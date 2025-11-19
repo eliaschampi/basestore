@@ -1,21 +1,21 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import { onMount } from "svelte";
-	import { scale } from "svelte/transition";
-	import type { ContextProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import { onMount } from 'svelte';
+	import { scale } from 'svelte/transition';
+	import type { ContextProps } from './types';
 
 	interface Props extends ContextProps {
 		children?: Snippet<[{ data: unknown }]>;
 	}
 
 	const {
-		size = "md",
+		size = 'md',
 		closeOnClick = true,
 		closeOnScroll = true,
-		itemSelector = ".lumi-context-item",
+		itemSelector = '.lumi-context-item',
 		maxHeight = 300,
 		viewportPadding = 12,
-		class: className = "",
+		class: className = '',
 		onopen,
 		onclose,
 		children
@@ -30,13 +30,13 @@
 
 	const contextClasses = $derived(() => {
 		return [
-			"lumi-context",
+			'lumi-context',
 			`lumi-context--${size}`,
-			show && isPositioned && "lumi-context--visible",
+			show && isPositioned && 'lumi-context--visible',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	const contextStyle = $derived(() => ({
@@ -72,7 +72,7 @@
 					contextMenu?.focus();
 
 					if (closeOnScroll) {
-						window.addEventListener("scroll", close, { passive: true });
+						window.addEventListener('scroll', close, { passive: true });
 					}
 
 					onopen?.(event, data, top, left);
@@ -91,7 +91,7 @@
 		}, 150);
 
 		if (closeOnScroll) {
-			window.removeEventListener("scroll", close);
+			window.removeEventListener('scroll', close);
 		}
 
 		onclose?.();
@@ -108,15 +108,15 @@
 
 	function handleKeydown(event: KeyboardEvent): void {
 		switch (event.key) {
-			case "Escape":
+			case 'Escape':
 				event.preventDefault();
 				close();
 				break;
-			case "ArrowDown":
+			case 'ArrowDown':
 				event.preventDefault();
 				focusNextItem(1);
 				break;
-			case "ArrowUp":
+			case 'ArrowUp':
 				event.preventDefault();
 				focusNextItem(-1);
 				break;
@@ -144,14 +144,14 @@
 	}
 
 	onMount(() => {
-		document.addEventListener("click", handleClickOutside);
-		document.addEventListener("contextmenu", handleClickOutside);
+		document.addEventListener('click', handleClickOutside);
+		document.addEventListener('contextmenu', handleClickOutside);
 
 		return () => {
-			document.removeEventListener("click", handleClickOutside);
-			document.removeEventListener("contextmenu", handleClickOutside);
+			document.removeEventListener('click', handleClickOutside);
+			document.removeEventListener('contextmenu', handleClickOutside);
 			if (closeOnScroll) {
-				window.removeEventListener("scroll", close);
+				window.removeEventListener('scroll', close);
 			}
 		};
 	});
@@ -222,9 +222,15 @@
 	}
 
 	/* Sizes */
-	.lumi-context--sm { min-width: 140px; }
-	.lumi-context--md { min-width: 180px; }
-	.lumi-context--lg { min-width: 240px; }
+	.lumi-context--sm {
+		min-width: 140px;
+	}
+	.lumi-context--md {
+		min-width: 180px;
+	}
+	.lumi-context--lg {
+		min-width: 240px;
+	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.lumi-context {

@@ -1,20 +1,20 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import type { LoadingProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import type { LoadingProps } from './types';
 
 	interface Props extends LoadingProps {
 		children?: Snippet;
 	}
 
-	const { color = "primary", text = "", class: className = "", children }: Props = $props();
+	const { color = 'primary', text = '', class: className = '', children }: Props = $props();
 
 	const classes = $derived(() => {
-		const baseClasses = ["lumi-loading", `lumi-loading--${color}`];
+		const baseClasses = ['lumi-loading', `lumi-loading--${color}`];
 
-		if (text || children) baseClasses.push("lumi-loading--with-text");
+		if (text || children) baseClasses.push('lumi-loading--with-text');
 		if (className) baseClasses.push(className);
 
-		return baseClasses.join(" ");
+		return baseClasses.join(' ');
 	});
 </script>
 

@@ -1,6 +1,6 @@
 // Lumi UI - Select Component Types
 
-import type { FloatingPlacement } from "$lib/utils/floating.svelte";
+import type { FloatingPlacement } from '$lib/utils/floating.svelte';
 
 export interface SelectOption {
 	/** Option value */
@@ -16,7 +16,7 @@ export interface SelectOption {
 	[key: string]: unknown;
 }
 
-export type SelectSize = "sm" | "md" | "lg";
+export type SelectSize = 'sm' | 'md' | 'lg';
 
 export interface SelectProps {
 	/** Selected value */

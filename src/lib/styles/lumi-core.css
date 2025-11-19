@@ -55,8 +55,8 @@ body {
 	height: 100vh;
 	overflow: hidden;
 	grid-template-areas:
-		"sidebar navbar"
-		"sidebar content";
+		'sidebar navbar'
+		'sidebar content';
 	grid-template-columns: var(--lumi-sidebar-width) 1fr;
 	grid-template-rows: auto 1fr;
 	transition: grid-template-columns var(--lumi-duration-base) var(--lumi-easing-default);
@@ -978,8 +978,8 @@ body {
 	/* Transform to mobile layout - remove sidebar from grid */
 	.lumi-dashboard-layout {
 		grid-template-areas:
-			"navbar"
-			"content";
+			'navbar'
+			'content';
 		grid-template-columns: 1fr;
 		grid-template-rows: auto 1fr;
 	}
@@ -987,8 +987,8 @@ body {
 	/* Override any collapsed state classes */
 	.lumi-dashboard-layout.lumi-sidebar--is-collapsed {
 		grid-template-areas:
-			"navbar"
-			"content";
+			'navbar'
+			'content';
 		grid-template-columns: 1fr;
 	}
 

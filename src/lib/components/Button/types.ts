@@ -5,13 +5,13 @@
 
 export interface ButtonProps {
 	/** Button type variant */
-	type?: "filled" | "border" | "flat" | "gradient";
+	type?: 'filled' | 'border' | 'flat' | 'gradient';
 
 	/** Color variant */
-	color?: "primary" | "secondary" | "success" | "warning" | "danger" | "info";
+	color?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
 
 	/** Size variant */
-	size?: "sm" | "md" | "lg" | "xl";
+	size?: 'sm' | 'md' | 'lg' | 'xl';
 
 	/** Icon name to display */
 	icon?: string;
@@ -29,7 +29,7 @@ export interface ButtonProps {
 	disabled?: boolean;
 
 	/** HTML button type */
-	button?: "button" | "submit" | "reset";
+	button?: 'button' | 'submit' | 'reset';
 
 	/** Additional CSS classes */
 	class?: string;

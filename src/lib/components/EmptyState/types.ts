@@ -1,13 +1,13 @@
 // Lumi UI - EmptyState Component Types
 
 export type EmptyStateColor =
-	| "primary"
-	| "secondary"
-	| "success"
-	| "warning"
-	| "danger"
-	| "info"
-	| "muted";
+	| 'primary'
+	| 'secondary'
+	| 'success'
+	| 'warning'
+	| 'danger'
+	| 'info'
+	| 'muted';
 
 export interface EmptyStateProps {
 	/** Title text */

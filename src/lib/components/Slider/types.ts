@@ -1,7 +1,7 @@
 // Lumi UI - Slider Component Types
 
-export type SliderColor = "primary" | "secondary" | "success" | "warning" | "danger" | "info";
-export type SliderSize = "sm" | "md" | "lg";
+export type SliderColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
+export type SliderSize = 'sm' | 'md' | 'lg';
 
 export interface SliderProps {
 	/** Current value of the slider (bindable) */

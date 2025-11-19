@@ -1,15 +1,15 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import type { FieldsetProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import type { FieldsetProps } from './types';
 
 	interface Props extends FieldsetProps {
 		children?: Snippet;
 	}
 
-	const { legend = "", class: className = "", children }: Props = $props();
+	const { legend = '', class: className = '', children }: Props = $props();
 
 	const classes = $derived(() => {
-		return ["lumi-fieldset", className].filter(Boolean).join(" ");
+		return ['lumi-fieldset', className].filter(Boolean).join(' ');
 	});
 </script>
 

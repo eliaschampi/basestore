@@ -15,12 +15,12 @@ export interface SegmentedControlOption {
 }
 
 export type SegmentedControlColor =
-	| "primary"
-	| "secondary"
-	| "success"
-	| "warning"
-	| "danger"
-	| "info";
+	| 'primary'
+	| 'secondary'
+	| 'success'
+	| 'warning'
+	| 'danger'
+	| 'info';
 
 export interface SegmentedControlProps {
 	/** Selected value */

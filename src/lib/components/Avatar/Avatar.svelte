@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { Icon } from "../Icon";
-	import type { AvatarProps } from "./types";
+	import { Icon } from '../Icon';
+	import type { AvatarProps } from './types';
 
 	const {
-		text = "",
-		src = "",
-		icon = "",
-		alt = "",
-		color = "primary",
-		size = "md",
-		class: className = "",
+		text = '',
+		src = '',
+		icon = '',
+		alt = '',
+		color = 'primary',
+		size = 'md',
+		class: className = '',
 		onclick,
 		onerror
 	}: AvatarProps = $props();
@@ -18,7 +18,7 @@
 
 	// Generate display text (initials) - matches Vue original logic
 	const displayText = $derived(() => {
-		if (!text) return "";
+		if (!text) return '';
 
 		const textStr = String(text);
 		if (textStr.length <= 5) return textStr;
@@ -27,19 +27,19 @@
 		const words = textStr.split(/\s+/);
 		if (words.length > 1) {
 			return words
-				.map((word) => word[0]?.toUpperCase() || "")
-				.join("")
+				.map((word) => word[0]?.toUpperCase() || '')
+				.join('')
 				.slice(0, 5);
 		}
 
-		return textStr[0]?.toUpperCase() || "";
+		return textStr[0]?.toUpperCase() || '';
 	});
 
 	// Computed classes
 	const classes = $derived(() => {
-		return ["lumi-avatar", `lumi-avatar--${color}`, `lumi-avatar--${size}`, className]
+		return ['lumi-avatar', `lumi-avatar--${color}`, `lumi-avatar--${size}`, className]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	// Event handlers
@@ -56,7 +56,7 @@
 <div
 	class={classes()}
 	role="img"
-	aria-label={alt || text || "Avatar"}
+	aria-label={alt || text || 'Avatar'}
 	onclick={handleClick}
 	tabindex={onclick ? 0 : -1}
 >

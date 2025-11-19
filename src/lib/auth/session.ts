@@ -1,7 +1,7 @@
-import type { Cookies } from "@sveltejs/kit";
-import { generateToken, verifyToken } from "./jwt";
-import type { Database } from "$lib/database";
-import type { Users } from "$lib/database/types";
+import type { Cookies } from '@sveltejs/kit';
+import { generateToken, verifyToken } from './jwt';
+import type { Database } from '$lib/database';
+import type { Users } from '$lib/database/types';
 
 export interface Session {
 	user: Users;
@@ -9,13 +9,13 @@ export interface Session {
 	expiresAt: number;
 }
 
-const SESSION_COOKIE_NAME = "faztore_session";
+const SESSION_COOKIE_NAME = 'faztore_session';
 
 const cookieConfig = {
-	path: "/",
+	path: '/',
 	httpOnly: true,
-	sameSite: "lax" as const,
-	secure: process.env.NODE_ENV === "production",
+	sameSite: 'lax' as const,
+	secure: process.env.NODE_ENV === 'production',
 	maxAge: 60 * 60 * 24 * 7 // 7 days
 };
 
@@ -30,13 +30,13 @@ export async function createSession(
 	try {
 		// Get user from database
 		const user = await db
-			.selectFrom("users")
+			.selectFrom('users')
 			.selectAll()
-			.where("code", "=", userCode)
+			.where('code', '=', userCode)
 			.executeTakeFirst();
 
 		if (!user) {
-			console.error("User not found:", userCode);
+			console.error('User not found:', userCode);
 			return null;
 		}
 
@@ -45,7 +45,7 @@ export async function createSession(
 		const payload = verifyToken(token);
 
 		if (!payload) {
-			console.error("Failed to generate session token:", userCode);
+			console.error('Failed to generate session token:', userCode);
 			return null;
 		}
 
@@ -54,9 +54,9 @@ export async function createSession(
 
 		// Update last login
 		await db
-			.updateTable("users")
+			.updateTable('users')
 			.set({ last_login: new Date() })
-			.where("code", "=", userCode)
+			.where('code', '=', userCode)
 			.execute();
 
 		return {
@@ -65,7 +65,7 @@ export async function createSession(
 			expiresAt: payload.exp! * 1000
 		};
 	} catch (error) {
-		console.error("Error creating session:", error);
+		console.error('Error creating session:', error);
 		return null;
 	}
 }
@@ -89,9 +89,9 @@ export async function getSession(db: Database, cookies: Cookies): Promise<Sessio
 
 		// Get fresh user data
 		const user = await db
-			.selectFrom("users")
+			.selectFrom('users')
 			.selectAll()
-			.where("code", "=", payload.userCode)
+			.where('code', '=', payload.userCode)
 			.executeTakeFirst();
 
 		if (!user) {
@@ -105,7 +105,7 @@ export async function getSession(db: Database, cookies: Cookies): Promise<Sessio
 			expiresAt: payload.exp! * 1000
 		};
 	} catch (error) {
-		console.error("Error getting session:", error);
+		console.error('Error getting session:', error);
 		destroySession(cookies);
 		return null;
 	}
@@ -115,7 +115,7 @@ export async function getSession(db: Database, cookies: Cookies): Promise<Sessio
  * Destroy current session
  */
 export function destroySession(cookies: Cookies): void {
-	cookies.delete(SESSION_COOKIE_NAME, { path: "/" });
+	cookies.delete(SESSION_COOKIE_NAME, { path: '/' });
 }
 
 /**

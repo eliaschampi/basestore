@@ -1,13 +1,13 @@
 <script lang="ts">
-	import Icon from "../Icon/Icon.svelte";
-	import type { DividerProps } from "./types";
+	import Icon from '../Icon/Icon.svelte';
+	import type { DividerProps } from './types';
 
 	const {
-		position = "center",
+		position = 'center',
 		icon = undefined,
 		text = undefined,
 		spaced = true,
-		class: className = "",
+		class: className = '',
 		onclick
 	}: DividerProps = $props();
 
@@ -15,21 +15,21 @@
 
 	const dividerClasses = $derived(() => {
 		return [
-			"lumi-divider",
+			'lumi-divider',
 			`lumi-divider--${position}`,
-			hasContent && "lumi-divider--with-content",
-			spaced && "lumi-divider--spaced",
+			hasContent && 'lumi-divider--with-content',
+			spaced && 'lumi-divider--spaced',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	function handleKeydown(e: KeyboardEvent) {
-		if (onclick && (e.key === "Enter" || e.key === " ")) {
+		if (onclick && (e.key === 'Enter' || e.key === ' ')) {
 			e.preventDefault();
 			// Create a synthetic MouseEvent for keyboard activation
-			const syntheticEvent = new MouseEvent("click", {
+			const syntheticEvent = new MouseEvent('click', {
 				bubbles: true,
 				cancelable: true,
 				view: window
@@ -43,11 +43,11 @@
 	class={dividerClasses()}
 	{onclick}
 	onkeydown={handleKeydown}
-	role={onclick ? "button" : "separator"}
+	role={onclick ? 'button' : 'separator'}
 	tabindex={onclick ? 0 : undefined}
-	aria-label={onclick ? "Divider button" : undefined}
+	aria-label={onclick ? 'Divider button' : undefined}
 >
-	{#if hasContent && position !== "left"}
+	{#if hasContent && position !== 'left'}
 		<span class="lumi-divider__line lumi-divider__line--before"></span>
 	{/if}
 
@@ -61,7 +61,7 @@
 		</span>
 	{/if}
 
-	{#if hasContent && position !== "right"}
+	{#if hasContent && position !== 'right'}
 		<span class="lumi-divider__line lumi-divider__line--after"></span>
 	{:else if !hasContent}
 		<span class="lumi-divider__line lumi-divider__line--full"></span>

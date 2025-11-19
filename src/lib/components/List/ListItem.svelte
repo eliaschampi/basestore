@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import Icon from "../Icon/Icon.svelte";
+	import type { Snippet } from 'svelte';
+	import Icon from '../Icon/Icon.svelte';
 
 	interface Props {
 		title?: string;
@@ -24,7 +24,7 @@
 		disabled = false,
 		clickable = false,
 		active = false,
-		class: className = "",
+		class: className = '',
 		onclick,
 		children,
 		avatar,
@@ -34,14 +34,14 @@
 
 	const classes = $derived(() => {
 		return [
-			"lumi-list-item",
-			disabled && "lumi-list-item--disabled",
-			clickable && "lumi-list-item--clickable",
-			active && "lumi-list-item--active",
+			'lumi-list-item',
+			disabled && 'lumi-list-item--disabled',
+			clickable && 'lumi-list-item--clickable',
+			active && 'lumi-list-item--active',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	const handleClick = (event: MouseEvent) => {
@@ -54,7 +54,7 @@
 <div
 	class={classes()}
 	onclick={handleClick}
-	role={clickable ? "button" : undefined}
+	role={clickable ? 'button' : undefined}
 	tabindex={clickable && !disabled ? 0 : undefined}
 >
 	{#if avatar}
@@ -180,7 +180,7 @@
 		background: var(--lumi-color-background-hover);
 		color: var(--lumi-color-text);
 	}
-	
+
 	.lumi-list-item--clickable:hover .lumi-list-item__icon {
 		color: var(--lumi-color-primary);
 	}
@@ -198,7 +198,7 @@
 	.lumi-list-item--active .lumi-list-item__icon {
 		color: var(--lumi-color-primary);
 	}
-	
+
 	.lumi-list-item--active .lumi-list-item__subtitle {
 		color: color-mix(in srgb, var(--lumi-color-primary) 70%, transparent);
 	}

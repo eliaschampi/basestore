@@ -1,16 +1,16 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import { onMount, setContext } from "svelte";
-	import { scale } from "svelte/transition";
-	import { createFloating } from "$lib/utils/floating.svelte";
-	import type { DropdownProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import { onMount, setContext } from 'svelte';
+	import { scale } from 'svelte/transition';
+	import { createFloating } from '$lib/utils/floating.svelte';
+	import type { DropdownProps } from './types';
 
 	interface Props {
 		open?: boolean;
-		position?: DropdownProps["position"];
-		size?: DropdownProps["size"];
+		position?: DropdownProps['position'];
+		size?: DropdownProps['size'];
 		disabled?: boolean;
-		trigger?: DropdownProps["trigger"];
+		trigger?: DropdownProps['trigger'];
 		closeOnClickOutside?: boolean;
 		maxHeight?: number;
 		offset?: number;
@@ -25,15 +25,15 @@
 
 	let {
 		open = $bindable(false),
-		position = "bottom-start",
-		size = "md",
+		position = 'bottom-start',
+		size = 'md',
 		disabled = false,
-		trigger = "click",
+		trigger = 'click',
 		closeOnClickOutside = true,
 		maxHeight = 300,
 		offset = 4,
 		viewportPadding = 12,
-		class: className = "",
+		class: className = '',
 		onshow,
 		onhide,
 		children,
@@ -55,7 +55,7 @@
 			maxHeight,
 			offset,
 			viewportPadding,
-			zIndex: "var(--lumi-z-dropdown)"
+			zIndex: 'var(--lumi-z-dropdown)'
 		}
 	);
 
@@ -69,10 +69,10 @@
 	});
 
 	// Provide close function to child components
-	setContext("dropdownClose", closeDropdown);
+	setContext('dropdownClose', closeDropdown);
 
 	const dropdownClasses = $derived(() => {
-		return ["lumi-dropdown", open && "lumi-dropdown--open", className].filter(Boolean).join(" ");
+		return ['lumi-dropdown', open && 'lumi-dropdown--open', className].filter(Boolean).join(' ');
 	});
 
 	function openDropdown(): void {
@@ -102,7 +102,7 @@
 		if (!dropdownRef || !menuRef) return;
 
 		const target = event.target as Element;
-		
+
 		// Check if click is outside both trigger and menu
 		if (!dropdownRef.contains(target) && !menuRef.contains(target)) {
 			closeDropdown();
@@ -110,35 +110,35 @@
 	}
 
 	function handleEscape(event: KeyboardEvent): void {
-		if (event.key === "Escape" && open) {
+		if (event.key === 'Escape' && open) {
 			closeDropdown();
 		}
 	}
 
 	function handleTriggerClick(event: MouseEvent): void {
-		if (trigger === "click") {
+		if (trigger === 'click') {
 			event.stopPropagation();
 			toggle();
 		}
 	}
 
 	function handleTriggerKeydown(event: KeyboardEvent): void {
-		if (event.key === "Enter" || event.key === " ") {
+		if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault();
 			toggle();
-		} else if (event.key === "Escape") {
+		} else if (event.key === 'Escape') {
 			closeDropdown();
 		}
 	}
 
 	function handleMouseEnter(): void {
-		if (trigger === "hover" && !disabled) {
+		if (trigger === 'hover' && !disabled) {
 			openDropdown();
 		}
 	}
 
 	function handleMouseLeave(): void {
-		if (trigger === "hover" && !disabled) {
+		if (trigger === 'hover' && !disabled) {
 			closeDropdown();
 		}
 	}
@@ -146,19 +146,19 @@
 	onMount(() => {
 		// Use capture phase for click outside to prevent issues
 		if (closeOnClickOutside) {
-			document.addEventListener("click", handleClickOutside, true);
+			document.addEventListener('click', handleClickOutside, true);
 		}
-		document.addEventListener("keydown", handleEscape);
+		document.addEventListener('keydown', handleEscape);
 
 		return () => {
-			document.removeEventListener("click", handleClickOutside, true);
-			document.removeEventListener("keydown", handleEscape);
+			document.removeEventListener('click', handleClickOutside, true);
+			document.removeEventListener('keydown', handleEscape);
 		};
 	});
 </script>
 
-<div 
-	bind:this={dropdownRef} 
+<div
+	bind:this={dropdownRef}
 	class={dropdownClasses()}
 	onmouseenter={handleMouseEnter}
 	onmouseleave={handleMouseLeave}
@@ -221,7 +221,7 @@
 	.lumi-dropdown__trigger:focus {
 		outline: none;
 	}
-	
+
 	.lumi-dropdown__trigger:focus-visible {
 		outline: 2px solid var(--lumi-color-primary);
 		border-radius: var(--lumi-radius-md);

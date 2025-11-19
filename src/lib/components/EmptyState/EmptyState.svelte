@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import Icon from "../Icon/Icon.svelte";
-	import type { EmptyStateProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import Icon from '../Icon/Icon.svelte';
+	import type { EmptyStateProps } from './types';
 
 	interface Props extends EmptyStateProps {
 		visual?: Snippet;
@@ -11,12 +11,12 @@
 	}
 
 	const {
-		title = "No data available",
-		description = "",
-		image = "",
-		icon = "",
-		iconColor = "muted",
-		class: className = "",
+		title = 'No data available',
+		description = '',
+		image = '',
+		icon = '',
+		iconColor = 'muted',
+		class: className = '',
 		visual,
 		titleSlot,
 		descriptionSlot,
@@ -24,14 +24,14 @@
 	}: Props = $props();
 
 	const classes = $derived(() => {
-		return ["lumi-empty-state", className].filter(Boolean).join(" ");
+		return ['lumi-empty-state', className].filter(Boolean).join(' ');
 	});
 
 	const imageUrl = $derived(() => {
-		if (!image) return "";
+		if (!image) return '';
 
 		// If it's already a full URL, return as is
-		if (image.startsWith("http") || image.startsWith("/")) {
+		if (image.startsWith('http') || image.startsWith('/')) {
 			return image;
 		}
 
@@ -46,7 +46,7 @@
 		{#if visual}
 			{@render visual()}
 		{:else if image}
-			<img src={imageUrl()} alt={title || "Empty state"} class="lumi-empty-state__image" />
+			<img src={imageUrl()} alt={title || 'Empty state'} class="lumi-empty-state__image" />
 		{:else if icon}
 			<div class="lumi-empty-state__icon">
 				<Icon {icon} size="64px" color={`var(--lumi-color-${iconColor})`} />

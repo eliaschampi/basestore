@@ -1,13 +1,13 @@
 <script lang="ts">
-	import type { SwitchProps } from "./types";
+	import type { SwitchProps } from './types';
 
 	let {
 		checked = $bindable(false),
-		label = "",
-		size = "md",
-		color = "primary",
+		label = '',
+		size = 'md',
+		color = 'primary',
 		disabled = false,
-		class: className = "",
+		class: className = '',
 		children,
 		onchange
 	}: SwitchProps = $props();
@@ -16,15 +16,15 @@
 
 	const classes = $derived(
 		[
-			"lumi-switch",
+			'lumi-switch',
 			`lumi-switch--${size}`,
 			`lumi-switch--${color}`,
-			checked && "lumi-switch--checked",
-			disabled && "lumi-switch--disabled",
+			checked && 'lumi-switch--checked',
+			disabled && 'lumi-switch--disabled',
 			className
 		]
 			.filter(Boolean)
-			.join(" ")
+			.join(' ')
 	);
 
 	const handleChange = (event: Event) => {
@@ -199,30 +199,42 @@
 	.lumi-switch:not(.lumi-switch--disabled):hover .lumi-switch__track {
 		box-shadow: var(--lumi-shadow-sm);
 	}
-	
+
 	/* Focus styles */
 	.lumi-switch__input:focus-visible + .lumi-switch__track {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-primary);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-primary);
 	}
-	
+
 	.lumi-switch--secondary .lumi-switch__input:focus-visible + .lumi-switch__track {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-secondary);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-secondary);
 	}
-	
+
 	.lumi-switch--success .lumi-switch__input:focus-visible + .lumi-switch__track {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-success);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-success);
 	}
-	
+
 	.lumi-switch--warning .lumi-switch__input:focus-visible + .lumi-switch__track {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-warning);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-warning);
 	}
-	
+
 	.lumi-switch--danger .lumi-switch__input:focus-visible + .lumi-switch__track {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-danger);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-danger);
 	}
-	
+
 	.lumi-switch--info .lumi-switch__input:focus-visible + .lumi-switch__track {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-info);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-info);
 	}
 
 	/* Disabled state */

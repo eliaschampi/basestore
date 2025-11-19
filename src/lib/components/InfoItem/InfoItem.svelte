@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import Icon from "../Icon/Icon.svelte";
-	import type { InfoItemProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import Icon from '../Icon/Icon.svelte';
+	import type { InfoItemProps } from './types';
 
 	interface Props extends InfoItemProps {
 		children?: Snippet;
@@ -10,12 +10,12 @@
 	}
 
 	const {
-		layout = "horizontal",
-		icon = "",
-		iconColor = "primary",
-		label = "",
-		value = "",
-		class: className = "",
+		layout = 'horizontal',
+		icon = '',
+		iconColor = 'primary',
+		label = '',
+		value = '',
+		class: className = '',
 		children,
 		iconSlot,
 		labelSlot
@@ -23,13 +23,13 @@
 
 	const classes = $derived(() => {
 		return [
-			"lumi-info-item",
+			'lumi-info-item',
 			`lumi-info-item--${layout}`,
-			(icon || iconSlot) && "lumi-info-item--with-icon",
+			(icon || iconSlot) && 'lumi-info-item--with-icon',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 </script>
 

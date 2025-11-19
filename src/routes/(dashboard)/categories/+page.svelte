@@ -1,17 +1,17 @@
 <script lang="ts">
-	import { invalidate } from "$app/navigation";
-	import { enhance } from "$app/forms";
-	import Card from "$lib/components/Card/Card.svelte";
-	import Title from "$lib/components/Title/Title.svelte";
-	import Table from "$lib/components/Table/Table.svelte";
-	import Button from "$lib/components/Button/Button.svelte";
-	import Dialog from "$lib/components/Dialog/Dialog.svelte";
-	import Input from "$lib/components/Input/Input.svelte";
-	import Textarea from "$lib/components/Textarea/Textarea.svelte";
-	import Alert from "$lib/components/Alert/Alert.svelte";
-	import { showToast } from "$lib/stores/Toast";
-	import { can } from "$lib/stores/permissions";
-	import type { PageData } from "./$types";
+	import { invalidate } from '$app/navigation';
+	import { enhance } from '$app/forms';
+	import Card from '$lib/components/Card/Card.svelte';
+	import Title from '$lib/components/Title/Title.svelte';
+	import Table from '$lib/components/Table/Table.svelte';
+	import Button from '$lib/components/Button/Button.svelte';
+	import Dialog from '$lib/components/Dialog/Dialog.svelte';
+	import Input from '$lib/components/Input/Input.svelte';
+	import Textarea from '$lib/components/Textarea/Textarea.svelte';
+	import Alert from '$lib/components/Alert/Alert.svelte';
+	import { showToast } from '$lib/stores/Toast';
+	import { can } from '$lib/stores/permissions';
+	import type { PageData } from './$types';
 
 	interface Category {
 		code: string;
@@ -23,33 +23,33 @@
 
 	const { data }: { data: PageData } = $props();
 
-	const canCreate = $derived(can("categories:create"));
-	const canUpdate = $derived(can("categories:update"));
-	const canDelete = $derived(can("categories:delete"));
+	const canCreate = $derived(can('categories:create'));
+	const canUpdate = $derived(can('categories:update'));
+	const canDelete = $derived(can('categories:delete'));
 
 	let showModal = $state(false);
 	let showDeleteModal = $state(false);
 	let isEditing = $state(false);
-	let errorMessage = $state("");
+	let errorMessage = $state('');
 	let selectedCategory = $state<Category | null>(null);
 
-	let formName = $state("");
-	let formDescription = $state("");
+	let formName = $state('');
+	let formDescription = $state('');
 
 	function formatDate(date: Date | string): string {
-		return new Date(date).toLocaleDateString("es-ES", {
-			year: "numeric",
-			month: "short",
-			day: "numeric"
+		return new Date(date).toLocaleDateString('es-ES', {
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric'
 		});
 	}
 
 	function openCreateModal() {
 		if (!canCreate) return;
 		isEditing = false;
-		formName = "";
-		formDescription = "";
-		errorMessage = "";
+		formName = '';
+		formDescription = '';
+		errorMessage = '';
 		showModal = true;
 	}
 
@@ -58,8 +58,8 @@
 		isEditing = true;
 		selectedCategory = category;
 		formName = category.name;
-		formDescription = category.description || "";
-		errorMessage = "";
+		formDescription = category.description || '';
+		errorMessage = '';
 		showModal = true;
 	}
 
@@ -71,7 +71,7 @@
 
 	function closeModal() {
 		showModal = false;
-		errorMessage = "";
+		errorMessage = '';
 	}
 
 	function closeDeleteModal() {
@@ -110,7 +110,9 @@
 					{#if row.description}
 						<span class="lumi-text--sm lumi-text--muted">{row.description}</span>
 					{:else}
-						<span class="lumi-text--sm lumi-text--muted" style="font-style: italic;">Sin descripción</span>
+						<span class="lumi-text--sm lumi-text--muted" style="font-style: italic;"
+							>Sin descripción</span
+						>
 					{/if}
 				</td>
 				<td>{formatDate(row.created_at)}</td>
@@ -140,21 +142,21 @@
 </div>
 
 <!-- Create/Edit Modal -->
-<Dialog bind:open={showModal} title={isEditing ? "Editar Categoría" : "Nueva Categoría"} size="md">
+<Dialog bind:open={showModal} title={isEditing ? 'Editar Categoría' : 'Nueva Categoría'} size="md">
 	<form
 		method="POST"
 		action="?/{isEditing ? 'update' : 'create'}"
 		use:enhance={() => {
 			return async ({ result }) => {
-				if (result.type === "success") {
+				if (result.type === 'success') {
 					showToast(
-						isEditing ? "Categoría actualizada exitosamente" : "Categoría creada exitosamente",
-						"success"
+						isEditing ? 'Categoría actualizada exitosamente' : 'Categoría creada exitosamente',
+						'success'
 					);
-					await invalidate("categories:load");
+					await invalidate('categories:load');
 					closeModal();
-				} else if (result.type === "failure") {
-					errorMessage = result.data?.error || "Ocurrió un error";
+				} else if (result.type === 'failure') {
+					errorMessage = result.data?.error || 'Ocurrió un error';
 				}
 			};
 		}}
@@ -164,7 +166,7 @@
 		{/if}
 
 		{#if errorMessage}
-			<Alert type="danger" closable onclose={() => (errorMessage = "")}>
+			<Alert type="danger" closable onclose={() => (errorMessage = '')}>
 				{errorMessage}
 			</Alert>
 		{/if}
@@ -190,8 +192,12 @@
 
 	{#snippet footer()}
 		<Button type="border" onclick={closeModal}>Cancelar</Button>
-		<Button type="filled" color="primary" onclick={() => document.querySelector('form')?.requestSubmit()}>
-			{isEditing ? "Actualizar" : "Crear"}
+		<Button
+			type="filled"
+			color="primary"
+			onclick={() => document.querySelector('form')?.requestSubmit()}
+		>
+			{isEditing ? 'Actualizar' : 'Crear'}
 		</Button>
 	{/snippet}
 </Dialog>
@@ -204,12 +210,12 @@
 		action="?/delete"
 		use:enhance={() => {
 			return async ({ result }) => {
-				if (result.type === "success") {
-					showToast("Categoría eliminada exitosamente", "success");
-					await invalidate("categories:load");
+				if (result.type === 'success') {
+					showToast('Categoría eliminada exitosamente', 'success');
+					await invalidate('categories:load');
 					closeDeleteModal();
-				} else if (result.type === "failure") {
-					showToast(result.data?.error || "Error al eliminar", "error");
+				} else if (result.type === 'failure') {
+					showToast(result.data?.error || 'Error al eliminar', 'error');
 				}
 			};
 		}}
@@ -217,15 +223,19 @@
 		{#if selectedCategory}
 			<input type="hidden" name="code" value={selectedCategory.code} />
 			<p class="lumi-margin--none">
-				¿Estás seguro de que deseas eliminar la categoría <strong>{selectedCategory.name}</strong>? Esta
-				acción no se puede deshacer.
+				¿Estás seguro de que deseas eliminar la categoría <strong>{selectedCategory.name}</strong>?
+				Esta acción no se puede deshacer.
 			</p>
 		{/if}
 	</form>
 
 	{#snippet footer()}
 		<Button type="border" onclick={closeDeleteModal}>Cancelar</Button>
-		<Button type="filled" color="danger" onclick={() => document.getElementById('delete-category-form')?.requestSubmit()}>
+		<Button
+			type="filled"
+			color="danger"
+			onclick={() => document.getElementById('delete-category-form')?.requestSubmit()}
+		>
 			Eliminar
 		</Button>
 	{/snippet}

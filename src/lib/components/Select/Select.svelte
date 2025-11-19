@@ -1,31 +1,31 @@
 <script lang="ts">
-	import { onMount } from "svelte";
-	import { createFloating } from "$lib/utils/floating.svelte";
-	import Icon from "../Icon/Icon.svelte";
-	import type { SelectOption, SelectProps } from "./types";
+	import { onMount } from 'svelte';
+	import { createFloating } from '$lib/utils/floating.svelte';
+	import Icon from '../Icon/Icon.svelte';
+	import type { SelectOption, SelectProps } from './types';
 
 	let {
 		value = $bindable(null),
 		options = [],
-		placeholder = "Select an option",
-		label = "",
-		name = "",
-		size = "md",
+		placeholder = 'Select an option',
+		label = '',
+		name = '',
+		size = 'md',
 		disabled = false,
 		autocomplete = false,
 		error = false,
-		errorMessage = "",
-		noDataText = "No options available",
-		width = "100%",
-		valueKey = "value",
-		labelKey = "label",
-		disabledKey = "disabled",
+		errorMessage = '',
+		noDataText = 'No options available',
+		width = '100%',
+		valueKey = 'value',
+		labelKey = 'label',
+		disabledKey = 'disabled',
 		clearable = true,
 		loading = false,
-		placement = "bottom-start",
+		placement = 'bottom-start',
 		maxHeight = 250,
 		offset = 4,
-		class: className = "",
+		class: className = '',
 		onchange,
 		onopen,
 		onclose,
@@ -37,7 +37,7 @@
 	let inputRef: HTMLInputElement | undefined = $state();
 	let dropdownRef: HTMLDivElement | undefined = $state();
 	let focusedIndex = $state(-1);
-	let searchQuery = $state("");
+	let searchQuery = $state('');
 
 	// Floating element management
 	const floating = createFloating(
@@ -48,13 +48,13 @@
 			matchWidth: true,
 			maxHeight,
 			offset,
-			zIndex: "var(--lumi-z-dropdown)"
+			zIndex: 'var(--lumi-z-dropdown)'
 		}
 	);
 
 	// Utility for deep/shallow comparison
 	function isEqual(a: unknown, b: unknown): boolean {
-		if (typeof a === "object" && a !== null && typeof b === "object" && b !== null) {
+		if (typeof a === 'object' && a !== null && typeof b === 'object' && b !== null) {
 			return JSON.stringify(a) === JSON.stringify(b);
 		}
 		return a === b;
@@ -63,13 +63,13 @@
 	// Unique ID for accessibility
 	const uniqueId = Math.random().toString(36).substring(2, 11);
 	const inputId = $derived(`lumi-select-${uniqueId}`);
-	const widthStyle = $derived(width ? `width: ${width}` : "");
+	const widthStyle = $derived(width ? `width: ${width}` : '');
 
 	// Normalize options
 	const normalizedOptions = $derived(() => {
 		if (!options || options.length === 0) return [];
 
-		if (options.every((opt) => typeof opt !== "object" || opt === null)) {
+		if (options.every((opt) => typeof opt !== 'object' || opt === null)) {
 			return options.map((opt) => ({
 				[valueKey]: opt,
 				[labelKey]: String(opt)
@@ -90,7 +90,7 @@
 			return searchQuery;
 		}
 		const selected = selectedOption();
-		return selected?.[labelKey] || "";
+		return selected?.[labelKey] || '';
 	});
 
 	// Watch for changes to the selected value to update the input text
@@ -99,7 +99,7 @@
 		if (selected) {
 			searchQuery = selected[labelKey] as string;
 		} else {
-			searchQuery = "";
+			searchQuery = '';
 		}
 	});
 
@@ -128,16 +128,16 @@
 	// Classes
 	const selectClasses = $derived(() => {
 		return [
-			"lumi-select",
+			'lumi-select',
 			`lumi-select--${size}`,
-			floating.isOpen && "lumi-select--active",
-			disabled && "lumi-select--disabled",
-			error && "lumi-select--error",
-			loading && "lumi-select--loading",
+			floating.isOpen && 'lumi-select--active',
+			disabled && 'lumi-select--disabled',
+			error && 'lumi-select--error',
+			loading && 'lumi-select--loading',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	// Methods
@@ -166,7 +166,7 @@
 		focusedIndex = -1;
 		// Reset search query to the selected value's label
 		const selected = selectedOption();
-		searchQuery = selected ? (selected[labelKey] as string) : "";
+		searchQuery = selected ? (selected[labelKey] as string) : '';
 		onclose?.();
 	}
 
@@ -182,7 +182,7 @@
 
 	function handleKeydown(event: KeyboardEvent): void {
 		switch (event.key) {
-			case "Enter":
+			case 'Enter':
 				if (!floating.isOpen) {
 					event.preventDefault();
 					openDropdown();
@@ -196,18 +196,18 @@
 					}
 				}
 				break;
-			case "Escape":
+			case 'Escape':
 				event.preventDefault();
 				closeDropdown();
 				break;
-			case "ArrowDown": {
+			case 'ArrowDown': {
 				event.preventDefault();
 				if (!floating.isOpen) openDropdown();
 				const filtered = filteredOptions();
 				focusedIndex = Math.min(focusedIndex + 1, filtered.length - 1);
 				break;
 			}
-			case "ArrowUp":
+			case 'ArrowUp':
 				event.preventDefault();
 				if (!floating.isOpen) openDropdown();
 				focusedIndex = Math.max(focusedIndex - 1, 0);
@@ -227,7 +227,7 @@
 		event.stopPropagation();
 		value = null;
 		onchange?.(null);
-		searchQuery = "";
+		searchQuery = '';
 		if (autocomplete) {
 			inputRef?.focus();
 		}
@@ -250,9 +250,9 @@
 	}
 
 	onMount(() => {
-		document.addEventListener("click", handleClickOutside);
+		document.addEventListener('click', handleClickOutside);
 		return () => {
-			document.removeEventListener("click", handleClickOutside);
+			document.removeEventListener('click', handleClickOutside);
 		};
 	});
 </script>
@@ -270,7 +270,7 @@
 		<!-- Input Field -->
 		<input
 			bind:this={inputRef}
-			name={name}
+			{name}
 			id={inputId}
 			type="text"
 			readonly={!autocomplete}
@@ -355,7 +355,7 @@
 							aria-disabled={isDisabled}
 							onclick={() => selectOption(option)}
 							onkeydown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
+								if (e.key === 'Enter' || e.key === ' ') {
 									e.preventDefault();
 									selectOption(option);
 								}
@@ -546,13 +546,25 @@
 	}
 
 	/* Sizes */
-	.lumi-select--sm .lumi-select__input { padding: var(--lumi-space-xs) var(--lumi-space-sm); font-size: var(--lumi-font-size-sm); }
-	.lumi-select--lg .lumi-select__input { padding: var(--lumi-space-md); font-size: var(--lumi-font-size-lg); }
+	.lumi-select--sm .lumi-select__input {
+		padding: var(--lumi-space-xs) var(--lumi-space-sm);
+		font-size: var(--lumi-font-size-sm);
+	}
+	.lumi-select--lg .lumi-select__input {
+		padding: var(--lumi-space-md);
+		font-size: var(--lumi-font-size-lg);
+	}
 
 	/* States */
-	.lumi-select--disabled { opacity: 0.6; pointer-events: none; }
-	.lumi-select--error { --select-border: var(--lumi-color-danger); --select-focus: var(--lumi-color-danger); }
-	
+	.lumi-select--disabled {
+		opacity: 0.6;
+		pointer-events: none;
+	}
+	.lumi-select--error {
+		--select-border: var(--lumi-color-danger);
+		--select-focus: var(--lumi-color-danger);
+	}
+
 	.lumi-select__spinner {
 		width: 16px;
 		height: 16px;
@@ -562,5 +574,9 @@
 		animation: spin 1s linear infinite;
 	}
 
-	@keyframes spin { to { transform: rotate(360deg); } }
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
 </style>

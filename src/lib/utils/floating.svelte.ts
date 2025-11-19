@@ -9,12 +9,12 @@ export interface FloatingPosition {
 }
 
 export type FloatingPlacement =
-	| "bottom-start"
-	| "bottom-end"
-	| "top-start"
-	| "top-end"
-	| "bottom"
-	| "top";
+	| 'bottom-start'
+	| 'bottom-end'
+	| 'top-start'
+	| 'top-end'
+	| 'bottom'
+	| 'top';
 
 export interface UseFloatingOptions {
 	offset?: number;
@@ -32,11 +32,11 @@ export function createFloating(
 ) {
 	const {
 		offset = 8,
-		placement = "bottom-start",
+		placement = 'bottom-start',
 		matchWidth = false,
 		maxHeight = 300,
 		viewportPadding = 16,
-		zIndex = "var(--lumi-z-dropdown)"
+		zIndex = 'var(--lumi-z-dropdown)'
 	} = options;
 
 	let isOpen = $state(false);
@@ -44,7 +44,7 @@ export function createFloating(
 
 	const floatingStyles = $derived(() => {
 		const styles: Record<string, string> = {
-			position: "fixed",
+			position: 'fixed',
 			top: `${position.top}px`,
 			left: `${position.left}px`,
 			zIndex
@@ -77,13 +77,13 @@ export function createFloating(
 		let calculatedMaxHeight = maxHeight;
 
 		// Handle placement variations
-		if (placement.includes("top")) {
+		if (placement.includes('top')) {
 			top = triggerRect.top - offset;
 		}
 
-		if (placement.includes("end")) {
+		if (placement.includes('end')) {
 			left = triggerRect.right;
-		} else if (placement === "bottom" || placement === "top") {
+		} else if (placement === 'bottom' || placement === 'top') {
 			// Center alignment
 			left = triggerRect.left + triggerRect.width / 2;
 		}
@@ -100,12 +100,12 @@ export function createFloating(
 		}
 
 		// Adjust for center alignment
-		if (placement === "bottom" || placement === "top") {
+		if (placement === 'bottom' || placement === 'top') {
 			left -= floatingWidth / 2;
 		}
 
 		// Adjust for end alignment
-		if (placement.includes("end") && !placement.includes("top") && !placement.includes("bottom")) {
+		if (placement.includes('end') && !placement.includes('top') && !placement.includes('bottom')) {
 			left -= floatingWidth;
 		}
 
@@ -117,7 +117,7 @@ export function createFloating(
 		}
 
 		// Viewport boundary adjustments - Vertical
-		if (placement.includes("top")) {
+		if (placement.includes('top')) {
 			if (top - floatingHeight < viewportPadding) {
 				// Flip to bottom
 				top = triggerRect.bottom + offset;
@@ -172,12 +172,12 @@ export function createFloating(
 	// Auto-update on scroll/resize
 	$effect(() => {
 		if (isOpen) {
-			window.addEventListener("scroll", updatePosition, { passive: true });
-			window.addEventListener("resize", updatePosition, { passive: true });
+			window.addEventListener('scroll', updatePosition, { passive: true });
+			window.addEventListener('resize', updatePosition, { passive: true });
 
 			return () => {
-				window.removeEventListener("scroll", updatePosition);
-				window.removeEventListener("resize", updatePosition);
+				window.removeEventListener('scroll', updatePosition);
+				window.removeEventListener('resize', updatePosition);
 			};
 		}
 	});

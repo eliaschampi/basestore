@@ -3,7 +3,7 @@
  * Static registry for tree-shaking optimization
  */
 
-import type { Icon as LucideIcon } from "lucide-svelte";
+import type { Icon as LucideIcon } from 'lucide-svelte';
 import {
 	Activity,
 	AlertCircle,
@@ -93,8 +93,8 @@ import {
 	XCircle,
 	Package,
 	Building
-} from "lucide-svelte";
-import type { ComponentType } from "svelte";
+} from 'lucide-svelte';
+import type { ComponentType } from 'svelte';
 
 // Icon registry type
 export type IconComponent = ComponentType<LucideIcon>;

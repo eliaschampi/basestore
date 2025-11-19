@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import { getContext } from "svelte";
-	import Icon from "../Icon/Icon.svelte";
+	import type { Snippet } from 'svelte';
+	import { getContext } from 'svelte';
+	import Icon from '../Icon/Icon.svelte';
 
 	interface Props {
 		children?: Snippet;
@@ -17,21 +17,21 @@
 		icon,
 		danger = false,
 		disabled = false,
-		class: className = "",
+		class: className = '',
 		onclick
 	}: Props = $props();
 
-	const closeDropdown = getContext<() => void>("dropdownClose");
+	const closeDropdown = getContext<() => void>('dropdownClose');
 
 	const itemClasses = $derived(() => {
 		return [
-			"lumi-dropdown-item",
-			disabled && "lumi-dropdown-item--disabled",
-			danger && "lumi-dropdown-item--danger",
+			'lumi-dropdown-item',
+			disabled && 'lumi-dropdown-item--disabled',
+			danger && 'lumi-dropdown-item--danger',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	function handleClick(): void {
@@ -48,7 +48,7 @@
 	tabindex={disabled ? -1 : 0}
 	onclick={handleClick}
 	onkeydown={(e) => {
-		if (e.key === "Enter" || e.key === " ") {
+		if (e.key === 'Enter' || e.key === ' ') {
 			e.preventDefault();
 			handleClick();
 		}
@@ -59,7 +59,7 @@
 			<Icon {icon} size="16px" />
 		</div>
 	{/if}
-	
+
 	<span class="lumi-dropdown-item__content">
 		{#if children}
 			{@render children()}
@@ -97,7 +97,7 @@
 		background: var(--lumi-color-background-hover);
 		box-shadow: inset 0 0 0 2px var(--lumi-color-primary);
 	}
-	
+
 	.lumi-dropdown-item:active:not(.lumi-dropdown-item--disabled) {
 		transform: scale(0.98);
 	}

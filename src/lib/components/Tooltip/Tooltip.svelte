@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import { fade } from "svelte/transition";
-	import type { TooltipProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import { fade } from 'svelte/transition';
+	import type { TooltipProps } from './types';
 
 	interface Props extends TooltipProps {
 		children?: Snippet;
@@ -9,11 +9,11 @@
 	}
 
 	const {
-		text = "",
-		color = "primary",
-		position = "top",
+		text = '',
+		color = 'primary',
+		position = 'top',
 		delay = 0,
-		class: className = "",
+		class: className = '',
 		children,
 		content
 	}: Props = $props();
@@ -23,13 +23,13 @@
 
 	const tooltipClasses = $derived(() => {
 		return [
-			"lumi-tooltip__content",
+			'lumi-tooltip__content',
 			`lumi-tooltip--${position}`,
 			`lumi-tooltip--${color}`,
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	function showTooltip(): void {
@@ -54,7 +54,7 @@
 <div
 	class="lumi-tooltip"
 	role="tooltip"
-	aria-label={text || "Tooltip"}
+	aria-label={text || 'Tooltip'}
 	onmouseenter={showTooltip}
 	onmouseleave={hideTooltip}
 >
@@ -104,7 +104,7 @@
 	}
 
 	.lumi-tooltip--top::after {
-		content: "";
+		content: '';
 		position: absolute;
 		top: 100%;
 		left: 50%;
@@ -120,7 +120,7 @@
 	}
 
 	.lumi-tooltip--bottom::after {
-		content: "";
+		content: '';
 		position: absolute;
 		bottom: 100%;
 		left: 50%;
@@ -136,7 +136,7 @@
 	}
 
 	.lumi-tooltip--left::after {
-		content: "";
+		content: '';
 		position: absolute;
 		left: 100%;
 		top: 50%;
@@ -152,7 +152,7 @@
 	}
 
 	.lumi-tooltip--right::after {
-		content: "";
+		content: '';
 		position: absolute;
 		right: 100%;
 		top: 50%;

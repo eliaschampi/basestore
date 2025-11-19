@@ -1,8 +1,8 @@
 // Lumi UI - Collapse Component Types
 
-export type CollapseColor = "primary" | "secondary" | "success" | "warning" | "danger" | "info";
-export type CollapseSize = "sm" | "md" | "lg";
-export type CollapseRadius = "none" | "sm" | "md" | "lg" | "full";
+export type CollapseColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
+export type CollapseSize = 'sm' | 'md' | 'lg';
+export type CollapseRadius = 'none' | 'sm' | 'md' | 'lg' | 'full';
 
 export interface CollapseProps {
 	/** Title text */

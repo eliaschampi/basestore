@@ -1,5 +1,5 @@
-import type { Database } from "$lib/database";
-import type { PermissionKey } from "$lib/stores/permissions.ts";
+import type { Database } from '$lib/database';
+import type { PermissionKey } from '$lib/stores/permissions.ts';
 
 /**
  * Get user permissions from database
@@ -7,14 +7,14 @@ import type { PermissionKey } from "$lib/stores/permissions.ts";
 export async function getUserPermissions(db: Database, userCode: string): Promise<PermissionKey[]> {
 	try {
 		const permissions = await db
-			.selectFrom("permissions")
-			.select(["entity", "action"])
-			.where("user_code", "=", userCode)
+			.selectFrom('permissions')
+			.select(['entity', 'action'])
+			.where('user_code', '=', userCode)
 			.execute();
 
 		return permissions.map((p: { entity: string; action: string }) => `${p.entity}:${p.action}`);
 	} catch (error) {
-		console.error("Error fetching user permissions:", error);
+		console.error('Error fetching user permissions:', error);
 		return [];
 	}
 }

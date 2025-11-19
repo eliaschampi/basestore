@@ -1,6 +1,6 @@
 // Lumi UI - Context Menu Component Types
 
-export type ContextSize = "sm" | "md" | "lg";
+export type ContextSize = 'sm' | 'md' | 'lg';
 
 export interface ContextProps {
 	/** Size of the context menu */

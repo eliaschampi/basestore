@@ -7,7 +7,7 @@ export interface AlertProps {
 	active?: boolean;
 
 	/** Alert type variant */
-	type?: "success" | "warning" | "danger" | "info" | "primary" | "secondary";
+	type?: 'success' | 'warning' | 'danger' | 'info' | 'primary' | 'secondary';
 
 	/** Alert title */
 	title?: string;

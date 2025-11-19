@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { browser } from "$app/environment";
-	import Navbar from "$lib/components/Navbar/Navbar.svelte";
-	import Sidebar from "$lib/components/Sidebar/Sidebar.svelte";
-	import SidebarItem from "$lib/components/Sidebar/SidebarItem.svelte";
-	import { Icon, Divider, Button } from "$lib/components";
-	import Avatar from "$lib/components/Avatar/Avatar.svelte";
-	import Dropdown from "$lib/components/Dropdown/Dropdown.svelte";
-	import DropdownItem from "$lib/components/Dropdown/DropdownItem.svelte";
-	import { initializePermissions } from "$lib/stores/permissions.ts";
-	import { theme } from "$lib/stores/theme.ts";
-	import { page } from "$app/state";
+	import { browser } from '$app/environment';
+	import Navbar from '$lib/components/Navbar/Navbar.svelte';
+	import Sidebar from '$lib/components/Sidebar/Sidebar.svelte';
+	import SidebarItem from '$lib/components/Sidebar/SidebarItem.svelte';
+	import { Icon, Divider, Button } from '$lib/components';
+	import Avatar from '$lib/components/Avatar/Avatar.svelte';
+	import Dropdown from '$lib/components/Dropdown/Dropdown.svelte';
+	import DropdownItem from '$lib/components/Dropdown/DropdownItem.svelte';
+	import { initializePermissions } from '$lib/stores/permissions.ts';
+	import { theme } from '$lib/stores/theme.ts';
+	import { page } from '$app/state';
 
 	initializePermissions(page.data.userPermissions || [], page.data.user?.is_super_admin || false);
 
@@ -31,10 +31,10 @@
 			};
 
 			checkMobile();
-			window.addEventListener("resize", checkMobile);
+			window.addEventListener('resize', checkMobile);
 
 			return () => {
-				window.removeEventListener("resize", checkMobile);
+				window.removeEventListener('resize', checkMobile);
 			};
 		}
 	});
@@ -55,17 +55,17 @@
 		theme.toggle();
 	}
 
-	const isDarkTheme = $derived($theme === "dark");
+	const isDarkTheme = $derived($theme === 'dark');
 
 	function getInitials(name?: string | null, lastName?: string | null): string {
-		const first = name?.charAt(0) || "";
-		const last = lastName?.charAt(0) || "";
-		return (first + last).toUpperCase() || "U";
+		const first = name?.charAt(0) || '';
+		const last = lastName?.charAt(0) || '';
+		return (first + last).toUpperCase() || 'U';
 	}
 </script>
 
 <svelte:head>
-	<title>{page.data.title ? `${page.data.title} | Faztore` : "Faztore"}</title>
+	<title>{page.data.title ? `${page.data.title} | Faztore` : 'Faztore'}</title>
 </svelte:head>
 
 <div
@@ -89,7 +89,7 @@
 			</div>
 		{/snippet}
 
-		<SidebarItem href="/" active={page.url.pathname === "/"} collapsed={sidebarCollapsed}>
+		<SidebarItem href="/" active={page.url.pathname === '/'} collapsed={sidebarCollapsed}>
 			{#snippet icon()}
 				<Icon icon="home" size="20px" />
 			{/snippet}
@@ -100,7 +100,7 @@
 
 		<SidebarItem
 			href="/branches"
-			active={page.url.pathname.startsWith("/branches")}
+			active={page.url.pathname.startsWith('/branches')}
 			collapsed={sidebarCollapsed}
 		>
 			{#snippet icon()}
@@ -111,7 +111,7 @@
 
 		<SidebarItem
 			href="/categories"
-			active={page.url.pathname.startsWith("/categories")}
+			active={page.url.pathname.startsWith('/categories')}
 			collapsed={sidebarCollapsed}
 		>
 			{#snippet icon()}
@@ -122,7 +122,7 @@
 
 		<SidebarItem
 			href="/brands"
-			active={page.url.pathname.startsWith("/brands")}
+			active={page.url.pathname.startsWith('/brands')}
 			collapsed={sidebarCollapsed}
 		>
 			{#snippet icon()}
@@ -135,7 +135,7 @@
 
 		<SidebarItem
 			href="/users"
-			active={page.url.pathname.startsWith("/users")}
+			active={page.url.pathname.startsWith('/users')}
 			collapsed={sidebarCollapsed}
 		>
 			{#snippet icon()}
@@ -148,14 +148,14 @@
 	<!-- Navbar -->
 	<Navbar ontoggle-sidebar={toggleSidebar} ontoggle-theme={toggleTheme}>
 		{#snippet title()}
-			{page.data.title || "Dashboard"}
+			{page.data.title || 'Dashboard'}
 		{/snippet}
 
 		{#snippet actions()}
 			<Button
 				type="flat"
 				size="sm"
-				icon={isDarkTheme ? "sun" : "moon"}
+				icon={isDarkTheme ? 'sun' : 'moon'}
 				aria-label="Toggle theme"
 				onclick={toggleTheme}
 			/>

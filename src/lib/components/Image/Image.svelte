@@ -1,44 +1,44 @@
 <script lang="ts">
-	import type { ImageProps } from "./types";
+	import type { ImageProps } from './types';
 
 	const {
 		src,
-		srcSet = "",
-		sizes = "",
-		alt = "",
+		srcSet = '',
+		sizes = '',
+		alt = '',
 		width,
 		height,
-		radius = "lg",
-		loading = "lazy",
+		radius = 'lg',
+		loading = 'lazy',
 		isZoomed = false,
 		removeWrapper = false,
 		disableSkeleton = false,
-		class: className = "",
+		class: className = '',
 		onload,
 		onerror
 	}: ImageProps = $props();
 
-	let isLoading = $state(loading === "lazy");
+	let isLoading = $state(loading === 'lazy');
 	let hasError = $state(false);
 
 	const classes = $derived(() => {
 		return [
-			"lumi-image",
-			radius !== "none" && `lumi-image--radius-${radius}`,
-			isZoomed && "lumi-image--zoomed",
-			isLoading && "lumi-image--loading",
-			hasError && "lumi-image--error",
+			'lumi-image',
+			radius !== 'none' && `lumi-image--radius-${radius}`,
+			isZoomed && 'lumi-image--zoomed',
+			isLoading && 'lumi-image--loading',
+			hasError && 'lumi-image--error',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	const wrapperStyles = $derived(() => {
 		const styles: string[] = [];
 		if (width) styles.push(`width: ${width}px`);
 		if (height) styles.push(`height: ${height}px`);
-		return styles.join("; ");
+		return styles.join('; ');
 	});
 
 	const handleImageLoad = (event: Event) => {
@@ -54,7 +54,7 @@
 	};
 
 	$effect(() => {
-		if (loading === "eager") {
+		if (loading === 'eager') {
 			isLoading = false;
 		}
 	});
@@ -196,7 +196,7 @@
 	}
 
 	.lumi-image--error::after {
-		content: "⚠️";
+		content: '⚠️';
 		position: absolute;
 		top: 50%;
 		left: 50%;

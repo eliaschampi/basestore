@@ -1,17 +1,17 @@
 // Lumi UI - StatusIndicator Component Types
 
 export type StatusIndicatorStatus =
-	| "default"
-	| "active"
-	| "inactive"
-	| "pending"
-	| "error"
-	| "primary"
-	| "secondary"
-	| "success"
-	| "warning"
-	| "danger"
-	| "info";
+	| 'default'
+	| 'active'
+	| 'inactive'
+	| 'pending'
+	| 'error'
+	| 'primary'
+	| 'secondary'
+	| 'success'
+	| 'warning'
+	| 'danger'
+	| 'info';
 
 export interface StatusIndicatorProps {
 	/** Status type or custom color */

@@ -1,59 +1,59 @@
 <script lang="ts">
-	import { Icon } from "../Icon";
-	import type { InputProps } from "./types";
+	import { Icon } from '../Icon';
+	import type { InputProps } from './types';
 
 	let {
-		type = "text",
-		name = "",
-		value = $bindable(""),
-		label = "",
-		labelPlaceholder = "",
-		placeholder = "",
+		type = 'text',
+		name = '',
+		value = $bindable(''),
+		label = '',
+		labelPlaceholder = '',
+		placeholder = '',
 		autofocus = false,
-		icon = "",
+		icon = '',
 		iconAfter = false,
 		iconNoBorder = false,
-		color = "primary",
+		color = 'primary',
 		success = false,
 		danger = false,
 		warning = false,
-		successText = "",
-		dangerText = "",
-		warningText = "",
-		descriptionText = "",
-		size = "md",
-		valIconSuccess = "checkCircle",
-		valIconDanger = "xCircle",
-		valIconWarning = "alertTriangle",
+		successText = '',
+		dangerText = '',
+		warningText = '',
+		descriptionText = '',
+		size = 'md',
+		valIconSuccess = 'checkCircle',
+		valIconDanger = 'xCircle',
+		valIconWarning = 'alertTriangle',
 		disabled = false,
 		readonly = false,
 		required = false,
-		class: className = "",
+		class: className = '',
 		oninput,
 		onfocus,
 		onblur,
-		"onicon-click": onIconClick
+		'onicon-click': onIconClick
 	}: InputProps = $props();
 
 	// Local state
 	let isFocused = $state(false);
 	let inputElement: HTMLInputElement;
-	let internalError = $state("");
+	let internalError = $state('');
 
 	// Computed values
 	const inputId = $derived(`lumi-input-${Math.random().toString(36).substring(2, 11)}`);
 
 	const state = $derived.by(() => {
-		if (success) return "success";
-		if (danger || internalError) return "danger";
-		if (warning) return "warning";
-		return "default";
+		if (success) return 'success';
+		if (danger || internalError) return 'danger';
+		if (warning) return 'warning';
+		return 'default';
 	});
 
 	const activeColor = $derived.by(() => {
-		if (state === "success") return "success";
-		if (state === "danger") return "danger";
-		if (state === "warning") return "warning";
+		if (state === 'success') return 'success';
+		if (state === 'danger') return 'danger';
+		if (state === 'warning') return 'warning';
 		return color;
 	});
 
@@ -62,22 +62,26 @@
 		if (danger && dangerText) return dangerText;
 		if (warning && warningText) return warningText;
 		if (internalError) return internalError;
-		return "";
+		return '';
 	});
 
 	const validationIcon = $derived.by(() => {
 		if (success) return valIconSuccess;
 		if (danger || internalError) return valIconDanger;
 		if (warning) return valIconWarning;
-		return "";
+		return '';
 	});
 
 	const iconSizePx = $derived.by(() => {
 		switch (size) {
-			case "sm": return "16px";
-			case "lg": return "20px";
-			case "xl": return "24px";
-			default: return "18px";
+			case 'sm':
+				return '16px';
+			case 'lg':
+				return '20px';
+			case 'xl':
+				return '24px';
+			default:
+				return '18px';
 		}
 	});
 
@@ -88,12 +92,12 @@
 	});
 
 	const containerClasses = $derived(() => {
-		const classes = ["lumi-input-container", `lumi-input-container--${size}`];
-		if (isFocused) classes.push("lumi-input-container--focused");
-		if (state !== "default") classes.push(`lumi-input-container--${state}`);
-		if (disabled) classes.push("lumi-input-container--disabled");
+		const classes = ['lumi-input-container', `lumi-input-container--${size}`];
+		if (isFocused) classes.push('lumi-input-container--focused');
+		if (state !== 'default') classes.push(`lumi-input-container--${state}`);
+		if (disabled) classes.push('lumi-input-container--disabled');
 		if (className) classes.push(className);
-		return classes.join(" ");
+		return classes.join(' ');
 	});
 
 	// Event handlers
@@ -116,12 +120,12 @@
 
 	function validate() {
 		if (required && !value) {
-			internalError = "This field is required";
-		} else if (type === "email" && value) {
+			internalError = 'This field is required';
+		} else if (type === 'email' && value) {
 			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-			internalError = !emailRegex.test(String(value)) ? "Please enter a valid email address" : "";
+			internalError = !emailRegex.test(String(value)) ? 'Please enter a valid email address' : '';
 		} else {
-			internalError = "";
+			internalError = '';
 		}
 	}
 
@@ -130,9 +134,15 @@
 		if (onIconClick) onIconClick(event);
 	}
 
-	export function focus() { inputElement?.focus(); }
-	export function blur() { inputElement?.blur(); }
-	export function select() { inputElement?.select(); }
+	export function focus() {
+		inputElement?.focus();
+	}
+	export function blur() {
+		inputElement?.blur();
+	}
+	export function select() {
+		inputElement?.select();
+	}
 </script>
 
 <div class={containerClasses()} style={styleVars()}>
@@ -146,7 +156,7 @@
 		<input
 			bind:this={inputElement}
 			id={inputId}
-			name={name}
+			{name}
 			{type}
 			{value}
 			{disabled}
@@ -171,7 +181,7 @@
 				onclick={handleIconClick}
 				tabindex="-1"
 			>
-				<Icon icon={icon} size={iconSizePx} />
+				<Icon {icon} size={iconSizePx} />
 			</button>
 		{/if}
 
@@ -239,9 +249,15 @@
 	}
 
 	/* State colors */
-	.lumi-input-container--success { --input-border: var(--lumi-color-success); }
-	.lumi-input-container--danger { --input-border: var(--lumi-color-danger); }
-	.lumi-input-container--warning { --input-border: var(--lumi-color-warning); }
+	.lumi-input-container--success {
+		--input-border: var(--lumi-color-success);
+	}
+	.lumi-input-container--danger {
+		--input-border: var(--lumi-color-danger);
+	}
+	.lumi-input-container--warning {
+		--input-border: var(--lumi-color-warning);
+	}
 
 	.lumi-input {
 		flex: 1;
@@ -261,10 +277,21 @@
 	}
 
 	/* Sizes */
-	.lumi-input-container--sm .lumi-input { padding: var(--lumi-space-xs) var(--lumi-space-sm); font-size: var(--lumi-font-size-sm); }
-	.lumi-input-container--md .lumi-input { padding: var(--lumi-space-sm); }
-	.lumi-input-container--lg .lumi-input { padding: var(--lumi-space-md); font-size: var(--lumi-font-size-lg); }
-	.lumi-input-container--xl .lumi-input { padding: var(--lumi-space-md) var(--lumi-space-lg); font-size: var(--lumi-font-size-xl); }
+	.lumi-input-container--sm .lumi-input {
+		padding: var(--lumi-space-xs) var(--lumi-space-sm);
+		font-size: var(--lumi-font-size-sm);
+	}
+	.lumi-input-container--md .lumi-input {
+		padding: var(--lumi-space-sm);
+	}
+	.lumi-input-container--lg .lumi-input {
+		padding: var(--lumi-space-md);
+		font-size: var(--lumi-font-size-lg);
+	}
+	.lumi-input-container--xl .lumi-input {
+		padding: var(--lumi-space-md) var(--lumi-space-lg);
+		font-size: var(--lumi-font-size-xl);
+	}
 
 	/* Icons */
 	.lumi-input__icon {
@@ -278,7 +305,7 @@
 		cursor: pointer;
 		transition: color 0.2s;
 	}
-	
+
 	.lumi-input__icon:not(.lumi-input__icon--no-border):not(.lumi-input__icon--after) {
 		border-right: 1px solid var(--lumi-color-border-light);
 	}
@@ -286,7 +313,9 @@
 		border-left: 1px solid var(--lumi-color-border-light);
 	}
 
-	.lumi-input__icon:hover { color: var(--input-focus); }
+	.lumi-input__icon:hover {
+		color: var(--input-focus);
+	}
 
 	.lumi-input__validation-icon {
 		display: flex;
@@ -296,11 +325,16 @@
 	}
 
 	/* Messages */
-	.lumi-input__message, .lumi-input__description {
+	.lumi-input__message,
+	.lumi-input__description {
 		font-size: var(--lumi-font-size-xs);
 		margin-top: -4px;
 	}
-	
-	.lumi-input__message { color: var(--input-focus); }
-	.lumi-input__description { color: var(--lumi-color-text-muted); }
+
+	.lumi-input__message {
+		color: var(--input-focus);
+	}
+	.lumi-input__description {
+		color: var(--lumi-color-text-muted);
+	}
 </style>

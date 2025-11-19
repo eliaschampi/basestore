@@ -14,7 +14,7 @@ export interface TagIndicatorProps {
 	selected?: boolean;
 
 	/** Size variant */
-	size?: "sm" | "md" | "lg";
+	size?: 'sm' | 'md' | 'lg';
 
 	/** Show check icon when selected */
 	showIcon?: boolean;
@@ -26,7 +26,7 @@ export interface TagIndicatorProps {
 	tooltip?: string;
 
 	/** Orientation */
-	orientation?: "horizontal" | "vertical";
+	orientation?: 'horizontal' | 'vertical';
 
 	/** Whether disabled */
 	disabled?: boolean;

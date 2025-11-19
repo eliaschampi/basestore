@@ -1,8 +1,8 @@
 <script lang="ts">
-	import Card from "$lib/components/Card/Card.svelte";
-	import Title from "$lib/components/Title/Title.svelte";
-	import { Icon } from "$lib/components";
-	import type { PageData } from "./$types";
+	import Card from '$lib/components/Card/Card.svelte';
+	import Title from '$lib/components/Title/Title.svelte';
+	import { Icon } from '$lib/components';
+	import type { PageData } from './$types';
 
 	const { data }: { data: PageData } = $props();
 
@@ -10,38 +10,38 @@
 		title: string;
 		value: number;
 		icon: string;
-		color: "primary" | "secondary" | "success" | "info";
+		color: 'primary' | 'secondary' | 'success' | 'info';
 		href: string;
 	}
 
 	const statCards: StatCard[] = [
 		{
-			title: "Usuarios",
+			title: 'Usuarios',
 			value: data.stats.users,
-			icon: "users",
-			color: "primary",
-			href: "/users"
+			icon: 'users',
+			color: 'primary',
+			href: '/users'
 		},
 		{
-			title: "Sedes",
+			title: 'Sedes',
 			value: data.stats.branches,
-			icon: "building",
-			color: "secondary",
-			href: "/branches"
+			icon: 'building',
+			color: 'secondary',
+			href: '/branches'
 		},
 		{
-			title: "Categorías",
+			title: 'Categorías',
 			value: data.stats.categories,
-			icon: "tag",
-			color: "success",
-			href: "/categories"
+			icon: 'tag',
+			color: 'success',
+			href: '/categories'
 		},
 		{
-			title: "Marcas",
+			title: 'Marcas',
 			value: data.stats.brands,
-			icon: "award",
-			color: "info",
-			href: "/brands"
+			icon: 'award',
+			color: 'info',
+			href: '/brands'
 		}
 	];
 
@@ -49,45 +49,45 @@
 		title: string;
 		description: string;
 		icon: string;
-		color: "primary" | "secondary" | "success" | "info";
+		color: 'primary' | 'secondary' | 'success' | 'info';
 		href: string;
 	}
 
 	const quickAccessCards: QuickAccessCard[] = [
 		{
-			title: "Usuarios",
-			description: "Gestiona usuarios y permisos del sistema",
-			icon: "users",
-			color: "primary",
-			href: "/users"
+			title: 'Usuarios',
+			description: 'Gestiona usuarios y permisos del sistema',
+			icon: 'users',
+			color: 'primary',
+			href: '/users'
 		},
 		{
-			title: "Sedes",
-			description: "Administra las sedes del sistema",
-			icon: "building",
-			color: "secondary",
-			href: "/branches"
+			title: 'Sedes',
+			description: 'Administra las sedes del sistema',
+			icon: 'building',
+			color: 'secondary',
+			href: '/branches'
 		},
 		{
-			title: "Categorías",
-			description: "Administra las categorías del sistema",
-			icon: "tag",
-			color: "success",
-			href: "/categories"
+			title: 'Categorías',
+			description: 'Administra las categorías del sistema',
+			icon: 'tag',
+			color: 'success',
+			href: '/categories'
 		},
 		{
-			title: "Marcas",
-			description: "Administra las marcas del sistema",
-			icon: "award",
-			color: "info",
-			href: "/brands"
+			title: 'Marcas',
+			description: 'Administra las marcas del sistema',
+			icon: 'award',
+			color: 'info',
+			href: '/brands'
 		},
 		{
-			title: "Mi Perfil",
-			description: "Gestiona tu información personal",
-			icon: "user",
-			color: "primary",
-			href: "/profile"
+			title: 'Mi Perfil',
+			description: 'Gestiona tu información personal',
+			icon: 'user',
+			color: 'primary',
+			href: '/profile'
 		}
 	];
 </script>

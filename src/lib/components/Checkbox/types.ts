@@ -3,10 +3,10 @@
  * Lumi UI - Professional Svelte 5 Component Library
  */
 
-import type { Snippet } from "svelte";
+import type { Snippet } from 'svelte';
 
-export type CheckboxSize = "sm" | "md";
-export type CheckboxColor = "primary" | "secondary" | "success" | "warning" | "danger" | "info";
+export type CheckboxSize = 'sm' | 'md';
+export type CheckboxColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
 
 export interface CheckboxProps {
 	/** Checked state (bindable) */

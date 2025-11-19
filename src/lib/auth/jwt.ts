@@ -1,7 +1,7 @@
-import jwt from "jsonwebtoken";
+import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || "development-secret-key";
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+const JWT_SECRET = process.env.JWT_SECRET || 'development-secret-key';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 export interface JWTPayload {
 	userCode: string;
@@ -13,7 +13,7 @@ export interface JWTPayload {
 /**
  * Generate JWT token
  */
-export function generateToken(payload: Omit<JWTPayload, "iat" | "exp">): string {
+export function generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
 	return jwt.sign(payload, JWT_SECRET, {
 		expiresIn: JWT_EXPIRES_IN
 	});
@@ -26,7 +26,7 @@ export function verifyToken(token: string): JWTPayload | null {
 	try {
 		return jwt.verify(token, JWT_SECRET) as JWTPayload;
 	} catch (error) {
-		console.error("JWT verification failed:", error);
+		console.error('JWT verification failed:', error);
 		return null;
 	}
 }

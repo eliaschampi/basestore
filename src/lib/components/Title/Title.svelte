@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import Icon from "../Icon/Icon.svelte";
-	import type { TitleColor, TitleSize } from "./types";
+	import type { Snippet } from 'svelte';
+	import Icon from '../Icon/Icon.svelte';
+	import type { TitleColor, TitleSize } from './types';
 
 	interface Props {
 		size?: TitleSize;
@@ -17,12 +17,12 @@
 	}
 
 	const {
-		size = "md",
-		color = "text",
-		icon = "",
-		title = "",
-		subtitle = "",
-		class: className = "",
+		size = 'md',
+		color = 'text',
+		icon = '',
+		title = '',
+		subtitle = '',
+		class: className = '',
 		children,
 		iconSnippet,
 		subtitleSnippet,
@@ -31,19 +31,19 @@
 
 	const titleClasses = $derived(() => {
 		return [
-			"lumi-title",
+			'lumi-title',
 			`lumi-title--${size}`,
-			(icon || iconSnippet) && "lumi-title--with-icon",
-			(subtitle || subtitleSnippet) && "lumi-title--with-subtitle",
-			right && "lumi-title--with-right",
+			(icon || iconSnippet) && 'lumi-title--with-icon',
+			(subtitle || subtitleSnippet) && 'lumi-title--with-subtitle',
+			right && 'lumi-title--with-right',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	const styleVars = $derived(() => {
-		const colorVar = color === "text" ? "var(--lumi-color-text)" : `var(--lumi-color-${color})`;
+		const colorVar = color === 'text' ? 'var(--lumi-color-text)' : `var(--lumi-color-${color})`;
 		return `--title-color: ${colorVar};`;
 	});
 </script>
@@ -55,7 +55,7 @@
 			{#if iconSnippet}
 				{@render iconSnippet()}
 			{:else if icon}
-				<Icon {icon} size={size === "lg" || size === "xl" ? "32px" : "24px"} />
+				<Icon {icon} size={size === 'lg' || size === 'xl' ? '32px' : '24px'} />
 			{/if}
 		</div>
 	{/if}
@@ -141,14 +141,26 @@
 	}
 
 	/* Sizes */
-	.lumi-title--sm .lumi-title__text { font-size: var(--lumi-font-size-base); }
-	.lumi-title--md .lumi-title__text { font-size: var(--lumi-font-size-lg); }
-	.lumi-title--lg .lumi-title__text { font-size: var(--lumi-font-size-xl); }
-	.lumi-title--xl .lumi-title__text { font-size: var(--lumi-font-size-2xl); }
+	.lumi-title--sm .lumi-title__text {
+		font-size: var(--lumi-font-size-base);
+	}
+	.lumi-title--md .lumi-title__text {
+		font-size: var(--lumi-font-size-lg);
+	}
+	.lumi-title--lg .lumi-title__text {
+		font-size: var(--lumi-font-size-xl);
+	}
+	.lumi-title--xl .lumi-title__text {
+		font-size: var(--lumi-font-size-2xl);
+	}
 
 	/* Responsive */
 	@media (max-width: 768px) {
-		.lumi-title--xl .lumi-title__text { font-size: var(--lumi-font-size-xl); }
-		.lumi-title--lg .lumi-title__text { font-size: var(--lumi-font-size-lg); }
+		.lumi-title--xl .lumi-title__text {
+			font-size: var(--lumi-font-size-xl);
+		}
+		.lumi-title--lg .lumi-title__text {
+			font-size: var(--lumi-font-size-lg);
+		}
 	}
 </style>

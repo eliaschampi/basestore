@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import { onMount } from "svelte";
-	import { fade, scale } from "svelte/transition";
-	import Icon from "../Icon/Icon.svelte";
-	import type { DialogProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import { onMount } from 'svelte';
+	import { fade, scale } from 'svelte/transition';
+	import Icon from '../Icon/Icon.svelte';
+	import type { DialogProps } from './types';
 
 	interface Props extends DialogProps {
 		children?: Snippet;
@@ -13,15 +13,15 @@
 
 	let {
 		open = $bindable(false),
-		title = "",
-		size = "md",
+		title = '',
+		size = 'md',
 		persistent = false,
 		scrollable = false,
 		fullScreen = false,
 		hideClose = false,
-		closeLabel = "Close dialog",
+		closeLabel = 'Close dialog',
 		closeOnEscape = true,
-		class: className = "",
+		class: className = '',
 		onclose,
 		onopen,
 		onafteropen,
@@ -33,7 +33,7 @@
 
 	let dialogElement: HTMLDivElement | undefined = $state();
 	let previousActiveElement: HTMLElement | null = null;
-	let bodyOverflow = "";
+	let bodyOverflow = '';
 
 	const uniqueId = Math.random().toString(36).substring(2, 11);
 	const titleId = `lumi-dialog-title-${uniqueId}`;
@@ -41,19 +41,19 @@
 
 	const dialogClasses = $derived(
 		[
-			"lumi-dialog",
+			'lumi-dialog',
 			`lumi-dialog--${size}`,
-			scrollable && "lumi-dialog--scrollable",
-			fullScreen && "lumi-dialog--full-screen"
+			scrollable && 'lumi-dialog--scrollable',
+			fullScreen && 'lumi-dialog--full-screen'
 		]
 			.filter(Boolean)
-			.join(" ")
+			.join(' ')
 	);
 
 	const overlayClasses = $derived(
-		["lumi-dialog-overlay", persistent && "lumi-dialog-overlay--persistent"]
+		['lumi-dialog-overlay', persistent && 'lumi-dialog-overlay--persistent']
 			.filter(Boolean)
-			.join(" ")
+			.join(' ')
 	);
 
 	function handleClose(): void {
@@ -70,13 +70,13 @@
 	}
 
 	function handleEscapeKey(event: KeyboardEvent): void {
-		if (event.key === "Escape" && closeOnEscape && open) {
+		if (event.key === 'Escape' && closeOnEscape && open) {
 			handleClose();
 		}
 	}
 
 	function trapFocus(event: KeyboardEvent): void {
-		if (!dialogElement || event.key !== "Tab") return;
+		if (!dialogElement || event.key !== 'Tab') return;
 
 		const focusableElements = dialogElement.querySelectorAll(
 			'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -100,7 +100,7 @@
 
 	function lockBodyScroll(): void {
 		bodyOverflow = document.body.style.overflow;
-		document.body.style.overflow = "hidden";
+		document.body.style.overflow = 'hidden';
 	}
 
 	function unlockBodyScroll(): void {
@@ -123,14 +123,14 @@
 		if (open) {
 			previousActiveElement = document.activeElement as HTMLElement;
 			lockBodyScroll();
-			document.addEventListener("keydown", handleEscapeKey);
-			document.addEventListener("keydown", trapFocus);
+			document.addEventListener('keydown', handleEscapeKey);
+			document.addEventListener('keydown', trapFocus);
 			onopen?.();
 			focusDialog();
 			setTimeout(() => onafteropen?.(), 300);
 		} else {
-			document.removeEventListener("keydown", handleEscapeKey);
-			document.removeEventListener("keydown", trapFocus);
+			document.removeEventListener('keydown', handleEscapeKey);
+			document.removeEventListener('keydown', trapFocus);
 			unlockBodyScroll();
 			if (previousActiveElement) {
 				previousActiveElement.focus();
@@ -142,8 +142,8 @@
 
 	onMount(() => {
 		return () => {
-			document.removeEventListener("keydown", handleEscapeKey);
-			document.removeEventListener("keydown", trapFocus);
+			document.removeEventListener('keydown', handleEscapeKey);
+			document.removeEventListener('keydown', trapFocus);
 			unlockBodyScroll();
 		};
 	});
@@ -155,7 +155,7 @@
 		transition:fade={{ duration: 200 }}
 		onclick={handleOverlayClick}
 		onkeydown={(e) => {
-			if (e.key === "Enter" || e.key === " ") {
+			if (e.key === 'Enter' || e.key === ' ') {
 				e.preventDefault();
 				handleOverlayClick();
 			}
@@ -257,10 +257,18 @@
 	}
 
 	/* Size Variants */
-	.lumi-dialog--sm { max-width: 400px; }
-	.lumi-dialog--md { max-width: 560px; }
-	.lumi-dialog--lg { max-width: 800px; }
-	.lumi-dialog--xl { max-width: 1024px; }
+	.lumi-dialog--sm {
+		max-width: 400px;
+	}
+	.lumi-dialog--md {
+		max-width: 560px;
+	}
+	.lumi-dialog--lg {
+		max-width: 800px;
+	}
+	.lumi-dialog--xl {
+		max-width: 1024px;
+	}
 
 	/* Scrollable Content */
 	.lumi-dialog--scrollable .lumi-dialog__content {

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import type { CardProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import type { CardProps } from './types';
 
 	interface Props extends CardProps {
 		children?: Snippet;
@@ -26,12 +26,12 @@
 	}: Props = $props();
 
 	const cardClasses = $derived(() => {
-		const classes = ["lumi-card"];
-		if (clickable) classes.push("lumi-card--clickable");
-		if (image) classes.push("lumi-card--with-image");
-		if (spaced) classes.push("lumi-card--spaced");
+		const classes = ['lumi-card'];
+		if (clickable) classes.push('lumi-card--clickable');
+		if (image) classes.push('lumi-card--with-image');
+		if (spaced) classes.push('lumi-card--spaced');
 		if (className) classes.push(className);
-		return classes.join(" ");
+		return classes.join(' ');
 	});
 
 	function handleClick(event: MouseEvent) {
@@ -41,10 +41,16 @@
 	}
 </script>
 
-<div class={cardClasses()} {style} onclick={handleClick} role={clickable ? "button" : undefined} tabindex={clickable ? 0 : undefined}>
+<div
+	class={cardClasses()}
+	{style}
+	onclick={handleClick}
+	role={clickable ? 'button' : undefined}
+	tabindex={clickable ? 0 : undefined}
+>
 	{#if image}
 		<div class="lumi-card__image" style="height: {imageHeight}px;">
-			<img src={image} alt={imageAlt || title || "Card image"} />
+			<img src={image} alt={imageAlt || title || 'Card image'} />
 		</div>
 	{/if}
 

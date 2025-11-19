@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import type { SidebarProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import type { SidebarProps } from './types';
 
 	interface Props extends SidebarProps {
 		children?: Snippet;
@@ -10,20 +10,20 @@
 	const {
 		collapsed = false,
 		mobileOpen = false,
-		class: className = "",
+		class: className = '',
 		children,
 		header
 	}: Props = $props();
 
 	const sidebarClasses = $derived(() => {
 		return [
-			"lumi-sidebar",
-			collapsed && "lumi-sidebar--collapsed",
-			mobileOpen && "lumi-sidebar--mobile-open",
+			'lumi-sidebar',
+			collapsed && 'lumi-sidebar--collapsed',
+			mobileOpen && 'lumi-sidebar--mobile-open',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 </script>
 

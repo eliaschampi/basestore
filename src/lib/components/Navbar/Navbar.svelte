@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import Button from "../Button/Button.svelte";
-	import type { NavbarProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import Button from '../Button/Button.svelte';
+	import type { NavbarProps } from './types';
 
 	interface Props extends NavbarProps {
 		title?: Snippet;
@@ -10,9 +10,9 @@
 	}
 
 	const {
-		class: className = "",
-		"ontoggle-sidebar": onToggleSidebar,
-		"ontoggle-theme": onToggleTheme,
+		class: className = '',
+		'ontoggle-sidebar': onToggleSidebar,
+		'ontoggle-theme': onToggleTheme,
 		title,
 		actions,
 		user

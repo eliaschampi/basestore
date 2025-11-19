@@ -1,7 +1,7 @@
 // Lumi UI - InfoItem Component Types
 
-export type InfoItemLayout = "horizontal" | "vertical";
-export type InfoItemColor = "primary" | "secondary" | "success" | "warning" | "danger" | "info";
+export type InfoItemLayout = 'horizontal' | 'vertical';
+export type InfoItemColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
 
 export interface InfoItemProps {
 	/** Layout orientation */

@@ -5,8 +5,8 @@ export interface NavbarProps {
 	class?: string;
 
 	/** Toggle sidebar event handler */
-	"ontoggle-sidebar"?: () => void;
+	'ontoggle-sidebar'?: () => void;
 
 	/** Toggle theme event handler */
-	"ontoggle-theme"?: () => void;
+	'ontoggle-theme'?: () => void;
 }

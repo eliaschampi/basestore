@@ -1,32 +1,32 @@
 <script lang="ts">
-	import Icon from "../Icon/Icon.svelte";
-	import type { TagIndicatorProps } from "./types";
+	import Icon from '../Icon/Icon.svelte';
+	import type { TagIndicatorProps } from './types';
 
 	const {
 		tag,
 		selected = false,
-		size = "sm",
+		size = 'sm',
 		showIcon = false,
 		clickable = true,
-		tooltip = "",
-		orientation = "horizontal",
+		tooltip = '',
+		orientation = 'horizontal',
 		disabled = false,
-		class: className = "",
+		class: className = '',
 		onclick
 	}: TagIndicatorProps = $props();
 
 	const containerClasses = $derived(() => {
 		return [
-			"lumi-tag-indicator",
+			'lumi-tag-indicator',
 			`lumi-tag-indicator--${size}`,
 			`lumi-tag-indicator--${orientation}`,
-			selected && "lumi-tag-indicator--selected",
-			clickable && !disabled && "lumi-tag-indicator--clickable",
-			disabled && "lumi-tag-indicator--disabled",
+			selected && 'lumi-tag-indicator--selected',
+			clickable && !disabled && 'lumi-tag-indicator--clickable',
+			disabled && 'lumi-tag-indicator--disabled',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	function handleClick(): void {

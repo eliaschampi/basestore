@@ -9,7 +9,7 @@
  * - Clean, minimalist, solid approach with modern patterns
  */
 
-import { getContext, setContext } from "svelte";
+import { getContext, setContext } from 'svelte';
 
 // ============================================================================
 // TYPES - Clean and minimal
@@ -21,7 +21,7 @@ export type PermissionKey = string; // Format: 'entity:action' (e.g., 'users:rea
 // CONTEXT KEY - Context-based approach
 // ============================================================================
 
-const PERMISSIONS_CONTEXT_KEY = Symbol("permissions");
+const PERMISSIONS_CONTEXT_KEY = Symbol('permissions');
 
 // ============================================================================
 // PERMISSION STORE CLASS - Simple and efficient
@@ -96,7 +96,7 @@ export function getPermissionStore(): PermissionStore {
 	const store = getContext<PermissionStore>(PERMISSIONS_CONTEXT_KEY);
 	if (!store) {
 		throw new Error(
-			"Permission store not found. Make sure to call initializePermissions() in your root layout."
+			'Permission store not found. Make sure to call initializePermissions() in your root layout.'
 		);
 	}
 	return store;

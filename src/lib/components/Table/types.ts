@@ -65,19 +65,19 @@ export interface TableProps {
 	class?: string;
 
 	/** Row click handler */
-	"onrow-click"?: (row: TableRow, index: number) => void;
+	'onrow-click'?: (row: TableRow, index: number) => void;
 
 	/** Row select handler */
-	"onrow-select"?: (row: TableRow, selected: boolean) => void;
+	'onrow-select'?: (row: TableRow, selected: boolean) => void;
 
 	/** Search handler */
 	onsearch?: (query: string) => void;
 
 	/** Page change handler */
-	"onpage-change"?: (page: number) => void;
+	'onpage-change'?: (page: number) => void;
 
 	/** Sort handler */
-	onsort?: (column: string, direction: "asc" | "desc" | null) => void;
+	onsort?: (column: string, direction: 'asc' | 'desc' | null) => void;
 }
 
 export interface TrProps {
@@ -115,11 +115,11 @@ export interface TableContext {
 	sortable: boolean;
 	getSelectedItems: () => TableRow[];
 	getSortColumn: () => string | null;
-	getSortDirection: () => "asc" | "desc" | null;
+	getSortDirection: () => 'asc' | 'desc' | null;
 	handleRowSelect: (row: TableRow, selected: boolean) => void;
 	handleSort: (column: string) => void;
 	isRowSelected: (row: TableRow) => boolean;
 }
 
-export type TableSize = "sm" | "md";
-export type TableColor = "primary" | "secondary" | "success" | "warning" | "danger" | "info";
+export type TableSize = 'sm' | 'md';
+export type TableColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';

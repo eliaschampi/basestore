@@ -1,23 +1,23 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import Icon from "../Icon/Icon.svelte";
-	import type { ListHeaderProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import Icon from '../Icon/Icon.svelte';
+	import type { ListHeaderProps } from './types';
 
 	interface Props extends ListHeaderProps {
 		children?: Snippet;
 		actions?: Snippet;
 	}
 
-	const { title, color, icon, class: className = "", children, actions }: Props = $props();
+	const { title, color, icon, class: className = '', children, actions }: Props = $props();
 
 	const classes = $derived(() => {
-		return ["lumi-list-header", color && `lumi-list-header--${color}`, className]
+		return ['lumi-list-header', color && `lumi-list-header--${color}`, className]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	const styleVars = $derived(() => {
-		return color ? `--header-color: var(--lumi-color-${color});` : "";
+		return color ? `--header-color: var(--lumi-color-${color});` : '';
 	});
 </script>
 
@@ -89,10 +89,22 @@
 	}
 
 	/* Color variants */
-	.lumi-list-header--primary { color: var(--lumi-color-primary); }
-	.lumi-list-header--secondary { color: var(--lumi-color-secondary); }
-	.lumi-list-header--success { color: var(--lumi-color-success); }
-	.lumi-list-header--warning { color: var(--lumi-color-warning); }
-	.lumi-list-header--danger { color: var(--lumi-color-danger); }
-	.lumi-list-header--info { color: var(--lumi-color-info); }
+	.lumi-list-header--primary {
+		color: var(--lumi-color-primary);
+	}
+	.lumi-list-header--secondary {
+		color: var(--lumi-color-secondary);
+	}
+	.lumi-list-header--success {
+		color: var(--lumi-color-success);
+	}
+	.lumi-list-header--warning {
+		color: var(--lumi-color-warning);
+	}
+	.lumi-list-header--danger {
+		color: var(--lumi-color-danger);
+	}
+	.lumi-list-header--info {
+		color: var(--lumi-color-info);
+	}
 </style>

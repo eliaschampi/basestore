@@ -1,18 +1,18 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import { Icon } from "../Icon";
-	import type { ChipProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import { Icon } from '../Icon';
+	import type { ChipProps } from './types';
 
 	interface Props extends ChipProps {
 		children?: Snippet;
 	}
 
 	const {
-		color = "primary",
-		size = "md",
-		icon = "",
+		color = 'primary',
+		size = 'md',
+		icon = '',
 		closable = false,
-		class: className = "",
+		class: className = '',
 		children,
 		onclose,
 		onclick
@@ -20,14 +20,14 @@
 
 	// Computed classes
 	const classes = $derived(() => {
-		return ["lumi-chip", `lumi-chip--${color}`, `lumi-chip--${size}`, className]
+		return ['lumi-chip', `lumi-chip--${color}`, `lumi-chip--${size}`, className]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	// Icon size based on chip size
 	const iconSize = $derived(() => {
-		return size === "sm" ? "sm" : size === "md" ? "md" : "lg";
+		return size === 'sm' ? 'sm' : size === 'md' ? 'md' : 'lg';
 	});
 
 	// Event handlers

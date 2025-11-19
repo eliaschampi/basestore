@@ -3,10 +3,10 @@
  * Lumi UI - Professional Svelte 5 Component Library
  */
 
-import type { Snippet } from "svelte";
+import type { Snippet } from 'svelte';
 
-export type RadioSize = "sm" | "md";
-export type RadioColor = "primary" | "secondary" | "success" | "warning" | "danger" | "info";
+export type RadioSize = 'sm' | 'md';
+export type RadioColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
 
 export interface RadioProps {
 	/** Selected value (bindable) */

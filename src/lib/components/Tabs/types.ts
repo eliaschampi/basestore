@@ -3,8 +3,8 @@
  * Beautiful tab navigation with keyboard support
  */
 
-export type TabsColor = "primary" | "secondary" | "success" | "warning" | "danger" | "info";
-export type TabsPosition = "horizontal" | "vertical";
+export type TabsColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
+export type TabsPosition = 'horizontal' | 'vertical';
 
 export interface Tab {
 	/**

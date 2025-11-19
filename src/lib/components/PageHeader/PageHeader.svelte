@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import Title from "../Title/Title.svelte";
-	import type { PageHeaderProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import Title from '../Title/Title.svelte';
+	import type { PageHeaderProps } from './types';
 
 	interface Props extends PageHeaderProps {
 		children?: Snippet;
@@ -15,18 +15,18 @@
 		subtitle,
 		icon,
 		iconColor,
-		size = "lg",
+		size = 'lg',
 		color,
-		class: className = "",
+		class: className = '',
 		children,
 		breadcrumbs,
 		actions
 	}: Props = $props();
 
 	const classes = $derived(() => {
-		return ["lumi-page-header", bordered && "lumi-page-header--bordered", className]
+		return ['lumi-page-header', bordered && 'lumi-page-header--bordered', className]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 </script>
 

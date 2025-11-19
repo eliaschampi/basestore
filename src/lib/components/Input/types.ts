@@ -3,27 +3,26 @@
  */
 
 export type InputType =
-	| "text"
-	| "password"
-	| "email"
-	| "number"
-	| "tel"
-	| "url"
-	| "search"
-	| "date"
-	| "time"
-	| "datetime-local"
-	| "month"
-	| "week";
+	| 'text'
+	| 'password'
+	| 'email'
+	| 'number'
+	| 'tel'
+	| 'url'
+	| 'search'
+	| 'date'
+	| 'time'
+	| 'datetime-local'
+	| 'month'
+	| 'week';
 
-export type InputSize = "sm" | "md" | "lg" | "xl";
+export type InputSize = 'sm' | 'md' | 'lg' | 'xl';
 
-export type InputColor = "primary" | "secondary" | "success" | "warning" | "danger" | "info";
+export type InputColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
 
 export interface InputProps {
-
 	name?: string;
-	
+
 	/** Input type */
 	type?: InputType;
 
@@ -109,5 +108,5 @@ export interface InputProps {
 	onblur?: (event: FocusEvent) => void;
 
 	/** Icon click handler */
-	"onicon-click"?: (event: MouseEvent) => void;
+	'onicon-click'?: (event: MouseEvent) => void;
 }

@@ -1,25 +1,25 @@
 <script lang="ts">
-	import type { TextareaProps } from "./types";
+	import type { TextareaProps } from './types';
 
 	let {
-		value = $bindable(""),
-		label = "",
-		placeholder = "",
+		value = $bindable(''),
+		label = '',
+		placeholder = '',
 		error = false,
-		hint = "",
+		hint = '',
 		maxlength = undefined,
 		disabled = false,
 		readonly = false,
 		rows = 3,
-		size = "md",
-		color = "primary",
-		resize = "vertical",
+		size = 'md',
+		color = 'primary',
+		resize = 'vertical',
 		required = false,
 		showCount = false,
 		autosize = false,
 		autofocus = false,
 		resizable = true,
-		class: className = "",
+		class: className = '',
 		oninput,
 		onfocus,
 		onblur,
@@ -35,17 +35,17 @@
 	// Computed classes
 	const classes = $derived(() => {
 		return [
-			"lumi-textarea",
+			'lumi-textarea',
 			`lumi-textarea--${size}`,
 			`lumi-textarea--${color}`,
-			isFocused && "lumi-textarea--focused",
-			error && "lumi-textarea--error",
-			disabled && "lumi-textarea--disabled",
-			readonly && "lumi-textarea--readonly",
+			isFocused && 'lumi-textarea--focused',
+			error && 'lumi-textarea--error',
+			disabled && 'lumi-textarea--disabled',
+			readonly && 'lumi-textarea--readonly',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	// Character count
@@ -99,7 +99,7 @@
 			{autofocus}
 			{value}
 			class="lumi-textarea__input"
-			style:resize={resizable ? resize : "none"}
+			style:resize={resizable ? resize : 'none'}
 			oninput={handleInput}
 			onfocus={handleFocus}
 			onblur={handleBlur}
@@ -111,7 +111,7 @@
 		{/if}
 	</div>
 
-	{#if error && typeof error === "string"}
+	{#if error && typeof error === 'string'}
 		<div class="lumi-textarea__error">{error}</div>
 	{/if}
 

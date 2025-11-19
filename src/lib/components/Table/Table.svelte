@@ -1,10 +1,10 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import { setContext } from "svelte";
-	import Button from "../Button/Button.svelte";
-	import Checkbox from "../Checkbox/Checkbox.svelte";
-	import Input from "../Input/Input.svelte";
-	import type { TableProps, TableRow } from "./types";
+	import type { Snippet } from 'svelte';
+	import { setContext } from 'svelte';
+	import Button from '../Button/Button.svelte';
+	import Checkbox from '../Checkbox/Checkbox.svelte';
+	import Input from '../Input/Input.svelte';
+	import type { TableProps, TableRow } from './types';
 
 	interface Props extends TableProps {
 		children?: Snippet;
@@ -23,17 +23,17 @@
 		search = false,
 		selectable = false,
 		pagination = false,
-		noDataText = "No data available",
+		noDataText = 'No data available',
 		data = undefined,
 		itemsPerPage = 10,
 		loading = false,
 		sortable = false,
 		selected = $bindable([]),
-		class: className = "",
-		"onrow-click": onRowClick,
-		"onrow-select": onRowSelect,
+		class: className = '',
+		'onrow-click': onRowClick,
+		'onrow-select': onRowSelect,
 		onsearch,
-		"onpage-change": onPageChange,
+		'onpage-change': onPageChange,
 		onsort,
 		children,
 		header,
@@ -42,11 +42,11 @@
 		paginationSlot
 	}: Props = $props();
 
-	let searchQuery = $state("");
+	let searchQuery = $state('');
 	let currentPage = $state(1);
 	let selectedItems = $state<TableRow[]>(selected || []);
 	let sortColumn = $state<string | null>(null);
-	let sortDirection = $state<"asc" | "desc" | null>(null);
+	let sortDirection = $state<'asc' | 'desc' | null>(null);
 
 	const processedData = $derived(() => {
 		if (!data) return [];
@@ -56,9 +56,7 @@
 		if (searchQuery && search) {
 			const query = searchQuery.toLowerCase();
 			result = result.filter((item) =>
-				Object.values(item).some(val => 
-					String(val).toLowerCase().includes(query)
-				)
+				Object.values(item).some((val) => String(val).toLowerCase().includes(query))
 			);
 		}
 
@@ -73,7 +71,7 @@
 				if (bVal === null || bVal === undefined) return -1;
 
 				const comparison = aVal < bVal ? -1 : 1;
-				return sortDirection === "asc" ? comparison : -comparison;
+				return sortDirection === 'asc' ? comparison : -comparison;
 			});
 		}
 
@@ -91,7 +89,7 @@
 		const filteredLength =
 			searchQuery && search
 				? data.filter((item) =>
-						Object.values(item).some(val => 
+						Object.values(item).some((val) =>
 							String(val).toLowerCase().includes(searchQuery.toLowerCase())
 						)
 					).length
@@ -102,13 +100,13 @@
 	const isAllSelected = $derived(() => {
 		if (!data || !selectable) return false;
 		const currentData = processedData();
-		return currentData.length > 0 && currentData.every(item => isRowSelected(item));
+		return currentData.length > 0 && currentData.every((item) => isRowSelected(item));
 	});
 
 	const isPartiallySelected = $derived(() => {
 		if (!data || !selectable) return false;
 		const currentData = processedData();
-		const selectedCount = currentData.filter(item => isRowSelected(item)).length;
+		const selectedCount = currentData.filter((item) => isRowSelected(item)).length;
 		return selectedCount > 0 && selectedCount < currentData.length;
 	});
 
@@ -121,15 +119,15 @@
 
 	const tableClasses = $derived(() => {
 		return [
-			"lumi-table",
-			compact && "lumi-table--compact",
-			stripe && "lumi-table--stripe",
-			hover && "lumi-table--hover",
-			loading && "lumi-table--loading",
+			'lumi-table',
+			compact && 'lumi-table--compact',
+			stripe && 'lumi-table--stripe',
+			hover && 'lumi-table--hover',
+			loading && 'lumi-table--loading',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	const getRowKey = (row: TableRow, index: number): string => {
@@ -145,15 +143,15 @@
 		if (!sortable) return;
 
 		if (sortColumn === column) {
-			if (sortDirection === "asc") {
-				sortDirection = "desc";
-			} else if (sortDirection === "desc") {
+			if (sortDirection === 'asc') {
+				sortDirection = 'desc';
+			} else if (sortDirection === 'desc') {
 				sortDirection = null;
 				sortColumn = null;
 			}
 		} else {
 			sortColumn = column;
-			sortDirection = "asc";
+			sortDirection = 'asc';
 		}
 
 		onsort?.(column, sortDirection);
@@ -163,18 +161,18 @@
 		if (!data || !selectable) return;
 
 		const currentData = processedData();
-		
+
 		if (checked) {
 			// Add all currently visible items that aren't already selected
-			currentData.forEach(row => {
+			currentData.forEach((row) => {
 				if (!isRowSelected(row)) {
 					selectedItems.push(row);
 				}
 			});
 		} else {
 			// Remove all currently visible items from selection
-			const currentIds = new Set(currentData.map(row => getRowKey(row, 0)));
-			selectedItems = selectedItems.filter(item => !currentIds.has(getRowKey(item, 0)));
+			const currentIds = new Set(currentData.map((row) => getRowKey(row, 0)));
+			selectedItems = selectedItems.filter((item) => !currentIds.has(getRowKey(item, 0)));
 		}
 
 		selected = selectedItems;
@@ -211,7 +209,7 @@
 		}
 	};
 
-	setContext("table", {
+	setContext('table', {
 		compact,
 		stripe,
 		hover,
@@ -475,7 +473,9 @@
 	}
 
 	@keyframes spin {
-		to { transform: rotate(360deg); }
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	/* Pagination */

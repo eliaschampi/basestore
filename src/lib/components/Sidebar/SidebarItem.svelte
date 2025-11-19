@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import type { SidebarItemProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import type { SidebarItemProps } from './types';
 
 	interface Props extends SidebarItemProps {
 		children?: Snippet;
@@ -11,21 +11,21 @@
 		active = false,
 		collapsed = false,
 		href = undefined,
-		class: className = "",
+		class: className = '',
 		onclick,
 		children,
 		icon
 	}: Props = $props();
 
 	const itemClasses = $derived(() => {
-		return ["lumi-sidebar-item", active && "lumi-sidebar-item--active", className]
+		return ['lumi-sidebar-item', active && 'lumi-sidebar-item--active', className]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 </script>
 
 {#if href}
-	<a {href} class={itemClasses()} onclick={onclick}>
+	<a {href} class={itemClasses()} {onclick}>
 		{#if icon}
 			<span class="lumi-sidebar-item__icon">
 				{@render icon()}

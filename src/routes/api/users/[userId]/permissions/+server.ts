@@ -1,12 +1,12 @@
-import { json, error } from "@sveltejs/kit";
-import type { RequestHandler } from "./$types";
-import { dbInstance as db } from "$lib/config/server";
+import { json, error } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
+import { dbInstance as db } from '$lib/config/server';
 
 // GET - Fetch user permissions
 export const GET: RequestHandler = async ({ params, locals }) => {
 	const session = await locals.auth();
 	if (!session?.user) {
-		throw error(401, "No autorizado");
+		throw error(401, 'No autorizado');
 	}
 
 	const { userId } = params;
@@ -14,15 +14,15 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 	try {
 		// Fetch permissions for the user
 		const permissions = await db
-			.selectFrom("permissions")
+			.selectFrom('permissions')
 			.selectAll()
-			.where("user_code", "=", userId)
+			.where('user_code', '=', userId)
 			.execute();
 
 		return json({ permissions });
 	} catch (err) {
-		console.error("Error fetching permissions:", err);
-		throw error(500, "Error al obtener permisos");
+		console.error('Error fetching permissions:', err);
+		throw error(500, 'Error al obtener permisos');
 	}
 };
 
@@ -30,7 +30,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 export const POST: RequestHandler = async ({ params, request, locals }) => {
 	const session = await locals.auth();
 	if (!session?.user) {
-		throw error(401, "No autorizado");
+		throw error(401, 'No autorizado');
 	}
 
 	const { userId } = params;
@@ -39,7 +39,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 		const { permissions } = await request.json();
 
 		// Delete existing permissions
-		await db.deleteFrom("permissions").where("user_code", "=", userId).execute();
+		await db.deleteFrom('permissions').where('user_code', '=', userId).execute();
 
 		// Insert new permissions
 		if (permissions && permissions.length > 0) {
@@ -49,7 +49,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 				action: p.user_action
 			}));
 
-			await db.insertInto("permissions").values(permissionsToInsert).execute();
+			await db.insertInto('permissions').values(permissionsToInsert).execute();
 		}
 
 		return json({
@@ -57,7 +57,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 			count: permissions?.length || 0
 		});
 	} catch (err) {
-		console.error("Error updating permissions:", err);
-		throw error(500, "Error al actualizar permisos");
+		console.error('Error updating permissions:', err);
+		throw error(500, 'Error al actualizar permisos');
 	}
 };

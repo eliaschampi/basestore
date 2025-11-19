@@ -1,4 +1,4 @@
-import type { PageServerLoad } from "./$types";
+import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const db = locals.db;
@@ -6,25 +6,25 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// Get statistics
 	const [usersCount, branchesCount, categoriesCount, brandsCount] = await Promise.all([
 		db
-			.selectFrom("users")
-			.select((eb) => eb.fn.count("code").as("count"))
+			.selectFrom('users')
+			.select((eb) => eb.fn.count('code').as('count'))
 			.executeTakeFirst(),
 		db
-			.selectFrom("branches")
-			.select((eb) => eb.fn.count("code").as("count"))
+			.selectFrom('branches')
+			.select((eb) => eb.fn.count('code').as('count'))
 			.executeTakeFirst(),
 		db
-			.selectFrom("categories")
-			.select((eb) => eb.fn.count("code").as("count"))
+			.selectFrom('categories')
+			.select((eb) => eb.fn.count('code').as('count'))
 			.executeTakeFirst(),
 		db
-			.selectFrom("brands")
-			.select((eb) => eb.fn.count("code").as("count"))
+			.selectFrom('brands')
+			.select((eb) => eb.fn.count('code').as('count'))
 			.executeTakeFirst()
 	]);
 
 	return {
-		title: "Dashboard",
+		title: 'Dashboard',
 		stats: {
 			users: Number(usersCount?.count || 0),
 			branches: Number(branchesCount?.count || 0),

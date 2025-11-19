@@ -1,7 +1,7 @@
 <script lang="ts">
-	import favicon from "$lib/assets/favicon.svg";
-	import "$lib/styles/tokens.css";
-	import "$lib/styles/lumi-core.css";
+	import favicon from '$lib/assets/favicon.svg';
+	import '$lib/styles/tokens.css';
+	import '$lib/styles/lumi-core.css';
 
 	const { children } = $props();
 </script>

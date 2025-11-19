@@ -1,6 +1,6 @@
 // Lumi UI - Dialog Component Types
 
-export type DialogSize = "sm" | "md" | "lg" | "xl";
+export type DialogSize = 'sm' | 'md' | 'lg' | 'xl';
 
 export interface DialogProps {
 	/** Whether dialog is open */

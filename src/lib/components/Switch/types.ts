@@ -3,10 +3,10 @@
  * Lumi UI - Professional Svelte 5 Component Library
  */
 
-import type { Snippet } from "svelte";
+import type { Snippet } from 'svelte';
 
-export type SwitchSize = "sm" | "md" | "lg";
-export type SwitchColor = "primary" | "secondary" | "success" | "warning" | "danger" | "info";
+export type SwitchSize = 'sm' | 'md' | 'lg';
+export type SwitchColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
 
 export interface SwitchProps {
 	/** Checked state (bindable) */

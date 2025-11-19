@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import type { ButtonProps } from "./types";
-	import Icon from "../Icon/Icon.svelte";
+	import type { Snippet } from 'svelte';
+	import type { ButtonProps } from './types';
+	import Icon from '../Icon/Icon.svelte';
 
 	interface Props extends ButtonProps {
 		children?: Snippet;
@@ -9,15 +9,15 @@
 	}
 
 	const {
-		type = "filled",
-		color = "primary",
-		size = "md",
+		type = 'filled',
+		color = 'primary',
+		size = 'md',
 		icon,
 		iconAfter = false,
 		radius = false,
 		loading = false,
 		disabled = false,
-		button = "button",
+		button = 'button',
 		class: className,
 		onclick,
 		children
@@ -25,11 +25,11 @@
 
 	const iconSize = $derived(() => {
 		switch (size) {
-			case "sm":
+			case 'sm':
 				return 16;
-			case "lg":
+			case 'lg':
 				return 20;
-			case "xl":
+			case 'xl':
 				return 24;
 			default:
 				return 18; // md
@@ -37,18 +37,14 @@
 	});
 
 	const buttonClasses = $derived(() => {
-		const classes = [
-			"lumi-button",
-			`lumi-button--${type}`,
-			`lumi-button--${size}`
-		];
+		const classes = ['lumi-button', `lumi-button--${type}`, `lumi-button--${size}`];
 
-		if (radius) classes.push("lumi-button--radius");
-		if (icon && !children) classes.push("lumi-button--icon-only");
-		if (loading) classes.push("lumi-button--loading");
+		if (radius) classes.push('lumi-button--radius');
+		if (icon && !children) classes.push('lumi-button--icon-only');
+		if (loading) classes.push('lumi-button--loading');
 		if (className) classes.push(className);
 
-		return classes.join(" ");
+		return classes.join(' ');
 	});
 
 	// Map colors to CSS variables dynamically
@@ -173,9 +169,15 @@
 		padding: 0;
 		width: var(--lumi-space-xxl);
 	}
-	.lumi-button--icon-only.lumi-button--sm { width: var(--lumi-space-xl); }
-	.lumi-button--icon-only.lumi-button--lg { width: var(--lumi-space-3xl); }
-	.lumi-button--icon-only.lumi-button--xl { width: var(--lumi-space-4xl); }
+	.lumi-button--icon-only.lumi-button--sm {
+		width: var(--lumi-space-xl);
+	}
+	.lumi-button--icon-only.lumi-button--lg {
+		width: var(--lumi-space-3xl);
+	}
+	.lumi-button--icon-only.lumi-button--xl {
+		width: var(--lumi-space-4xl);
+	}
 
 	/* ========================================================================== */
 	/* TYPES (Using CSS Variables) */
@@ -215,13 +217,21 @@
 
 	/* Gradient */
 	.lumi-button--gradient {
-		background: linear-gradient(135deg, var(--btn-color), color-mix(in srgb, var(--btn-color) 80%, black));
+		background: linear-gradient(
+			135deg,
+			var(--btn-color),
+			color-mix(in srgb, var(--btn-color) 80%, black)
+		);
 		color: var(--lumi-color-white);
 		border-color: transparent;
 		box-shadow: 0 4px 15px rgba(var(--btn-color-rgb), 0.3);
 	}
 	.lumi-button--gradient:hover:not(:disabled) {
-		background: linear-gradient(135deg, color-mix(in srgb, var(--btn-color) 90%, white), var(--btn-color));
+		background: linear-gradient(
+			135deg,
+			color-mix(in srgb, var(--btn-color) 90%, white),
+			var(--btn-color)
+		);
 		box-shadow: 0 6px 20px rgba(var(--btn-color-rgb), 0.4);
 		transform: translateY(-2px);
 	}
@@ -253,6 +263,8 @@
 	}
 
 	@keyframes lumi-spin {
-		to { transform: rotate(360deg); }
+		to {
+			transform: rotate(360deg);
+		}
 	}
 </style>

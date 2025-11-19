@@ -5,15 +5,15 @@
 
 export const config = {
 	// API URLs
-	API_BASE_URL: import.meta.env.VITE_API_BASE_URL || "http://localhost:3000",
-	API_URL: import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1",
+	API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
+	API_URL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1',
 
 	// API Endpoints (relative paths)
 	endpoints: {
 		file: {
-			download: "/file/download",
-			stream: "/file/stream",
-			image: "/file/image"
+			download: '/file/download',
+			stream: '/file/stream',
+			image: '/file/image'
 		}
 	}
 } as const;

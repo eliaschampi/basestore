@@ -1,38 +1,38 @@
-import { browser } from "$app/environment";
-import { writable } from "svelte/store";
+import { browser } from '$app/environment';
+import { writable } from 'svelte/store';
 
-type Theme = "dark" | "light";
+type Theme = 'dark' | 'light';
 
 function getInitialTheme(): Theme {
 	if (!browser) {
-		return "light";
+		return 'light';
 	}
 
 	// First check localStorage
-	const savedTheme = localStorage.getItem("theme");
-	if (savedTheme === "dark" || savedTheme === "light") {
+	const savedTheme = localStorage.getItem('theme');
+	if (savedTheme === 'dark' || savedTheme === 'light') {
 		return savedTheme;
 	}
 
 	// Then check data-theme attribute
-	const theme = document.documentElement.getAttribute("data-theme");
-	if (theme === "dark" || theme === "light") {
+	const theme = document.documentElement.getAttribute('data-theme');
+	if (theme === 'dark' || theme === 'light') {
 		return theme;
 	}
 
 	// Finally fall back to system preference
-	return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+	return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 function applyThemeToDOM(theme: Theme) {
 	if (browser) {
-		document.documentElement.setAttribute("data-theme", theme);
+		document.documentElement.setAttribute('data-theme', theme);
 	}
 }
 
 function saveThemeToStorage(theme: Theme) {
 	if (browser) {
-		localStorage.setItem("theme", theme);
+		localStorage.setItem('theme', theme);
 	}
 }
 
@@ -55,7 +55,7 @@ function createThemeStore() {
 
 	const toggleTheme = () => {
 		update((currentTheme) => {
-			const newTheme = currentTheme === "dark" ? "light" : "dark";
+			const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 			applyThemeToDOM(newTheme);
 			saveThemeToStorage(newTheme);
 			return newTheme;
@@ -70,16 +70,16 @@ function createThemeStore() {
 	};
 
 	if (browser) {
-		const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+		const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 		const systemThemeChangeHandler = (e: MediaQueryListEvent) => {
 			// Only update if user hasn't set a preference
-			if (localStorage.getItem("theme") === null) {
-				const newSystemTheme = e.matches ? "dark" : "light";
+			if (localStorage.getItem('theme') === null) {
+				const newSystemTheme = e.matches ? 'dark' : 'light';
 				setSystemTheme(newSystemTheme);
 			}
 		};
 
-		mediaQuery.addEventListener("change", systemThemeChangeHandler);
+		mediaQuery.addEventListener('change', systemThemeChangeHandler);
 	}
 
 	return {

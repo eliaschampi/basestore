@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import { onMount } from "svelte";
-	import type { ProgressColor, ProgressSize } from "./types";
+	import type { Snippet } from 'svelte';
+	import { onMount } from 'svelte';
+	import type { ProgressColor, ProgressSize } from './types';
 
 	interface Props {
 		value?: number;
@@ -19,15 +19,15 @@
 
 	const {
 		value = $bindable(0),
-		color = "primary",
-		size = "md",
+		color = 'primary',
+		size = 'md',
 		indeterminate = false,
 		striped = false,
 		animated = false,
 		showLabel = false,
 		label,
 		labelSnippet,
-		class: className = "",
+		class: className = '',
 		oncomplete
 	}: Props = $props();
 
@@ -45,16 +45,16 @@
 
 	const progressClasses = $derived(() => {
 		return [
-			"lumi-progress",
+			'lumi-progress',
 			`lumi-progress--${color}`,
 			`lumi-progress--${size}`,
-			indeterminate && "lumi-progress--indeterminate",
-			striped && "lumi-progress--striped",
-			animated && "lumi-progress--animated",
+			indeterminate && 'lumi-progress--indeterminate',
+			striped && 'lumi-progress--striped',
+			animated && 'lumi-progress--animated',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	function animateToValue(targetValue: number): void {

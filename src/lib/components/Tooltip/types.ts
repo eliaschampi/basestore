@@ -1,7 +1,7 @@
 // Lumi UI - Tooltip Component Types
 
-export type TooltipColor = "primary" | "secondary" | "success" | "warning" | "danger" | "info";
-export type TooltipPosition = "top" | "bottom" | "left" | "right";
+export type TooltipColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
+export type TooltipPosition = 'top' | 'bottom' | 'left' | 'right';
 
 export interface TooltipProps {
 	/** Tooltip text */

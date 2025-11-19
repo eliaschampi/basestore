@@ -1,15 +1,15 @@
 <script lang="ts">
-	import type { RadioProps } from "./types";
+	import type { RadioProps } from './types';
 
 	let {
 		group = $bindable(),
 		value,
-		label = "",
-		name = "",
-		size = "md",
-		color = "primary",
+		label = '',
+		name = '',
+		size = 'md',
+		color = 'primary',
 		disabled = false,
-		class: className = "",
+		class: className = '',
 		children,
 		onchange
 	}: RadioProps = $props();
@@ -23,15 +23,15 @@
 	// Computed classes
 	const classes = $derived(() => {
 		return [
-			"lumi-radio",
+			'lumi-radio',
 			`lumi-radio--${size}`,
 			`lumi-radio--${color}`,
-			isChecked() && "lumi-radio--checked",
-			disabled && "lumi-radio--disabled",
+			isChecked() && 'lumi-radio--checked',
+			disabled && 'lumi-radio--disabled',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	// Handle change event
@@ -171,7 +171,9 @@
 
 	/* Focus styles */
 	.lumi-radio__input:focus-visible + .lumi-radio__visual {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-primary);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-primary);
 	}
 
 	/* Disabled state */
@@ -204,7 +206,9 @@
 		background: var(--lumi-color-secondary);
 	}
 	.lumi-radio--secondary .lumi-radio__input:focus-visible + .lumi-radio__visual {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-secondary);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-secondary);
 	}
 
 	.lumi-radio--success:hover .lumi-radio__visual {
@@ -217,7 +221,9 @@
 		background: var(--lumi-color-success);
 	}
 	.lumi-radio--success .lumi-radio__input:focus-visible + .lumi-radio__visual {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-success);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-success);
 	}
 
 	.lumi-radio--warning:hover .lumi-radio__visual {
@@ -230,7 +236,9 @@
 		background: var(--lumi-color-warning);
 	}
 	.lumi-radio--warning .lumi-radio__input:focus-visible + .lumi-radio__visual {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-warning);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-warning);
 	}
 
 	.lumi-radio--danger:hover .lumi-radio__visual {
@@ -243,7 +251,9 @@
 		background: var(--lumi-color-danger);
 	}
 	.lumi-radio--danger .lumi-radio__input:focus-visible + .lumi-radio__visual {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-danger);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-danger);
 	}
 
 	.lumi-radio--info:hover .lumi-radio__visual {
@@ -256,6 +266,8 @@
 		background: var(--lumi-color-info);
 	}
 	.lumi-radio--info .lumi-radio__input:focus-visible + .lumi-radio__visual {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-info);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-info);
 	}
 </style>

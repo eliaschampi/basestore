@@ -1,7 +1,7 @@
 // Lumi UI - List Component Types
 
-export type ListSize = "sm" | "md";
-export type ListColor = "primary" | "secondary" | "success" | "warning" | "danger" | "info";
+export type ListSize = 'sm' | 'md';
+export type ListColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
 
 export interface ListProps {
 	/** Size variant */

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import { slide } from "svelte/transition";
-	import { cubicOut } from "svelte/easing";
-	import type { CollapseProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import { slide } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
+	import type { CollapseProps } from './types';
 
 	interface Props extends CollapseProps {
 		children?: Snippet;
@@ -10,13 +10,13 @@
 	}
 
 	const {
-		title = "",
+		title = '',
 		defaultOpen = false,
-		color = "primary",
-		size = "md",
-		radius = "md",
+		color = 'primary',
+		size = 'md',
+		radius = 'md',
 		disabled = false,
-		class: className = "",
+		class: className = '',
 		ontoggle,
 		onchange,
 		children,
@@ -28,26 +28,26 @@
 
 	const collapseClasses = $derived(() => {
 		return [
-			"lumi-collapse",
+			'lumi-collapse',
 			`lumi-collapse--${color}`,
 			`lumi-collapse--${size}`,
 			`lumi-collapse--radius-${radius}`,
-			isOpen && "lumi-collapse--open",
-			disabled && "lumi-collapse--disabled",
+			isOpen && 'lumi-collapse--open',
+			disabled && 'lumi-collapse--disabled',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	const triggerClasses = $derived(() => {
 		return [
-			"lumi-collapse__trigger",
-			isOpen && "lumi-collapse__trigger--open",
-			disabled && "lumi-collapse__trigger--disabled"
+			'lumi-collapse__trigger',
+			isOpen && 'lumi-collapse__trigger--open',
+			disabled && 'lumi-collapse__trigger--disabled'
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	function toggleCollapse(): void {
@@ -76,7 +76,14 @@
 				{/if}
 			</div>
 			<div class="lumi-collapse__icon" class:lumi-collapse__icon--rotated={isOpen}>
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<svg
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
 					<polyline points="6 9 12 15 18 9"></polyline>
 				</svg>
 			</div>

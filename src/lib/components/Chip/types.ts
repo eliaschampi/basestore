@@ -3,8 +3,8 @@
  * Beautiful chips with closable variants
  */
 
-export type ChipColor = "primary" | "secondary" | "success" | "warning" | "danger" | "info";
-export type ChipSize = "sm" | "md";
+export type ChipColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
+export type ChipSize = 'sm' | 'md';
 
 export interface ChipProps {
 	/**

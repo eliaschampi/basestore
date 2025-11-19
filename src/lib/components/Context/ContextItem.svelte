@@ -1,26 +1,26 @@
 <script lang="ts">
-	import Icon from "../Icon/Icon.svelte";
-	import type { ContextItemProps } from "./types";
+	import Icon from '../Icon/Icon.svelte';
+	import type { ContextItemProps } from './types';
 
 	const {
-		title = "",
-		icon = "",
-		shortcut = "",
+		title = '',
+		icon = '',
+		shortcut = '',
 		disabled = false,
 		danger = false,
-		class: className = "",
+		class: className = '',
 		onclick
 	}: ContextItemProps = $props();
 
 	const itemClasses = $derived(() => {
 		return [
-			"lumi-context-item",
-			disabled && "lumi-context-item--disabled",
-			danger && "lumi-context-item--danger",
+			'lumi-context-item',
+			disabled && 'lumi-context-item--disabled',
+			danger && 'lumi-context-item--danger',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	function handleClick(event: MouseEvent): void {
@@ -30,7 +30,7 @@
 	}
 
 	function handleKeydown(event: KeyboardEvent): void {
-		if (event.key === "Enter" || event.key === " ") {
+		if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault();
 			handleClick(event as unknown as MouseEvent);
 		}
@@ -49,9 +49,9 @@
 			<Icon {icon} size="16px" />
 		</div>
 	{/if}
-	
+
 	<span class="lumi-context-item__text">{title}</span>
-	
+
 	{#if shortcut}
 		<span class="lumi-context-item__shortcut">{shortcut}</span>
 	{/if}

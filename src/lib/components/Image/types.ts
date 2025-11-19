@@ -20,10 +20,10 @@ export interface ImageProps {
 	height?: number;
 
 	/** Border radius variant */
-	radius?: "none" | "sm" | "md" | "lg" | "full";
+	radius?: 'none' | 'sm' | 'md' | 'lg' | 'full';
 
 	/** Loading strategy */
-	loading?: "eager" | "lazy";
+	loading?: 'eager' | 'lazy';
 
 	/** Whether to show zoomed effect on hover */
 	isZoomed?: boolean;

@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { getIcon } from "$lib/utils/icons";
-	import type { IconProps } from "./types";
+	import { getIcon } from '$lib/utils/icons';
+	import type { IconProps } from './types';
 
 	const {
-		icon = "",
-		color = "inherit",
-		bg = "",
-		size = "md",
+		icon = '',
+		color = 'inherit',
+		bg = '',
+		size = 'md',
 		round = false,
 		stroke = 2,
-		class: className = "",
+		class: className = '',
 		onclick
 	}: IconProps = $props();
 
@@ -18,14 +18,14 @@
 
 	// Build classes
 	const classes = $derived(() => {
-		const baseClasses = ["lumi-icon", `lumi-icon--${size}`];
+		const baseClasses = ['lumi-icon', `lumi-icon--${size}`];
 
-		if (round) baseClasses.push("lumi-icon--round");
+		if (round) baseClasses.push('lumi-icon--round');
 		if (bg) baseClasses.push(`lumi-icon--bg-${bg}`);
-		if (color && color !== "inherit") baseClasses.push(`lumi-icon--color-${color}`);
+		if (color && color !== 'inherit') baseClasses.push(`lumi-icon--color-${color}`);
 		if (className) baseClasses.push(className);
 
-		return baseClasses.join(" ");
+		return baseClasses.join(' ');
 	});
 
 	// Build inline styles for custom sizes
@@ -41,7 +41,7 @@
 		return Object.keys(styles).length > 0
 			? Object.entries(styles)
 					.map(([key, value]) => `${key}: ${value}`)
-					.join("; ")
+					.join('; ')
 			: undefined;
 	});
 
@@ -186,7 +186,7 @@
 	}
 
 	/* Enhanced hover for background variants */
-	:global(.lumi-icon[class*="--bg-"]:hover) {
+	:global(.lumi-icon[class*='--bg-']:hover) {
 		transform: translateY(-2px) scale(1.02);
 	}
 
@@ -196,7 +196,7 @@
 	}
 
 	/* Enhanced active for background variants */
-	:global(.lumi-icon[class*="--bg-"]:active) {
+	:global(.lumi-icon[class*='--bg-']:active) {
 		transform: translateY(0) scale(0.95);
 	}
 

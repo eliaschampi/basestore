@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { invalidate } from "$app/navigation";
-	import Dialog from "../Dialog/Dialog.svelte";
-	import Button from "../Button/Button.svelte";
-	import Select from "../Select/Select.svelte";
-	import Icon from "../Icon/Icon.svelte";
-	import Alert from "../Alert/Alert.svelte";
-	import { showToast } from "$lib/stores/Toast";
-	import { PERMISSION_DEFINITIONS, getPermissionByKey } from "$lib/permissions/definitions";
-	import type { PermissionDefinition } from "$lib/permissions/definitions";
+	import { invalidate } from '$app/navigation';
+	import Dialog from '../Dialog/Dialog.svelte';
+	import Button from '../Button/Button.svelte';
+	import Select from '../Select/Select.svelte';
+	import Icon from '../Icon/Icon.svelte';
+	import Alert from '../Alert/Alert.svelte';
+	import { showToast } from '$lib/stores/Toast';
+	import { PERMISSION_DEFINITIONS, getPermissionByKey } from '$lib/permissions/definitions';
+	import type { PermissionDefinition } from '$lib/permissions/definitions';
 
 	interface ApiPermission {
 		code: string;
@@ -34,9 +34,9 @@
 	// State management
 	let userPermissions = $state<string[]>([]); // Array of permission keys like 'users:read'
 	let loading = $state(false);
-	let error = $state("");
+	let error = $state('');
 	let saving = $state(false);
-	let selectedPermission = $state("");
+	let selectedPermission = $state('');
 
 	// Computed
 	const availablePermissions = $derived(
@@ -55,13 +55,13 @@
 		if (!user.code) return;
 
 		loading = true;
-		error = "";
+		error = '';
 
 		try {
 			const response = await fetch(`/api/users/${user.code}/permissions`);
 			if (!response.ok) {
 				const errorData = await response.json();
-				throw new Error(errorData.message || "Error fetching permissions");
+				throw new Error(errorData.message || 'Error fetching permissions');
 			}
 
 			const { permissions: permissionsData } = (await response.json()) as {
@@ -71,8 +71,8 @@
 			// Convert to permission keys format (entity:action)
 			userPermissions = permissionsData.map((p) => `${p.entity}:${p.action}`);
 		} catch (err) {
-			error = err instanceof Error ? err.message : "Error loading permissions";
-			console.error("Permission loading error:", err);
+			error = err instanceof Error ? err.message : 'Error loading permissions';
+			console.error('Permission loading error:', err);
 		} finally {
 			loading = false;
 		}
@@ -82,7 +82,7 @@
 	function addPermission() {
 		if (selectedPermission && !userPermissions.includes(selectedPermission)) {
 			userPermissions = [...userPermissions, selectedPermission];
-			selectedPermission = "";
+			selectedPermission = '';
 		}
 	}
 
@@ -94,33 +94,33 @@
 	// Save permissions
 	async function savePermissions() {
 		saving = true;
-		error = "";
+		error = '';
 
 		try {
 			// Convert permission keys to API format
 			const permissionsToSave = userPermissions.map((key) => {
-				const [entity, action] = key.split(":");
+				const [entity, action] = key.split(':');
 				return { entity, user_action: action };
 			});
 
 			const response = await fetch(`/api/users/${user.code}/permissions`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ permissions: permissionsToSave })
 			});
 
 			if (!response.ok) {
 				const errorData = await response.json();
-				throw new Error(errorData.message || "Error guardando permisos");
+				throw new Error(errorData.message || 'Error guardando permisos');
 			}
 
 			const result = await response.json();
-			showToast(`Permisos actualizados correctamente (${result.count} permisos)`, "success");
-			await invalidate("users:permissions");
+			showToast(`Permisos actualizados correctamente (${result.count} permisos)`, 'success');
+			await invalidate('users:permissions');
 			closeModal();
 		} catch (err) {
-			error = err instanceof Error ? err.message : "Error guardando permisos";
-			console.error("Permission saving error:", err);
+			error = err instanceof Error ? err.message : 'Error guardando permisos';
+			console.error('Permission saving error:', err);
 		} finally {
 			saving = false;
 		}
@@ -147,7 +147,7 @@
 		</div>
 	{:else if error}
 		<div class="lumi-margin-bottom--md">
-			<Alert type="danger" closable onclose={() => (error = "")}>
+			<Alert type="danger" closable onclose={() => (error = '')}>
 				{error}
 			</Alert>
 			<div class="lumi-flex lumi-flex--center lumi-margin-top--md">

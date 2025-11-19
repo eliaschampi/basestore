@@ -1,7 +1,7 @@
 // Lumi UI - Progress Component Types
 
-export type ProgressColor = "primary" | "secondary" | "success" | "warning" | "danger" | "info";
-export type ProgressSize = "xs" | "sm" | "md" | "lg" | "xl";
+export type ProgressColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
+export type ProgressSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 export interface ProgressProps {
 	/** Progress value (0-100) */

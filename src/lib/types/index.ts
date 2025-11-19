@@ -7,10 +7,10 @@
 // COMMON TYPES
 // ============================================================================
 
-export type Size = "sm" | "md" | "lg" | "xl";
-export type Color = "primary" | "secondary" | "success" | "warning" | "danger" | "info";
-export type Variant = "filled" | "border" | "flat" | "gradient";
-export type Radius = "none" | "sm" | "base" | "md" | "lg" | "xl" | "2xl" | "3xl" | "full";
+export type Size = 'sm' | 'md' | 'lg' | 'xl';
+export type Color = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
+export type Variant = 'filled' | 'border' | 'flat' | 'gradient';
+export type Radius = 'none' | 'sm' | 'base' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';
 
 // ============================================================================
 // COMPONENT PROP TYPES
@@ -30,7 +30,7 @@ export interface ButtonProps extends BaseComponentProps {
 	radius?: boolean;
 	loading?: boolean;
 	disabled?: boolean;
-	button?: "button" | "submit" | "reset";
+	button?: 'button' | 'submit' | 'reset';
 }
 
 export interface InputProps extends BaseComponentProps {
@@ -71,7 +71,7 @@ export interface CardProps extends BaseComponentProps {
 
 export interface AlertProps extends BaseComponentProps {
 	active?: boolean;
-	type?: "success" | "warning" | "danger" | "info";
+	type?: 'success' | 'warning' | 'danger' | 'info';
 	title?: string;
 	icon?: string;
 	closable?: boolean;
@@ -83,7 +83,7 @@ export interface AlertProps extends BaseComponentProps {
 export interface LoadingProps extends BaseComponentProps {
 	size?: Size;
 	color?: string;
-	type?: "spinner" | "dots" | "pulse";
+	type?: 'spinner' | 'dots' | 'pulse';
 	overlay?: boolean;
 	text?: string;
 }
@@ -91,8 +91,8 @@ export interface LoadingProps extends BaseComponentProps {
 export interface AvatarProps extends BaseComponentProps {
 	src?: string;
 	alt?: string;
-	size?: "xs" | "sm" | "md" | "lg" | "xl";
-	shape?: "circle" | "square" | "rounded";
+	size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+	shape?: 'circle' | 'square' | 'rounded';
 	fallback?: string;
 	showStatus?: boolean;
 	statusColor?: string;
@@ -102,7 +102,7 @@ export interface ChipProps extends BaseComponentProps {
 	label?: string;
 	color?: Color;
 	size?: Size;
-	variant?: "filled" | "outlined" | "flat";
+	variant?: 'filled' | 'outlined' | 'flat';
 	closable?: boolean;
 	disabled?: boolean;
 }

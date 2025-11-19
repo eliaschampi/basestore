@@ -1,10 +1,10 @@
 // Lumi UI - Dropdown Component Types
 
-import type { FloatingPlacement } from "$lib/utils/floating.svelte";
+import type { FloatingPlacement } from '$lib/utils/floating.svelte';
 
 export type DropdownPosition = FloatingPlacement;
-export type DropdownSize = "sm" | "md";
-export type DropdownTrigger = "click" | "hover";
+export type DropdownSize = 'sm' | 'md';
+export type DropdownTrigger = 'click' | 'hover';
 
 export interface DropdownProps {
 	/** Whether dropdown is open */

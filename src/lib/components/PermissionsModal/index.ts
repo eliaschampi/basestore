@@ -1,1 +1,1 @@
-export { default } from "./PermissionsModal.svelte";
+export { default } from './PermissionsModal.svelte';

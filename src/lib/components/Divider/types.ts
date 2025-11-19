@@ -1,6 +1,6 @@
 // Lumi UI - Divider Component Types
 
-export type DividerPosition = "left" | "center" | "right";
+export type DividerPosition = 'left' | 'center' | 'right';
 
 export interface DividerProps {
 	/** Content position */

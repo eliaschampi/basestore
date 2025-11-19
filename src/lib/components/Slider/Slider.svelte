@@ -1,18 +1,18 @@
 <script lang="ts">
-	import type { SliderProps } from "./types";
+	import type { SliderProps } from './types';
 
 	let {
 		value = $bindable(0),
 		min = 0,
 		max = 100,
 		step = 1,
-		label = "",
-		color = "primary",
-		size = "md",
+		label = '',
+		color = 'primary',
+		size = 'md',
 		disabled = false,
 		showValue = false,
 		showTooltip = true,
-		class: className = "",
+		class: className = '',
 		onchange
 	}: SliderProps = $props();
 
@@ -25,14 +25,14 @@
 
 	const classes = $derived(() => {
 		return [
-			"lumi-slider",
+			'lumi-slider',
 			`lumi-slider--${color}`,
 			`lumi-slider--${size}`,
-			disabled && "lumi-slider--disabled",
+			disabled && 'lumi-slider--disabled',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	const handleTrackClick = (event: MouseEvent) => {
@@ -62,7 +62,7 @@
 			if (!track) return;
 
 			const rect = track.getBoundingClientRect();
-			const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+			const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
 			const clickX = clientX - rect.left;
 			const clickPercentage = Math.max(0, Math.min(100, (clickX / rect.width) * 100));
 			const newValue = min + (clickPercentage / 100) * (max - min);
@@ -74,16 +74,16 @@
 		const handleMouseUp = () => {
 			isDragging = false;
 			if (onchange) onchange(value);
-			document.removeEventListener("mousemove", handleMouseMove);
-			document.removeEventListener("mouseup", handleMouseUp);
-			document.removeEventListener("touchmove", handleMouseMove);
-			document.removeEventListener("touchend", handleMouseUp);
+			document.removeEventListener('mousemove', handleMouseMove);
+			document.removeEventListener('mouseup', handleMouseUp);
+			document.removeEventListener('touchmove', handleMouseMove);
+			document.removeEventListener('touchend', handleMouseUp);
 		};
 
-		document.addEventListener("mousemove", handleMouseMove);
-		document.addEventListener("mouseup", handleMouseUp);
-		document.addEventListener("touchmove", handleMouseMove);
-		document.addEventListener("touchend", handleMouseUp);
+		document.addEventListener('mousemove', handleMouseMove);
+		document.addEventListener('mouseup', handleMouseUp);
+		document.addEventListener('touchmove', handleMouseMove);
+		document.addEventListener('touchend', handleMouseUp);
 	};
 </script>
 
@@ -276,7 +276,7 @@
 	}
 
 	.lumi-slider__tooltip::after {
-		content: "";
+		content: '';
 		position: absolute;
 		top: 100%;
 		left: 50%;

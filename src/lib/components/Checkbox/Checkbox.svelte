@@ -1,14 +1,14 @@
 <script lang="ts">
-	import type { CheckboxProps } from "./types";
+	import type { CheckboxProps } from './types';
 
 	let {
 		checked = $bindable(false),
 		indeterminate = $bindable(false),
-		label = "",
-		size = "md",
-		color = "primary",
+		label = '',
+		size = 'md',
+		color = 'primary',
 		disabled = false,
-		class: className = "",
+		class: className = '',
 		children,
 		onchange
 	}: CheckboxProps = $props();
@@ -19,15 +19,15 @@
 	// Computed classes
 	const classes = $derived(() => {
 		return [
-			"lumi-checkbox",
+			'lumi-checkbox',
 			`lumi-checkbox--${size}`,
 			`lumi-checkbox--${color}`,
-			(checked || indeterminate) && "lumi-checkbox--checked",
-			disabled && "lumi-checkbox--disabled",
+			(checked || indeterminate) && 'lumi-checkbox--checked',
+			disabled && 'lumi-checkbox--disabled',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	// Handle change event
@@ -187,7 +187,9 @@
 
 	/* Focus styles */
 	.lumi-checkbox__input:focus-visible + .lumi-checkbox__visual {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-primary);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-primary);
 	}
 
 	/* Disabled state */
@@ -212,7 +214,9 @@
 		border-color: var(--lumi-color-secondary);
 	}
 	.lumi-checkbox--secondary .lumi-checkbox__input:focus-visible + .lumi-checkbox__visual {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-secondary);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-secondary);
 	}
 
 	.lumi-checkbox--success.lumi-checkbox--checked .lumi-checkbox__visual {
@@ -220,7 +224,9 @@
 		border-color: var(--lumi-color-success);
 	}
 	.lumi-checkbox--success .lumi-checkbox__input:focus-visible + .lumi-checkbox__visual {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-success);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-success);
 	}
 
 	.lumi-checkbox--warning.lumi-checkbox--checked .lumi-checkbox__visual {
@@ -228,7 +234,9 @@
 		border-color: var(--lumi-color-warning);
 	}
 	.lumi-checkbox--warning .lumi-checkbox__input:focus-visible + .lumi-checkbox__visual {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-warning);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-warning);
 	}
 
 	.lumi-checkbox--danger.lumi-checkbox--checked .lumi-checkbox__visual {
@@ -236,7 +244,9 @@
 		border-color: var(--lumi-color-danger);
 	}
 	.lumi-checkbox--danger .lumi-checkbox__input:focus-visible + .lumi-checkbox__visual {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-danger);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-danger);
 	}
 
 	.lumi-checkbox--info.lumi-checkbox--checked .lumi-checkbox__visual {
@@ -244,7 +254,9 @@
 		border-color: var(--lumi-color-info);
 	}
 	.lumi-checkbox--info .lumi-checkbox__input:focus-visible + .lumi-checkbox__visual {
-		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-info);
+		box-shadow:
+			0 0 0 2px var(--lumi-color-background),
+			0 0 0 4px var(--lumi-color-info);
 	}
 
 	/* Animation for checkmark */

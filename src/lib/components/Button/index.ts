@@ -3,5 +3,5 @@
  * Export button component and types
  */
 
-export { default as Button } from "./Button.svelte";
-export type { ButtonProps } from "./types";
+export { default as Button } from './Button.svelte';
+export type { ButtonProps } from './types';

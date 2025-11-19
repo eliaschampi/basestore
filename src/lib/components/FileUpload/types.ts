@@ -3,7 +3,7 @@
  * Professional file upload with drag-drop, validation, and progress tracking
  */
 
-export type FileUploadStatus = "selected" | "uploading" | "success" | "error";
+export type FileUploadStatus = 'selected' | 'uploading' | 'success' | 'error';
 
 export interface FileUploadFile {
 	id: string;

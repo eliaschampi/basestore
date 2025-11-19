@@ -3,8 +3,8 @@
  * Lumi UI - Professional Svelte 5 Component Library
  */
 
-export type TextareaSize = "sm" | "md" | "lg";
-export type TextareaColor = "primary" | "secondary" | "success" | "warning" | "danger" | "info";
+export type TextareaSize = 'sm' | 'md' | 'lg';
+export type TextareaColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
 
 export interface TextareaProps {
 	/** Textarea value (bindable) */
@@ -30,7 +30,7 @@ export interface TextareaProps {
 	/** Color variant for focus state */
 	color?: TextareaColor;
 	/** Resize behavior */
-	resize?: "none" | "vertical" | "horizontal" | "both";
+	resize?: 'none' | 'vertical' | 'horizontal' | 'both';
 	/** Required field indicator */
 	required?: boolean;
 	/** Show character counter */

@@ -1,29 +1,29 @@
 <script lang="ts">
-	import type { StatusIndicatorProps, StatusIndicatorStatus } from "./types";
+	import type { StatusIndicatorProps, StatusIndicatorStatus } from './types';
 
 	const {
-		status = "default",
+		status = 'default',
 		animated = false,
 		pulse = false,
-		tooltip = "",
-		class: className = ""
+		tooltip = '',
+		class: className = ''
 	}: StatusIndicatorProps = $props();
 
 	// pulse is an alias for animated
 	const isAnimated = $derived(animated || pulse);
 
 	const predefinedStatuses: StatusIndicatorStatus[] = [
-		"default",
-		"active",
-		"inactive",
-		"pending",
-		"error",
-		"primary",
-		"secondary",
-		"success",
-		"warning",
-		"danger",
-		"info"
+		'default',
+		'active',
+		'inactive',
+		'pending',
+		'error',
+		'primary',
+		'secondary',
+		'success',
+		'warning',
+		'danger',
+		'info'
 	];
 
 	const isPredefined = $derived(() => {
@@ -32,21 +32,21 @@
 
 	const classes = $derived(() => {
 		return [
-			"lumi-status-indicator",
+			'lumi-status-indicator',
 			isPredefined() && `lumi-status-indicator--${status}`,
-			!isPredefined() && "lumi-status-indicator--custom",
-			isAnimated && "lumi-status-indicator--animated",
+			!isPredefined() && 'lumi-status-indicator--custom',
+			isAnimated && 'lumi-status-indicator--animated',
 			className
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	const customStyle = $derived(() => {
 		if (!isPredefined()) {
 			return `--lumi-status-indicator-custom-color: ${status}`;
 		}
-		return "";
+		return '';
 	});
 </script>
 

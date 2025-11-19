@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import { setContext } from "svelte";
-	import { Icon } from "../Icon";
-	import type { TabsProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import { setContext } from 'svelte';
+	import { Icon } from '../Icon';
+	import type { TabsProps } from './types';
 
 	interface Props extends TabsProps {
 		children?: Snippet;
@@ -11,9 +11,9 @@
 	let {
 		value = $bindable(),
 		tabs = [],
-		color = "primary",
-		position = "horizontal",
-		class: className = "",
+		color = 'primary',
+		position = 'horizontal',
+		class: className = '',
 		children,
 		onchange
 	}: Props = $props();
@@ -28,16 +28,16 @@
 		}
 	});
 
-	setContext("tabs", {
+	setContext('tabs', {
 		get activeTab() {
 			return value;
 		}
 	});
 
 	const classes = $derived(
-		["lumi-tabs", `lumi-tabs--${position}`, `lumi-tabs--${color}`, className]
+		['lumi-tabs', `lumi-tabs--${position}`, `lumi-tabs--${color}`, className]
 			.filter(Boolean)
-			.join(" ")
+			.join(' ')
 	);
 
 	const selectTab = (tabValue: string | number) => {
@@ -53,19 +53,19 @@
 
 		let nextIndex = currentIndex;
 
-		if (position === "horizontal") {
-			if (event.key === "ArrowLeft") {
+		if (position === 'horizontal') {
+			if (event.key === 'ArrowLeft') {
 				event.preventDefault();
 				nextIndex = currentIndex > 0 ? currentIndex - 1 : enabledTabs.length - 1;
-			} else if (event.key === "ArrowRight") {
+			} else if (event.key === 'ArrowRight') {
 				event.preventDefault();
 				nextIndex = currentIndex < enabledTabs.length - 1 ? currentIndex + 1 : 0;
 			}
 		} else {
-			if (event.key === "ArrowUp") {
+			if (event.key === 'ArrowUp') {
 				event.preventDefault();
 				nextIndex = currentIndex > 0 ? currentIndex - 1 : enabledTabs.length - 1;
-			} else if (event.key === "ArrowDown") {
+			} else if (event.key === 'ArrowDown') {
 				event.preventDefault();
 				nextIndex = currentIndex < enabledTabs.length - 1 ? currentIndex + 1 : 0;
 			}

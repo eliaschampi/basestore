@@ -1,17 +1,17 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import type { ListProps } from "./types";
+	import type { Snippet } from 'svelte';
+	import type { ListProps } from './types';
 
 	interface Props extends ListProps {
 		children?: Snippet;
 	}
 
-	const { size = "md", disabled = false, class: className = "", children }: Props = $props();
+	const { size = 'md', disabled = false, class: className = '', children }: Props = $props();
 
 	const classes = $derived(() => {
-		return ["lumi-list", `lumi-list--${size}`, disabled && "lumi-list--disabled", className]
+		return ['lumi-list', `lumi-list--${size}`, disabled && 'lumi-list--disabled', className]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 </script>
 

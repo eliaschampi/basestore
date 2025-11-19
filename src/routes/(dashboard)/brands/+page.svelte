@@ -1,17 +1,17 @@
 <script lang="ts">
-	import { invalidate } from "$app/navigation";
-	import { enhance } from "$app/forms";
-	import Card from "$lib/components/Card/Card.svelte";
-	import Title from "$lib/components/Title/Title.svelte";
-	import Table from "$lib/components/Table/Table.svelte";
-	import Button from "$lib/components/Button/Button.svelte";
-	import Dialog from "$lib/components/Dialog/Dialog.svelte";
-	import Input from "$lib/components/Input/Input.svelte";
-	import Textarea from "$lib/components/Textarea/Textarea.svelte";
-	import Alert from "$lib/components/Alert/Alert.svelte";
-	import { showToast } from "$lib/stores/Toast";
-	import { can } from "$lib/stores/permissions";
-	import type { PageData } from "./$types";
+	import { invalidate } from '$app/navigation';
+	import { enhance } from '$app/forms';
+	import Card from '$lib/components/Card/Card.svelte';
+	import Title from '$lib/components/Title/Title.svelte';
+	import Table from '$lib/components/Table/Table.svelte';
+	import Button from '$lib/components/Button/Button.svelte';
+	import Dialog from '$lib/components/Dialog/Dialog.svelte';
+	import Input from '$lib/components/Input/Input.svelte';
+	import Textarea from '$lib/components/Textarea/Textarea.svelte';
+	import Alert from '$lib/components/Alert/Alert.svelte';
+	import { showToast } from '$lib/stores/Toast';
+	import { can } from '$lib/stores/permissions';
+	import type { PageData } from './$types';
 
 	interface Brand {
 		code: string;
@@ -23,33 +23,33 @@
 
 	const { data }: { data: PageData } = $props();
 
-	const canCreate = $derived(can("brands:create"));
-	const canUpdate = $derived(can("brands:update"));
-	const canDelete = $derived(can("brands:delete"));
+	const canCreate = $derived(can('brands:create'));
+	const canUpdate = $derived(can('brands:update'));
+	const canDelete = $derived(can('brands:delete'));
 
 	let showModal = $state(false);
 	let showDeleteModal = $state(false);
 	let isEditing = $state(false);
-	let errorMessage = $state("");
+	let errorMessage = $state('');
 	let selectedBrand = $state<Brand | null>(null);
 
-	let formName = $state("");
-	let formDescription = $state("");
+	let formName = $state('');
+	let formDescription = $state('');
 
 	function formatDate(date: Date | string): string {
-		return new Date(date).toLocaleDateString("es-ES", {
-			year: "numeric",
-			month: "short",
-			day: "numeric"
+		return new Date(date).toLocaleDateString('es-ES', {
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric'
 		});
 	}
 
 	function openCreateModal() {
 		if (!canCreate) return;
 		isEditing = false;
-		formName = "";
-		formDescription = "";
-		errorMessage = "";
+		formName = '';
+		formDescription = '';
+		errorMessage = '';
 		showModal = true;
 	}
 
@@ -58,8 +58,8 @@
 		isEditing = true;
 		selectedBrand = brand;
 		formName = brand.name;
-		formDescription = brand.description || "";
-		errorMessage = "";
+		formDescription = brand.description || '';
+		errorMessage = '';
 		showModal = true;
 	}
 
@@ -71,7 +71,7 @@
 
 	function closeModal() {
 		showModal = false;
-		errorMessage = "";
+		errorMessage = '';
 	}
 
 	function closeDeleteModal() {
@@ -110,7 +110,9 @@
 					{#if row.description}
 						<span class="lumi-text--sm lumi-text--muted">{row.description}</span>
 					{:else}
-						<span class="lumi-text--sm lumi-text--muted" style="font-style: italic;">Sin descripción</span>
+						<span class="lumi-text--sm lumi-text--muted" style="font-style: italic;"
+							>Sin descripción</span
+						>
 					{/if}
 				</td>
 				<td>{formatDate(row.created_at)}</td>
@@ -140,21 +142,21 @@
 </div>
 
 <!-- Create/Edit Modal -->
-<Dialog bind:open={showModal} title={isEditing ? "Editar Marca" : "Nueva Marca"} size="md">
+<Dialog bind:open={showModal} title={isEditing ? 'Editar Marca' : 'Nueva Marca'} size="md">
 	<form
 		method="POST"
 		action="?/{isEditing ? 'update' : 'create'}"
 		use:enhance={() => {
 			return async ({ result }) => {
-				if (result.type === "success") {
+				if (result.type === 'success') {
 					showToast(
-						isEditing ? "Marca actualizada exitosamente" : "Marca creada exitosamente",
-						"success"
+						isEditing ? 'Marca actualizada exitosamente' : 'Marca creada exitosamente',
+						'success'
 					);
-					await invalidate("brands:load");
+					await invalidate('brands:load');
 					closeModal();
-				} else if (result.type === "failure") {
-					errorMessage = result.data?.error || "Ocurrió un error";
+				} else if (result.type === 'failure') {
+					errorMessage = result.data?.error || 'Ocurrió un error';
 				}
 			};
 		}}
@@ -164,7 +166,7 @@
 		{/if}
 
 		{#if errorMessage}
-			<Alert type="danger" closable onclose={() => (errorMessage = "")}>
+			<Alert type="danger" closable onclose={() => (errorMessage = '')}>
 				{errorMessage}
 			</Alert>
 		{/if}
@@ -190,8 +192,12 @@
 
 	{#snippet footer()}
 		<Button type="border" onclick={closeModal}>Cancelar</Button>
-		<Button type="filled" color="primary" onclick={() => document.querySelector('form')?.requestSubmit()}>
-			{isEditing ? "Actualizar" : "Crear"}
+		<Button
+			type="filled"
+			color="primary"
+			onclick={() => document.querySelector('form')?.requestSubmit()}
+		>
+			{isEditing ? 'Actualizar' : 'Crear'}
 		</Button>
 	{/snippet}
 </Dialog>
@@ -204,12 +210,12 @@
 		action="?/delete"
 		use:enhance={() => {
 			return async ({ result }) => {
-				if (result.type === "success") {
-					showToast("Marca eliminada exitosamente", "success");
-					await invalidate("brands:load");
+				if (result.type === 'success') {
+					showToast('Marca eliminada exitosamente', 'success');
+					await invalidate('brands:load');
 					closeDeleteModal();
-				} else if (result.type === "failure") {
-					showToast(result.data?.error || "Error al eliminar", "error");
+				} else if (result.type === 'failure') {
+					showToast(result.data?.error || 'Error al eliminar', 'error');
 				}
 			};
 		}}
@@ -225,7 +231,11 @@
 
 	{#snippet footer()}
 		<Button type="border" onclick={closeDeleteModal}>Cancelar</Button>
-		<Button type="filled" color="danger" onclick={() => document.getElementById('delete-form')?.requestSubmit()}>
+		<Button
+			type="filled"
+			color="danger"
+			onclick={() => document.getElementById('delete-form')?.requestSubmit()}
+		>
 			Eliminar
 		</Button>
 	{/snippet}

@@ -3,8 +3,8 @@
  * Clean avatar with image fallback and initials generation
  */
 
-export type AvatarColor = "primary" | "secondary" | "success" | "warning" | "danger" | "info";
-export type AvatarSize = "sm" | "md" | "lg" | "xl";
+export type AvatarColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
+export type AvatarSize = 'sm' | 'md' | 'lg' | 'xl';
 
 export interface AvatarProps {
 	/**
