@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
 	import { slide } from "svelte/transition";
+	import { cubicOut } from "svelte/easing";
 	import type { CollapseProps } from "./types";
 
 	interface Props extends CollapseProps {
@@ -75,8 +76,8 @@
 				{/if}
 			</div>
 			<div class="lumi-collapse__icon" class:lumi-collapse__icon--rotated={isOpen}>
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-					<polyline points="6,9 12,15 18,9"></polyline>
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<polyline points="6 9 12 15 18 9"></polyline>
 				</svg>
 			</div>
 		</div>
@@ -87,7 +88,7 @@
 			id="collapse-{id}"
 			class="lumi-collapse__content"
 			class:lumi-collapse__content--open={isOpen}
-			transition:slide={{ duration: 300 }}
+			transition:slide={{ duration: 300, easing: cubicOut }}
 		>
 			<div class="lumi-collapse__body">
 				{#if children}
@@ -101,7 +102,7 @@
 <style>
 	/* Modern Collapse Component - Clean & Professional */
 	.lumi-collapse {
-		border: 1px solid var(--lumi-color-border-light);
+		border: 1px solid var(--lumi-color-border);
 		border-radius: var(--lumi-radius-lg);
 		background: var(--lumi-color-surface);
 		overflow: hidden;
@@ -110,21 +111,20 @@
 	}
 
 	.lumi-collapse:hover:not(.lumi-collapse--disabled) {
-		border-color: var(--lumi-color-border);
-		transform: translateY(-1px);
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+		border-color: var(--lumi-color-border-strong);
+		box-shadow: var(--lumi-shadow-sm);
 	}
 
 	.lumi-collapse--open {
-		border-color: var(--lumi-color-border);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-		transform: translateY(-2px);
+		border-color: var(--lumi-color-border-strong);
+		box-shadow: var(--lumi-shadow-md);
 	}
 
 	.lumi-collapse--disabled {
-		opacity: 0.5;
+		opacity: 0.6;
 		cursor: not-allowed;
 		pointer-events: none;
+		background: var(--lumi-color-background-secondary);
 	}
 
 	/* Radius variants */
@@ -157,15 +157,17 @@
 		padding: 0;
 		margin: 0;
 		transition: background 0.2s ease;
+		text-align: left;
 	}
 
 	.lumi-collapse__trigger:hover:not(.lumi-collapse__trigger--disabled) {
-		background: rgba(0, 0, 0, 0.02);
+		background: var(--lumi-color-background-hover);
 	}
 
 	.lumi-collapse__trigger:focus-visible {
-		outline: 2px solid var(--lumi-color-primary);
-		outline-offset: -2px;
+		outline: none;
+		background: var(--lumi-color-background-hover);
+		box-shadow: inset 0 0 0 2px var(--lumi-color-primary);
 	}
 
 	.lumi-collapse__trigger--disabled {
@@ -189,7 +191,6 @@
 		color: var(--lumi-color-text);
 		line-height: 1.5;
 		margin: 0;
-		text-align: left;
 	}
 
 	/* Size variants */
@@ -279,7 +280,8 @@
 	/* Content */
 	.lumi-collapse__content {
 		overflow: hidden;
-		border-top: 1px solid var(--lumi-color-border-light);
+		border-top: 1px solid transparent;
+		transition: border-color 0.3s ease;
 	}
 
 	.lumi-collapse__content--open {

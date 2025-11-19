@@ -28,14 +28,12 @@
 </script>
 
 <aside class={sidebarClasses()} role="navigation" aria-label="Sidebar">
-	<!-- Header with cover image -->
 	{#if header}
 		<header class="lumi-sidebar__header">
 			{@render header()}
 		</header>
 	{/if}
 
-	<!-- Navigation items -->
 	<nav class="lumi-sidebar__body">
 		<div class="lumi-sidebar__items">
 			{#if children}
@@ -54,10 +52,8 @@
 		width: var(--lumi-sidebar-width);
 		height: 100vh;
 		background: var(--lumi-color-surface);
-		box-shadow: var(--lumi-shadow-md);
-		transition:
-			width var(--lumi-duration-base) var(--lumi-easing-default),
-			transform var(--lumi-duration-base) var(--lumi-easing-default);
+		border-right: 1px solid var(--lumi-color-border);
+		transition: all var(--lumi-duration-base) var(--lumi-easing-default);
 		overflow: hidden;
 		z-index: var(--lumi-z-sidebar);
 	}
@@ -68,8 +64,11 @@
 
 	.lumi-sidebar__header {
 		padding: var(--lumi-space-lg);
-		border-bottom: 1px solid var(--lumi-color-border);
+		border-bottom: 1px solid var(--lumi-color-border-light);
 		flex-shrink: 0;
+		min-height: var(--lumi-navbar-height);
+		display: flex;
+		align-items: center;
 	}
 
 	.lumi-sidebar__body {
@@ -79,6 +78,7 @@
 		padding: var(--lumi-space-md);
 	}
 
+	/* Custom scrollbar */
 	.lumi-sidebar__body::-webkit-scrollbar {
 		width: 4px;
 	}
@@ -88,12 +88,12 @@
 	}
 
 	.lumi-sidebar__body::-webkit-scrollbar-thumb {
-		background: var(--lumi-color-border);
+		background: transparent;
 		border-radius: var(--lumi-radius-full);
 	}
 
-	.lumi-sidebar__body::-webkit-scrollbar-thumb:hover {
-		background: var(--lumi-color-border-strong);
+	.lumi-sidebar:hover .lumi-sidebar__body::-webkit-scrollbar-thumb {
+		background: var(--lumi-color-border);
 	}
 
 	.lumi-sidebar__items {
@@ -109,24 +109,17 @@
 			top: 0;
 			left: 0;
 			transform: translateX(-100%);
-			width: var(--lumi-sidebar-width);
-			z-index: var(--lumi-z-modal);
+			width: var(--lumi-sidebar-width-mobile);
+			box-shadow: var(--lumi-shadow-xl);
+			border-right: none;
 		}
 
 		.lumi-sidebar--mobile-open {
 			transform: translateX(0);
-			box-shadow: var(--lumi-shadow-xl);
 		}
 
 		.lumi-sidebar--collapsed {
-			width: var(--lumi-sidebar-width);
-		}
-	}
-
-	/* Reduced motion support */
-	@media (prefers-reduced-motion: reduce) {
-		.lumi-sidebar {
-			transition: none;
+			width: var(--lumi-sidebar-width-mobile); /* No collapsed state on mobile */
 		}
 	}
 </style>

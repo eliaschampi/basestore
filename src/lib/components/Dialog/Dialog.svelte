@@ -152,7 +152,7 @@
 {#if open}
 	<div
 		class={overlayClasses}
-		transition:fade={{ duration: 300 }}
+		transition:fade={{ duration: 200 }}
 		onclick={handleOverlayClick}
 		onkeydown={(e) => {
 			if (e.key === "Enter" || e.key === " ") {
@@ -165,7 +165,7 @@
 		<div
 			bind:this={dialogElement}
 			class={dialogClasses}
-			transition:scale={{ duration: 300, start: 0.95 }}
+			transition:scale={{ duration: 200, start: 0.95 }}
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby={titleId}
@@ -221,8 +221,9 @@
 	.lumi-dialog-overlay {
 		position: fixed;
 		inset: 0;
-		background: rgba(0, 0, 0, 0.5);
-		backdrop-filter: blur(4px);
+		background: rgba(0, 0, 0, 0.4);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
 		z-index: var(--lumi-z-modal-backdrop);
 		display: flex;
 		align-items: center;
@@ -247,8 +248,8 @@
 		flex-direction: column;
 		cursor: default;
 		z-index: var(--lumi-z-modal);
-		box-shadow: none;
-		border: 2px solid var(--lumi-color-border-light);
+		box-shadow: var(--lumi-shadow-2xl);
+		border: 1px solid var(--lumi-color-border-light);
 	}
 
 	.lumi-dialog:focus {
@@ -256,21 +257,10 @@
 	}
 
 	/* Size Variants */
-	.lumi-dialog--sm {
-		max-width: 400px;
-	}
-
-	.lumi-dialog--md {
-		max-width: 500px;
-	}
-
-	.lumi-dialog--lg {
-		max-width: 700px;
-	}
-
-	.lumi-dialog--xl {
-		max-width: 900px;
-	}
+	.lumi-dialog--sm { max-width: 400px; }
+	.lumi-dialog--md { max-width: 560px; }
+	.lumi-dialog--lg { max-width: 800px; }
+	.lumi-dialog--xl { max-width: 1024px; }
 
 	/* Scrollable Content */
 	.lumi-dialog--scrollable .lumi-dialog__content {
@@ -297,8 +287,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: var(--lumi-space-lg) var(--lumi-space-lg) var(--lumi-space-md);
-		border-bottom: 2px solid var(--lumi-color-border-light);
+		padding: var(--lumi-space-lg) var(--lumi-space-xl);
+		border-bottom: 1px solid var(--lumi-color-border-light);
 		flex-shrink: 0;
 	}
 
@@ -321,59 +311,47 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 2.5rem;
-		height: 2.5rem;
+		width: 32px;
+		height: 32px;
 		margin-left: var(--lumi-space-md);
 		background: transparent;
-		border: 2px solid transparent;
-		border-radius: var(--lumi-radius-lg);
+		border: none;
+		border-radius: var(--lumi-radius-full);
 		color: var(--lumi-color-text-muted);
 		cursor: pointer;
-		transition: var(--lumi-transition-all);
+		transition: all 0.2s ease;
 		flex-shrink: 0;
 	}
 
 	.lumi-dialog__close:hover {
 		background: var(--lumi-color-background-hover);
 		color: var(--lumi-color-text);
-		border-color: var(--lumi-color-border);
-		transform: scale(1.05);
 	}
 
 	.lumi-dialog__close:active {
 		transform: scale(0.95);
 	}
 
-	.lumi-dialog__close:focus-visible {
-		outline: 2px solid var(--lumi-color-primary);
-		outline-offset: 2px;
-	}
-
 	/* Dialog Content */
 	.lumi-dialog__content {
 		flex: 1;
-		padding: var(--lumi-space-lg);
+		padding: var(--lumi-space-xl);
 		color: var(--lumi-color-text);
 		line-height: var(--lumi-line-height-normal);
 		overflow-y: auto;
 	}
 
 	.lumi-dialog__content::-webkit-scrollbar {
-		width: var(--lumi-space-xs);
+		width: 6px;
 	}
 
 	.lumi-dialog__content::-webkit-scrollbar-track {
-		background: var(--lumi-color-background);
-		border-radius: var(--lumi-radius-base);
+		background: transparent;
 	}
 
 	.lumi-dialog__content::-webkit-scrollbar-thumb {
 		background: var(--lumi-color-border);
-		border-radius: var(--lumi-radius-base);
-	}
-
-	.lumi-dialog__content::-webkit-scrollbar-thumb:hover {
-		background: var(--lumi-color-border-strong);
+		border-radius: var(--lumi-radius-full);
 	}
 
 	/* Dialog Footer */
@@ -382,64 +360,50 @@
 		align-items: center;
 		justify-content: flex-end;
 		gap: var(--lumi-space-md);
-		padding: var(--lumi-space-md) var(--lumi-space-lg) var(--lumi-space-lg);
-		border-top: 2px solid var(--lumi-color-border-light);
+		padding: var(--lumi-space-lg) var(--lumi-space-xl);
+		border-top: 1px solid var(--lumi-color-border-light);
 		flex-shrink: 0;
+		background: var(--lumi-color-background-hover);
+		border-bottom-left-radius: var(--lumi-radius-2xl);
+		border-bottom-right-radius: var(--lumi-radius-2xl);
 	}
 
 	/* Responsive Design */
 	@media (max-width: 768px) {
 		.lumi-dialog-overlay {
-			padding: var(--lumi-space-sm);
-			align-items: flex-start;
+			padding: 0;
+			align-items: flex-end;
 		}
 
-		.lumi-dialog--sm,
-		.lumi-dialog--md,
-		.lumi-dialog--lg,
-		.lumi-dialog--xl {
-			max-width: none;
-			width: 100%;
+		.lumi-dialog {
+			max-width: 100%;
+			border-bottom-left-radius: 0;
+			border-bottom-right-radius: 0;
 			max-height: 90vh;
 		}
 
 		.lumi-dialog--full-screen {
-			border-radius: 0;
-			width: 100vw;
 			height: 100vh;
+			max-height: 100vh;
+			border-radius: 0;
 		}
 
 		.lumi-dialog__header {
-			padding: var(--lumi-space-md);
+			padding: var(--lumi-space-md) var(--lumi-space-lg);
 		}
 
 		.lumi-dialog__content {
-			padding: var(--lumi-space-md);
+			padding: var(--lumi-space-lg);
 		}
 
 		.lumi-dialog__footer {
-			padding: var(--lumi-space-md);
-			flex-direction: column;
+			padding: var(--lumi-space-md) var(--lumi-space-lg);
+			flex-direction: column-reverse;
 			gap: var(--lumi-space-sm);
 		}
 
 		.lumi-dialog__footer :global(.lumi-button) {
 			width: 100%;
-		}
-
-		.lumi-dialog__title {
-			font-size: var(--lumi-font-size-lg);
-		}
-	}
-
-	@media (max-width: 480px) {
-		.lumi-dialog-overlay {
-			padding: var(--lumi-space-xs);
-			align-items: flex-start;
-		}
-
-		.lumi-dialog {
-			max-height: 95vh;
 		}
 	}
 
@@ -447,21 +411,7 @@
 	@media (prefers-reduced-motion: reduce) {
 		.lumi-dialog-overlay,
 		.lumi-dialog {
-			transition-duration: 0.1s;
-		}
-	}
-
-	/* High Contrast Mode Support */
-	@media (prefers-contrast: high) {
-		.lumi-dialog {
-			border-width: 3px;
-			border-color: currentColor;
-		}
-
-		.lumi-dialog__header,
-		.lumi-dialog__footer {
-			border-width: 2px;
-			border-color: currentColor;
+			transition-duration: 0.01ms !important;
 		}
 	}
 </style>

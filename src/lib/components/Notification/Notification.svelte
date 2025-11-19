@@ -1,36 +1,36 @@
 <script lang="ts">
-	import { fade } from "svelte/transition";
-	import { Icon } from "../Icon";
-	import type { NotificationProps } from "./types";
+	import { fly } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
+	import { Icon } from '../Icon';
+	import type { NotificationProps } from './types';
 
 	let {
-		type = "primary",
-		title = "",
-		message = "",
+		type = 'primary',
+		title = '',
+		message = '',
 		closable = true,
 		duration = 0,
 		active = $bindable(true),
-		class: className = "",
+		class: className = '',
 		onclose
 	}: NotificationProps = $props();
 
 	const iconMap: Record<string, string> = {
-		success: "checkCircle",
-		warning: "alertTriangle",
-		error: "xCircle",
-		info: "info",
-		primary: "bell"
+		success: 'checkCircle',
+		warning: 'alertTriangle',
+		error: 'xCircle',
+		info: 'info',
+		primary: 'bell'
 	};
 
 	const classes = $derived(
-		["lumi-notification", `lumi-notification--${type}`, className].filter(Boolean).join(" ")
+		['lumi-notification', `lumi-notification--${type}`, className].filter(Boolean).join(' ')
 	);
 
 	$effect(() => {
 		if (active && duration > 0) {
 			const timer = setTimeout(() => {
-				active = false;
-				onclose?.();
+				handleClose();
 			}, duration);
 			return () => clearTimeout(timer);
 		}
@@ -43,7 +43,12 @@
 </script>
 
 {#if active}
-	<div class={classes} role="alert" aria-live="polite" transition:fade={{ duration: 200 }}>
+	<div
+		class={classes}
+		role="alert"
+		aria-live="polite"
+		transition:fly={{ y: 20, duration: 300, easing: cubicOut }}
+	>
 		<!-- Icon -->
 		<div class="lumi-notification__icon">
 			<Icon icon={iconMap[type]} size="md" />
@@ -81,77 +86,64 @@
 	.lumi-notification {
 		display: flex;
 		align-items: flex-start;
-		gap: var(--lumi-space-sm);
+		gap: var(--lumi-space-md);
 		min-width: 320px;
 		max-width: 480px;
 		padding: var(--lumi-space-md);
 		background: var(--lumi-color-surface);
 		border: 1px solid var(--lumi-color-border);
-		border-radius: var(--lumi-radius-2xl);
-		box-shadow: var(--lumi-shadow-md);
-		pointer-events: auto;
-		cursor: pointer;
-		transition: all var(--lumi-transition-base);
-		position: relative;
-	}
-
-	.lumi-notification:hover {
-		opacity: 1;
-		background: var(--lumi-color-surface);
+		border-radius: var(--lumi-radius-lg);
 		box-shadow: var(--lumi-shadow-lg);
-		z-index: 1;
-		border-left-width: 6px;
+		pointer-events: auto;
+		cursor: default;
+		position: relative;
+		overflow: hidden;
 	}
 
 	/* Type variants with left border accents */
 	.lumi-notification--success {
 		border-left: 4px solid var(--lumi-color-success);
-		background: color-mix(in srgb, var(--lumi-color-surface) 95%, var(--lumi-color-success) 5%);
 	}
 
 	.lumi-notification--success .lumi-notification__icon {
 		color: var(--lumi-color-success);
-		background: color-mix(in srgb, var(--lumi-color-success) 10%, transparent);
+		background-color: var(--lumi-color-success-bg);
 	}
 
 	.lumi-notification--warning {
 		border-left: 4px solid var(--lumi-color-warning);
-		background: color-mix(in srgb, var(--lumi-color-surface) 95%, var(--lumi-color-warning) 5%);
 	}
 
 	.lumi-notification--warning .lumi-notification__icon {
 		color: var(--lumi-color-warning);
-		background: color-mix(in srgb, var(--lumi-color-warning) 10%, transparent);
+		background-color: var(--lumi-color-warning-bg);
 	}
 
 	.lumi-notification--error {
 		border-left: 4px solid var(--lumi-color-danger);
-		background: color-mix(in srgb, var(--lumi-color-surface) 95%, var(--lumi-color-danger) 5%);
 	}
 
 	.lumi-notification--error .lumi-notification__icon {
 		color: var(--lumi-color-danger);
-		background: color-mix(in srgb, var(--lumi-color-danger) 10%, transparent);
+		background-color: var(--lumi-color-danger-bg);
 	}
 
 	.lumi-notification--info {
 		border-left: 4px solid var(--lumi-color-info);
-		background: color-mix(in srgb, var(--lumi-color-surface) 95%, var(--lumi-color-info) 5%);
 	}
 
 	.lumi-notification--info .lumi-notification__icon {
 		color: var(--lumi-color-info);
-		background: color-mix(in srgb, var(--lumi-color-info) 10%, transparent);
+		background-color: var(--lumi-color-info-bg);
 	}
 
 	.lumi-notification--primary {
 		border-left: 4px solid var(--lumi-color-primary);
-		background: color-mix(in srgb, var(--lumi-color-surface) 95%, var(--lumi-color-primary) 5%);
 	}
 
 	.lumi-notification--primary .lumi-notification__icon {
 		color: var(--lumi-color-primary);
-		background: color-mix(in srgb, var(--lumi-color-primary) 10%, transparent);
+		background-color: var(--lumi-color-primary-bg);
 	}
 
 	/* Icon container */
@@ -160,17 +152,16 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 2rem;
-		height: 2rem;
-		transition: all var(--lumi-transition-base);
-		border-radius: var(--lumi-radius-lg);
-		padding: var(--lumi-space-xs);
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: var(--lumi-radius-full);
 	}
 
 	/* Content area */
 	.lumi-notification__content {
 		flex: 1;
 		min-width: 0;
+		padding-top: 2px;
 	}
 
 	/* Title */
@@ -179,17 +170,17 @@
 		font-weight: var(--lumi-font-weight-semibold);
 		color: var(--lumi-color-text);
 		line-height: var(--lumi-line-height-tight);
-		margin-bottom: var(--lumi-space-sm);
+		margin-bottom: 4px;
+		font-size: var(--lumi-font-size-base);
 	}
 
 	/* Message text */
 	.lumi-notification__text {
 		margin: 0;
 		color: var(--lumi-color-text-muted);
-		line-height: var(--lumi-line-height-relaxed);
+		line-height: var(--lumi-line-height-normal);
+		font-size: var(--lumi-font-size-sm);
 		word-wrap: break-word;
-		overflow-wrap: break-word;
-		hyphens: auto;
 	}
 
 	/* Close button */
@@ -198,19 +189,20 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: var(--lumi-space-lg);
-		height: var(--lumi-space-lg);
+		width: 24px;
+		height: 24px;
 		padding: 0;
-		background: none;
+		background: transparent;
 		border: none;
-		border-radius: var(--lumi-radius-full);
+		border-radius: var(--lumi-radius-md);
 		color: var(--lumi-color-text-muted);
 		cursor: pointer;
-		transition: all var(--lumi-transition-base);
+		transition: all 0.2s ease;
+		margin-top: 2px;
 	}
 
 	.lumi-notification__close:hover {
-		background: var(--lumi-color-surface);
+		background-color: var(--lumi-color-background-hover);
 		color: var(--lumi-color-text);
 	}
 
@@ -220,11 +212,11 @@
 	}
 
 	/* Responsive adjustments */
-	@media (max-width: 768px) {
+	@media (max-width: 640px) {
 		.lumi-notification {
 			min-width: auto;
-			max-width: none;
 			width: 100%;
+			border-radius: var(--lumi-radius-lg);
 		}
 	}
 

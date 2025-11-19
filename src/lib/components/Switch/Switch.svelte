@@ -28,6 +28,7 @@
 	);
 
 	const handleChange = (event: Event) => {
+		if (disabled) return;
 		const target = event.target as HTMLInputElement;
 		checked = target.checked;
 		onchange?.(checked, event);
@@ -72,6 +73,7 @@
 		cursor: pointer;
 		user-select: none;
 		font-family: var(--lumi-font-family-sans);
+		transition: opacity 0.2s ease;
 	}
 
 	.lumi-switch__input {
@@ -86,22 +88,22 @@
 		position: relative;
 		width: 2.75rem;
 		height: 1.5rem;
-		background: var(--lumi-color-gray-300);
+		background: var(--lumi-color-border-strong);
 		border-radius: var(--lumi-radius-full);
-		transition: var(--lumi-transition-all);
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 		flex-shrink: 0;
 	}
 
 	.lumi-switch__thumb {
 		position: absolute;
-		top: 0.125rem;
-		left: 0.125rem;
-		width: 1.25rem;
-		height: 1.25rem;
+		top: 2px;
+		left: 2px;
+		width: calc(1.5rem - 4px);
+		height: calc(1.5rem - 4px);
 		background: var(--lumi-color-white);
 		border-radius: var(--lumi-radius-full);
 		box-shadow: var(--lumi-shadow-sm);
-		transition: var(--lumi-transition-all);
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
 	.lumi-switch__label {
@@ -110,7 +112,6 @@
 		font-weight: var(--lumi-font-weight-medium);
 		line-height: var(--lumi-line-height-normal);
 		cursor: pointer;
-		transition: var(--lumi-transition-colors);
 	}
 
 	/* Size variants */
@@ -120,8 +121,8 @@
 	}
 
 	.lumi-switch--sm .lumi-switch__thumb {
-		width: 1rem;
-		height: 1rem;
+		width: calc(1.25rem - 4px);
+		height: calc(1.25rem - 4px);
 	}
 
 	.lumi-switch--sm .lumi-switch__label {
@@ -134,8 +135,8 @@
 	}
 
 	.lumi-switch--md .lumi-switch__thumb {
-		width: 1.25rem;
-		height: 1.25rem;
+		width: calc(1.5rem - 4px);
+		height: calc(1.5rem - 4px);
 	}
 
 	.lumi-switch--md .lumi-switch__label {
@@ -148,8 +149,8 @@
 	}
 
 	.lumi-switch--lg .lumi-switch__thumb {
-		width: 1.5rem;
-		height: 1.5rem;
+		width: calc(1.75rem - 4px);
+		height: calc(1.75rem - 4px);
 	}
 
 	.lumi-switch--lg .lumi-switch__label {
@@ -196,32 +197,42 @@
 
 	/* Hover effects */
 	.lumi-switch:not(.lumi-switch--disabled):hover .lumi-switch__track {
-		box-shadow: var(--lumi-shadow-md);
+		box-shadow: var(--lumi-shadow-sm);
 	}
-
-	.lumi-switch:not(.lumi-switch--disabled):hover .lumi-switch__thumb {
-		box-shadow: var(--lumi-shadow-md);
+	
+	/* Focus styles */
+	.lumi-switch__input:focus-visible + .lumi-switch__track {
+		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-primary);
+	}
+	
+	.lumi-switch--secondary .lumi-switch__input:focus-visible + .lumi-switch__track {
+		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-secondary);
+	}
+	
+	.lumi-switch--success .lumi-switch__input:focus-visible + .lumi-switch__track {
+		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-success);
+	}
+	
+	.lumi-switch--warning .lumi-switch__input:focus-visible + .lumi-switch__track {
+		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-warning);
+	}
+	
+	.lumi-switch--danger .lumi-switch__input:focus-visible + .lumi-switch__track {
+		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-danger);
+	}
+	
+	.lumi-switch--info .lumi-switch__input:focus-visible + .lumi-switch__track {
+		box-shadow: 0 0 0 2px var(--lumi-color-background), 0 0 0 4px var(--lumi-color-info);
 	}
 
 	/* Disabled state */
 	.lumi-switch--disabled {
 		cursor: not-allowed;
-		opacity: 0.5;
+		opacity: 0.6;
 	}
 
 	.lumi-switch--disabled .lumi-switch__track {
-		background: var(--lumi-color-gray-200);
-	}
-
-	.lumi-switch--disabled .lumi-switch__label {
-		cursor: not-allowed;
-		color: var(--lumi-color-text-muted);
-	}
-
-	/* Focus styles */
-	.lumi-switch:focus-within .lumi-switch__track {
-		outline: 2px solid var(--lumi-color-primary);
-		outline-offset: 2px;
+		background: var(--lumi-color-border);
 	}
 
 	/* Accessibility */

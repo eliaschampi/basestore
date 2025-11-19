@@ -65,7 +65,7 @@
 
 	{#if icon}
 		<div class="lumi-list-item__icon">
-			<Icon {icon} size="20px" />
+			<Icon {icon} size="var(--list-icon-size, 20px)" />
 		</div>
 	{/if}
 
@@ -102,13 +102,15 @@
 	.lumi-list-item {
 		display: flex;
 		align-items: center;
-		gap: var(--lumi-space-sm);
-		padding: var(--lumi-space-sm) var(--lumi-space-md);
-		border-radius: var(--lumi-radius-lg);
-		transition: var(--lumi-transition-all);
+		gap: var(--lumi-space-md);
+		padding: var(--list-item-padding, var(--lumi-space-sm) var(--lumi-space-md));
+		border-radius: var(--lumi-radius-md);
+		transition: all 0.2s ease;
 		cursor: default;
 		background: transparent;
 		position: relative;
+		color: var(--lumi-color-text);
+		text-decoration: none;
 	}
 
 	/* Avatar */
@@ -119,6 +121,8 @@
 		width: 32px;
 		height: 32px;
 		flex-shrink: 0;
+		border-radius: var(--lumi-radius-full);
+		overflow: hidden;
 	}
 
 	/* Icon */
@@ -126,10 +130,9 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 20px;
-		height: 20px;
-		color: var(--lumi-color-primary);
+		color: var(--lumi-color-text-muted);
 		flex-shrink: 0;
+		transition: color 0.2s;
 	}
 
 	/* Content */
@@ -142,24 +145,24 @@
 	}
 
 	.lumi-list-item__title {
-		font-size: var(--lumi-font-size-base);
+		font-size: var(--list-font-size, var(--lumi-font-size-base));
 		font-weight: var(--lumi-font-weight-medium);
-		color: var(--lumi-color-text);
+		color: inherit;
 		line-height: var(--lumi-line-height-tight);
-		margin: 0;
 	}
 
 	.lumi-list-item__subtitle {
-		font-size: var(--lumi-font-size-sm);
+		font-size: 0.85em;
 		color: var(--lumi-color-text-muted);
 		line-height: var(--lumi-line-height-normal);
+		margin-top: 2px;
 	}
 
 	/* Actions */
 	.lumi-list-item__actions {
 		display: flex;
 		align-items: center;
-		gap: var(--lumi-space-xs);
+		gap: var(--lumi-space-sm);
 		margin-left: auto;
 	}
 
@@ -174,50 +177,29 @@
 	}
 
 	.lumi-list-item--clickable:hover:not(.lumi-list-item--active):not(.lumi-list-item--disabled) {
-		background: var(--lumi-color-surface-hover);
-		transform: translateX(2px);
+		background: var(--lumi-color-background-hover);
+		color: var(--lumi-color-text);
 	}
-
-	.lumi-list-item--clickable:active {
-		background: var(--lumi-color-surface-hover);
-		transform: translateX(0);
+	
+	.lumi-list-item--clickable:hover .lumi-list-item__icon {
+		color: var(--lumi-color-primary);
 	}
 
 	/* Active state */
 	.lumi-list-item--active {
 		background: var(--lumi-color-primary-bg);
-	}
-
-	.lumi-list-item--active::before {
-		content: "";
-		position: absolute;
-		left: 0;
-		top: 50%;
-		transform: translateY(-50%);
-		width: 3px;
-		height: 60%;
-		background: var(--lumi-color-primary);
-		border-radius: 0 var(--lumi-radius-full) var(--lumi-radius-full) 0;
+		color: var(--lumi-color-primary);
 	}
 
 	.lumi-list-item--active .lumi-list-item__title {
-		color: var(--lumi-color-primary);
 		font-weight: var(--lumi-font-weight-semibold);
 	}
 
 	.lumi-list-item--active .lumi-list-item__icon {
 		color: var(--lumi-color-primary);
 	}
-
-	/* Hover for non-active items */
-	.lumi-list-item:hover:not(.lumi-list-item--disabled):not(.lumi-list-item--active) {
-		background: var(--lumi-color-surface-hover);
-	}
-
-	/* Reduced motion support */
-	@media (prefers-reduced-motion: reduce) {
-		.lumi-list-item {
-			transition: none;
-		}
+	
+	.lumi-list-item--active .lumi-list-item__subtitle {
+		color: color-mix(in srgb, var(--lumi-color-primary) 70%, transparent);
 	}
 </style>

@@ -55,11 +55,16 @@
 	}}
 >
 	{#if icon}
-		<Icon {icon} size="sm" />
+		<div class="lumi-dropdown-item__icon">
+			<Icon {icon} size="16px" />
+		</div>
 	{/if}
-	{#if children}
-		{@render children()}
-	{/if}
+	
+	<span class="lumi-dropdown-item__content">
+		{#if children}
+			{@render children()}
+		{/if}
+	</span>
 </button>
 
 <style>
@@ -67,41 +72,73 @@
 		width: 100%;
 		padding: var(--lumi-space-sm) var(--lumi-space-md);
 		cursor: pointer;
-		transition: var(--lumi-transition-all);
+		transition: all 0.1s ease;
 		user-select: none;
 		color: var(--lumi-color-text);
-		font-size: var(--lumi-font-size-base);
+		font-size: var(--lumi-font-size-sm);
 		line-height: var(--lumi-line-height-normal);
 		display: flex;
 		align-items: center;
-		gap: var(--lumi-space-sm);
+		gap: var(--lumi-space-md);
 		background: transparent;
 		border: none;
-		border-radius: var(--lumi-radius-md);
+		border-radius: var(--lumi-radius-sm);
 		text-align: left;
+		text-decoration: none;
 	}
 
 	.lumi-dropdown-item:hover:not(.lumi-dropdown-item--disabled) {
 		background: var(--lumi-color-background-hover);
+		color: var(--lumi-color-text);
 	}
 
-	.lumi-dropdown-item:focus {
+	.lumi-dropdown-item:focus-visible {
 		outline: none;
 		background: var(--lumi-color-background-hover);
 		box-shadow: inset 0 0 0 2px var(--lumi-color-primary);
 	}
+	
+	.lumi-dropdown-item:active:not(.lumi-dropdown-item--disabled) {
+		transform: scale(0.98);
+	}
 
+	.lumi-dropdown-item__icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--lumi-color-text-muted);
+		flex-shrink: 0;
+		width: 16px;
+		height: 16px;
+	}
+
+	.lumi-dropdown-item:hover .lumi-dropdown-item__icon {
+		color: inherit;
+	}
+
+	.lumi-dropdown-item__content {
+		flex: 1;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	/* States */
 	.lumi-dropdown-item--disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
-		pointer-events: none;
 	}
 
 	.lumi-dropdown-item--danger {
 		color: var(--lumi-color-danger);
 	}
 
+	.lumi-dropdown-item--danger .lumi-dropdown-item__icon {
+		color: var(--lumi-color-danger);
+	}
+
 	.lumi-dropdown-item--danger:hover:not(.lumi-dropdown-item--disabled) {
-		background: color-mix(in srgb, var(--lumi-color-danger) 10%, transparent);
+		background: var(--lumi-color-danger-bg);
+		color: var(--lumi-color-danger);
 	}
 </style>

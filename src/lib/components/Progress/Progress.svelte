@@ -115,7 +115,7 @@
 			aria-valuemax="100"
 		>
 			<!-- Striped pattern -->
-			{#if striped}
+			{#if striped || animated}
 				<div class="lumi-progress__stripes"></div>
 			{/if}
 		</div>
@@ -156,14 +156,15 @@
 		height: 100%;
 		background: var(--lumi-color-primary);
 		border-radius: var(--lumi-radius-full);
-		transition: width 0.3s ease-out;
+		transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		position: relative;
 		overflow: hidden;
 	}
 
 	.lumi-progress__bar--indeterminate {
 		width: 30% !important;
-		animation: lumi-progress-indeterminate 1.5s ease-in-out infinite;
+		position: absolute;
+		animation: lumi-progress-indeterminate 1.5s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
 	}
 
 	.lumi-progress__stripes {
@@ -192,6 +193,7 @@
 		color: var(--lumi-color-text);
 		min-width: 3rem;
 		text-align: right;
+		font-variant-numeric: tabular-nums;
 	}
 
 	/* Size Variants */
@@ -204,15 +206,15 @@
 	}
 
 	.lumi-progress--md .lumi-progress__track {
-		height: var(--lumi-space-md);
+		height: 12px;
 	}
 
 	.lumi-progress--lg .lumi-progress__track {
-		height: var(--lumi-space-lg);
+		height: 16px;
 	}
 
 	.lumi-progress--xl .lumi-progress__track {
-		height: var(--lumi-space-xl);
+		height: 24px;
 	}
 
 	/* Color Variants */
@@ -242,19 +244,25 @@
 
 	@keyframes lumi-progress-indeterminate {
 		0% {
-			transform: translateX(-100%);
+			left: -35%;
+			right: 100%;
+		}
+		60% {
+			left: 100%;
+			right: -90%;
 		}
 		100% {
-			transform: translateX(400%);
+			left: 100%;
+			right: -90%;
 		}
 	}
 
 	@keyframes lumi-progress-stripes {
 		0% {
-			background-position: 0 0;
+			background-position: 1rem 0;
 		}
 		100% {
-			background-position: 1rem 0;
+			background-position: 0 0;
 		}
 	}
 

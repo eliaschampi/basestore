@@ -26,28 +26,27 @@
 		width: 100%;
 		position: relative;
 		font-family: var(--lumi-font-family-sans);
-		background: transparent;
-		border: none;
-		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
 	}
 
 	/* Size variants */
-	.lumi-list--sm :global(.lumi-list-item),
-	.lumi-list--sm :global(.lumi-list-header) {
-		padding: var(--lumi-space-xs) var(--lumi-space-sm);
-		font-size: var(--lumi-font-size-sm);
+	.lumi-list--sm {
+		--list-item-padding: var(--lumi-space-xs) var(--lumi-space-sm);
+		--list-font-size: var(--lumi-font-size-sm);
+		--list-icon-size: 16px;
 	}
 
-	.lumi-list--md :global(.lumi-list-item),
-	.lumi-list--md :global(.lumi-list-header) {
-		padding: var(--lumi-space-sm) var(--lumi-space-md);
-		font-size: var(--lumi-font-size-base);
+	.lumi-list--md {
+		--list-item-padding: var(--lumi-space-sm) var(--lumi-space-md);
+		--list-font-size: var(--lumi-font-size-base);
+		--list-icon-size: 20px;
 	}
 
 	/* Disabled state */
 	.lumi-list--disabled {
-		opacity: 0.5;
+		opacity: 0.6;
 		pointer-events: none;
-		cursor: not-allowed;
 	}
 </style>

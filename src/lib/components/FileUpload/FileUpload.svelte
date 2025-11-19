@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { Icon } from "../Icon";
-	import { Loading } from "../Loading";
-	import type { FileUploadFile, FileUploadProps } from "./types";
+	import { Icon } from '../Icon';
+	import { Loading } from '../Loading';
+	import type { FileUploadFile, FileUploadProps } from './types';
 
 	let {
 		files = $bindable([]),
-		placeholderText = "Upload your files",
-		accept = "*",
+		placeholderText = 'Upload your files',
+		accept = '*',
 		multiple = false,
 		maxSize = 0,
 		disabled = false,
-		class: className = "",
+		class: className = '',
 		onchange,
 		onremove
 	}: FileUploadProps = $props();
@@ -20,15 +20,15 @@
 
 	// Computed classes
 	const dropzoneClasses = $derived(() => {
-		const hasError = files.some((f) => f.status === "error");
+		const hasError = files.some((f) => f.status === 'error');
 		return [
-			"lumi-file-upload__dropzone",
-			isDragging && "lumi-file-upload__dropzone--dragging",
-			disabled && "lumi-file-upload__dropzone--disabled",
-			hasError && "lumi-file-upload__dropzone--error"
+			'lumi-file-upload__dropzone',
+			isDragging && 'lumi-file-upload__dropzone--dragging',
+			disabled && 'lumi-file-upload__dropzone--disabled',
+			hasError && 'lumi-file-upload__dropzone--error'
 		]
 			.filter(Boolean)
-			.join(" ");
+			.join(' ');
 	});
 
 	// Process files with validation
@@ -39,13 +39,13 @@
 			const newFile: FileUploadFile = {
 				id: `${file.name}-${file.lastModified}-${Math.random().toString(36).substring(2, 11)}`,
 				file,
-				status: "selected",
+				status: 'selected',
 				progress: 0
 			};
 
 			// Validation: max size
 			if (maxSize > 0 && file.size > maxSize) {
-				newFile.status = "error";
+				newFile.status = 'error';
 				newFile.error = `Max size: ${formatFileSize(maxSize)}`;
 			}
 
@@ -66,7 +66,7 @@
 		const target = event.target as HTMLInputElement;
 		if (!target.files) return;
 		processFiles(Array.from(target.files));
-		target.value = ""; // Reset to allow same file selection
+		target.value = ''; // Reset to allow same file selection
 	};
 
 	const handleDragOver = (event: DragEvent) => {
@@ -88,8 +88,8 @@
 	};
 
 	const openFileDialog = () => {
-		// Only open dialog if empty, otherwise the div acts as container
-		if (files.length === 0 && !disabled) {
+		// Only open dialog if empty or multiple, otherwise the div acts as container
+		if (!disabled) {
 			fileInputRef?.click();
 		}
 	};
@@ -101,9 +101,9 @@
 	};
 
 	const formatFileSize = (bytes: number): string => {
-		if (bytes === 0) return "0 B";
+		if (bytes === 0) return '0 B';
 		const k = 1024;
-		const sizes = ["B", "KB", "MB", "GB", "TB"];
+		const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
 		const i = Math.floor(Math.log(bytes) / Math.log(k));
 		return `${parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
 	};
@@ -115,25 +115,25 @@
 	};
 
 	export const upload = async () => {
-		const filesToUpload = files.filter((f) => f.status === "selected" || f.status === "error");
+		const filesToUpload = files.filter((f) => f.status === 'selected' || f.status === 'error');
 		await Promise.all(filesToUpload.map(uploadFile));
 	};
 
 	// Simulated upload (replace with real API call)
 	const uploadFile = (fileWrapper: FileUploadFile): Promise<FileUploadFile> => {
 		return new Promise((resolve) => {
-			if (fileWrapper.status !== "selected" && fileWrapper.status !== "error") {
+			if (fileWrapper.status !== 'selected' && fileWrapper.status !== 'error') {
 				resolve(fileWrapper);
 				return;
 			}
 
 			// Reset error state on re-upload attempt
-			if (fileWrapper.status === "error") {
-				fileWrapper.status = "selected";
+			if (fileWrapper.status === 'error') {
+				fileWrapper.status = 'selected';
 				fileWrapper.error = undefined;
 			}
 
-			fileWrapper.status = "uploading";
+			fileWrapper.status = 'uploading';
 			fileWrapper.progress = 0;
 
 			const interval = setInterval(() => {
@@ -141,7 +141,7 @@
 				if (fileWrapper.progress >= 100) {
 					clearInterval(interval);
 					fileWrapper.progress = 100;
-					fileWrapper.status = "success";
+					fileWrapper.status = 'success';
 					resolve(fileWrapper);
 				}
 			}, 200);
@@ -154,7 +154,7 @@
 		class={dropzoneClasses()}
 		onclick={openFileDialog}
 		onkeydown={(e) => {
-			if (e.key === "Enter" || e.key === " ") {
+			if (e.key === 'Enter' || e.key === ' ') {
 				e.preventDefault();
 				openFileDialog();
 			}
@@ -180,7 +180,9 @@
 		{#if files.length === 0}
 			<!-- Placeholder (Empty State) -->
 			<div class="lumi-file-upload__placeholder">
-				<Icon icon="upload" size="3xl" class="lumi-file-upload__placeholder-icon" />
+				<div class="lumi-file-upload__icon-wrapper">
+					<Icon icon="upload" size="xl" class="lumi-file-upload__placeholder-icon" />
+				</div>
 				<span class="lumi-file-upload__placeholder-text">{placeholderText}</span>
 				<span class="lumi-file-upload__placeholder-info">
 					Drag your files here or click to select
@@ -192,16 +194,23 @@
 				{#each files as fileWrapper (fileWrapper.id)}
 					<div
 						class="lumi-file-upload__file-item lumi-file-upload__file-item--{fileWrapper.status}"
+						onclick={(e) => e.stopPropagation()}
+						role="group"
+						aria-label="File item"
 					>
 						<!-- File Icon -->
-						<Icon icon="file" class="lumi-file-upload__file-item-icon" />
+						<div class="lumi-file-upload__file-icon">
+							<Icon icon="file" size="lg" />
+						</div>
 
 						<!-- File Details -->
 						<div class="lumi-file-upload__file-item-details">
-							<span class="lumi-file-upload__file-item-name">{fileWrapper.file.name}</span>
+							<span class="lumi-file-upload__file-item-name" title={fileWrapper.file.name}
+								>{fileWrapper.file.name}</span
+							>
 							<span class="lumi-file-upload__file-item-info">
-								{#if fileWrapper.status === "error"}
-									{fileWrapper.error}
+								{#if fileWrapper.status === 'error'}
+									<span class="lumi-text--danger">{fileWrapper.error}</span>
 								{:else}
 									{formatFileSize(fileWrapper.file.size)}
 								{/if}
@@ -210,13 +219,13 @@
 
 						<!-- Actions & Status -->
 						<div class="lumi-file-upload__file-item-actions">
-							{#if fileWrapper.status === "uploading"}
-								<Loading color="primary" />
+							{#if fileWrapper.status === 'uploading'}
+								<Loading size="sm" color="primary" />
 							{/if}
-							{#if fileWrapper.status === "success"}
-								<Icon icon="checkCircle" color="success" />
+							{#if fileWrapper.status === 'success'}
+								<Icon icon="checkCircle" color="var(--lumi-color-success)" size="md" />
 							{/if}
-							{#if ["selected", "error"].includes(fileWrapper.status) && !disabled}
+							{#if ['selected', 'error'].includes(fileWrapper.status) && !disabled}
 								<button
 									type="button"
 									class="lumi-file-upload__remove-btn"
@@ -226,13 +235,13 @@
 									}}
 									aria-label="Remove file"
 								>
-									<Icon icon="x" color="danger" size="sm" />
+									<Icon icon="x" size="sm" />
 								</button>
 							{/if}
 						</div>
 
 						<!-- Progress Bar -->
-						{#if ["uploading", "success"].includes(fileWrapper.status)}
+						{#if ['uploading', 'success'].includes(fileWrapper.status)}
 							<div class="lumi-file-upload__progress-track">
 								<div
 									class="lumi-file-upload__progress-bar"
@@ -242,6 +251,20 @@
 						{/if}
 					</div>
 				{/each}
+
+				{#if multiple}
+					<button
+						type="button"
+						class="lumi-file-upload__add-more"
+						onclick={(e) => {
+							e.stopPropagation();
+							openFileDialog();
+						}}
+					>
+						<Icon icon="plus" size="sm" />
+						<span>Add more files</span>
+					</button>
+				{/if}
 			</div>
 		{/if}
 	</div>
@@ -262,12 +285,12 @@
 		display: flex;
 		flex-direction: column;
 		width: 100%;
-		min-height: 10rem;
+		min-height: 160px;
 		padding: var(--lumi-space-lg);
-		border: 1px dashed var(--lumi-color-border);
+		border: 2px dashed var(--lumi-color-border);
 		border-radius: var(--lumi-radius-lg);
-		background-color: var(--lumi-color-background);
-		transition: all var(--lumi-transition-base);
+		background-color: var(--lumi-color-surface);
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 		position: relative;
 		overflow: hidden;
 		cursor: pointer;
@@ -275,29 +298,31 @@
 
 	.lumi-file-upload__dropzone:not(.lumi-file-upload__dropzone--disabled):hover {
 		border-color: var(--lumi-color-primary);
-		box-shadow: 0 0 0 3px color-mix(in srgb, var(--lumi-color-primary) 10%, transparent);
+		background-color: var(--lumi-color-background-hover);
+	}
+
+	.lumi-file-upload__dropzone:focus-visible {
+		outline: none;
+		border-color: var(--lumi-color-primary);
+		box-shadow: 0 0 0 4px var(--lumi-color-primary-bg);
 	}
 
 	.lumi-file-upload__dropzone--dragging {
 		border-color: var(--lumi-color-primary);
-		background-color: color-mix(
-			in srgb,
-			var(--lumi-color-primary) 5%,
-			var(--lumi-color-background)
-		);
+		background-color: var(--lumi-color-primary-bg);
 		transform: scale(1.01);
-		box-shadow: 0 0 0 3px color-mix(in srgb, var(--lumi-color-primary) 15%, transparent);
 	}
 
 	.lumi-file-upload__dropzone--disabled {
 		opacity: 0.6;
 		cursor: not-allowed;
-		background-color: var(--lumi-color-background);
+		background-color: var(--lumi-color-background-secondary);
+		border-style: solid;
 	}
 
 	.lumi-file-upload__dropzone--error {
 		border-color: var(--lumi-color-danger);
-		background-color: color-mix(in srgb, var(--lumi-color-danger) 5%, var(--lumi-color-background));
+		background-color: var(--lumi-color-danger-bg);
 	}
 
 	/* Placeholder shown when dropzone is empty */
@@ -310,25 +335,37 @@
 		gap: var(--lumi-space-sm);
 		flex-grow: 1;
 		color: var(--lumi-color-text-muted);
+		padding: var(--lumi-space-lg);
 	}
 
-	.lumi-file-upload__placeholder-icon {
+	.lumi-file-upload__icon-wrapper {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 48px;
+		height: 48px;
+		border-radius: var(--lumi-radius-full);
+		background-color: var(--lumi-color-background-secondary);
+		color: var(--lumi-color-text-muted);
+		transition: all 0.2s ease;
+		margin-bottom: var(--lumi-space-xs);
+	}
+
+	.lumi-file-upload__dropzone:hover .lumi-file-upload__icon-wrapper {
+		background-color: var(--lumi-color-primary-bg);
 		color: var(--lumi-color-primary);
-		opacity: 0.8;
-		transition: transform var(--lumi-transition-base);
-	}
-
-	.lumi-file-upload__placeholder:hover .lumi-file-upload__placeholder-icon {
 		transform: scale(1.1);
 	}
 
 	.lumi-file-upload__placeholder-text {
-		font-weight: var(--lumi-font-weight-semibold);
+		font-weight: var(--lumi-font-weight-medium);
 		color: var(--lumi-color-text);
+		font-size: var(--lumi-font-size-lg);
 	}
 
 	.lumi-file-upload__placeholder-info {
 		font-size: var(--lumi-font-size-sm);
+		color: var(--lumi-color-text-muted);
 	}
 
 	/* Hidden native input */
@@ -341,8 +378,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--lumi-space-sm);
-		overflow-y: auto;
-		max-height: 300px;
+		width: 100%;
 	}
 
 	/* Individual file item */
@@ -350,15 +386,30 @@
 		display: grid;
 		grid-template-columns: auto 1fr auto;
 		align-items: center;
-		gap: var(--lumi-space-sm);
-		padding: var(--lumi-space-sm);
-		background-color: var(--lumi-color-surface);
+		gap: var(--lumi-space-md);
+		padding: var(--lumi-space-md);
+		background-color: var(--lumi-color-background);
+		border: 1px solid var(--lumi-color-border);
 		border-radius: var(--lumi-radius-md);
-		border: 1px solid transparent;
-		transition: all var(--lumi-transition-base);
+		transition: all 0.2s ease;
+		position: relative;
+		overflow: hidden;
+		cursor: default;
 	}
 
-	.lumi-file-upload__file-item-icon {
+	.lumi-file-upload__file-item:hover {
+		border-color: var(--lumi-color-border-strong);
+		box-shadow: var(--lumi-shadow-sm);
+	}
+
+	.lumi-file-upload__file-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 40px;
+		height: 40px;
+		border-radius: var(--lumi-radius-md);
+		background-color: var(--lumi-color-background-secondary);
 		color: var(--lumi-color-text-muted);
 	}
 
@@ -366,17 +417,20 @@
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
+		gap: 2px;
 	}
 
 	.lumi-file-upload__file-item-name {
 		font-weight: var(--lumi-font-weight-medium);
+		color: var(--lumi-color-text);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+		font-size: var(--lumi-font-size-sm);
 	}
 
 	.lumi-file-upload__file-item-info {
-		font-size: var(--lumi-font-size-sm);
+		font-size: var(--lumi-font-size-xs);
 		color: var(--lumi-color-text-muted);
 	}
 
@@ -393,13 +447,15 @@
 		background: none;
 		border: none;
 		cursor: pointer;
-		padding: var(--lumi-space-2xs);
+		padding: var(--lumi-space-xs);
 		border-radius: var(--lumi-radius-sm);
-		transition: background-color var(--lumi-transition-base);
+		color: var(--lumi-color-text-muted);
+		transition: all 0.2s ease;
 	}
 
 	.lumi-file-upload__remove-btn:hover {
-		background-color: color-mix(in srgb, var(--lumi-color-danger) 10%, transparent);
+		background-color: var(--lumi-color-danger-bg);
+		color: var(--lumi-color-danger);
 	}
 
 	/* File item states */
@@ -409,37 +465,62 @@
 
 	.lumi-file-upload__file-item--success {
 		border-color: var(--lumi-color-success);
+		background-color: color-mix(in srgb, var(--lumi-color-success) 5%, var(--lumi-color-surface));
 	}
 
-	.lumi-file-upload__file-item--success .lumi-file-upload__progress-bar {
-		background-color: var(--lumi-color-success);
-		width: 100% !important;
+	.lumi-file-upload__file-item--success .lumi-file-upload__file-icon {
+		background-color: var(--lumi-color-success-bg);
+		color: var(--lumi-color-success);
 	}
 
 	.lumi-file-upload__file-item--error {
 		border-color: var(--lumi-color-danger);
-		background-color: color-mix(in srgb, var(--lumi-color-danger) 5%, var(--lumi-color-surface));
+		background-color: var(--lumi-color-danger-bg);
 	}
 
-	.lumi-file-upload__file-item--error .lumi-file-upload__file-item-info {
+	.lumi-file-upload__file-item--error .lumi-file-upload__file-icon {
+		background-color: var(--lumi-color-danger-bg);
 		color: var(--lumi-color-danger);
 	}
 
 	/* Progress bar */
 	.lumi-file-upload__progress-track {
-		grid-column: 1 / -1;
-		height: 4px;
-		background-color: var(--lumi-color-border);
-		border-radius: var(--lumi-radius-full);
-		margin-top: var(--lumi-space-xs);
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		height: 3px;
+		background-color: transparent;
 		overflow: hidden;
 	}
 
 	.lumi-file-upload__progress-bar {
 		height: 100%;
 		width: 0;
-		border-radius: inherit;
 		background-color: var(--lumi-color-primary);
 		transition: width 0.4s ease;
+	}
+
+	/* Add more button */
+	.lumi-file-upload__add-more {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--lumi-space-xs);
+		padding: var(--lumi-space-sm);
+		background: transparent;
+		border: 1px dashed var(--lumi-color-border);
+		border-radius: var(--lumi-radius-md);
+		color: var(--lumi-color-text-muted);
+		font-size: var(--lumi-font-size-sm);
+		cursor: pointer;
+		transition: all 0.2s ease;
+		width: 100%;
+	}
+
+	.lumi-file-upload__add-more:hover {
+		border-color: var(--lumi-color-primary);
+		color: var(--lumi-color-primary);
+		background-color: var(--lumi-color-primary-bg);
 	}
 </style>

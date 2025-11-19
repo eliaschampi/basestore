@@ -13,8 +13,8 @@
 		closeOnClick = true,
 		closeOnScroll = true,
 		itemSelector = ".lumi-context-item",
-		maxHeight = 400,
-		viewportPadding = 16,
+		maxHeight = 300,
+		viewportPadding = 12,
 		class: className = "",
 		onopen,
 		onclose,
@@ -63,17 +63,14 @@
 				const maxLeft = window.innerWidth - offsetWidth - viewportPadding;
 				const maxTop = window.innerHeight - offsetHeight - viewportPadding;
 
-				left = Math.min(clientX, maxLeft);
-				top = Math.min(clientY, maxTop);
+				left = Math.min(Math.max(viewportPadding, clientX), maxLeft);
+				top = Math.min(Math.max(viewportPadding, clientY), maxTop);
 
 				// Small delay to ensure smooth animation
 				setTimeout(() => {
 					isPositioned = true;
-
-					// Focus the menu for keyboard navigation
 					contextMenu?.focus();
 
-					// Add scroll listener if needed
 					if (closeOnScroll) {
 						window.addEventListener("scroll", close, { passive: true });
 					}
@@ -88,14 +85,11 @@
 		if (!show) return;
 
 		isPositioned = false;
-
-		// Small delay for exit animation
 		setTimeout(() => {
 			show = false;
 			contextData = null;
 		}, 150);
 
-		// Remove scroll listener
 		if (closeOnScroll) {
 			window.removeEventListener("scroll", close);
 		}
@@ -175,9 +169,11 @@
 		onkeydown={handleKeydown}
 		onclick={handleClick}
 	>
-		{#if children}
-			{@render children({ data: contextData })}
-		{/if}
+		<div class="lumi-context__content">
+			{#if children}
+				{@render children({ data: contextData })}
+			{/if}
+		</div>
 	</div>
 {/if}
 
@@ -186,62 +182,54 @@
 		position: fixed;
 		z-index: var(--lumi-z-dropdown);
 		background: var(--lumi-color-surface);
-		border-radius: var(--lumi-radius-2xl);
+		border: 1px solid var(--lumi-color-border);
+		border-radius: var(--lumi-radius-lg);
 		padding: var(--lumi-space-xs);
-		min-width: 12rem;
-		max-width: 20rem;
-		box-shadow: var(--lumi-shadow-md);
-		border: 1px solid var(--lumi-color-border-light);
+		min-width: 160px;
+		max-width: 280px;
+		box-shadow: var(--lumi-shadow-lg);
 		outline: none;
-		overflow-y: auto;
 		opacity: 0;
-		transform: scale(0.95);
-		transition:
-			opacity 0.15s ease,
-			transform 0.15s ease;
+		transform-origin: top left;
+		display: flex;
+		flex-direction: column;
 	}
 
 	.lumi-context--visible {
 		opacity: 1;
-		transform: scale(1);
 	}
 
-	.lumi-context:focus {
-		outline: none;
+	.lumi-context__content {
+		overflow-y: auto;
+		max-height: inherit;
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
 	}
 
-	.lumi-context::-webkit-scrollbar {
-		width: 6px;
+	/* Scrollbar */
+	.lumi-context__content::-webkit-scrollbar {
+		width: 4px;
 	}
 
-	.lumi-context::-webkit-scrollbar-track {
-		background: var(--lumi-color-background);
-		border-radius: var(--lumi-radius-base);
+	.lumi-context__content::-webkit-scrollbar-track {
+		background: transparent;
 	}
 
-	.lumi-context::-webkit-scrollbar-thumb {
-		background: var(--lumi-color-border-strong);
-		border-radius: var(--lumi-radius-base);
+	.lumi-context__content::-webkit-scrollbar-thumb {
+		background: var(--lumi-color-border);
+		border-radius: var(--lumi-radius-full);
 	}
 
-	.lumi-context::-webkit-scrollbar-thumb:hover {
-		background: var(--lumi-color-text-muted);
-	}
-	.lumi-context--sm {
-		min-width: 150px;
-	}
-
-	.lumi-context--md {
-		min-width: 200px;
-	}
-
-	.lumi-context--lg {
-		min-width: 250px;
-	}
+	/* Sizes */
+	.lumi-context--sm { min-width: 140px; }
+	.lumi-context--md { min-width: 180px; }
+	.lumi-context--lg { min-width: 240px; }
 
 	@media (prefers-reduced-motion: reduce) {
 		.lumi-context {
-			transition: none;
+			transition: none !important;
+			animation: none !important;
 		}
 	}
 </style>

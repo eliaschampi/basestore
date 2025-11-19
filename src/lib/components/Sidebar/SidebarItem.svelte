@@ -22,16 +22,10 @@
 			.filter(Boolean)
 			.join(" ");
 	});
-
-	function handleClick(): void {
-		if (!href) {
-			onclick?.();
-		}
-	}
 </script>
 
 {#if href}
-	<a {href} class={itemClasses()}>
+	<a {href} class={itemClasses()} onclick={onclick}>
 		{#if icon}
 			<span class="lumi-sidebar-item__icon">
 				{@render icon()}
@@ -64,40 +58,43 @@
 
 <style>
 	.lumi-sidebar-item {
-		text-decoration: none;
 		position: relative;
 		display: flex;
 		align-items: center;
 		gap: var(--lumi-space-md);
 		padding: var(--lumi-space-sm) var(--lumi-space-md);
+		min-height: 44px;
 		border-radius: var(--lumi-radius-md);
 		color: var(--lumi-color-text-muted);
 		font-weight: var(--lumi-font-weight-medium);
 		font-size: var(--lumi-font-size-base);
+		text-decoration: none;
 		background: transparent;
 		border: none;
 		cursor: pointer;
 		text-align: left;
-		transition: all var(--lumi-duration-fast) var(--lumi-easing-default);
+		transition: all 0.2s ease;
 		width: 100%;
+		outline: none;
+	}
+
+	.lumi-sidebar-item:hover {
+		background: var(--lumi-color-background-hover);
+		color: var(--lumi-color-text);
+	}
+
+	.lumi-sidebar-item:focus-visible {
+		box-shadow: 0 0 0 2px var(--lumi-color-primary);
 	}
 
 	.lumi-sidebar-item--active {
 		background: var(--lumi-color-primary-bg);
 		color: var(--lumi-color-primary);
 	}
-	
 
-	.lumi-sidebar-item--active::before {
-		content: "";
-		position: absolute;
-		left: 0;
-		top: 50%;
-		transform: translateY(-50%);
-		width: 4px;
-		height: 60%;
-		background: var(--lumi-color-primary);
-		border-radius: 0 var(--lumi-radius-full) var(--lumi-radius-full) 0;
+	.lumi-sidebar-item--active:hover {
+		background: var(--lumi-color-primary-bg);
+		color: var(--lumi-color-primary);
 	}
 
 	.lumi-sidebar-item__icon {
@@ -105,6 +102,8 @@
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
+		width: 20px;
+		height: 20px;
 	}
 
 	.lumi-sidebar-item__text {
@@ -112,5 +111,6 @@
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+		line-height: 1.5;
 	}
 </style>

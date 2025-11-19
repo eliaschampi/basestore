@@ -31,8 +31,8 @@
 		trigger = "click",
 		closeOnClickOutside = true,
 		maxHeight = 300,
-		offset = 8,
-		viewportPadding = 16,
+		offset = 4,
+		viewportPadding = 12,
 		class: className = "",
 		onshow,
 		onhide,
@@ -131,6 +131,18 @@
 		}
 	}
 
+	function handleMouseEnter(): void {
+		if (trigger === "hover" && !disabled) {
+			openDropdown();
+		}
+	}
+
+	function handleMouseLeave(): void {
+		if (trigger === "hover" && !disabled) {
+			closeDropdown();
+		}
+	}
+
 	onMount(() => {
 		// Use capture phase for click outside to prevent issues
 		if (closeOnClickOutside) {
@@ -145,7 +157,13 @@
 	});
 </script>
 
-<div bind:this={dropdownRef} class={dropdownClasses()}>
+<div 
+	bind:this={dropdownRef} 
+	class={dropdownClasses()}
+	onmouseenter={handleMouseEnter}
+	onmouseleave={handleMouseLeave}
+	role="presentation"
+>
 	<!-- Trigger -->
 	<div
 		class="lumi-dropdown__trigger"
@@ -175,13 +193,15 @@
 				.zIndex}; {floating.floatingStyles.maxHeight
 				? `max-height: ${floating.floatingStyles.maxHeight}`
 				: ''}"
-			transition:scale={{ duration: 200, start: 0.95 }}
+			transition:scale={{ duration: 150, start: 0.95 }}
 		>
-			{#if content}
-				{@render content()}
-			{:else if children}
-				{@render children()}
-			{/if}
+			<div class="lumi-dropdown__content">
+				{#if content}
+					{@render content()}
+				{:else if children}
+					{@render children()}
+				{/if}
+			</div>
 		</div>
 	{/if}
 </div>
@@ -195,61 +215,61 @@
 	.lumi-dropdown__trigger {
 		cursor: pointer;
 		user-select: none;
+		display: inline-flex;
 	}
 
 	.lumi-dropdown__trigger:focus {
 		outline: none;
 	}
-
-	.lumi-dropdown-item:focus-visible {
-		background: var(--lumi-color-background-hover);
-		box-shadow: inset 0 0 0 2px var(--lumi-color-primary);
-	}
-
-	.lumi-dropdown-item:active {
-		transform: scale(0.98);
+	
+	.lumi-dropdown__trigger:focus-visible {
+		outline: 2px solid var(--lumi-color-primary);
+		border-radius: var(--lumi-radius-md);
 	}
 
 	.lumi-dropdown__menu {
 		background: var(--lumi-color-surface);
-		border: 2px solid var(--lumi-color-border);
-		border-radius: var(--lumi-radius-2xl);
+		border: 1px solid var(--lumi-color-border);
+		border-radius: var(--lumi-radius-lg);
 		box-shadow: var(--lumi-shadow-lg);
 		padding: var(--lumi-space-xs);
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.lumi-dropdown__content {
 		overflow-y: auto;
+		max-height: inherit;
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
 	}
 
-	.lumi-dropdown__menu::-webkit-scrollbar {
-		width: 6px;
+	.lumi-dropdown__content::-webkit-scrollbar {
+		width: 4px;
 	}
 
-	.lumi-dropdown__menu::-webkit-scrollbar-track {
-		background: var(--lumi-color-background);
-		border-radius: var(--lumi-radius-base);
+	.lumi-dropdown__content::-webkit-scrollbar-track {
+		background: transparent;
 	}
 
-	.lumi-dropdown__menu::-webkit-scrollbar-thumb {
-		background: var(--lumi-color-border-strong);
-		border-radius: var(--lumi-radius-base);
-	}
-
-	.lumi-dropdown__menu::-webkit-scrollbar-thumb:hover {
-		background: var(--lumi-color-text-muted);
+	.lumi-dropdown__content::-webkit-scrollbar-thumb {
+		background: var(--lumi-color-border);
+		border-radius: var(--lumi-radius-full);
 	}
 
 	.lumi-dropdown__menu--sm {
-		min-width: 10rem;
-		font-size: var(--lumi-font-size-sm);
+		min-width: 140px;
 	}
 
 	.lumi-dropdown__menu--md {
-		min-width: 12rem;
-		font-size: var(--lumi-font-size-base);
+		min-width: 180px;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.lumi-dropdown__menu {
-			transition: none;
+			transition: none !important;
 		}
 	}
 </style>

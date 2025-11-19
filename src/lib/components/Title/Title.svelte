@@ -18,7 +18,7 @@
 
 	const {
 		size = "md",
-		color = "primary",
+		color = "text",
 		icon = "",
 		title = "",
 		subtitle = "",
@@ -32,6 +32,7 @@
 	const titleClasses = $derived(() => {
 		return [
 			"lumi-title",
+			`lumi-title--${size}`,
 			(icon || iconSnippet) && "lumi-title--with-icon",
 			(subtitle || subtitleSnippet) && "lumi-title--with-subtitle",
 			right && "lumi-title--with-right",
@@ -41,21 +42,20 @@
 			.join(" ");
 	});
 
-	const titleTextClasses = $derived(() => {
-		return ["lumi-title__text", `lumi-title__text--${size}`, `lumi-title__text--${color}`]
-			.filter(Boolean)
-			.join(" ");
+	const styleVars = $derived(() => {
+		const colorVar = color === "text" ? "var(--lumi-color-text)" : `var(--lumi-color-${color})`;
+		return `--title-color: ${colorVar};`;
 	});
 </script>
 
-<div class={titleClasses()}>
+<div class={titleClasses()} style={styleVars()}>
 	<!-- Icon -->
 	{#if icon || iconSnippet}
 		<div class="lumi-title__icon">
 			{#if iconSnippet}
 				{@render iconSnippet()}
 			{:else if icon}
-				<Icon {icon} size={size === "lg" ? "32px" : "24px"} />
+				<Icon {icon} size={size === "lg" || size === "xl" ? "32px" : "24px"} />
 			{/if}
 		</div>
 	{/if}
@@ -63,13 +63,13 @@
 	<!-- Content -->
 	<div class="lumi-title__content">
 		<!-- Main title -->
-		<div class={titleTextClasses()}>
+		<h3 class="lumi-title__text">
 			{#if children}
 				{@render children()}
 			{:else}
 				{title}
 			{/if}
-		</div>
+		</h3>
 
 		<!-- Subtitle -->
 		{#if subtitle || subtitleSnippet}
@@ -97,8 +97,8 @@
 		align-items: center;
 		font-family: var(--lumi-font-family-sans);
 		line-height: var(--lumi-line-height-normal);
-		transition: var(--lumi-transition-all);
-		gap: var(--lumi-space-xs);
+		gap: var(--lumi-space-sm);
+		color: var(--title-color);
 	}
 
 	.lumi-title__icon {
@@ -106,6 +106,8 @@
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
+		color: var(--title-color);
+		opacity: 0.8;
 	}
 
 	.lumi-title__content {
@@ -113,60 +115,21 @@
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		align-items: flex-start;
 	}
 
 	.lumi-title__text {
 		margin: 0;
 		font-weight: var(--lumi-font-weight-bold);
-		color: var(--lumi-color-text);
+		color: inherit;
 		line-height: var(--lumi-line-height-tight);
 	}
 
-	.lumi-title__text--sm {
-		font-size: var(--lumi-font-size-base);
-		font-weight: var(--lumi-font-weight-normal);
-	}
-
-	.lumi-title__text--md {
-		font-size: var(--lumi-font-size-lg);
-	}
-
-	.lumi-title__text--lg {
-		font-size: var(--lumi-font-size-xl);
-	}
-
-	.lumi-title__text--primary {
-		color: var(--lumi-color-primary);
-	}
-
-	.lumi-title__text--secondary {
-		color: var(--lumi-color-secondary);
-	}
-
-	.lumi-title__text--success {
-		color: var(--lumi-color-success);
-	}
-
-	.lumi-title__text--warning {
-		color: var(--lumi-color-warning);
-	}
-
-	.lumi-title__text--danger {
-		color: var(--lumi-color-danger);
-	}
-
-	.lumi-title__text--info {
-		color: var(--lumi-color-info);
-	}
-
 	.lumi-title__subtitle {
-		margin: 0;
-		margin-top: var(--lumi-space-2xs);
+		margin-top: 2px;
 		font-weight: var(--lumi-font-weight-normal);
 		color: var(--lumi-color-text-muted);
 		line-height: var(--lumi-line-height-normal);
-		font-size: var(--lumi-font-size-sm);
+		font-size: 0.875em; /* Relative to title size */
 	}
 
 	.lumi-title__right {
@@ -174,19 +137,18 @@
 		align-items: center;
 		gap: var(--lumi-space-sm);
 		flex-shrink: 0;
+		margin-left: auto;
 	}
 
-	.lumi-title--with-right {
-		justify-content: space-between;
-	}
+	/* Sizes */
+	.lumi-title--sm .lumi-title__text { font-size: var(--lumi-font-size-base); }
+	.lumi-title--md .lumi-title__text { font-size: var(--lumi-font-size-lg); }
+	.lumi-title--lg .lumi-title__text { font-size: var(--lumi-font-size-xl); }
+	.lumi-title--xl .lumi-title__text { font-size: var(--lumi-font-size-2xl); }
 
-	.lumi-title:hover .lumi-title__icon {
-		transform: scale(1.05);
-	}
-
-	.lumi-title:focus-visible {
-		outline: 2px solid var(--lumi-color-primary);
-		outline-offset: 2px;
-		border-radius: var(--lumi-radius-md);
+	/* Responsive */
+	@media (max-width: 768px) {
+		.lumi-title--xl .lumi-title__text { font-size: var(--lumi-font-size-xl); }
+		.lumi-title--lg .lumi-title__text { font-size: var(--lumi-font-size-lg); }
 	}
 </style>

@@ -22,20 +22,21 @@
 <nav class="lumi-navbar {className}" role="navigation">
 	<!-- Left side - Menu toggle and title -->
 	<div class="lumi-navbar__left">
-		<Button
-			type="flat"
-			size="md"
-			icon="menu"
-			aria-label="Toggle sidebar"
-			onclick={onToggleSidebar}
-			class="lumi-navbar__menu-btn"
-		/>
+		<div class="lumi-navbar__menu-btn">
+			<Button
+				type="flat"
+				size="md"
+				icon="menu"
+				aria-label="Toggle sidebar"
+				onclick={onToggleSidebar}
+			/>
+		</div>
 
 		<div class="lumi-navbar__title">
 			{#if title}
 				{@render title()}
 			{:else}
-				Dashboard
+				<span class="lumi-text--lg lumi-font--bold">Dashboard</span>
 			{/if}
 		</div>
 	</div>
@@ -66,18 +67,27 @@
 	.lumi-navbar {
 		grid-area: navbar;
 		position: sticky;
+		top: var(--lumi-space-md);
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		height: var(--lumi-navbar-height);
-		padding: 0 var(--lumi-space-md);
-		background: var(--lumi-color-surface);
-		border-radius: var(--lumi-radius-2xl);
-		box-shadow: var(--lumi-shadow-md);
+		padding: 0 var(--lumi-space-lg);
+		background: var(--lumi-color-surface-overlay);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		border-radius: var(--lumi-radius-xl);
+		box-shadow: var(--lumi-shadow-sm);
 		border: 1px solid var(--lumi-color-border-light);
 		z-index: var(--lumi-z-fixed);
-		margin-top: var(--lumi-space-md);
-		margin-inline: var(--lumi-space-md);
+		margin: var(--lumi-space-md);
+		margin-bottom: 0;
+		transition: all 0.3s ease;
+	}
+
+	.lumi-navbar:hover {
+		box-shadow: var(--lumi-shadow-md);
+		border-color: var(--lumi-color-border);
 	}
 
 	.lumi-navbar__left {
@@ -87,15 +97,14 @@
 	}
 
 	.lumi-navbar__title {
-		font-size: var(--lumi-font-size-lg);
-		font-weight: var(--lumi-font-weight-semibold);
 		color: var(--lumi-color-text);
+		white-space: nowrap;
 	}
 
 	.lumi-navbar__right {
 		display: flex;
 		align-items: center;
-		gap: var(--lumi-space-xs);
+		gap: var(--lumi-space-md);
 	}
 
 	.lumi-navbar__actions {
@@ -104,6 +113,18 @@
 		gap: var(--lumi-space-xs);
 	}
 
+	/* Responsive adjustments */
+	@media (max-width: 1024px) {
+		.lumi-navbar {
+			margin: 0;
+			border-radius: 0;
+			border-left: none;
+			border-right: none;
+			border-top: none;
+			top: 0;
+			width: 100%;
+		}
+	}
 
 	@media (max-width: 768px) {
 		.lumi-navbar {
@@ -112,16 +133,6 @@
 
 		.lumi-navbar__title {
 			display: none;
-		}
-
-		.lumi-navbar__left {
-			gap: var(--lumi-space-sm);
-		}
-	}
-
-	@media (max-width: 480px) {
-		.lumi-navbar {
-			padding: 0 var(--lumi-space-sm);
 		}
 	}
 </style>

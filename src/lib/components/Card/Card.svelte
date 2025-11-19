@@ -27,17 +27,11 @@
 
 	const cardClasses = $derived(() => {
 		const classes = ["lumi-card"];
-
 		if (clickable) classes.push("lumi-card--clickable");
 		if (image) classes.push("lumi-card--with-image");
 		if (spaced) classes.push("lumi-card--spaced");
 		if (className) classes.push(className);
-
 		return classes.join(" ");
-	});
-
-	const contentClasses = $derived(() => {
-		return "lumi-card__content";
 	});
 
 	function handleClick(event: MouseEvent) {
@@ -47,7 +41,7 @@
 	}
 </script>
 
-<div class={cardClasses()} {style} onclick={handleClick}>
+<div class={cardClasses()} {style} onclick={handleClick} role={clickable ? "button" : undefined} tabindex={clickable ? 0 : undefined}>
 	{#if image}
 		<div class="lumi-card__image" style="height: {imageHeight}px;">
 			<img src={image} alt={imageAlt || title || "Card image"} />
@@ -69,7 +63,7 @@
 		</div>
 	{/if}
 
-	<div class={contentClasses()}>
+	<div class="lumi-card__content">
 		{#if children}
 			{@render children()}
 		{/if}
@@ -86,71 +80,53 @@
 	.lumi-card {
 		position: relative;
 		background: var(--lumi-color-surface);
-		border-radius: var(--lumi-radius-2xl);
-		border: none;
-		transition: var(--lumi-transition-all);
+		border: 1px solid var(--lumi-color-border);
+		border-radius: var(--lumi-radius-xl);
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
-		box-shadow: var(--lumi-shadow-md);
-		padding: var(--lumi-space-lg);
+		box-shadow: var(--lumi-shadow-sm);
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		width: 100%;
 		text-align: left;
-		font: inherit;
-		color: inherit;
+		color: var(--lumi-color-text);
 	}
 
-	/* Card with image - remove padding for seamless image */
-	.lumi-card--with-image {
-		padding: 0;
-	}
-
-	.lumi-card--with-image .lumi-card__header,
-	.lumi-card--with-image .lumi-card__content,
-	.lumi-card--with-image .lumi-card__footer {
-		padding: 0 var(--lumi-space-lg);
-	}
-
-	.lumi-card--with-image .lumi-card__header {
-		padding-top: var(--lumi-space-lg);
-	}
-
-	.lumi-card--with-image .lumi-card__content {
-		padding-bottom: var(--lumi-space-lg);
-	}
-
-	.lumi-card--with-image .lumi-card__footer {
-		padding-bottom: var(--lumi-space-lg);
+	.lumi-card:hover {
+		box-shadow: var(--lumi-shadow-md);
+		border-color: var(--lumi-color-border-strong);
 	}
 
 	/* Clickable state */
 	.lumi-card--clickable {
 		cursor: pointer;
 	}
-	/** will change shadow to border */
+
 	.lumi-card--clickable:hover {
-		transform: translateY(-1px);
-		border: 2px dotted var(--lumi-color-border);
+		transform: translateY(-2px);
+		box-shadow: var(--lumi-shadow-lg);
+		border-color: var(--lumi-color-primary);
 	}
 
 	.lumi-card--clickable:active {
-		transform: translateY(0);
-		border: 2px dotted var(--lumi-color-border);
+		transform: translateY(-2px);
+		box-shadow: var(--lumi-shadow-lg);
 	}
 
-	/* Spaced content - adds gap between children */
+	/* Spaced content */
 	.lumi-card--spaced .lumi-card__content {
 		display: flex;
 		flex-direction: column;
 		gap: var(--lumi-space-md);
 	}
 
-	/* Card image - seamless integration */
+	/* Image */
 	.lumi-card__image {
 		width: 100%;
 		overflow: hidden;
 		flex-shrink: 0;
 		position: relative;
+		border-bottom: 1px solid var(--lumi-color-border-light);
 	}
 
 	.lumi-card__image img {
@@ -158,15 +134,37 @@
 		height: 100%;
 		object-fit: cover;
 		display: block;
+		transition: transform 0.5s ease;
 	}
 
-	/* Card elements - clean and minimal */
+	.lumi-card--clickable:hover .lumi-card__image img {
+		transform: scale(1.05);
+	}
+
+	/* Sections */
+	.lumi-card__header,
+	.lumi-card__content,
+	.lumi-card__footer {
+		padding: var(--lumi-space-lg);
+	}
+
 	.lumi-card__header {
-		border-bottom: none;
-		flex-shrink: 0;
-		padding-bottom: var(--lumi-space-sm);
+		padding-bottom: var(--lumi-space-xs);
 	}
 
+	.lumi-card__content {
+		flex: 1;
+		padding-top: var(--lumi-space-sm);
+		padding-bottom: var(--lumi-space-lg);
+	}
+
+	.lumi-card__footer {
+		padding-top: var(--lumi-space-md);
+		border-top: 1px solid var(--lumi-color-border-light);
+		background: var(--lumi-color-background-hover);
+	}
+
+	/* Typography */
 	.lumi-card__title {
 		margin: 0;
 		color: var(--lumi-color-text);
@@ -182,15 +180,8 @@
 		line-height: var(--lumi-line-height-normal);
 	}
 
-	.lumi-card__content {
-		flex: 1;
-		color: var(--lumi-color-text);
-		line-height: var(--lumi-line-height-normal);
-	}
-
-	.lumi-card__footer {
-		border-top: none;
-		flex-shrink: 0;
-		padding-top: var(--lumi-space-md);
+	/* With Image adjustments */
+	.lumi-card--with-image .lumi-card__header {
+		padding-top: var(--lumi-space-lg);
 	}
 </style>
