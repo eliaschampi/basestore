@@ -1,0 +1,255 @@
+<script lang="ts">
+	import type { Snippet } from "svelte";
+	import { onMount, setContext } from "svelte";
+	import { scale } from "svelte/transition";
+	import { createFloating } from "$lib/utils/floating.svelte";
+	import type { DropdownProps } from "./types";
+
+	interface Props {
+		open?: boolean;
+		position?: DropdownProps["position"];
+		size?: DropdownProps["size"];
+		disabled?: boolean;
+		trigger?: DropdownProps["trigger"];
+		closeOnClickOutside?: boolean;
+		maxHeight?: number;
+		offset?: number;
+		viewportPadding?: number;
+		class?: string;
+		onshow?: () => void;
+		onhide?: () => void;
+		children?: Snippet;
+		content?: Snippet;
+		triggerContent?: Snippet;
+	}
+
+	let {
+		open = $bindable(false),
+		position = "bottom-start",
+		size = "md",
+		disabled = false,
+		trigger = "click",
+		closeOnClickOutside = true,
+		maxHeight = 300,
+		offset = 8,
+		viewportPadding = 16,
+		class: className = "",
+		onshow,
+		onhide,
+		children,
+		content,
+		triggerContent
+	}: Props = $props();
+
+	let dropdownRef: HTMLDivElement | undefined = $state();
+	let menuRef: HTMLDivElement | undefined = $state();
+
+	const triggerId = `lumi-dropdown-trigger-${Math.random().toString(36).substring(2, 11)}`;
+
+	// Floating element management
+	const floating = createFloating(
+		() => dropdownRef,
+		() => menuRef,
+		{
+			placement: position,
+			maxHeight,
+			offset,
+			viewportPadding,
+			zIndex: "var(--lumi-z-dropdown)"
+		}
+	);
+
+	// Sync open state with floating
+	$effect(() => {
+		if (open && !floating.isOpen) {
+			openDropdown();
+		} else if (!open && floating.isOpen) {
+			closeDropdown();
+		}
+	});
+
+	// Provide close function to child components
+	setContext("dropdownClose", closeDropdown);
+
+	const dropdownClasses = $derived(() => {
+		return ["lumi-dropdown", open && "lumi-dropdown--open", className].filter(Boolean).join(" ");
+	});
+
+	function openDropdown(): void {
+		if (disabled) return;
+		floating.open();
+		open = true;
+		onshow?.();
+	}
+
+	function closeDropdown(): void {
+		floating.close();
+		open = false;
+		onhide?.();
+	}
+
+	function toggle(): void {
+		if (disabled) return;
+		if (open) {
+			closeDropdown();
+		} else {
+			openDropdown();
+		}
+	}
+
+	function handleClickOutside(event: MouseEvent): void {
+		if (!closeOnClickOutside || !open) return;
+		if (!dropdownRef || !menuRef) return;
+
+		const target = event.target as Element;
+		
+		// Check if click is outside both trigger and menu
+		if (!dropdownRef.contains(target) && !menuRef.contains(target)) {
+			closeDropdown();
+		}
+	}
+
+	function handleEscape(event: KeyboardEvent): void {
+		if (event.key === "Escape" && open) {
+			closeDropdown();
+		}
+	}
+
+	function handleTriggerClick(event: MouseEvent): void {
+		if (trigger === "click") {
+			event.stopPropagation();
+			toggle();
+		}
+	}
+
+	function handleTriggerKeydown(event: KeyboardEvent): void {
+		if (event.key === "Enter" || event.key === " ") {
+			event.preventDefault();
+			toggle();
+		} else if (event.key === "Escape") {
+			closeDropdown();
+		}
+	}
+
+	onMount(() => {
+		// Use capture phase for click outside to prevent issues
+		if (closeOnClickOutside) {
+			document.addEventListener("click", handleClickOutside, true);
+		}
+		document.addEventListener("keydown", handleEscape);
+
+		return () => {
+			document.removeEventListener("click", handleClickOutside, true);
+			document.removeEventListener("keydown", handleEscape);
+		};
+	});
+</script>
+
+<div bind:this={dropdownRef} class={dropdownClasses()}>
+	<!-- Trigger -->
+	<div
+		class="lumi-dropdown__trigger"
+		aria-expanded={open}
+		aria-haspopup="true"
+		role="button"
+		tabindex="0"
+		onclick={handleTriggerClick}
+		onkeydown={handleTriggerKeydown}
+	>
+		{#if children}
+			{@render children()}
+		{:else if triggerContent}
+			{@render triggerContent()}
+		{/if}
+	</div>
+
+	<!-- Menu -->
+	{#if open}
+		<div
+			bind:this={menuRef}
+			class="lumi-dropdown__menu lumi-dropdown__menu--{size}"
+			role="menu"
+			aria-labelledby={triggerId}
+			style="position: {floating.floatingStyles.position}; top: {floating.floatingStyles
+				.top}; left: {floating.floatingStyles.left}; z-index: {floating.floatingStyles
+				.zIndex}; {floating.floatingStyles.maxHeight
+				? `max-height: ${floating.floatingStyles.maxHeight}`
+				: ''}"
+			transition:scale={{ duration: 200, start: 0.95 }}
+		>
+			{#if content}
+				{@render content()}
+			{:else if children}
+				{@render children()}
+			{/if}
+		</div>
+	{/if}
+</div>
+
+<style>
+	.lumi-dropdown {
+		position: relative;
+		display: inline-block;
+	}
+
+	.lumi-dropdown__trigger {
+		cursor: pointer;
+		user-select: none;
+	}
+
+	.lumi-dropdown__trigger:focus {
+		outline: none;
+	}
+
+	.lumi-dropdown-item:focus-visible {
+		background: var(--lumi-color-background-hover);
+		box-shadow: inset 0 0 0 2px var(--lumi-color-primary);
+	}
+
+	.lumi-dropdown-item:active {
+		transform: scale(0.98);
+	}
+
+	.lumi-dropdown__menu {
+		background: var(--lumi-color-surface);
+		border: 2px solid var(--lumi-color-border);
+		border-radius: var(--lumi-radius-2xl);
+		box-shadow: var(--lumi-shadow-lg);
+		padding: var(--lumi-space-xs);
+		overflow-y: auto;
+	}
+
+	.lumi-dropdown__menu::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	.lumi-dropdown__menu::-webkit-scrollbar-track {
+		background: var(--lumi-color-background);
+		border-radius: var(--lumi-radius-base);
+	}
+
+	.lumi-dropdown__menu::-webkit-scrollbar-thumb {
+		background: var(--lumi-color-border-strong);
+		border-radius: var(--lumi-radius-base);
+	}
+
+	.lumi-dropdown__menu::-webkit-scrollbar-thumb:hover {
+		background: var(--lumi-color-text-muted);
+	}
+
+	.lumi-dropdown__menu--sm {
+		min-width: 10rem;
+		font-size: var(--lumi-font-size-sm);
+	}
+
+	.lumi-dropdown__menu--md {
+		min-width: 12rem;
+		font-size: var(--lumi-font-size-base);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.lumi-dropdown__menu {
+			transition: none;
+		}
+	}
+</style>
