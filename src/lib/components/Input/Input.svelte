@@ -10,7 +10,6 @@
 		label = '',
 		labelPlaceholder = '',
 		placeholder = '',
-		autofocus = false,
 		icon = '',
 		iconAfter = false,
 		iconNoBorder = false,
@@ -162,7 +161,6 @@
 			{disabled}
 			{readonly}
 			{required}
-			{autofocus}
 			placeholder={labelPlaceholder || placeholder}
 			class="lumi-input"
 			class:lumi-input--has-icon={!!icon}

@@ -86,7 +86,7 @@ export function createFloating(
 		}
 
 		const calculatedWidth = matchWidth ? triggerRect.width : undefined;
-		let calculatedMaxHeight = maxHeight;
+		const calculatedMaxHeight = maxHeight;
 
 		// Handle placement variations
 		if (placement.includes('top')) {
@@ -94,10 +94,12 @@ export function createFloating(
 		}
 
 		if (placement.includes('end')) {
-			left = (strategy === 'absolute' ? triggerRect.right + window.scrollX : triggerRect.right);
+			left = strategy === 'absolute' ? triggerRect.right + window.scrollX : triggerRect.right;
 		} else if (placement === 'bottom' || placement === 'top') {
 			// Center alignment
-			left = (strategy === 'absolute' ? triggerRect.left + window.scrollX : triggerRect.left) + triggerRect.width / 2;
+			left =
+				(strategy === 'absolute' ? triggerRect.left + window.scrollX : triggerRect.left) +
+				triggerRect.width / 2;
 		}
 
 		// Get floating element dimensions if available
@@ -135,7 +137,9 @@ export function createFloating(
 		// Viewport boundary adjustments - Vertical
 		// Check if it fits below (default)
 		const bottomSpace = viewport.height - (strategy === 'absolute' ? top - scrollTop : top);
-		const topSpace = (strategy === 'absolute' ? top - scrollTop : top) - (placement.includes('top') ? 0 : triggerRect.height + offset * 2);
+		const topSpace =
+			(strategy === 'absolute' ? top - scrollTop : top) -
+			(placement.includes('top') ? 0 : triggerRect.height + offset * 2);
 
 		if (placement.includes('top')) {
 			// It's already trying to be on top.
@@ -147,7 +151,9 @@ export function createFloating(
 
 			if ((strategy === 'absolute' ? top - scrollTop : top) - floatingHeight < viewportPadding) {
 				// Not enough space on top, flip to bottom
-				top = (strategy === 'absolute' ? triggerRect.bottom + window.scrollY : triggerRect.bottom) + offset;
+				top =
+					(strategy === 'absolute' ? triggerRect.bottom + window.scrollY : triggerRect.bottom) +
+					offset;
 			} else {
 				top = top - floatingHeight;
 			}
@@ -155,7 +161,10 @@ export function createFloating(
 			// Default bottom
 			// If not enough space below, and more space above, flip to top
 			if (bottomSpace < floatingHeight + viewportPadding && topSpace > bottomSpace) {
-				top = (strategy === 'absolute' ? triggerRect.top + window.scrollY : triggerRect.top) - offset - floatingHeight;
+				top =
+					(strategy === 'absolute' ? triggerRect.top + window.scrollY : triggerRect.top) -
+					offset -
+					floatingHeight;
 			}
 		}
 

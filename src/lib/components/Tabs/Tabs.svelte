@@ -80,7 +80,7 @@
 <div class={classes}>
 	<!-- Tab Navigation -->
 	<div class="lumi-tabs__nav" role="tablist" aria-orientation={position}>
-		{#each tabs as tab, index (tab.value)}
+		{#each tabs as tab (tab.value)}
 			<button
 				type="button"
 				role="tab"

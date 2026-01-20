@@ -2,6 +2,8 @@
 	import Card from '../Card/Card.svelte';
 	import Title from '../Title/Title.svelte';
 	import Icon from '../Icon/Icon.svelte';
+	import { resolve } from '$app/paths';
+	import type { Pathname } from '$app/types';
 	import type { QuickAccessCardProps } from './types';
 
 	const {
@@ -18,7 +20,7 @@
 	});
 </script>
 
-<a {href} class="lumi-text-decoration--none">
+<a href={resolve(href as Pathname)} class="lumi-text-decoration--none">
 	<Card clickable class={cardClasses()}>
 		<div class="lumi-quick-access-card__container">
 			<div class="lumi-quick-access-card__icon-container lumi-bg--{color}">

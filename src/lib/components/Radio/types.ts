@@ -10,9 +10,9 @@ export type RadioColor = 'primary' | 'secondary' | 'success' | 'warning' | 'dang
 
 export interface RadioProps {
 	/** Selected value (bindable) */
-	group?: any;
+	group?: unknown;
 	/** Radio value */
-	value: any;
+	value: unknown;
 	/** Label text */
 	label?: string;
 	/** Radio name (for grouping) */
@@ -28,5 +28,5 @@ export interface RadioProps {
 	/** Children snippet for custom label */
 	children?: Snippet;
 	/** Change event handler */
-	onchange?: (value: any, event: Event) => void;
+	onchange?: (value: unknown, event: Event) => void;
 }

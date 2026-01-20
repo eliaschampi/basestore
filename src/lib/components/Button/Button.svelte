@@ -6,6 +6,7 @@
 	interface Props extends ButtonProps {
 		children?: Snippet;
 		onclick?: (event: MouseEvent) => void;
+		'aria-label'?: string;
 	}
 
 	const {
@@ -18,6 +19,7 @@
 		loading = false,
 		disabled = false,
 		button = 'button',
+		'aria-label': ariaLabel = '',
 		class: className,
 		onclick,
 		children
@@ -65,6 +67,7 @@
 	class={buttonClasses()}
 	type={button}
 	disabled={disabled || loading}
+	aria-label={ariaLabel || (icon && !children ? icon : undefined)}
 	onclick={handleClick}
 	style={styleVars()}
 >

@@ -16,8 +16,7 @@
 		resize = 'vertical',
 		required = false,
 		showCount = false,
-		autosize = false,
-		autofocus = false,
+		autosize: _autosize = false,
 		resizable = true,
 		class: className = '',
 		oninput,
@@ -96,7 +95,6 @@
 			{readonly}
 			{rows}
 			{maxlength}
-			{autofocus}
 			{value}
 			class="lumi-textarea__input"
 			style:resize={resizable ? resize : 'none'}

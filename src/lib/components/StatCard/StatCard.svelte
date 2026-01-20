@@ -2,6 +2,8 @@
 	import Card from '../Card/Card.svelte';
 	import Title from '../Title/Title.svelte';
 	import Icon from '../Icon/Icon.svelte';
+	import { resolve } from '$app/paths';
+	import type { Pathname } from '$app/types';
 	import type { StatCardProps } from './types';
 
 	const {
@@ -20,7 +22,7 @@
 </script>
 
 {#if href}
-	<a {href} class="lumi-text-decoration--none">
+	<a href={resolve(href as Pathname)} class="lumi-text-decoration--none">
 		<Card clickable class={cardClasses()}>
 			<div class="lumi-stat-card__container">
 				<div class="lumi-stat-card__header">

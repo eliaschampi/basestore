@@ -3,11 +3,9 @@
 	import Dialog from '../Dialog/Dialog.svelte';
 	import Button from '../Button/Button.svelte';
 	import Select from '../Select/Select.svelte';
-	import Icon from '../Icon/Icon.svelte';
 	import Alert from '../Alert/Alert.svelte';
 	import { showToast } from '$lib/stores/Toast';
 	import { PERMISSION_DEFINITIONS, getPermissionByKey } from '$lib/permissions/definitions';
-	import type { PermissionDefinition } from '$lib/permissions/definitions';
 
 	interface ApiPermission {
 		code: string;

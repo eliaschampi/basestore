@@ -37,8 +37,6 @@ export interface TextareaProps {
 	showCount?: boolean;
 	/** Auto-resize based on content */
 	autosize?: boolean;
-	/** Auto-focus on mount */
-	autofocus?: boolean;
 	/** Resizable */
 	resizable?: boolean;
 	/** Custom CSS class */

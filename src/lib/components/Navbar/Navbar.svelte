@@ -19,7 +19,7 @@
 	}: Props = $props();
 </script>
 
-<nav class="lumi-navbar {className}" role="navigation">
+<nav class="lumi-navbar {className}">
 	<!-- Left side - Menu toggle and title -->
 	<div class="lumi-navbar__left">
 		<div class="lumi-navbar__menu-btn">

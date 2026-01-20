@@ -63,8 +63,8 @@
 		if (sortColumn && sortDirection && sortable) {
 			const col = sortColumn;
 			result.sort((a, b) => {
-				const aVal = a[col] as any;
-				const bVal = b[col] as any;
+				const aVal = a[col] as unknown;
+				const bVal = b[col] as unknown;
 
 				if (aVal === bVal) return 0;
 				if (aVal === null || aVal === undefined) return 1;
@@ -296,7 +296,7 @@
 								{#if row}
 									{@render row({ row: rowData, index })}
 								{:else}
-									{#each Object.values(rowData) as value}
+									{#each Object.values(rowData) as value, valueIndex (`cell-${index}-${valueIndex}`)}
 										<td class="lumi-table__td">
 											{value}
 										</td>

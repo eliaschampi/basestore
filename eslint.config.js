@@ -24,17 +24,6 @@ export default ts.config(
 		}
 	},
 	{
-		files: ['**/*.svelte'],
-		languageOptions: {
-			parserOptions: {
-				parser: ts.parser
-			}
-		},
-		rules: {
-			'prefer-const': 'off' // Svelte $props() destructuring requires let
-		}
-	},
-	{
 		rules: {
 			'@typescript-eslint/no-unused-vars': [
 				'error',
@@ -48,6 +37,23 @@ export default ts.config(
 			'no-console': ['warn', { allow: ['warn', 'error'] }],
 			'prefer-const': 'error',
 			'no-var': 'error'
+		}
+	},
+	{
+		files: ['**/*.svelte'],
+		languageOptions: {
+			parserOptions: {
+				parser: ts.parser
+			}
+		},
+		rules: {
+			'prefer-const': 'off' // Svelte $props() destructuring requires let
+		}
+	},
+	{
+		files: ['**/*.svelte.ts'],
+		languageOptions: {
+			parser: ts.parser
 		}
 	}
 );

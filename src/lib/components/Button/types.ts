@@ -31,6 +31,8 @@ export interface ButtonProps {
 	/** HTML button type */
 	button?: 'button' | 'submit' | 'reset';
 
+	/** Accessible label for icon-only buttons */
+	ariaLabel?: string;
 	/** Additional CSS classes */
 	class?: string;
 }

@@ -21,7 +21,7 @@
 		hideClose = false,
 		closeLabel = 'Close dialog',
 		closeOnEscape = true,
-		class: className = '',
+		class: _className = '',
 		onclose,
 		onopen,
 		onafteropen,
@@ -39,16 +39,16 @@
 	const titleId = `lumi-dialog-title-${uniqueId}`;
 	const contentId = `lumi-dialog-content-${uniqueId}`;
 
-	const dialogClasses = $derived(
-		[
+	const dialogClasses = $derived(() => {
+		return [
 			'lumi-dialog',
 			`lumi-dialog--${size}`,
 			scrollable && 'lumi-dialog--scrollable',
 			fullScreen && 'lumi-dialog--full-screen'
 		]
 			.filter(Boolean)
-			.join(' ')
-	);
+			.join(' ');
+	});
 
 	const overlayClasses = $derived(
 		['lumi-dialog-overlay', persistent && 'lumi-dialog-overlay--persistent']
@@ -114,7 +114,11 @@
 					'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
 				) as HTMLElement;
 
-				firstFocusable ? firstFocusable.focus() : dialogElement.focus();
+				if (firstFocusable) {
+					firstFocusable.focus();
+				} else {
+					dialogElement.focus();
+				}
 			}
 		}, 0);
 	}
@@ -193,7 +197,7 @@
 							aria-label={closeLabel}
 							onclick={handleClose}
 						>
-							<Icon icon="x" size="20px" />
+							<Icon icon="x" size="md" />
 						</button>
 					{/if}
 				</header>
