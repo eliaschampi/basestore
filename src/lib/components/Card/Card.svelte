@@ -92,7 +92,7 @@
 		display: flex;
 		flex-direction: column;
 		box-shadow: var(--lumi-shadow-sm);
-		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		transition: var(--lumi-transition-shadow);
 		width: 100%;
 		text-align: left;
 		color: var(--lumi-color-text);
@@ -110,13 +110,13 @@
 
 	.lumi-card--clickable:hover {
 		transform: translateY(-2px);
-		box-shadow: var(--lumi-shadow-lg);
+		box-shadow: var(--lumi-shadow-md);
 		border-color: var(--lumi-color-primary);
 	}
 
 	.lumi-card--clickable:active {
-		transform: translateY(-2px);
-		box-shadow: var(--lumi-shadow-lg);
+		transform: translateY(0);
+		box-shadow: var(--lumi-shadow-sm);
 	}
 
 	/* Spaced content */

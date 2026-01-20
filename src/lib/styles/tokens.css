@@ -148,32 +148,52 @@
 	/* SPACING SYSTEM - 4px base unit */
 	/* ========================================================================== */
 	--lumi-space-none: 0;
-	--lumi-space-2xs: 0.25rem; /* 4px */
-	--lumi-space-xs: 0.5rem; /* 8px */
-	--lumi-space-sm: 0.75rem; /* 12px */
-	--lumi-space-md: 1rem; /* 16px - STANDARD */
-	--lumi-space-lg: 1.5rem; /* 24px */
-	--lumi-space-xl: 2rem; /* 32px */
-	--lumi-space-xxl: 2.5rem; /* 40px */
-	--lumi-space-3xl: 3rem; /* 48px */
-	--lumi-space-4xl: 4rem; /* 64px */
-	--lumi-space-5xl: 5rem; /* 80px */
-	--lumi-space-6xl: 6rem; /* 96px */
+	--lumi-space-2xs: 0.25rem;
+	/* 4px */
+	--lumi-space-xs: 0.5rem;
+	/* 8px */
+	--lumi-space-sm: 0.75rem;
+	/* 12px */
+	--lumi-space-md: 1rem;
+	/* 16px - STANDARD */
+	--lumi-space-lg: 1.5rem;
+	/* 24px */
+	--lumi-space-xl: 2rem;
+	/* 32px */
+	--lumi-space-xxl: 2.5rem;
+	/* 40px */
+	--lumi-space-3xl: 3rem;
+	/* 48px */
+	--lumi-space-4xl: 4rem;
+	/* 64px */
+	--lumi-space-5xl: 5rem;
+	/* 80px */
+	--lumi-space-6xl: 6rem;
+	/* 96px */
 
 	/* ========================================================================== */
 	/* TYPOGRAPHY SYSTEM */
 	/* ========================================================================== */
 
 	/* Font Sizes */
-	--lumi-font-size-xs: 0.75rem; /* 12px */
-	--lumi-font-size-sm: 0.875rem; /* 14px */
-	--lumi-font-size-base: 1rem; /* 16px */
-	--lumi-font-size-lg: 1.125rem; /* 18px */
-	--lumi-font-size-xl: 1.25rem; /* 20px */
-	--lumi-font-size-2xl: 1.5rem; /* 24px */
-	--lumi-font-size-3xl: 1.875rem; /* 30px */
-	--lumi-font-size-4xl: 2.25rem; /* 36px */
-	--lumi-font-size-5xl: 3rem; /* 48px */
+	--lumi-font-size-xs: 0.75rem;
+	/* 12px */
+	--lumi-font-size-sm: 0.875rem;
+	/* 14px */
+	--lumi-font-size-base: 1rem;
+	/* 16px */
+	--lumi-font-size-lg: 1.125rem;
+	/* 18px */
+	--lumi-font-size-xl: 1.25rem;
+	/* 20px */
+	--lumi-font-size-2xl: 1.5rem;
+	/* 24px */
+	--lumi-font-size-3xl: 1.875rem;
+	/* 30px */
+	--lumi-font-size-4xl: 2.25rem;
+	/* 36px */
+	--lumi-font-size-5xl: 3rem;
+	/* 48px */
 
 	/* Font Weights */
 	--lumi-font-weight-light: 300;
@@ -205,22 +225,59 @@
 	/* BORDER RADIUS SYSTEM */
 	/* ========================================================================== */
 	--lumi-radius-none: 0;
-	--lumi-radius-sm: 0.25rem; /* 4px */
-	--lumi-radius-base: 0.375rem; /* 6px */
-	--lumi-radius-md: 0.5rem; /* 8px - STANDARD */
-	--lumi-radius-lg: 0.75rem; /* 12px */
-	--lumi-radius-xl: 1rem; /* 16px */
-	--lumi-radius-2xl: 1.5rem; /* 24px */
-	--lumi-radius-3xl: 2rem; /* 32px */
+	--lumi-radius-sm: 0.25rem;
+	/* 4px */
+	--lumi-radius-base: 0.375rem;
+	/* 6px */
+	--lumi-radius-md: 0.5rem;
+	/* 8px - STANDARD */
+	--lumi-radius-lg: 0.75rem;
+	/* 12px */
+	--lumi-radius-xl: 1rem;
+	/* 16px */
+	--lumi-radius-2xl: 1.5rem;
+	/* 24px */
+	--lumi-radius-3xl: 2rem;
+	/* 32px */
 	--lumi-radius-full: 9999px;
 
 	/* ========================================================================== */
-	/* SHADOW SYSTEM - Consistent across all components */
+	/* SHADOW SYSTEM - Refined for minimal aesthetic */
 	/* ========================================================================== */
-	--lumi-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-	--lumi-shadow-md: 0 4px 20px 0 rgba(0, 0, 0, 0.05);
-	--lumi-shadow-lg: 0 10px 25px 0 rgba(0, 0, 0, 0.1);
-	--lumi-shadow-xl: 0 20px 40px 0 rgba(0, 0, 0, 0.15);
+	--lumi-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+	--lumi-shadow-md: 0 2px 8px 0 rgba(0, 0, 0, 0.04);
+	--lumi-shadow-lg: 0 4px 16px 0 rgba(0, 0, 0, 0.06);
+	--lumi-shadow-xl: 0 8px 24px 0 rgba(0, 0, 0, 0.08);
+
+	/* ========================================================================== */
+	/* ICON SIZE SYSTEM */
+	/* ========================================================================== */
+	--lumi-icon-xs: 12px;
+	--lumi-icon-sm: 16px;
+	--lumi-icon-md: 20px;
+	--lumi-icon-lg: 24px;
+	--lumi-icon-xl: 32px;
+	--lumi-icon-2xl: 40px;
+
+	/* ========================================================================== */
+	/* BORDER WIDTH SYSTEM */
+	/* ========================================================================== */
+	--lumi-border-width-thin: 1px;
+	--lumi-border-width-base: 1.5px;
+	--lumi-border-width-thick: 2px;
+
+	/* ========================================================================== */
+	/* BLUR SYSTEM */
+	/* ========================================================================== */
+	--lumi-blur-sm: 4px;
+	--lumi-blur-md: 8px;
+	--lumi-blur-lg: 12px;
+	--lumi-blur-xl: 16px;
+
+	/* ========================================================================== */
+	/* OVERLAY COLOR */
+	/* ========================================================================== */
+	--lumi-color-overlay: rgba(0, 0, 0, 0.5);
 
 	/* ========================================================================== */
 	/* TRANSITION SYSTEM */
@@ -408,7 +465,10 @@
 
 	/* Enhanced shadows for dark mode */
 	--lumi-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-	--lumi-shadow-md: 0 4px 20px 0 rgba(0, 0, 0, 0.4);
-	--lumi-shadow-lg: 0 10px 25px 0 rgba(0, 0, 0, 0.5);
-	--lumi-shadow-xl: 0 20px 40px 0 rgba(0, 0, 0, 0.6);
+	--lumi-shadow-md: 0 2px 8px 0 rgba(0, 0, 0, 0.4);
+	--lumi-shadow-lg: 0 4px 16px 0 rgba(0, 0, 0, 0.5);
+	--lumi-shadow-xl: 0 8px 24px 0 rgba(0, 0, 0, 0.6);
+
+	/* Overlay color for dark theme */
+	--lumi-color-overlay: rgba(0, 0, 0, 0.7);
 }

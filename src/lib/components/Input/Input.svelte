@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Icon } from '../Icon';
 	import type { InputProps } from './types';
+	import { getIconSize } from '../config';
 
 	let {
 		type = 'text',
@@ -73,16 +74,7 @@
 	});
 
 	const iconSizePx = $derived.by(() => {
-		switch (size) {
-			case 'sm':
-				return '16px';
-			case 'lg':
-				return '20px';
-			case 'xl':
-				return '24px';
-			default:
-				return '18px';
-		}
+		return `${getIconSize(size as 'xs' | 'sm' | 'md' | 'lg' | 'xl')}px`;
 	});
 
 	// CSS Variables for dynamic styling
@@ -114,18 +106,26 @@
 
 	function handleBlur(event: FocusEvent) {
 		isFocused = false;
-		validate();
+		// Validation removed from blur - only validates on explicit validate() call
 		if (onblur) onblur(event);
 	}
 
-	function validate() {
+	/**
+	 * Public validation method
+	 * Call this from form submit handlers to validate the input
+	 */
+	export function validate() {
 		if (required && !value) {
 			internalError = 'This field is required';
+			return false;
 		} else if (type === 'email' && value) {
 			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-			internalError = !emailRegex.test(String(value)) ? 'Please enter a valid email address' : '';
+			const isValid = emailRegex.test(String(value));
+			internalError = !isValid ? 'Please enter a valid email address' : '';
+			return isValid;
 		} else {
 			internalError = '';
+			return true;
 		}
 	}
 

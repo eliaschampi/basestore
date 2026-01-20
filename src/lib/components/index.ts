@@ -104,3 +104,11 @@ export { Title } from './Title';
 export type { TooltipColor, TooltipPosition, TooltipProps } from './Tooltip';
 export { Tooltip } from './Tooltip';
 export { default as PermissionsModal } from './PermissionsModal';
+
+// ============================================================================
+// DASHBOARD COMPONENTS
+// ============================================================================
+export type { StatCardProps } from './StatCard';
+export { StatCard } from './StatCard';
+export type { QuickAccessCardProps } from './QuickAccessCard';
+export { QuickAccessCard } from './QuickAccessCard';
