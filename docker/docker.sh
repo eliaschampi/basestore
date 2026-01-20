@@ -2,7 +2,7 @@
 set -e
 
 readonly PROJECT_NAME="faztore"
-readonly COMPOSE_FILE="docker-compose.yml"
+readonly COMPOSE_FILE="docker/docker-compose.yml"
 
 check_docker() {
     command -v docker &> /dev/null || { echo "Docker not installed"; exit 1; }
@@ -38,9 +38,9 @@ cmd_shell() {
     docker exec -it "${PROJECT_NAME}_app" /bin/sh
 }
 
-cmd_npm() {
+cmd_pnpm() {
     shift
-    docker exec -it "${PROJECT_NAME}_app" npm "$@"
+    docker exec -it "${PROJECT_NAME}_app" pnpm "$@"
 }
 
 
@@ -62,29 +62,29 @@ check_containers() {
 
 cmd_db_migrate() {
     check_containers
-    docker exec -it "${PROJECT_NAME}_app" npm run db:migrate
+    docker exec -it "${PROJECT_NAME}_app" pnpm run db:migrate
 }
 
 cmd_db_rollback() {
     check_containers
-    docker exec -it "${PROJECT_NAME}_app" npm run db:rollback
+    docker exec -it "${PROJECT_NAME}_app" pnpm run db:rollback
 }
 
 cmd_db_status() {
     check_containers
-    docker exec -it "${PROJECT_NAME}_app" npm run db:status
+    docker exec -it "${PROJECT_NAME}_app" pnpm run db:status
 }
 
 cmd_db_generate() {
     check_containers
-    docker exec -it "${PROJECT_NAME}_app" npm run db:generate
+    docker exec -it "${PROJECT_NAME}_app" pnpm run db:generate
 }
 
 cmd_db_create() {
     shift
     [ $# -eq 0 ] && { echo "Migration name required"; exit 1; }
     check_containers
-    docker exec -it "${PROJECT_NAME}_app" npm run db:create "$@"
+    docker exec -it "${PROJECT_NAME}_app" pnpm run db:create "$@"
 }
 
 cmd_status() {
@@ -93,7 +93,7 @@ cmd_status() {
 
 cmd_test() {
     check_containers
-    docker exec -it "${PROJECT_NAME}_app" npm run test
+    docker exec -it "${PROJECT_NAME}_app" pnpm run test
 }
 
 show_help() {
@@ -112,7 +112,7 @@ Commands:
   logs            View logs
   status          Show status
   shell           App shell
-  npm             Run npm commands
+  pnpm            Run pnpm commands
   test            Run tests
 
 Database:
@@ -138,7 +138,7 @@ main() {
         "logs")         cmd_logs ;;
         "status")       cmd_status ;;
         "shell")        cmd_shell ;;
-        "npm")          cmd_npm "$@" ;;
+        "pnpm")         cmd_pnpm "$@" ;;
         "test")         cmd_test ;;
         "setup")        cmd_setup ;;
         "db:shell")     cmd_db_shell ;;

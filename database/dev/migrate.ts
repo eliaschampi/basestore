@@ -3,7 +3,17 @@ import { promises as fs } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Pool } from 'pg';
-import { devDbConfig } from '../../src/lib/database/index.js';
+import { config } from 'dotenv';
+
+config();
+
+const devDbConfig = {
+	host: process.env.DB_HOST || 'localhost',
+	user: process.env.DB_USER || process.env.PGUSER || process.env.USER || 'postgres',
+	password: process.env.DB_PASSWORD || '',
+	database: process.env.DB_NAME || 'faztore',
+	port: parseInt(process.env.DB_PORT || '5432')
+};
 
 interface MigrationFile {
 	id: string;
@@ -62,9 +72,10 @@ class Database {
 	}
 
 	async resetDatabase() {
-		await this.query(
-			`DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO postgres; GRANT ALL ON SCHEMA public TO public;`
-		);
+		const owner = process.env.DB_USER || process.env.PGUSER || process.env.USER || 'postgres';
+		await this.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
+		await this.query(`GRANT ALL ON SCHEMA public TO ${owner};`);
+		await this.query('GRANT ALL ON SCHEMA public TO public;');
 	}
 }
 
@@ -315,7 +326,7 @@ async function run(args: string[]) {
 				console.log('⚠️  This will destroy ALL data and schema!');
 				await db.resetDatabase();
 				console.log('✓ Database reset completed');
-				console.log('💡 Run "./docker.sh setup" to reinitialize');
+				console.log('💡 Run "pnpm db:init" to reinitialize');
 				break;
 
 			case 'help':

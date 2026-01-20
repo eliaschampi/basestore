@@ -15,7 +15,7 @@ services:
       JWT_EXPIRES_IN: 7d
     volumes:
       - .:/app
-      - node_modules:/app/node_modules
+      - pnpm_store:/app/node_modules
     depends_on:
       postgres:
         condition: service_healthy
@@ -41,4 +41,4 @@ services:
 
 volumes:
   postgres_data:
-  node_modules:
+  pnpm_store:

@@ -289,28 +289,28 @@ Extraído de `lumi-core.css`. Úsalas para maquetar sin escribir CSS nuevo.
 
 ## 6. 🛠️ DEVOPS & WORKFLOW
 
-### Docker Management (`docker.sh`)
+### Local Postgres (Homebrew)
 
-El script maestro para controlar el entorno.
+El proyecto corre sin Docker. Usa Postgres local y variables en `.env`.
 
-| Comando                        | Acción Técnica                                                       |
-| :----------------------------- | :------------------------------------------------------------------- |
-| `./docker.sh up`               | Levanta `app` (5173) y `postgres` (5432).                            |
-| `./docker.sh setup`            | Ejecuta scripts de inicialización (sin migraciones).                 |
-| `./docker.sh db:migrate`       | Ejecuta `tsx database/dev/migrate.ts migrate`.                       |
-| `./docker.sh db:rollback`      | Deshace la última migración.                                         |
-| `./docker.sh db:create [name]` | Crea un nuevo archivo de migración en TS.                            |
-| `./docker.sh db:generate`      | Genera tipos TypeScript a partir del esquema SQL (`kysely-codegen`). |
-| `./docker.sh shell`            | Abre terminal dentro del contenedor `app`.                           |
+- Instalar Postgres: `brew install postgresql@16`
+- Iniciar servicio: `brew services start postgresql@16`
+- Crear DB: `createdb faztore`
+- Inicializar schema: `pnpm db:setup`
 
-### Variables de Entorno (`docker-compose.yml`)
+### Variables de Entorno (.env)
 
 - `NODE_ENV`: development
-- `DB_HOST`: postgres
+- `DB_HOST`: localhost
 - `DB_USER`: postgres
 - `DB_NAME`: faztore
+- `DB_PASSWORD`: postgres
 - `JWT_SECRET`: **CRÍTICO** Cambiar en producción.
 - `JWT_EXPIRES_IN`: 7d
+
+### Docker (archivado)
+
+Los archivos Docker viven en `docker/` para referencia únicamente.
 
 ---
 
@@ -358,3 +358,408 @@ Para mantener la calificación de "5/5 Quality", verifica:
 ---
 
 _Documento generado a partir de la auditoría completa del proyecto `faztore`/`lumi-ui`. Última actualización: Octubre 2025._
+
+please read and understand following lines...
+
+# LUMI UI – DOCUMENTACIÓN TÉCNICA OFICIAL COMPLETA
+
+**Versión definitiva para LLMs y Desarrolladores Senior**  
+**Fecha:** 18 de noviembre de 2025  
+**Estado:** 100% Production Ready • 40/40 componentes migrados y auditados  
+**Objetivo del documento:** Ser el único fuente de verdad que cualquier LLM (Grok, Claude, GPT, etc.) necesita para entender, mantener, extender o corregir perfectamente todo el proyecto Faztore / Lumi UI sin ninguna ambigüedad.
+
+────────────────────────────────────────────────────────────
+
+## 1. FILOSOFÍA Y REGLAS INQUEBRANTABLES (system prompt obligatorio)
+
+Copia esto siempre como contexto cuando trabajes en este proyecto:
+
+```markdown
+Tú eres un desarrollador senior experto en Svelte 5 + TypeScript que trabaja exclusivamente con LUMI UI.
+
+Reglas absolutas (nunca violar):
+
+1. TODOS los valores visuales vienen de design tokens → Nunca hardcodear colores, radios, sombras, espaciados o transiciones.
+2. Importar componentes SIEMPRE desde "$lib/components"
+3. Usar exclusivamente Svelte 5 Runes: $state, $derived, $props, $effect, snippets
+4. Naming de clases: .lumi-button, .lumi-button--primary, .lumi-button\_\_icon (BEM modificado)
+5. Nunca usar px, rem, #hex, rgba() directo → siempre var(--lumi-...)
+6. Accesibilidad obligatoria: aria-label, role, keyboard navigation, focus trap
+7. Dark mode ya está resuelto en tokens.css (no tocar lógica de tema)
+8. Zero dependencias externas salvo: lucide-svelte, @floating-ui/dom, kysely
+9. Todo componente tiene su carpeta con: Component.svelte + types.ts + index.ts
+10. Usar snippets para slots (nunca <slot>)
+```
+
+────────────────────────────────────────────────────────────
+
+## 2. DESIGN TOKENS COMPLETOS (tokens.css + variables extra)
+
+### 2.1 Colores semánticos (base + 50–950)
+
+| Token                     | Light (hex)     | Dark (hex)            | Uso principal                        |
+| ------------------------- | --------------- | --------------------- | ------------------------------------ |
+| `--lumi-color-primary`    | #1e40af         | #3b82f6               | Botones principales, enlaces activos |
+| `--lumi-color-secondary`  | #fb7185         | #fb7185               | Acciones secundarias, badges         |
+| `--lumi-color-success`    | #22c55e         | #22c55e               | Confirmaciones, estados positivos    |
+| `--lumi-color-warning`    | #f59e0b         | #f59e0b               | Advertencias                         |
+| `--lumi-color-danger`     | #ef4444         | #ef4444               | Errores, delete                      |
+| `--lumi-color-info`       | #0ea5e9         | #0ea5e9               | Info, help                           |
+| `--lumi-color-text`       | #0f172a         | #fafafa               | Texto principal                      |
+| `--lumi-color-text-muted` | #64748b         | #a1a1aa               | Placeholder, secondary text          |
+| `--lumi-color-border`     | rgba(0,0,0,0.1) | rgba(255,255,255,0.1) | Bordes estándar                      |
+
+### 2.2 Espaciado (4px grid estricto)
+
+| Token              | Valor | Uso más frecuente                          |
+| ------------------ | ----- | ------------------------------------------ |
+| `--lumi-space-2xs` | 4px   | Micro-espaciado (iconos dentro de botones) |
+| `--lumi-space-xs`  | 8px   | Icon + text, padding muy pequeño           |
+| `--lumi-space-sm`  | 12px  | Padding inputs pequeños                    |
+| `--lumi-space-md`  | 16px  | PADDING ESTÁNDAR EN CASI TODO              |
+| `--lumi-space-lg`  | 24px  | Cards, secciones                           |
+| `--lumi-space-xl`  | 32px  | Separación entre bloques grandes           |
+| `--lumi-space-2xl` | 40px  | Hero sections                              |
+| `--lumi-space-3xl` | 48px+ | Solo en landing pages                      |
+
+### 2.3 Radius & Shadows (auditados 1:1 con Aula UI)
+
+| Token                | Valor                                  | Componentes que lo usan       |
+| -------------------- | -------------------------------------- | ----------------------------- |
+| `--lumi-radius-md`   | 8px                                    | Button, Input, Select, Tag    |
+| `--lumi-radius-lg`   | 12px                                   | Card pequeña, Alert           |
+| `--lumi-radius-xl`   | 16px                                   | (reservado)                   |
+| `--lumi-radius-2xl`  | 24px                                   | Card, Dialog, Modal, Sidebar  |
+| `--lumi-radius-full` | 9999px                                 | Avatar, Chip, StatusIndicator |
+| `--lumi-shadow-md`   | 0 4px 20px rgba(0,0,0,0.05) → dark 0.4 | Card estándar                 |
+| `--lumi-shadow-lg`   | 0 10px 25px rgba(0,0,0,0.1) → dark 0.5 | Dialog, Dropdown, Tooltip     |
+
+### 2.4 Transiciones & Durations
+
+```css
+--lumi-transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+--lumi-transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+```
+
+────────────────────────────────────────────────────────────
+
+## 3. CATÁLOGO COMPLETO DE COMPONENTES (40) – DETALLE TÉCNICO
+
+### 3.1 Button
+
+Ubicación: `src/lib/components/Button/Button.svelte`
+
+```svelte
+<Button
+	type="filled|border|flat|gradient"
+	color="primary|secondary|success|warning|danger|info"
+	size="sm|md|lg|xl"
+	icon="lucide-name"
+	loading={boolean}
+	disabled={boolean}
+>
+	Texto o {@render children()}
+</Button>
+```
+
+Variantes visuales auditadas:
+
+- filled → background var(--lumi-color-primary)
+- border → border 1.5px + background transparent
+- flat → solo color de texto + hover background rgba
+- gradient → linear-gradient con primary → primary-600
+
+### 3.2 Input / Textarea
+
+```svelte
+<Input
+	bind:value
+	label="Email"
+	placeholder=""
+	icon="mail"
+	type="text|password|email|number"
+	success={boolean}
+	danger={boolean}
+	descriptionText="Helper"
+	errorText="Error"
+/>
+```
+
+Estados visuales:
+
+- focus → border var(--lumi-color-primary) + ring
+- success → border success + icon check
+- danger → border danger + icon alert
+
+### 3.3 Select (con floating-ui)
+
+Características únicas:
+
+- Autocomplete integrado
+- Clearable
+- Multiple
+- Loading state
+- Keyboard navigation total
+
+### 3.4 Checkbox / Radio / Switch
+
+Todos comparten el mismo sistema de color/size
+
+- Checkbox soporta `indeterminate` state
+- Switch permite iconOn / iconOff personalizados
+
+### 3.5 Card
+
+```svelte
+<Card title="Título" subtitle="Sub">
+	{@render header()}
+	<!-- snippet opcional -->
+	Contenido
+	{@render footer()}
+</Card>
+```
+
+Clases internas: .lumi-card, .lumi-card--clickable, .lumi-card\_\_header
+
+### 3.6 Dialog (Modal)
+
+```svelte
+<Dialog bind:open title="Confirmar" size="sm|md|lg|xl">
+	<p>¿Seguro?</p>
+	{#snippet footer()}
+		<Button type="border" onclick={() => (open = false)}>Cancelar</Button>
+		<Button color="danger">Eliminar</Button>
+	{/snippet}
+</Dialog>
+```
+
+Características:
+
+- Focus trap automático
+- Esc cierra
+- Backdrop blur
+- z-index --lumi-z-modal
+
+### 3.7 Table (componente más potente)
+
+Props completos:
+
+```svelte
+<Table
+	data={array}
+	columns={array}
+	searchable
+	sortable
+	pagination={10 | 25 | 50 | 100}
+	selectable
+	hover
+	zebra
+>
+	{#snippet actions({ row })}
+		<Button size="sm" type="flat" color="danger">
+			<Icon name="trash-2" />
+		</Button>
+	{/snippet}
+</Table>
+```
+
+### 3.8 Tooltip
+
+```svelte
+<Tooltip content="Hola mundo" placement="top|bottom|left|right">
+	<Button>Hover me</Button>
+</Tooltip>
+```
+
+Flecha triangular + 6 colores disponibles
+
+### 3.9 Avatar
+
+```svelte
+<Avatar
+  src={url}
+  text="JD"        <!-- fallback initials -->
+  size="xs|sm|md|lg|xl"
+  status="online|offline|busy"
+  rounded="full|lg"
+/>
+```
+
+### 3.10 Notification (Toast global)
+
+Usar desde cualquier parte:
+
+```ts
+import { toast } from '$lib/stores/toast';
+
+toast.success('Guardado correctamente');
+toast.error('Error', 'Detalle del error');
+```
+
+────────────────────────────────────────────────────────────
+
+## 4. UTILIDADES CSS (lumi-core.css) – NUNCA REPETIR
+
+| Clase                  | Equivalente en tokens                    |
+| ---------------------- | ---------------------------------------- |
+| .lumi-flex             | display:flex + gap: var(--lumi-space-md) |
+| .lumi-flex--center     | align+justify center                     |
+| .lumi-flex--between    | justify-content: space-between           |
+| .lumi-grid--responsive | auto-fit, minmax(280px,1fr)              |
+| .lumi-stack            | flex column + gap md                     |
+| .lumi-text--center     | text-align center                        |
+| .lumi-width--full      | width: 100%                              |
+
+────────────────────────────────────────────────────────────
+
+## 5. ESTRUCTURA DE ARCHIVOS (OBLIGATORIA)
+
+```
+src/lib/components/
+├── Button/
+│   ├── Button.svelte
+│   ├── types.ts
+│   └── index.ts
+├── Card/
+├── Dialog/
+├── Table/
+├── ...
+└── index.ts   ← exporta todo
+```
+
+Ejemplo index.ts de Button:
+
+```ts
+export { default as Button } from './Button.svelte';
+export type { ButtonProps, ButtonProps } from './types';
+```
+
+Main index:
+
+```ts
+export * from './Button';
+export * from './Input';
+export * from './Card';
+// ... todos los 40
+```
+
+────────────────────────────────────────────────────────────
+
+## 6. PATRONES DE CÓDIGO RECURRENTES (copiar-pegar)
+
+### 6.1 Estado reactivo estándar
+
+```svelte
+<script lang="ts">
+	let count = $state(0);
+	const doubled = $derived(count * 2);
+
+	$effect(() => {
+		console.log('count changed', count);
+	});
+</script>
+```
+
+### 6.2 Clases dinámicas perfectas
+
+```ts
+const classes = $derived(() =>
+	[
+		'lumi-button',
+		`lumi-button--${type}`,
+		`lumi-button--${color}`,
+		`lumi-button--${size}`,
+		loading && 'lumi-button--loading',
+		disabled && 'lumi-button--disabled',
+		className
+	]
+		.filter(Boolean)
+		.join(' ')
+);
+```
+
+### 6.3 Formulario con enhance (SvelteKit)
+
+```svelte
+<form use:enhance={() => {
+  return async ({ result }) => {
+    if (result.type === 'success') {
+      toast.success('Guardado');
+      invalidate('app:users');
+      showDialog = false;
+    }
+  };
+}}>
+```
+
+────────────────────────────────────────────────────────────
+
+## 7. PERMISOS & AUTH (producción real)
+
+Store global:
+
+```ts
+// src/lib/stores/permissions.ts
+import { writable } from 'svelte/store';
+
+export const userPermissions = writable<string[]>([]);
+
+export const can = (permission: string) => $derived(userPermissions.includes(permission));
+```
+
+Uso:
+
+```svelte
+<script>
+	import { can } from '$lib/stores/permissions';
+	const canDelete = $derived(can('users:delete'));
+</script>
+
+{#if canDelete}
+	<Button color="danger">Eliminar</Button>
+{/if}
+```
+
+────────────────────────────────────────────────────────────
+
+## 8. QUICK START COMPLETO (Local)
+
+```bash
+# Primera vez
+pnpm install
+cp .env.example .env
+brew services start postgresql@16
+createdb faztore
+pnpm db:setup
+
+# Desarrollo diario
+pnpm dev
+
+# Migraciones
+pnpm db:create create_users_table
+pnpm db:migrate
+pnpm db:generate     # → genera tipos Kysely
+```
+
+────────────────────────────────────────────────────────────
+
+## 9. RESUMEN FINAL – LO QUE HACE ÚNICA A LUMI UI
+
+| Métrica                         | Valor                    | Comentario                  |
+| ------------------------------- | ------------------------ | --------------------------- |
+| Componentes                     | 40/40 (100%)             | Todos auditados visualmente |
+| Consistencia visual con Aula UI | 100%                     | Audit 1:1 realizado         |
+| Bundle size vs Vue original     | -67%                     | Sin Virtual DOM             |
+| Performance                     | +30% más rápido          | Runes + compilación nativa  |
+| TypeScript errors               | 0                        | Cobertura 100%              |
+| Accesibilidad                   | WCAG 2.1 AA              | Focus trap, ARIA, keyboard  |
+| Dark mode                       | Nativo                   | Solo tokens.css             |
+| Dependencias externas           | 2 (lucide + floating-ui) | Ultra ligero                |
+
+**LUMI UI es el estándar de oro para aplicaciones administrativas modernas en Svelte 5: elegante, consistente, rápido y listo para producción.**
+
+Este documento es tu biblia. Cualquier LLM que lo lee → genera código perfecto al instante.
+
+¡Listo para escalar el próximo unicornio con Lumi UI!
+
+after continue please analyze all files and folders. then focus on clean code, best practices, and best performance. also act as a beautiful UI, consistency across all componentn, sharing same ui patter and design philosophy, omiting hardcoding ugly code.... please LLMS.

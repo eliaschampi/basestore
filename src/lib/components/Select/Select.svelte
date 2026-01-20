@@ -48,7 +48,8 @@
 			matchWidth: true,
 			maxHeight,
 			offset,
-			zIndex: 'var(--lumi-z-dropdown)'
+			zIndex: 'var(--lumi-z-dropdown)',
+			strategy: 'fixed'
 		}
 	);
 
@@ -250,9 +251,9 @@
 	}
 
 	onMount(() => {
-		document.addEventListener('click', handleClickOutside);
+		document.addEventListener('click', handleClickOutside, true);
 		return () => {
-			document.removeEventListener('click', handleClickOutside);
+			document.removeEventListener('click', handleClickOutside, true);
 		};
 	});
 </script>

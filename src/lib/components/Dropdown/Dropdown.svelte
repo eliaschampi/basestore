@@ -55,7 +55,8 @@
 			maxHeight,
 			offset,
 			viewportPadding,
-			zIndex: 'var(--lumi-z-dropdown)'
+			zIndex: 'var(--lumi-z-dropdown)',
+			strategy: 'fixed'
 		}
 	);
 

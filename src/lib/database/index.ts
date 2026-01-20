@@ -5,8 +5,8 @@ import type { DB } from './types';
 // Simple shared config for development tools (no SvelteKit dependencies)
 export const devDbConfig = {
 	host: process.env.DB_HOST || 'localhost',
-	user: process.env.DB_USER || 'postgres',
-	password: process.env.DB_PASSWORD || 'postgres',
+	user: process.env.DB_USER || process.env.PGUSER || process.env.USER || 'postgres',
+	password: process.env.DB_PASSWORD || '',
 	database: process.env.DB_NAME || 'faztore',
 	port: parseInt(process.env.DB_PORT || '5432')
 };

@@ -23,6 +23,7 @@ export interface UseFloatingOptions {
 	maxHeight?: number;
 	viewportPadding?: number;
 	zIndex?: string;
+	strategy?: 'fixed' | 'absolute';
 }
 
 export function createFloating(
@@ -36,7 +37,8 @@ export function createFloating(
 		matchWidth = false,
 		maxHeight = 300,
 		viewportPadding = 16,
-		zIndex = 'var(--lumi-z-dropdown)'
+		zIndex = 'var(--lumi-z-dropdown)',
+		strategy = 'fixed'
 	} = options;
 
 	let isOpen = $state(false);
@@ -44,7 +46,7 @@ export function createFloating(
 
 	const floatingStyles = $derived(() => {
 		const styles: Record<string, string> = {
-			position: 'fixed',
+			position: strategy,
 			top: `${position.top}px`,
 			left: `${position.left}px`,
 			zIndex
@@ -71,21 +73,31 @@ export function createFloating(
 			height: window.innerHeight
 		};
 
+		// Initial position based on trigger rect (relative to viewport for fixed)
 		let top = triggerRect.bottom + offset;
 		let left = triggerRect.left;
+
+		// If absolute strategy, we might need to adjust for scroll if the parent isn't the viewport
+		// But for simplicity and "breaking out" of containers like Dialogs, 'fixed' is preferred.
+		// If strategy is absolute, we assume the user handles the relative parent or we add scroll offset.
+		if (strategy === 'absolute') {
+			top += window.scrollY;
+			left += window.scrollX;
+		}
+
 		const calculatedWidth = matchWidth ? triggerRect.width : undefined;
 		let calculatedMaxHeight = maxHeight;
 
 		// Handle placement variations
 		if (placement.includes('top')) {
-			top = triggerRect.top - offset;
+			top = (strategy === 'absolute' ? triggerRect.top + window.scrollY : triggerRect.top) - offset;
 		}
 
 		if (placement.includes('end')) {
-			left = triggerRect.right;
+			left = (strategy === 'absolute' ? triggerRect.right + window.scrollX : triggerRect.right);
 		} else if (placement === 'bottom' || placement === 'top') {
 			// Center alignment
-			left = triggerRect.left + triggerRect.width / 2;
+			left = (strategy === 'absolute' ? triggerRect.left + window.scrollX : triggerRect.left) + triggerRect.width / 2;
 		}
 
 		// Get floating element dimensions if available
@@ -110,36 +122,46 @@ export function createFloating(
 		}
 
 		// Viewport boundary adjustments - Horizontal
-		if (left < viewportPadding) {
-			left = viewportPadding;
-		} else if (left + floatingWidth > viewport.width - viewportPadding) {
-			left = viewport.width - floatingWidth - viewportPadding;
+		// Only apply strict viewport bounds if fixed, or if we want to keep it on screen
+		const scrollLeft = strategy === 'absolute' ? window.scrollX : 0;
+		const scrollTop = strategy === 'absolute' ? window.scrollY : 0;
+
+		if (left < viewportPadding + scrollLeft) {
+			left = viewportPadding + scrollLeft;
+		} else if (left + floatingWidth > viewport.width - viewportPadding + scrollLeft) {
+			left = viewport.width - floatingWidth - viewportPadding + scrollLeft;
 		}
 
 		// Viewport boundary adjustments - Vertical
+		// Check if it fits below (default)
+		const bottomSpace = viewport.height - (strategy === 'absolute' ? top - scrollTop : top);
+		const topSpace = (strategy === 'absolute' ? top - scrollTop : top) - (placement.includes('top') ? 0 : triggerRect.height + offset * 2);
+
 		if (placement.includes('top')) {
-			if (top - floatingHeight < viewportPadding) {
-				// Flip to bottom
-				top = triggerRect.bottom + offset;
+			// It's already trying to be on top.
+			// If it doesn't fit on top, try bottom?
+			// top is currently the bottom edge of the floating element if we were to position it
+			// Wait, logic above set 'top' to the top edge of the floating element.
+
+			// Let's simplify: 'top' variable currently holds the intended TOP coordinate of the floating element.
+
+			if ((strategy === 'absolute' ? top - scrollTop : top) - floatingHeight < viewportPadding) {
+				// Not enough space on top, flip to bottom
+				top = (strategy === 'absolute' ? triggerRect.bottom + window.scrollY : triggerRect.bottom) + offset;
 			} else {
 				top = top - floatingHeight;
 			}
 		} else {
-			if (top + floatingHeight > viewport.height - viewportPadding) {
-				// Try to flip to top
-				const topPlacement = triggerRect.top - offset - floatingHeight;
-				if (topPlacement >= viewportPadding) {
-					top = topPlacement;
-				} else {
-					// Keep bottom but adjust height
-					calculatedMaxHeight = Math.max(100, viewport.height - top - viewportPadding);
-				}
+			// Default bottom
+			// If not enough space below, and more space above, flip to top
+			if (bottomSpace < floatingHeight + viewportPadding && topSpace > bottomSpace) {
+				top = (strategy === 'absolute' ? triggerRect.top + window.scrollY : triggerRect.top) - offset - floatingHeight;
 			}
 		}
 
 		position = {
-			top: Math.max(viewportPadding, top),
-			left: Math.max(viewportPadding, left),
+			top,
+			left,
 			width: calculatedWidth,
 			maxHeight: calculatedMaxHeight
 		};
@@ -172,11 +194,11 @@ export function createFloating(
 	// Auto-update on scroll/resize
 	$effect(() => {
 		if (isOpen) {
-			window.addEventListener('scroll', updatePosition, { passive: true });
+			window.addEventListener('scroll', updatePosition, { passive: true, capture: true });
 			window.addEventListener('resize', updatePosition, { passive: true });
 
 			return () => {
-				window.removeEventListener('scroll', updatePosition);
+				window.removeEventListener('scroll', updatePosition, { capture: true });
 				window.removeEventListener('resize', updatePosition);
 			};
 		}

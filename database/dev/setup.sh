@@ -32,7 +32,7 @@ wait_for_db() {
     log "Waiting for database connection..."
     local attempt=1
     while [ $attempt -le 30 ]; do
-        if tsx database/dev/migrate.ts check >/dev/null 2>&1; then
+        if pnpm exec -- tsx database/dev/migrate.ts check >/dev/null 2>&1; then
             success "Database connection established"
             return 0
         fi
@@ -47,7 +47,7 @@ wait_for_db() {
 is_db_initialized() {
     log "Checking if database is initialized..."
     # Check if any tables exist (if tables exist, database is initialized)
-    if tsx database/dev/migrate.ts check:tables 2>/dev/null | grep -q "true"; then
+    if pnpm exec -- tsx database/dev/migrate.ts check:tables 2>/dev/null | grep -q "true"; then
         success "Database is already initialized"
         return 0
     else
@@ -58,7 +58,7 @@ is_db_initialized() {
 
 init_database() {
     log "Initializing database with SQL files..."
-    if tsx database/dev/migrate.ts init >/dev/null 2>&1; then
+    if pnpm exec -- tsx database/dev/migrate.ts init >/dev/null 2>&1; then
         success "Database initialization completed"
     else
         error "Database initialization failed"
@@ -70,7 +70,7 @@ init_database() {
 
 generate_types() {
     log "Generating TypeScript types..."
-    if npm run db:generate >/dev/null 2>&1; then
+    if pnpm run db:generate >/dev/null 2>&1; then
         success "Types generated successfully"
     else
         error "Type generation failed"
@@ -83,8 +83,7 @@ setup_database() {
 
     # Check if running in container
     if ! is_container; then
-        error "Must run inside container. Use: ./docker.sh setup"
-        exit 1
+        warn "Running outside Docker. Proceeding with local Postgres."
     fi
 
     # Wait for database
@@ -110,20 +109,20 @@ show_status() {
     log "Checking database status..."
 
     if ! wait_for_db >/dev/null 2>&1; then
-        error "Database connection failed. Run: ./docker.sh up"
+        error "Database connection failed. Ensure Postgres is running and .env is set"
         return 1
     fi
 
     if is_db_initialized >/dev/null 2>&1; then
         success "Database is initialized"
         log "Running migration status check..."
-        if tsx database/dev/migrate.ts status 2>/dev/null; then
+        if pnpm exec -- tsx database/dev/migrate.ts status 2>/dev/null; then
             success "Migration status retrieved"
         else
             warn "Migration system not fully initialized"
         fi
     else
-        warn "Database not initialized. Run: ./docker.sh setup"
+        warn "Database not initialized. Run: pnpm db:init"
     fi
 }
 
@@ -133,7 +132,7 @@ reset_database() {
     read -p "Are you sure? Type 'yes' to confirm: " -r
     if [[ $REPLY == "yes" ]]; then
         log "Dropping all tables and schema..."
-        if tsx database/dev/migrate.ts reset >/dev/null 2>&1; then
+        if pnpm exec -- tsx database/dev/migrate.ts reset >/dev/null 2>&1; then
             success "Database reset completed"
             log "Reinitializing database with init files..."
             if init_database && generate_types; then

@@ -394,9 +394,9 @@
 	}
 
 	.lumi-table__th {
-		padding: var(--lumi-space-md) var(--lumi-space-lg);
+		padding: var(--lumi-space-lg);
 		text-align: left;
-		font-size: var(--lumi-font-size-sm);
+		font-size: var(--lumi-font-size-xs);
 		font-weight: var(--lumi-font-weight-semibold);
 		color: var(--lumi-color-text-muted);
 		text-transform: uppercase;
