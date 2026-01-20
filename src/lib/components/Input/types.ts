@@ -38,9 +38,6 @@ export interface InputProps {
 	/** Placeholder text */
 	placeholder?: string;
 
-	/** Whether to autofocus on mount */
-	autofocus?: boolean;
-
 	/** Icon name to display */
 	icon?: string;
 
