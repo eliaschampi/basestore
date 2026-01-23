@@ -29,7 +29,7 @@
 		<div
 			class="lumi-flex lumi-flex--column lumi-align-items--center lumi-flex--gap-sm lumi-margin-bottom--lg"
 		>
-			<Icon name="package" size={48} color="var(--lumi-color-primary)" />
+			<Icon icon="package" size="48" color="var(--lumi-color-primary)" />
 			<h1 class="lumi-text--3xl lumi-font--bold lumi-margin--none">Faztore</h1>
 		</div>
 
@@ -90,7 +90,7 @@
 							onclick={() => (showPassword = !showPassword)}
 							aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
 						>
-							<Icon name={showPassword ? 'eye-off' : 'eye'} size={18} />
+							<Icon icon={showPassword ? 'eye-off' : 'eye'} size="18" />
 						</button>
 					</div>
 

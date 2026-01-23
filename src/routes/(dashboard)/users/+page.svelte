@@ -10,6 +10,7 @@
 	import Dialog from '$lib/components/Dialog/Dialog.svelte';
 	import Input from '$lib/components/Input/Input.svelte';
 	import Alert from '$lib/components/Alert/Alert.svelte';
+	import Fieldset from '$lib/components/Fieldset/Fieldset.svelte';
 	import Dropdown from '$lib/components/Dropdown/Dropdown.svelte';
 	import DropdownItem from '$lib/components/Dropdown/DropdownItem.svelte';
 	import Icon from '$lib/components/Icon/Icon.svelte';
@@ -18,9 +19,11 @@
 	import { can } from '$lib/stores/permissions';
 	import { getInitials, formatDate } from '$lib/utils';
 	import type { PageData } from './$types';
-	import type { Users } from '$lib/database/types';
 
 	const { data }: { data: PageData } = $props();
+
+	type UserRow = PageData['users'][number];
+	type PermissionsUser = Pick<UserRow, 'code' | 'email'> & { name: string; last_name: string };
 
 	// Permissions
 	const canCreate = $derived(can('users:create'));
@@ -36,7 +39,7 @@
 	let isEditing = $state(false);
 	let errorMessage = $state('');
 	let passwordMessage = $state('');
-	let selectedUser = $state<Users | null>(null);
+	let selectedUser = $state<UserRow | null>(null);
 	let selectedAvatar = $state('avatar.svg');
 
 	// Form fields
@@ -58,6 +61,28 @@
 		return userId === page.data.user?.code;
 	};
 
+	const selectedPermissionsUser = $derived((): PermissionsUser | null => {
+		if (!selectedUser) return null;
+		return {
+			code: selectedUser.code,
+			email: selectedUser.email,
+			name: selectedUser.name ?? '',
+			last_name: selectedUser.last_name ?? ''
+		};
+	});
+
+	function getActionError(result: { data?: Record<string, unknown> }): string | null {
+		const error = result.data?.error;
+		return typeof error === 'string' && error.length > 0 ? error : null;
+	}
+
+	function submitForm(formId: string): void {
+		const form = document.getElementById(formId);
+		if (form instanceof HTMLFormElement) {
+			form.requestSubmit();
+		}
+	}
+
 	function openCreateModal() {
 		if (!canCreate) return;
 		isEditing = false;
@@ -70,7 +95,7 @@
 		showModal = true;
 	}
 
-	function openEditModal(user: Users) {
+	function openEditModal(user: UserRow) {
 		if (!canUpdate) return;
 		isEditing = true;
 		selectedUser = user;
@@ -83,19 +108,19 @@
 		showModal = true;
 	}
 
-	function openDeleteModal(user: Users) {
+	function openDeleteModal(user: UserRow) {
 		if (!canDelete) return;
 		selectedUser = user;
 		showDeleteModal = true;
 	}
 
-	function openPasswordModal(user: Users) {
+	function openPasswordModal(user: UserRow) {
 		selectedUser = user;
 		passwordMessage = '';
 		showPasswordModal = true;
 	}
 
-	function openPermissionsModal(user: Users) {
+	function openPermissionsModal(user: UserRow) {
 		if (!canManagePermissions) return;
 		selectedUser = user;
 		showPermissionsModal = true;
@@ -120,7 +145,7 @@
 
 <div class="lumi-stack lumi-space--lg">
 	<div class="lumi-flex lumi-flex--between lumi-align-items--center lumi-flex--gap-md">
-		<Title title="Usuarios" subtitle="Gestiona los usuarios del sistema" icon="users" size="xl" />
+		<Title title="Usuarios" subtitle="Gestiona los usuarios del sistema" icon="users" size="lg" />
 		<Button
 			type="filled"
 			color="primary"
@@ -164,7 +189,7 @@
 									</DropdownItem>
 								{/if}
 								{#if canDelete && !mySelf(user.code)}
-									<DropdownItem icon="trash" color="danger" onclick={() => openDeleteModal(user)}>
+									<DropdownItem icon="trash" danger onclick={() => openDeleteModal(user)}>
 										Eliminar
 									</DropdownItem>
 								{/if}
@@ -179,7 +204,7 @@
 					>
 						<Avatar
 							text={getInitials(user.name || '', user.last_name || '')}
-							src={user.photo_url}
+							src={user.photo_url ?? undefined}
 							size="lg"
 							color="primary"
 						/>
@@ -245,7 +270,7 @@
 					await invalidate('users:load');
 					closeModal();
 				} else if (result.type === 'failure') {
-					errorMessage = result.data?.error || 'Ocurrió un error';
+					errorMessage = getActionError(result) ?? 'Ocurrió un error';
 				}
 			};
 		}}
@@ -300,10 +325,7 @@
 			{/if}
 
 			<!-- Avatar Selection -->
-			<div>
-				<label class="lumi-text--sm lumi-font--medium lumi-block lumi-margin-bottom--sm">
-					Avatar
-				</label>
+			<Fieldset legend="Avatar">
 				<div class="lumi-flex lumi-flex--wrap lumi-flex--gap-sm lumi-justify--center">
 					{#each avatars as avatar (avatar.src)}
 						<label class="lumi-pointer">
@@ -335,17 +357,13 @@
 						</label>
 					{/each}
 				</div>
-			</div>
+			</Fieldset>
 		</div>
 	</form>
 
 	{#snippet footer()}
 		<Button type="border" onclick={closeModal}>Cancelar</Button>
-		<Button
-			type="filled"
-			color="primary"
-			onclick={() => document.getElementById('user-form')?.requestSubmit()}
-		>
+		<Button type="filled" color="primary" onclick={() => submitForm('user-form')}>
 			{isEditing ? 'Actualizar' : 'Crear'}
 		</Button>
 	{/snippet}
@@ -364,7 +382,7 @@
 					await invalidate('users:load');
 					closeDeleteModal();
 				} else if (result.type === 'failure') {
-					showToast(result.data?.error || 'Error al eliminar', 'error');
+					showToast(getActionError(result) ?? 'Error al eliminar', 'error');
 				}
 			};
 		}}
@@ -382,11 +400,7 @@
 
 	{#snippet footer()}
 		<Button type="border" onclick={closeDeleteModal}>Cancelar</Button>
-		<Button
-			type="filled"
-			color="danger"
-			onclick={() => document.getElementById('delete-user-form')?.requestSubmit()}
-		>
+		<Button type="filled" color="danger" onclick={() => submitForm('delete-user-form')}>
 			Eliminar
 		</Button>
 	{/snippet}
@@ -404,7 +418,7 @@
 					showToast('Contraseña actualizada exitosamente', 'success');
 					closePasswordModal();
 				} else if (result.type === 'failure') {
-					passwordMessage = result.data?.error || 'Error al actualizar la contraseña';
+					passwordMessage = getActionError(result) ?? 'Error al actualizar la contraseña';
 				}
 			};
 		}}
@@ -444,20 +458,16 @@
 
 	{#snippet footer()}
 		<Button type="border" onclick={closePasswordModal}>Cancelar</Button>
-		<Button
-			type="filled"
-			color="primary"
-			onclick={() => document.getElementById('password-form')?.requestSubmit()}
-		>
+		<Button type="filled" color="primary" onclick={() => submitForm('password-form')}>
 			Actualizar Contraseña
 		</Button>
 	{/snippet}
 </Dialog>
 
 <!-- Permissions Modal -->
-{#if selectedUser}
+{#if selectedPermissionsUser}
 	<PermissionsModal
-		user={selectedUser}
+		user={selectedPermissionsUser}
 		bind:open={showPermissionsModal}
 		onclose={() => (showPermissionsModal = false)}
 	/>

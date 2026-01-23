@@ -2,9 +2,10 @@ import type { Cookies } from '@sveltejs/kit';
 import { generateToken, verifyToken } from './jwt';
 import type { Database } from '$lib/database';
 import type { Users } from '$lib/database/types';
+import type { Selectable } from 'kysely';
 
 export interface Session {
-	user: Users;
+	user: Selectable<Users>;
 	token: string;
 	expiresAt: number;
 }
