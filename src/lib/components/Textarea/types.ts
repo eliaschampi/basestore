@@ -9,6 +9,8 @@ export type TextareaColor = 'primary' | 'secondary' | 'success' | 'warning' | 'd
 export interface TextareaProps {
 	/** Textarea value (bindable) */
 	value?: string;
+	/** Form field name */
+	name?: string;
 	/** Label text */
 	label?: string;
 	/** Placeholder text */

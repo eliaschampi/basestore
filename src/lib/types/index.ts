@@ -139,3 +139,16 @@ export interface FocusEvent {
 export interface BlurEvent {
 	event: FocusEvent;
 }
+
+// ============================================================================
+// TOAST TYPES
+// ============================================================================
+
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
+
+export interface ToastState {
+	id: number;
+	title: string;
+	type: ToastType;
+	duration?: number;
+}

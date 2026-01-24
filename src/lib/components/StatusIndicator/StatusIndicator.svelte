@@ -3,11 +3,20 @@
 
 	const {
 		status = 'default',
+		active,
 		animated = false,
 		pulse = false,
 		tooltip = '',
 		class: className = ''
 	}: StatusIndicatorProps = $props();
+
+	// Derive status from active prop if provided
+	const effectiveStatus = $derived(() => {
+		if (active !== undefined) {
+			return active ? 'active' : 'inactive';
+		}
+		return status;
+	});
 
 	// pulse is an alias for animated
 	const isAnimated = $derived(animated || pulse);
@@ -27,13 +36,13 @@
 	];
 
 	const isPredefined = $derived(() => {
-		return predefinedStatuses.includes(status as StatusIndicatorStatus);
+		return predefinedStatuses.includes(effectiveStatus() as StatusIndicatorStatus);
 	});
 
 	const classes = $derived(() => {
 		return [
 			'lumi-status-indicator',
-			isPredefined() && `lumi-status-indicator--${status}`,
+			isPredefined() && `lumi-status-indicator--${effectiveStatus()}`,
 			!isPredefined() && 'lumi-status-indicator--custom',
 			isAnimated && 'lumi-status-indicator--animated',
 			className
@@ -44,7 +53,7 @@
 
 	const customStyle = $derived(() => {
 		if (!isPredefined()) {
-			return `--lumi-status-indicator-custom-color: ${status}`;
+			return `--lumi-status-indicator-custom-color: ${effectiveStatus()}`;
 		}
 		return '';
 	});

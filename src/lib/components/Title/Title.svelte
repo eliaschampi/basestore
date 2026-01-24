@@ -43,7 +43,7 @@
 	});
 
 	const styleVars = $derived(() => {
-		const colorVar = color === 'text' ? 'var(--lumi-color-text)' : `var(--lumi-color-${color})`;
+		const colorVar = color === 'text' ? 'var(--lumi-color-text)' : `var(--lumi-color-${color as Exclude<TitleColor, 'text'>})`;
 		return `--title-color: ${colorVar};`;
 	});
 </script>
@@ -55,7 +55,7 @@
 			{#if iconSnippet}
 				{@render iconSnippet()}
 			{:else if icon}
-				<Icon {icon} size={size === 'lg' || size === 'xl' ? '32px' : '24px'} />
+				<Icon {icon} size={(size === 'lg' || size === 'xl') ? '32px' : '24px'} />
 			{/if}
 		</div>
 	{/if}

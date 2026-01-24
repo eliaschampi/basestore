@@ -6,8 +6,11 @@
 	interface Props {
 		children?: Snippet;
 		icon?: string;
+		href?: string;
+		color?: 'danger';
 		danger?: boolean;
 		disabled?: boolean;
+		submit?: boolean;
 		class?: string;
 		onclick?: () => void;
 	}
@@ -15,19 +18,24 @@
 	const {
 		children,
 		icon,
+		href,
+		color,
 		danger = false,
 		disabled = false,
+		submit = false,
 		class: className = '',
 		onclick
 	}: Props = $props();
 
 	const closeDropdown = getContext<() => void>('dropdownClose');
 
+	const isDanger = $derived(danger || color === 'danger');
+
 	const itemClasses = $derived(() => {
 		return [
 			'lumi-dropdown-item',
 			disabled && 'lumi-dropdown-item--disabled',
-			danger && 'lumi-dropdown-item--danger',
+			isDanger && 'lumi-dropdown-item--danger',
 			className
 		]
 			.filter(Boolean)
@@ -41,31 +49,59 @@
 	}
 </script>
 
-<button
-	type="button"
-	class={itemClasses()}
-	role="menuitem"
-	tabindex={disabled ? -1 : 0}
-	onclick={handleClick}
-	onkeydown={(e) => {
-		if (e.key === 'Enter' || e.key === ' ') {
-			e.preventDefault();
-			handleClick();
-		}
-	}}
->
-	{#if icon}
-		<div class="lumi-dropdown-item__icon">
-			<Icon {icon} size="16px" />
-		</div>
-	{/if}
-
-	<span class="lumi-dropdown-item__content">
-		{#if children}
-			{@render children()}
+{#if href}
+	<a
+		{href}
+		class={itemClasses()}
+		role="menuitem"
+		tabindex={disabled ? -1 : 0}
+		onclick={handleClick}
+		onkeydown={(e) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				handleClick();
+			}
+		}}
+	>
+		{#if icon}
+			<div class="lumi-dropdown-item__icon">
+				<Icon {icon} size="16px" />
+			</div>
 		{/if}
-	</span>
-</button>
+
+		<span class="lumi-dropdown-item__content">
+			{#if children}
+				{@render children()}
+			{/if}
+		</span>
+	</a>
+{:else}
+	<button
+		type={submit ? 'submit' : 'button'}
+		class={itemClasses()}
+		role="menuitem"
+		tabindex={disabled ? -1 : 0}
+		onclick={handleClick}
+		onkeydown={(e) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				handleClick();
+			}
+		}}
+	>
+		{#if icon}
+			<div class="lumi-dropdown-item__icon">
+				<Icon {icon} size="16px" />
+			</div>
+		{/if}
+
+		<span class="lumi-dropdown-item__content">
+			{#if children}
+				{@render children()}
+			{/if}
+		</span>
+	</button>
+{/if}
 
 <style>
 	.lumi-dropdown-item {
@@ -140,5 +176,10 @@
 	.lumi-dropdown-item--danger:hover:not(.lumi-dropdown-item--disabled) {
 		background: var(--lumi-color-danger-bg);
 		color: var(--lumi-color-danger);
+	}
+
+	/* Link styles */
+	a.lumi-dropdown-item {
+		text-decoration: none;
 	}
 </style>

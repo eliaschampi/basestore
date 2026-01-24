@@ -104,26 +104,26 @@
 
 			{#snippet row({ row })}
 				<td>
-					<span class="lumi-font--medium">{row.name}</span>
+					<span class="lumi-font--medium">{row.name as string}</span>
 				</td>
 				<td>
 					{#if row.description}
-						<span class="lumi-text--sm lumi-text--muted">{row.description}</span>
+						<span class="lumi-text--sm lumi-text--muted">{row.description as string}</span>
 					{:else}
 						<span class="lumi-text--sm lumi-text--muted" style="font-style: italic;"
 							>Sin descripción</span
 						>
 					{/if}
 				</td>
-				<td>{formatDate(row.created_at)}</td>
-				<td>{formatDate(row.updated_at)}</td>
+				<td>{formatDate(row.created_at as string | Date)}</td>
+				<td>{formatDate(row.updated_at as string | Date)}</td>
 				<td>
 					<div class="lumi-flex lumi-flex--gap-xs">
 						<Button
 							type="flat"
 							size="sm"
 							icon="edit"
-							onclick={() => openEditModal(row)}
+							onclick={() => openEditModal(row as unknown as Category)}
 							disabled={!canUpdate}
 						/>
 						<Button
@@ -131,7 +131,7 @@
 							size="sm"
 							icon="trash"
 							color="danger"
-							onclick={() => openDeleteModal(row)}
+							onclick={() => openDeleteModal(row as unknown as Category)}
 							disabled={!canDelete}
 						/>
 					</div>
@@ -156,7 +156,8 @@
 					await invalidate('categories:load');
 					closeModal();
 				} else if (result.type === 'failure') {
-					errorMessage = result.data?.error || 'Ocurrió un error';
+					const error = result.data?.error;
+					errorMessage = (typeof error === 'string' ? error : null) || 'Ocurrió un error';
 				}
 			};
 		}}
@@ -215,7 +216,8 @@
 					await invalidate('categories:load');
 					closeDeleteModal();
 				} else if (result.type === 'failure') {
-					showToast(result.data?.error || 'Error al eliminar', 'error');
+					const error = result.data?.error;
+					showToast((typeof error === 'string' ? error : null) || 'Error al eliminar', 'error');
 				}
 			};
 		}}
@@ -234,7 +236,10 @@
 		<Button
 			type="filled"
 			color="danger"
-			onclick={() => document.getElementById('delete-category-form')?.requestSubmit()}
+			onclick={() => {
+				const form = document.getElementById('delete-category-form');
+				if (form instanceof HTMLFormElement) form.requestSubmit();
+			}}
 		>
 			Eliminar
 		</Button>

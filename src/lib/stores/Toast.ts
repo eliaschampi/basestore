@@ -13,7 +13,7 @@ const TOAST_LIFETIME = 5000;
 // Límite máximo de toasts simultáneos
 const MAX_TOASTS = 5;
 
-export function showToast(title: string, type: ToastType) {
+export function showToast(title: string, type: ToastType): void {
 	const id = ++toastId;
 	const newToast: ToastState = { id, title, type };
 
@@ -29,13 +29,13 @@ export function showToast(title: string, type: ToastType) {
 		return updatedToasts;
 	});
 
-	// ProgSeder la eliminación automática
+	// Programar la eliminación automática
 	timeouts[id] = setTimeout(() => {
 		removeToast(id);
 	}, TOAST_LIFETIME);
 }
 
-export function removeToast(id: number) {
+export function removeToast(id: number): void {
 	if (timeouts[id]) {
 		clearTimeout(timeouts[id]);
 		delete timeouts[id];
@@ -43,7 +43,7 @@ export function removeToast(id: number) {
 	toasts.update((prev) => prev.filter((toast) => toast.id !== id));
 }
 
-export function clearAllToasts() {
+export function clearAllToasts(): void {
 	// Limpiar todos los timeouts
 	Object.keys(timeouts).forEach((id) => {
 		clearTimeout(timeouts[Number(id)]);

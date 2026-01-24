@@ -4,8 +4,7 @@ import { dbInstance as db } from '$lib/config/server';
 
 // GET - Fetch user permissions
 export const GET: RequestHandler = async ({ params, locals }) => {
-	const session = await locals.auth();
-	if (!session?.user) {
+	if (!locals.session?.user) {
 		throw error(401, 'No autorizado');
 	}
 
@@ -28,8 +27,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
 // POST - Update user permissions
 export const POST: RequestHandler = async ({ params, request, locals }) => {
-	const session = await locals.auth();
-	if (!session?.user) {
+	if (!locals.session?.user) {
 		throw error(401, 'No autorizado');
 	}
 

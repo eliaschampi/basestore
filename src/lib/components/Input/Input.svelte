@@ -37,13 +37,13 @@
 
 	// Local state
 	let isFocused = $state(false);
-	let inputElement: HTMLInputElement;
 	let internalError = $state('');
+	let inputElement: HTMLInputElement;
 
 	// Computed values
 	const inputId = $derived(`lumi-input-${Math.random().toString(36).substring(2, 11)}`);
 
-	const state = $derived.by(() => {
+	const inputState = $derived.by(() => {
 		if (success) return 'success';
 		if (danger || internalError) return 'danger';
 		if (warning) return 'warning';
@@ -51,9 +51,9 @@
 	});
 
 	const activeColor = $derived.by(() => {
-		if (state === 'success') return 'success';
-		if (state === 'danger') return 'danger';
-		if (state === 'warning') return 'warning';
+		if (inputState === 'success') return 'success';
+		if (inputState === 'danger') return 'danger';
+		if (inputState === 'warning') return 'warning';
 		return color;
 	});
 
@@ -85,7 +85,7 @@
 	const containerClasses = $derived(() => {
 		const classes = ['lumi-input-container', `lumi-input-container--${size}`];
 		if (isFocused) classes.push('lumi-input-container--focused');
-		if (state !== 'default') classes.push(`lumi-input-container--${state}`);
+		if (inputState !== 'default') classes.push(`lumi-input-container--${inputState}`);
 		if (disabled) classes.push('lumi-input-container--disabled');
 		if (className) classes.push(className);
 		return classes.join(' ');
@@ -191,7 +191,7 @@
 	</div>
 
 	{#if message}
-		<div class="lumi-input__message lumi-input__message--{state}">
+		<div class="lumi-input__message lumi-input__message--{inputState}">
 			{message}
 		</div>
 	{/if}

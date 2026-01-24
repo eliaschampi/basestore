@@ -11,6 +11,8 @@ export type SwitchColor = 'primary' | 'secondary' | 'success' | 'warning' | 'dan
 export interface SwitchProps {
 	/** Checked state (bindable) */
 	checked?: boolean;
+	/** Form field name */
+	name?: string;
 	/** Label text */
 	label?: string;
 	/** Size variant */

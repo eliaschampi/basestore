@@ -27,8 +27,8 @@
 
 	interface SimpleUser {
 		code: string;
-		name: string;
-		last_name: string;
+		name: string | null;
+		last_name: string | null;
 		email: string;
 	}
 
@@ -50,9 +50,9 @@
 	let selectedUserCode = $state('');
 
 	const userOptions = $derived(
-		data.users.map((u: SimpleUser) => ({
+		data.users.map((u) => ({
 			value: u.code,
-			label: `${u.name} ${u.last_name} (${u.email})`
+			label: `${u.name ?? ''} ${u.last_name ?? ''} (${u.email})`
 		}))
 	);
 
@@ -109,8 +109,8 @@
 	}
 
 	function getUserName(userCode: string): string {
-		const user = data.users.find((u: SimpleUser) => u.code === userCode);
-		return user ? `${user.name} ${user.last_name}` : 'Usuario no disponible';
+		const user = data.users.find((u) => u.code === userCode);
+		return user ? `${user.name ?? ''} ${user.last_name ?? ''}` : 'Usuario no disponible';
 	}
 
 	function closeModal() {
@@ -149,8 +149,8 @@
 			{#snippet row({ row })}
 				<td>
 					<div class="lumi-flex lumi-align-items--center lumi-flex--gap-sm">
-						<StatusIndicator active={row.state} />
-						<span class="lumi-font--medium">{row.name}</span>
+						<StatusIndicator active={row.state as boolean} />
+						<span class="lumi-font--medium">{row.name as string}</span>
 					</div>
 				</td>
 				<td>
@@ -161,16 +161,16 @@
 					{/if}
 				</td>
 				<td>
-					<Chip color="info" size="sm">{row.users?.length || 0} usuarios</Chip>
+					<Chip color="info" size="sm">{(row.users as string[])?.length || 0} usuarios</Chip>
 				</td>
-				<td>{formatDate(row.created_at)}</td>
+				<td>{formatDate(row.created_at as string | Date)}</td>
 				<td>
 					<div class="lumi-flex lumi-flex--gap-xs">
 						<Button
 							type="flat"
 							size="sm"
 							icon="edit"
-							onclick={() => openEditModal(row)}
+							onclick={() => openEditModal(row as unknown as Branch)}
 							disabled={!canUpdate}
 						/>
 						<Button
@@ -178,7 +178,7 @@
 							size="sm"
 							icon="trash"
 							color="danger"
-							onclick={() => openDeleteModal(row)}
+							onclick={() => openDeleteModal(row as unknown as Branch)}
 							disabled={!canDelete}
 						/>
 					</div>
@@ -203,7 +203,8 @@
 					await invalidate('branches:load');
 					closeModal();
 				} else if (result.type === 'failure') {
-					errorMessage = result.data?.error || 'Ocurrió un error';
+					const error = result.data?.error;
+					errorMessage = (typeof error === 'string' ? error : null) || 'Ocurrió un error';
 				}
 			};
 		}}
@@ -298,7 +299,8 @@
 					await invalidate('branches:load');
 					closeDeleteModal();
 				} else if (result.type === 'failure') {
-					showToast(result.data?.error || 'Error al eliminar', 'error');
+					const error = result.data?.error;
+					showToast((typeof error === 'string' ? error : null) || 'Error al eliminar', 'error');
 				}
 			};
 		}}
@@ -317,7 +319,10 @@
 		<Button
 			type="filled"
 			color="danger"
-			onclick={() => document.getElementById('delete-branch-form')?.requestSubmit()}
+			onclick={() => {
+				const form = document.getElementById('delete-branch-form');
+				if (form instanceof HTMLFormElement) form.requestSubmit();
+			}}
 		>
 			Eliminar
 		</Button>

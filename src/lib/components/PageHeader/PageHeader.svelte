@@ -14,7 +14,6 @@
 		title,
 		subtitle,
 		icon,
-		iconColor,
 		size = 'lg',
 		color,
 		class: className = '',
@@ -41,7 +40,7 @@
 		{#if children}
 			{@render children()}
 		{:else}
-			<Title {title} {subtitle} {icon} {iconColor} {size} {color} />
+			<Title {title} {subtitle} {icon} {size} {color} />
 		{/if}
 
 		{#if actions}

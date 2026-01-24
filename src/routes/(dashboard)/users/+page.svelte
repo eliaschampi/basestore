@@ -61,7 +61,7 @@
 		return userId === page.data.user?.code;
 	};
 
-	const selectedPermissionsUser = $derived((): PermissionsUser | null => {
+	const selectedPermissionsUser = $derived(() => {
 		if (!selectedUser) return null;
 		return {
 			code: selectedUser.code,
@@ -465,9 +465,9 @@
 </Dialog>
 
 <!-- Permissions Modal -->
-{#if selectedPermissionsUser}
+{#if selectedPermissionsUser()}
 	<PermissionsModal
-		user={selectedPermissionsUser}
+		user={selectedPermissionsUser()}
 		bind:open={showPermissionsModal}
 		onclose={() => (showPermissionsModal = false)}
 	/>
