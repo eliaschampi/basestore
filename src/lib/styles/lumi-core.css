@@ -629,7 +629,6 @@ body {
 }
 
 @keyframes lumi-pulse {
-
 	0%,
 	100% {
 		opacity: 1;
@@ -721,36 +720,36 @@ body {
 	justify-content: flex-start;
 }
 
-.lumi-stack>*+* {
+.lumi-stack > * + * {
 	margin-top: var(--lumi-space-lg) !important;
 }
 
 /* Space variants */
-.lumi-space--2xs>*+* {
+.lumi-space--2xs > * + * {
 	margin-top: var(--lumi-space-2xs) !important;
 }
 
-.lumi-space--xs>*+* {
+.lumi-space--xs > * + * {
 	margin-top: var(--lumi-space-xs) !important;
 }
 
-.lumi-space--sm>*+* {
+.lumi-space--sm > * + * {
 	margin-top: var(--lumi-space-sm) !important;
 }
 
-.lumi-space--md>*+* {
+.lumi-space--md > * + * {
 	margin-top: var(--lumi-space-md) !important;
 }
 
-.lumi-space--lg>*+* {
+.lumi-space--lg > * + * {
 	margin-top: var(--lumi-space-lg) !important;
 }
 
-.lumi-space--xl>*+* {
+.lumi-space--xl > * + * {
 	margin-top: var(--lumi-space-xl) !important;
 }
 
-.lumi-space--xxl>*+* {
+.lumi-space--xxl > * + * {
 	margin-top: var(--lumi-space-xxl) !important;
 }
 
@@ -925,7 +924,7 @@ body {
 	flex-direction: column;
 }
 
-.lumi-spaced-vertical> :not(:last-child) {
+.lumi-spaced-vertical > :not(:last-child) {
 	margin-bottom: var(--lumi-space-sm);
 }
 
@@ -1099,7 +1098,6 @@ body {
 
 /* Tablet & Mobile Layout (1024px and below) */
 @media (max-width: 1024px) {
-
 	/* Transform to mobile layout - remove sidebar from grid */
 	.lumi-dashboard-layout {
 		grid-template-areas:
@@ -1290,14 +1288,14 @@ body {
 	}
 
 	/* Reduce spacing on mobile */
-	.lumi-space--lg>*+*,
-	.lumi-space--xl>*+*,
-	.lumi-space--xxl>*+* {
+	.lumi-space--lg > * + *,
+	.lumi-space--xl > * + *,
+	.lumi-space--xxl > * + * {
 		margin-top: var(--lumi-space-md) !important;
 	}
 
 	/* Stack utilities become more compact */
-	.lumi-stack>*+* {
+	.lumi-stack > * + * {
 		margin-top: var(--lumi-space-md) !important;
 	}
 }

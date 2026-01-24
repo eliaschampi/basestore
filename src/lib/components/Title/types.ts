@@ -1,6 +1,13 @@
 // Lumi UI - Title Component Types
 
-export type TitleColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info' | 'text';
+export type TitleColor =
+	| 'primary'
+	| 'secondary'
+	| 'success'
+	| 'warning'
+	| 'danger'
+	| 'info'
+	| 'text';
 export type TitleSize = 'sm' | 'md' | 'lg' | 'xl';
 
 export interface TitleProps {

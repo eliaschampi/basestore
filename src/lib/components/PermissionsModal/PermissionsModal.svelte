@@ -92,7 +92,7 @@
 	// Save permissions
 	async function savePermissions() {
 		if (!user) return;
-		
+
 		saving = true;
 		error = '';
 
@@ -140,7 +140,11 @@
 	});
 </script>
 
-<Dialog bind:open title={user ? `Permisos de Usuario: ${user.name} ${user.last_name}` : 'Permisos de Usuario'} size="lg">
+<Dialog
+	bind:open
+	title={user ? `Permisos de Usuario: ${user.name} ${user.last_name}` : 'Permisos de Usuario'}
+	size="lg"
+>
 	{#if loading}
 		<div class="lumi-flex lumi-flex--center lumi-padding--xl">
 			<div class="lumi-loading-spinner"></div>
