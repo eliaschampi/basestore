@@ -45,7 +45,7 @@
 
 	let searchQuery = $state('');
 	let currentPage = $state(1);
-	let selectedItems = $state<TableRow[]>(selected || []);
+	let selectedItems = $state<TableRow[]>(selected ? [...selected] : []);
 	let sortColumn = $state<string | null>(null);
 	let sortDirection = $state<'asc' | 'desc' | null>(null);
 
@@ -71,42 +71,55 @@
 				if (aVal === null || aVal === undefined) return 1;
 				if (bVal === null || bVal === undefined) return -1;
 
-				const comparison = aVal < bVal ? -1 : 1;
+				if (typeof aVal === 'number' && typeof bVal === 'number') {
+					const comparison = aVal - bVal;
+					return sortDirection === 'asc' ? comparison : -comparison;
+				}
+
+				const aString = String(aVal);
+				const bString = String(bVal);
+				const comparison = aString.localeCompare(bString, undefined, {
+					numeric: true,
+					sensitivity: 'base'
+				});
 				return sortDirection === 'asc' ? comparison : -comparison;
 			});
-		}
-
-		if (pagination) {
-			const start = (currentPage - 1) * itemsPerPage;
-			const end = start + itemsPerPage;
-			result = result.slice(start, end);
 		}
 
 		return result;
 	});
 
+	const filteredData = $derived(() => {
+		if (!data) return [];
+		if (!searchQuery || !search) return [...data];
+		const query = searchQuery.toLowerCase();
+		return data.filter((item) =>
+			Object.values(item).some((val) => String(val).toLowerCase().includes(query))
+		);
+	});
+
 	const totalPages = $derived(() => {
-		if (!data) return 0;
-		const filteredLength =
-			searchQuery && search
-				? data.filter((item) =>
-						Object.values(item).some((val) =>
-							String(val).toLowerCase().includes(searchQuery.toLowerCase())
-						)
-					).length
-				: data.length;
-		return Math.ceil(filteredLength / itemsPerPage);
+		const totalItems = filteredData().length;
+		if (!totalItems) return 0;
+		return Math.ceil(totalItems / itemsPerPage);
+	});
+
+	const currentPageData = $derived(() => {
+		if (!pagination) return processedData();
+		const start = (currentPage - 1) * itemsPerPage;
+		const end = start + itemsPerPage;
+		return processedData().slice(start, end);
 	});
 
 	const isAllSelected = $derived(() => {
 		if (!data || !selectable) return false;
-		const currentData = processedData();
+		const currentData = currentPageData();
 		return currentData.length > 0 && currentData.every((item) => isRowSelected(item));
 	});
 
 	const isPartiallySelected = $derived(() => {
 		if (!data || !selectable) return false;
-		const currentData = processedData();
+		const currentData = currentPageData();
 		const selectedCount = currentData.filter((item) => isRowSelected(item)).length;
 		return selectedCount > 0 && selectedCount < currentData.length;
 	});
@@ -115,7 +128,7 @@
 		currentPage,
 		totalPages: totalPages(),
 		itemsPerPage,
-		totalItems: data?.length || 0
+		totalItems: filteredData().length
 	}));
 
 	const tableClasses = $derived(() => {
@@ -136,8 +149,12 @@
 	};
 
 	const handleSearch = () => {
-		onsearch?.(searchQuery);
-		if (pagination) currentPage = 1;
+		const trimmedQuery = searchQuery.trim();
+		if (searchQuery !== trimmedQuery) {
+			searchQuery = trimmedQuery;
+		}
+		onsearch?.(trimmedQuery);
+		if (pagination && currentPage !== 1) currentPage = 1;
 	};
 
 	const handleSort = (column: string) => {
@@ -161,7 +178,7 @@
 	const toggleSelectAll = (checked: boolean) => {
 		if (!data || !selectable) return;
 
-		const currentData = processedData();
+		const currentData = currentPageData();
 
 		if (checked) {
 			currentData.forEach((row) => {
@@ -205,15 +222,27 @@
 		if (page >= 1 && page <= totalPages()) {
 			currentPage = page;
 			onPageChange?.(page);
+		} else if (totalPages() === 0 && page === 1) {
+			currentPage = 1;
 		}
 	};
 
 	setContext('table', {
-		compact,
-		stripe,
-		hover,
-		selectable,
-		sortable,
+		get compact() {
+			return compact;
+		},
+		get stripe() {
+			return stripe;
+		},
+		get hover() {
+			return hover;
+		},
+		get selectable() {
+			return selectable;
+		},
+		get sortable() {
+			return sortable;
+		},
 		getSelectedItems: () => selectedItems,
 		getSortColumn: () => sortColumn,
 		getSortDirection: () => sortDirection,
@@ -223,11 +252,24 @@
 	});
 
 	$effect(() => {
-		if (searchQuery && pagination) currentPage = 1;
+		selectedItems = selected ? [...selected] : [];
 	});
 
 	$effect(() => {
-		if (data && pagination) currentPage = 1;
+		const hasSearch = Boolean(searchQuery && search);
+		if (pagination && hasSearch && currentPage !== 1) {
+			currentPage = 1;
+		}
+	});
+
+	$effect(() => {
+		const pages = totalPages();
+		if (!pagination) return;
+		if (pages === 0 && currentPage !== 1) {
+			currentPage = 1;
+		} else if (pages > 0 && currentPage > pages) {
+			currentPage = pages;
+		}
 	});
 </script>
 
@@ -258,7 +300,7 @@
 				<span>Loading...</span>
 			</div>
 		{:else}
-			<table class="lumi-table__content">
+			<table class="lumi-table__content" aria-busy={loading}>
 				<thead class="lumi-table__thead">
 					<tr>
 						{#if selectable}
@@ -278,7 +320,7 @@
 				</thead>
 				<tbody class="lumi-table__tbody">
 					{#if data && data.length > 0}
-						{#each processedData() as rowData, index (getRowKey(rowData, index))}
+						{#each currentPageData() as rowData, index (getRowKey(rowData, index))}
 							<tr
 								class="lumi-table__row"
 								class:lumi-table__row--selected={isRowSelected(rowData)}
@@ -296,7 +338,7 @@
 								{#if row}
 									{@render row({ row: rowData, index })}
 								{:else}
-									{#each Object.values(rowData) as value, valueIndex (`cell-${index}-${valueIndex}`)}
+									{#each Object.values(rowData) as value, valueIndex (`cell-${getRowKey(rowData, index)}-${valueIndex}`)}
 										<td class="lumi-table__td">
 											{value}
 										</td>
@@ -313,7 +355,7 @@
 			</table>
 
 			{#if data && data.length === 0}
-				<div class="lumi-table__empty">
+				<div class="lumi-table__empty" role="status" aria-live="polite">
 					<div class="lumi-table__empty-icon">
 						<Icon icon="inbox" size="48px" />
 					</div>
@@ -330,10 +372,10 @@
 			{:else}
 				<div class="lumi-table__pagination-info">
 					<span class="lumi-table__pagination-text">
-						Showing {(currentPage - 1) * itemsPerPage + 1} - {Math.min(
+						Showing {filteredData().length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} - {Math.min(
 							currentPage * itemsPerPage,
-							data?.length || 0
-						)} of {data?.length || 0}
+							filteredData().length
+						)} of {filteredData().length}
 					</span>
 				</div>
 				<div class="lumi-table__pagination-controls">
@@ -352,7 +394,7 @@
 							if (currentPage <= 3) return i + 1;
 							if (currentPage >= total - 2) return total - 4 + i;
 							return currentPage - 2 + i;
-						}) as page}
+						}) as page (page)}
 							<button
 								class="lumi-table__pagination-page"
 								class:lumi-table__pagination-page--active={currentPage === page}

@@ -151,12 +151,6 @@
 			unlockBodyScroll();
 		};
 	});
-	const handleKeyDownPresentation = (event: KeyboardEvent) => {
-		if (event.key === 'Enter' || event.key === ' ') {
-			event.preventDefault();
-			handleOverlayClick();
-		}
-	};
 	const handleKeyDownDialog = (event: KeyboardEvent) => {
 		if (event.key === 'Enter' || event.key === ' ') {
 			event.stopPropagation();
@@ -169,7 +163,6 @@
 		class={overlayClasses}
 		transition:fade={{ duration: 200 }}
 		onclick={handleOverlayClick}
-		onkeydown={handleKeyDownPresentation}
 		role="presentation"
 	>
 		<div
@@ -251,7 +244,12 @@
 	/* Dialog Container */
 	.lumi-dialog {
 		position: relative;
-		background: var(--lumi-color-surface);
+		background-color: var(--lumi-color-surface);
+		background-image: linear-gradient(
+			180deg,
+			var(--lumi-color-surface) 0%,
+			var(--lumi-color-surface-hover) 100%
+		);
 		border-radius: var(--lumi-radius-2xl);
 		max-height: 90vh;
 		width: 100%;
@@ -308,6 +306,9 @@
 		justify-content: space-between;
 		padding: var(--lumi-space-lg) var(--lumi-space-xl);
 		border-bottom: 1px solid var(--lumi-color-border-light);
+		background-color: var(--lumi-color-surface);
+		border-top-left-radius: var(--lumi-radius-2xl);
+		border-top-right-radius: var(--lumi-radius-2xl);
 		flex-shrink: 0;
 	}
 
@@ -357,6 +358,7 @@
 		padding: var(--lumi-space-xl);
 		color: var(--lumi-color-text);
 		line-height: var(--lumi-line-height-normal);
+		background-color: var(--lumi-color-surface);
 		overflow-y: auto;
 	}
 
@@ -382,7 +384,7 @@
 		padding: var(--lumi-space-lg) var(--lumi-space-xl);
 		border-top: 1px solid var(--lumi-color-border-light);
 		flex-shrink: 0;
-		background: var(--lumi-color-background-hover);
+		background: var(--lumi-color-surface);
 		border-bottom-left-radius: var(--lumi-radius-2xl);
 		border-bottom-right-radius: var(--lumi-radius-2xl);
 	}

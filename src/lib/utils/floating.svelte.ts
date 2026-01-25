@@ -26,25 +26,44 @@ export interface UseFloatingOptions {
 	strategy?: 'fixed' | 'absolute';
 }
 
+export type FloatingController = {
+	isOpen: boolean;
+	position: FloatingPosition;
+	floatingStyles: Record<string, string>;
+	open: () => void;
+	close: () => void;
+	toggle: () => void;
+	updatePosition: () => void;
+};
+
+export type FloatingOptionsInput = UseFloatingOptions | (() => UseFloatingOptions);
+
 export function createFloating(
 	triggerElement: () => HTMLElement | undefined,
 	floatingElement: () => HTMLElement | undefined,
-	options: UseFloatingOptions = {}
-) {
-	const {
-		offset = 8,
-		placement = 'bottom-start',
-		matchWidth = false,
-		maxHeight = 300,
-		viewportPadding = 16,
-		zIndex = 'var(--lumi-z-dropdown)',
-		strategy = 'fixed'
-	} = options;
+	options: FloatingOptionsInput = {} as UseFloatingOptions
+): FloatingController {
+	const optionsGetter: () => UseFloatingOptions =
+		typeof options === 'function' ? options : () => options;
+	const resolvedOptions = $derived(() => {
+		const current = optionsGetter() ?? {};
+		return {
+			offset: 8,
+			placement: 'bottom-start',
+			matchWidth: false,
+			maxHeight: 300,
+			viewportPadding: 16,
+			zIndex: 'var(--lumi-z-dropdown)',
+			strategy: 'fixed',
+			...current
+		};
+	});
 
 	let isOpen = $state(false);
 	let position = $state<FloatingPosition>({ top: 0, left: 0 });
 
 	const floatingStyles = $derived(() => {
+		const { strategy, zIndex, matchWidth } = resolvedOptions();
 		const styles: Record<string, string> = {
 			position: strategy,
 			top: `${position.top}px`,
@@ -67,6 +86,8 @@ export function createFloating(
 		const trigger = triggerElement();
 		if (!trigger || !isOpen) return;
 
+		const { offset, placement, matchWidth, maxHeight, viewportPadding, strategy } =
+			resolvedOptions();
 		const triggerRect = trigger.getBoundingClientRect();
 		const viewport = {
 			width: window.innerWidth,

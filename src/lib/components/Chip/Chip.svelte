@@ -46,10 +46,14 @@
 			onclick(event as unknown as MouseEvent);
 		}
 	};
-	
 </script>
 
-<div class={classes()} role={onclick ? 'button' : 'status'} onclick={handleClick} onkeydown={handleKeyDown}>
+<div
+	class={classes()}
+	role={onclick ? 'button' : 'status'}
+	onclick={handleClick}
+	onkeydown={handleKeyDown}
+>
 	{#if icon}
 		<!-- Icon -->
 		<span class="lumi-chip__icon">

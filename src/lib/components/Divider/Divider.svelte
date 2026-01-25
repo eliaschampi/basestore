@@ -44,7 +44,6 @@
 	{onclick}
 	onkeydown={handleKeydown}
 	role={onclick ? 'button' : 'separator'}
-	tabindex={onclick ? 0 : undefined}
 	aria-label={onclick ? 'Divider button' : undefined}
 >
 	{#if hasContent && position !== 'left'}

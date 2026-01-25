@@ -43,14 +43,14 @@
 	const floating = createFloating(
 		() => selectRef,
 		() => dropdownRef,
-		{
+		() => ({
 			placement,
 			matchWidth: true,
 			maxHeight,
 			offset,
 			zIndex: 'var(--lumi-z-dropdown)',
 			strategy: 'fixed'
-		}
+		})
 	);
 
 	// Utility for deep/shallow comparison

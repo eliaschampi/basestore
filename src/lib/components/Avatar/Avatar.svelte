@@ -51,7 +51,7 @@
 	const handleClick = (event: MouseEvent) => {
 		if (onclick) onclick(event);
 	};
-		// Agregar esta función junto a tus otros handlers
+	// Agregar esta función junto a tus otros handlers
 	const handleKeyDown = (event: KeyboardEvent) => {
 		// Activar solo con Enter o Space (comportamiento estándar de botones)
 		if (event.key === 'Enter' || event.key === ' ') {

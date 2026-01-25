@@ -45,19 +45,18 @@
 	let menuRef: HTMLDivElement | undefined = $state();
 
 	const triggerId = `lumi-dropdown-trigger-${Math.random().toString(36).substring(2, 11)}`;
-
 	// Floating element management
 	const floating = createFloating(
 		() => dropdownRef,
 		() => menuRef,
-		{
+		() => ({
 			placement: position,
 			maxHeight,
 			offset,
 			viewportPadding,
 			zIndex: 'var(--lumi-z-dropdown)',
-			strategy: 'fixed'
-		}
+			strategy: 'fixed' as const
+		})
 	);
 
 	// Sync open state with floating
