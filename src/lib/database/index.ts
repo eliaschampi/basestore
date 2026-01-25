@@ -32,7 +32,7 @@ export function createDatabase(config: {
 		dialect: new PostgresDialect({ pool }),
 		log: (event) => {
 			if (process.env.NODE_ENV === 'development' && event.level === 'query') {
-				// console.log('SQL:', event.query.sql);
+				// eslint-disable-next-line
 				console.log('Parameters:', event.query.parameters);
 			}
 		}
@@ -40,6 +40,7 @@ export function createDatabase(config: {
 
 	// Graceful shutdown
 	process.on('SIGTERM', async () => {
+		// eslint-disable-next-line	
 		console.log('Closing database pool...');
 		await pool.end();
 	});

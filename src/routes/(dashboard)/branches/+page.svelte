@@ -12,7 +12,6 @@
 	import Switch from '$lib/components/Switch/Switch.svelte';
 	import Select from '$lib/components/Select/Select.svelte';
 	import Alert from '$lib/components/Alert/Alert.svelte';
-	import { Icon } from '$lib/components';
 	import { showToast } from '$lib/stores/Toast';
 	import { can } from '$lib/stores/permissions';
 	import type { PageData } from './$types';
@@ -23,13 +22,6 @@
 		state: boolean;
 		users: string[];
 		created_at: Date | string;
-	}
-
-	interface SimpleUser {
-		code: string;
-		name: string | null;
-		last_name: string | null;
-		email: string;
 	}
 
 	const { data }: { data: PageData } = $props();
@@ -231,7 +223,7 @@
 			<Switch bind:checked={formState} name="state" label="Sede activa" />
 
 			<div class="lumi-stack lumi-space--sm">
-				<label class="lumi-text--sm lumi-font--medium lumi-block"> Usuarios asignados </label>
+				<div class="lumi-text--sm lumi-font--medium lumi-block"> Usuarios asignados </div>
 
 				<div class="lumi-flex lumi-flex--gap-sm">
 					<div class="lumi-flex-item--grow">
@@ -249,7 +241,7 @@
 
 				{#if selectedUsers.length > 0}
 					<div class="lumi-stack lumi-space--xs">
-						{#each selectedUsers as userCode}
+						{#each selectedUsers as userCode (userCode)}
 							<input type="hidden" name="selectedUsers" value={userCode} />
 							<div
 								class="lumi-flex lumi-flex--between lumi-align-items--center lumi-padding--sm lumi-bg--surface lumi-rounded--md"

@@ -23,7 +23,6 @@
 	const { data }: { data: PageData } = $props();
 
 	type UserRow = PageData['users'][number];
-	type PermissionsUser = Pick<UserRow, 'code' | 'email'> & { name: string; last_name: string };
 
 	// Permissions
 	const canCreate = $derived(can('users:create'));

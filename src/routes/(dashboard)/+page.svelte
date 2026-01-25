@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Title, StatCard, QuickAccessCard } from '$lib/components';
-	import type { PageData } from './$types';
 
-	const { data }: { data: PageData } = $props();
+	const { data } = $props();
+	const { users, branches, categories, brands } = $derived(data.stats);
 
 	interface StatCardData {
 		title: string;
@@ -15,28 +15,28 @@
 	const statCards: StatCardData[] = [
 		{
 			title: 'Usuarios',
-			value: data.stats.users,
+			value: users,
 			icon: 'users',
 			color: 'primary',
 			href: '/users'
 		},
 		{
 			title: 'Sedes',
-			value: data.stats.branches,
+			value: branches,
 			icon: 'building',
 			color: 'secondary',
 			href: '/branches'
 		},
 		{
 			title: 'Categorías',
-			value: data.stats.categories,
+			value: categories,
 			icon: 'tag',
 			color: 'success',
 			href: '/categories'
 		},
 		{
 			title: 'Marcas',
-			value: data.stats.brands,
+			value: brands,
 			icon: 'award',
 			color: 'info',
 			href: '/brands'
@@ -98,7 +98,7 @@
 
 	<!-- Stats Cards -->
 	<div class="lumi-grid lumi-grid--auto-fit lumi-grid--gap-lg">
-		{#each statCards as stat}
+		{#each statCards as stat (stat.title)}
 			<StatCard
 				title={stat.title}
 				value={stat.value}
@@ -115,7 +115,7 @@
 	</div>
 
 	<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-lg">
-		{#each quickAccessCards as card}
+		{#each quickAccessCards as card (card.title)}
 			<QuickAccessCard
 				title={card.title}
 				description={card.description}
