@@ -39,14 +39,21 @@
 			onclick(event);
 		}
 	}
+
+	function handleKeyDown(event: KeyboardEvent) {
+		if (clickable && (event.key === 'Enter' || event.key === ' ')) {
+			event.preventDefault();
+			handleClick(event as unknown as MouseEvent);
+		}
+	}
 </script>
 
 <div
 	class={cardClasses()}
 	{style}
 	onclick={handleClick}
+	onkeydown={handleKeyDown}
 	role={clickable ? 'button' : undefined}
-	tabindex={clickable ? 0 : undefined}
 >
 	{#if image}
 		<div class="lumi-card__image" style="height: {imageHeight}px;">

@@ -4,6 +4,7 @@
 	import Button from '../Button/Button.svelte';
 	import Checkbox from '../Checkbox/Checkbox.svelte';
 	import Input from '../Input/Input.svelte';
+	import Icon from '../Icon/Icon.svelte';
 	import type { TableProps, TableRow } from './types';
 
 	interface Props extends TableProps {
@@ -163,14 +164,12 @@
 		const currentData = processedData();
 
 		if (checked) {
-			// Add all currently visible items that aren't already selected
 			currentData.forEach((row) => {
 				if (!isRowSelected(row)) {
 					selectedItems.push(row);
 				}
 			});
 		} else {
-			// Remove all currently visible items from selection
 			const currentIds = new Set(currentData.map((row) => getRowKey(row, 0)));
 			selectedItems = selectedItems.filter((item) => !currentIds.has(getRowKey(item, 0)));
 		}
@@ -281,7 +280,8 @@
 					{#if data && data.length > 0}
 						{#each processedData() as rowData, index (getRowKey(rowData, index))}
 							<tr
-								class:lumi-table__tr--selected={isRowSelected(rowData)}
+								class="lumi-table__row"
+								class:lumi-table__row--selected={isRowSelected(rowData)}
 								onclick={() => handleRowClick(rowData, index)}
 							>
 								{#if selectable}
@@ -314,7 +314,10 @@
 
 			{#if data && data.length === 0}
 				<div class="lumi-table__empty">
-					{noDataText}
+					<div class="lumi-table__empty-icon">
+						<Icon icon="inbox" size="48px" />
+					</div>
+					<span class="lumi-table__empty-text">{noDataText}</span>
 				</div>
 			{/if}
 		{/if}
@@ -325,26 +328,48 @@
 			{#if paginationSlot}
 				{@render paginationSlot(paginationData())}
 			{:else}
+				<div class="lumi-table__pagination-info">
+					<span class="lumi-table__pagination-text">
+						Showing {(currentPage - 1) * itemsPerPage + 1} - {Math.min(
+							currentPage * itemsPerPage,
+							data?.length || 0
+						)} of {data?.length || 0}
+					</span>
+				</div>
 				<div class="lumi-table__pagination-controls">
 					<Button
 						size="sm"
-						type="flat"
+						type="border"
+						icon="chevron-left"
 						disabled={currentPage === 1}
 						onclick={() => goToPage(currentPage - 1)}
-					>
-						Previous
-					</Button>
-					<span class="lumi-table__pagination-info">
-						Page {currentPage} of {totalPages()}
-					</span>
+						aria-label="Previous page"
+					/>
+					<div class="lumi-table__pagination-pages">
+						{#each Array.from({ length: Math.min(5, totalPages()) }, (_, i) => {
+							const total = totalPages();
+							if (total <= 5) return i + 1;
+							if (currentPage <= 3) return i + 1;
+							if (currentPage >= total - 2) return total - 4 + i;
+							return currentPage - 2 + i;
+						}) as page}
+							<button
+								class="lumi-table__pagination-page"
+								class:lumi-table__pagination-page--active={currentPage === page}
+								onclick={() => goToPage(page)}
+							>
+								{page}
+							</button>
+						{/each}
+					</div>
 					<Button
 						size="sm"
-						type="flat"
+						type="border"
+						icon="chevron-right"
 						disabled={currentPage === totalPages()}
 						onclick={() => goToPage(currentPage + 1)}
-					>
-						Next
-					</Button>
+						aria-label="Next page"
+					/>
 				</div>
 			{/if}
 		</div>
@@ -352,12 +377,20 @@
 </div>
 
 <style>
+	/* ========================================================================== */
+	/* LUMI TABLE - Premium 2026 Design */
+	/* ========================================================================== */
+
 	.lumi-table {
 		width: 100%;
 		display: flex;
 		flex-direction: column;
 		gap: var(--lumi-space-md);
 	}
+
+	/* ========================================================================== */
+	/* HEADER */
+	/* ========================================================================== */
 
 	.lumi-table__header {
 		display: flex;
@@ -369,130 +402,271 @@
 
 	.lumi-table__search {
 		flex: 1;
-		max-width: 300px;
+		max-width: 320px;
+		min-width: 200px;
 	}
+
+	/* ========================================================================== */
+	/* TABLE WRAPPER - Premium Container */
+	/* ========================================================================== */
 
 	.lumi-table__wrapper {
 		width: 100%;
-		overflow-x: auto;
+		overflow: hidden;
 		background: var(--lumi-color-surface);
 		border: 1px solid var(--lumi-color-border);
-		border-radius: var(--lumi-radius-xl);
-		box-shadow: var(--lumi-shadow-sm);
+		border-radius: var(--lumi-radius-2xl);
+		box-shadow: var(--lumi-shadow-md);
+		overflow-x: auto;
 	}
+
+	/* ========================================================================== */
+	/* TABLE CONTENT */
+	/* ========================================================================== */
 
 	.lumi-table__content {
 		width: 100%;
 		border-collapse: collapse;
-		min-width: 600px;
+		min-width: 100%;
 	}
 
-	/* Header */
+	/* ========================================================================== */
+	/* HEADER ROW - Modern Gradient */
+	/* ========================================================================== */
+
 	.lumi-table__thead {
-		background: var(--lumi-color-background-hover);
+		background: linear-gradient(
+			180deg,
+			var(--lumi-color-surface) 0%,
+			var(--lumi-color-background-hover) 100%
+		);
 		border-bottom: 1px solid var(--lumi-color-border);
+		position: sticky;
+		top: 0;
+		z-index: 1;
 	}
 
-	.lumi-table__th {
-		padding: var(--lumi-space-lg);
+	.lumi-table__th,
+	.lumi-table__thead :global(th) {
+		padding: var(--lumi-space-md) var(--lumi-space-lg);
 		text-align: left;
 		font-size: var(--lumi-font-size-xs);
-		font-weight: var(--lumi-font-weight-semibold);
+		font-weight: var(--lumi-font-weight-bold);
 		color: var(--lumi-color-text-muted);
 		text-transform: uppercase;
-		letter-spacing: 0.05em;
+		letter-spacing: 0.08em;
 		white-space: nowrap;
+		background: transparent;
 	}
 
-	/* Body */
-	.lumi-table__tbody tr {
+	/* ========================================================================== */
+	/* BODY ROWS - Premium Styling */
+	/* ========================================================================== */
+
+	.lumi-table__tbody .lumi-table__row {
 		border-bottom: 1px solid var(--lumi-color-border-light);
-		transition: background-color 0.2s ease;
+		transition:
+			background-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			border-left-color var(--lumi-duration-fast) var(--lumi-easing-default);
+		border-left: 3px solid transparent;
 	}
 
-	.lumi-table__tbody tr:last-child {
+	.lumi-table__tbody .lumi-table__row:last-child {
 		border-bottom: none;
 	}
 
-	.lumi-table__td {
+	/* Hover effect with accent border */
+	.lumi-table--hover .lumi-table__tbody .lumi-table__row:hover {
+		background: var(--lumi-color-primary-50);
+		border-left-color: var(--lumi-color-primary);
+		cursor: pointer;
+	}
+
+	/* Selected row */
+	.lumi-table__row--selected {
+		background: var(--lumi-color-primary-50) !important;
+		border-left-color: var(--lumi-color-primary) !important;
+	}
+
+	/* Stripe pattern */
+	.lumi-table--stripe .lumi-table__tbody .lumi-table__row:nth-child(even) {
+		background: rgba(var(--lumi-color-background-rgb), 0.5);
+	}
+
+	/* ========================================================================== */
+	/* TABLE CELLS */
+	/* ========================================================================== */
+
+	.lumi-table__td,
+	.lumi-table__tbody :global(td) {
 		padding: var(--lumi-space-md) var(--lumi-space-lg);
-		font-size: var(--lumi-font-size-base);
+		font-size: var(--lumi-font-size-sm);
 		color: var(--lumi-color-text);
 		vertical-align: middle;
-	}
-
-	/* Variants */
-	.lumi-table--stripe .lumi-table__tbody tr:nth-child(even) {
-		background: var(--lumi-color-background-hover);
-	}
-
-	.lumi-table--hover .lumi-table__tbody tr:hover {
-		background: var(--lumi-color-primary-50);
-	}
-
-	.lumi-table__tr--selected {
-		background: var(--lumi-color-primary-50) !important;
-	}
-
-	.lumi-table--compact .lumi-table__th,
-	.lumi-table--compact .lumi-table__td {
-		padding: var(--lumi-space-sm) var(--lumi-space-md);
-		font-size: var(--lumi-font-size-sm);
 	}
 
 	/* Select Column */
 	.lumi-table__th--select,
 	.lumi-table__td--select {
-		width: 48px;
-		padding-right: 0;
+		width: 56px;
+		padding-right: var(--lumi-space-xs);
 		text-align: center;
 	}
 
-	/* Loading & Empty States */
-	.lumi-table__loading,
-	.lumi-table__empty {
-		padding: var(--lumi-space-3xl);
-		text-align: center;
-		color: var(--lumi-color-text-muted);
+	/* Compact variant */
+	.lumi-table--compact .lumi-table__th,
+	.lumi-table--compact .lumi-table__thead :global(th),
+	.lumi-table--compact .lumi-table__td,
+	.lumi-table--compact .lumi-table__tbody :global(td) {
+		padding: var(--lumi-space-sm) var(--lumi-space-md);
+		font-size: var(--lumi-font-size-xs);
 	}
+
+	/* ========================================================================== */
+	/* LOADING STATE - Skeleton Animation */
+	/* ========================================================================== */
 
 	.lumi-table__loading {
+		padding: var(--lumi-space-4xl);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		justify-content: center;
 		gap: var(--lumi-space-md);
+		color: var(--lumi-color-text-muted);
 	}
 
 	.lumi-table__spinner {
-		width: 32px;
-		height: 32px;
+		width: 40px;
+		height: 40px;
 		border: 3px solid var(--lumi-color-border);
 		border-top-color: var(--lumi-color-primary);
-		border-radius: 50%;
-		animation: spin 1s linear infinite;
+		border-radius: var(--lumi-radius-full);
+		animation: lumi-table-spin 0.8s linear infinite;
 	}
 
-	@keyframes spin {
+	@keyframes lumi-table-spin {
 		to {
 			transform: rotate(360deg);
 		}
 	}
 
-	/* Pagination */
+	/* ========================================================================== */
+	/* EMPTY STATE - Premium Design */
+	/* ========================================================================== */
+
+	.lumi-table__empty {
+		padding: var(--lumi-space-4xl);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: var(--lumi-space-md);
+	}
+
+	.lumi-table__empty-icon {
+		color: var(--lumi-color-text-light);
+		opacity: 0.6;
+	}
+
+	.lumi-table__empty-text {
+		font-size: var(--lumi-font-size-sm);
+		color: var(--lumi-color-text-muted);
+		font-weight: var(--lumi-font-weight-medium);
+	}
+
+	/* ========================================================================== */
+	/* PAGINATION - Modern Controls */
+	/* ========================================================================== */
+
 	.lumi-table__pagination {
 		display: flex;
-		justify-content: flex-end;
-		padding-top: var(--lumi-space-xs);
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--lumi-space-md);
+		padding-top: var(--lumi-space-sm);
+	}
+
+	.lumi-table__pagination-info {
+		display: flex;
+		align-items: center;
+		gap: var(--lumi-space-xs);
+	}
+
+	.lumi-table__pagination-text {
+		font-size: var(--lumi-font-size-xs);
+		color: var(--lumi-color-text-muted);
 	}
 
 	.lumi-table__pagination-controls {
 		display: flex;
 		align-items: center;
-		gap: var(--lumi-space-md);
+		gap: var(--lumi-space-xs);
 	}
 
-	.lumi-table__pagination-info {
-		font-size: var(--lumi-font-size-sm);
+	.lumi-table__pagination-pages {
+		display: flex;
+		align-items: center;
+		gap: var(--lumi-space-2xs);
+	}
+
+	.lumi-table__pagination-page {
+		min-width: 32px;
+		height: 32px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-family: var(--lumi-font-family-sans);
+		font-size: var(--lumi-font-size-xs);
+		font-weight: var(--lumi-font-weight-medium);
 		color: var(--lumi-color-text-muted);
+		background: transparent;
+		border: 1px solid transparent;
+		border-radius: var(--lumi-radius-md);
+		cursor: pointer;
+		transition:
+			background-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			color var(--lumi-duration-fast) var(--lumi-easing-default),
+			border-color var(--lumi-duration-fast) var(--lumi-easing-default);
+	}
+
+	.lumi-table__pagination-page:hover {
+		background: var(--lumi-color-background-hover);
+		color: var(--lumi-color-text);
+	}
+
+	.lumi-table__pagination-page--active {
+		background: var(--lumi-color-primary);
+		color: var(--lumi-color-white);
+		font-weight: var(--lumi-font-weight-semibold);
+	}
+
+	.lumi-table__pagination-page--active:hover {
+		background: var(--lumi-color-primary);
+		color: var(--lumi-color-white);
+	}
+
+	/* ========================================================================== */
+	/* RESPONSIVE */
+	/* ========================================================================== */
+
+	@media (max-width: 768px) {
+		.lumi-table__header {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.lumi-table__search {
+			max-width: none;
+		}
+
+		.lumi-table__pagination {
+			flex-direction: column;
+			gap: var(--lumi-space-sm);
+		}
+
+		.lumi-table__pagination-pages {
+			display: none;
+		}
 	}
 </style>

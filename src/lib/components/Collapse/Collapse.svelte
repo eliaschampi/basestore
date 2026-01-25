@@ -23,7 +23,7 @@
 		titleSnippet
 	}: Props = $props();
 
-	let isOpen = $state(defaultOpen);
+	let isOpen = $derived(defaultOpen);
 	const id = `collapse-${Math.random().toString(36).substring(2, 11)}`;
 
 	const collapseClasses = $derived(() => {

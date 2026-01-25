@@ -40,7 +40,7 @@ export function createDatabase(config: {
 
 	// Graceful shutdown
 	process.on('SIGTERM', async () => {
-		// eslint-disable-next-line	
+		// eslint-disable-next-line
 		console.log('Closing database pool...');
 		await pool.end();
 	});

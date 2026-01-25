@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import type { ButtonProps } from './types';
 	import Icon from '../Icon/Icon.svelte';
+	import { getIconSize } from '../config';
 
 	interface Props extends ButtonProps {
 		children?: Snippet;
@@ -25,18 +26,7 @@
 		children
 	}: Props = $props();
 
-	const iconSize = $derived(() => {
-		switch (size) {
-			case 'sm':
-				return 16;
-			case 'lg':
-				return 20;
-			case 'xl':
-				return 24;
-			default:
-				return 18; // md
-		}
-	});
+	const iconPixelSize = $derived(getIconSize(size));
 
 	const buttonClasses = $derived(() => {
 		const classes = ['lumi-button', `lumi-button--${type}`, `lumi-button--${size}`];
@@ -77,7 +67,7 @@
 
 	{#if icon && !iconAfter && !loading}
 		<span class="lumi-button__icon">
-			<Icon {icon} size="{iconSize()}px" />
+			<Icon {icon} size="{iconPixelSize}px" />
 		</span>
 	{/if}
 
@@ -89,91 +79,123 @@
 
 	{#if icon && iconAfter && !loading}
 		<span class="lumi-button__icon">
-			<Icon {icon} size="{iconSize()}px" />
+			<Icon {icon} size="{iconPixelSize}px" />
 		</span>
 	{/if}
 </button>
 
 <style>
+	/* ========================================================================== */
+	/* LUMI BUTTON - Premium 2026 Design */
+	/* ========================================================================== */
+
 	.lumi-button {
-		/* Base button styles */
+		/* Base Layout */
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		gap: var(--lumi-space-xs);
+
+		/* Typography */
 		font-family: var(--lumi-font-family-sans);
-		font-weight: var(--lumi-font-weight-medium);
-		line-height: var(--lumi-line-height-normal);
+		font-weight: var(--lumi-font-weight-semibold);
+		line-height: var(--lumi-line-height-none);
 		text-decoration: none;
-		border: 1px solid transparent;
-		border-radius: var(--lumi-radius-md);
-		cursor: pointer;
-		transition: var(--lumi-transition-all);
-		user-select: none;
 		white-space: nowrap;
+		letter-spacing: 0.01em;
+
+		/* Visual */
+		border: var(--lumi-border-width-base) solid transparent;
+		border-radius: var(--lumi-radius-lg);
+		cursor: pointer;
+		user-select: none;
 		position: relative;
 		overflow: hidden;
 		outline: none;
+
+		/* Smooth premium transitions */
+		transition:
+			transform var(--lumi-duration-fast) var(--lumi-easing-out),
+			box-shadow var(--lumi-duration-base) var(--lumi-easing-default),
+			background-color var(--lumi-duration-base) var(--lumi-easing-default),
+			border-color var(--lumi-duration-base) var(--lumi-easing-default),
+			opacity var(--lumi-duration-base) var(--lumi-easing-default);
 	}
 
+	/* Focus visible - Modern ring with glow */
 	.lumi-button:focus-visible {
+		outline: none;
 		box-shadow:
 			0 0 0 2px var(--lumi-color-background),
-			0 0 0 4px var(--btn-color);
+			0 0 0 4px var(--btn-color),
+			0 0 16px rgba(var(--btn-color-rgb), 0.3);
 	}
 
+	/* Disabled - Elegant fade */
 	.lumi-button:disabled {
-		opacity: 0.6;
+		opacity: 0.5;
 		cursor: not-allowed;
 		pointer-events: none;
-		filter: grayscale(0.2);
+		transform: none;
 	}
 
-	.lumi-button:active:not(:disabled) {
-		transform: translateY(0);
-	}
-
+	/* Hover lift effect */
 	.lumi-button:hover:not(:disabled) {
-		transform: translateY(-1px);
+		transform: translateY(-2px);
 	}
 
-	/* Size variants */
+	/* Active press effect */
+	.lumi-button:active:not(:disabled) {
+		transform: translateY(0) scale(0.98);
+	}
+
+	/* ========================================================================== */
+	/* SIZE VARIANTS */
+	/* ========================================================================== */
+
 	.lumi-button--sm {
 		height: var(--lumi-space-xl);
-		padding: 0 var(--lumi-space-sm);
-		font-size: var(--lumi-font-size-sm);
+		padding: 0 var(--lumi-space-md);
+		font-size: var(--lumi-font-size-xs);
+		border-radius: var(--lumi-radius-md);
 	}
 
 	.lumi-button--md {
 		height: var(--lumi-space-xxl);
-		padding: 0 var(--lumi-space-md);
-		font-size: var(--lumi-font-size-base);
+		padding: 0 var(--lumi-space-lg);
+		font-size: var(--lumi-font-size-sm);
 	}
 
 	.lumi-button--lg {
 		height: var(--lumi-space-3xl);
-		padding: 0 var(--lumi-space-lg);
-		font-size: var(--lumi-font-size-lg);
+		padding: 0 var(--lumi-space-xl);
+		font-size: var(--lumi-font-size-base);
 	}
 
 	.lumi-button--xl {
 		height: var(--lumi-space-4xl);
-		padding: 0 var(--lumi-space-xl);
-		font-size: var(--lumi-font-size-xl);
+		padding: 0 var(--lumi-space-xxl);
+		font-size: var(--lumi-font-size-lg);
 	}
 
-	/* Radius variant */
+	/* ========================================================================== */
+	/* SHAPE VARIANTS */
+	/* ========================================================================== */
+
 	.lumi-button--radius {
 		border-radius: var(--lumi-radius-full);
 	}
 
-	/* Icon only variant */
+	/* Icon only - Square aspect ratio */
 	.lumi-button--icon-only {
 		padding: 0;
-		width: var(--lumi-space-xxl);
+		aspect-ratio: 1;
 	}
 	.lumi-button--icon-only.lumi-button--sm {
 		width: var(--lumi-space-xl);
+	}
+	.lumi-button--icon-only.lumi-button--md {
+		width: var(--lumi-space-xxl);
 	}
 	.lumi-button--icon-only.lumi-button--lg {
 		width: var(--lumi-space-3xl);
@@ -183,83 +205,128 @@
 	}
 
 	/* ========================================================================== */
-	/* TYPES (Using CSS Variables) */
+	/* TYPE VARIANTS - Premium 2026 Styling */
 	/* ========================================================================== */
 
-	/* Filled */
+	/* FILLED - Bold with colored glow */
 	.lumi-button--filled {
 		background: var(--btn-color);
 		color: var(--lumi-color-white);
 		border-color: transparent;
-		box-shadow: 0 4px 12px rgba(var(--btn-color-rgb), 0.2);
+		box-shadow:
+			0 2px 8px rgba(var(--btn-color-rgb), 0.25),
+			0 4px 16px rgba(var(--btn-color-rgb), 0.15);
 	}
+
 	.lumi-button--filled:hover:not(:disabled) {
-		background: color-mix(in srgb, var(--btn-color) 90%, black);
-		box-shadow: 0 6px 16px rgba(var(--btn-color-rgb), 0.3);
+		background: color-mix(in srgb, var(--btn-color) 88%, black);
+		box-shadow:
+			0 4px 12px rgba(var(--btn-color-rgb), 0.35),
+			0 8px 24px rgba(var(--btn-color-rgb), 0.2);
 	}
 
-	/* Border (Outline) */
+	.lumi-button--filled:active:not(:disabled) {
+		box-shadow:
+			0 1px 4px rgba(var(--btn-color-rgb), 0.25),
+			0 2px 8px rgba(var(--btn-color-rgb), 0.15);
+	}
+
+	/* BORDER - Glass morphism outline */
 	.lumi-button--border {
-		background: transparent;
+		background: rgba(var(--btn-color-rgb), 0.04);
 		color: var(--btn-color);
-		border-color: var(--btn-color);
-	}
-	.lumi-button--border:hover:not(:disabled) {
-		background: rgba(var(--btn-color-rgb), 0.05);
+		border-color: rgba(var(--btn-color-rgb), 0.3);
+		backdrop-filter: blur(var(--lumi-blur-sm));
 	}
 
-	/* Flat (Ghost) */
+	.lumi-button--border:hover:not(:disabled) {
+		background: rgba(var(--btn-color-rgb), 0.1);
+		border-color: rgba(var(--btn-color-rgb), 0.5);
+		box-shadow: 0 4px 16px rgba(var(--btn-color-rgb), 0.12);
+	}
+
+	.lumi-button--border:active:not(:disabled) {
+		background: rgba(var(--btn-color-rgb), 0.15);
+	}
+
+	/* FLAT - Subtle ghost with glass effect */
 	.lumi-button--flat {
 		background: transparent;
 		color: var(--btn-color);
 		border-color: transparent;
 	}
+
 	.lumi-button--flat:hover:not(:disabled) {
-		background: rgba(var(--btn-color-rgb), 0.1);
+		background: rgba(var(--btn-color-rgb), 0.08);
+		box-shadow: 0 2px 8px rgba(var(--btn-color-rgb), 0.08);
 	}
 
-	/* Gradient */
+	.lumi-button--flat:active:not(:disabled) {
+		background: rgba(var(--btn-color-rgb), 0.12);
+	}
+
+	/* GRADIENT - Premium shimmer effect */
 	.lumi-button--gradient {
 		background: linear-gradient(
 			135deg,
-			var(--btn-color),
-			color-mix(in srgb, var(--btn-color) 80%, black)
+			var(--btn-color) 0%,
+			color-mix(in srgb, var(--btn-color) 70%, var(--lumi-color-secondary)) 100%
 		);
 		color: var(--lumi-color-white);
 		border-color: transparent;
-		box-shadow: 0 4px 15px rgba(var(--btn-color-rgb), 0.3);
-	}
-	.lumi-button--gradient:hover:not(:disabled) {
-		background: linear-gradient(
-			135deg,
-			color-mix(in srgb, var(--btn-color) 90%, white),
-			var(--btn-color)
-		);
-		box-shadow: 0 6px 20px rgba(var(--btn-color-rgb), 0.4);
-		transform: translateY(-2px);
+		box-shadow:
+			0 4px 16px rgba(var(--btn-color-rgb), 0.3),
+			0 8px 32px rgba(var(--btn-color-rgb), 0.15);
+		background-size: 200% 200%;
+		animation: lumi-gradient-shift 3s ease infinite;
 	}
 
-	/* Loading spinner */
+	.lumi-button--gradient:hover:not(:disabled) {
+		box-shadow:
+			0 6px 20px rgba(var(--btn-color-rgb), 0.4),
+			0 12px 40px rgba(var(--btn-color-rgb), 0.2);
+		animation-play-state: paused;
+		background-position: 100% 100%;
+	}
+
+	@keyframes lumi-gradient-shift {
+		0%,
+		100% {
+			background-position: 0% 50%;
+		}
+		50% {
+			background-position: 100% 50%;
+		}
+	}
+
+	/* ========================================================================== */
+	/* LOADING STATE */
+	/* ========================================================================== */
+
 	.lumi-button__spinner {
 		position: absolute;
-		width: 1em;
-		height: 1em;
+		width: 1.2em;
+		height: 1.2em;
 		border: 2px solid currentColor;
 		border-right-color: transparent;
-		border-radius: 50%;
-		animation: lumi-spin 0.8s linear infinite;
+		border-radius: var(--lumi-radius-full);
+		animation: lumi-spin 0.7s linear infinite;
 	}
 
 	.lumi-button--loading {
 		color: transparent !important;
+		pointer-events: none;
 	}
+
 	.lumi-button--loading .lumi-button__spinner {
-		color: var(--lumi-color-text); /* Fallback */
+		color: var(--lumi-color-text);
 	}
+
 	.lumi-button--filled.lumi-button--loading .lumi-button__spinner,
 	.lumi-button--gradient.lumi-button--loading .lumi-button__spinner {
 		color: var(--lumi-color-white);
 	}
+
 	.lumi-button--border.lumi-button--loading .lumi-button__spinner,
 	.lumi-button--flat.lumi-button--loading .lumi-button__spinner {
 		color: var(--btn-color);
@@ -269,5 +336,21 @@
 		to {
 			transform: rotate(360deg);
 		}
+	}
+
+	/* ========================================================================== */
+	/* INNER ELEMENTS */
+	/* ========================================================================== */
+
+	.lumi-button__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	.lumi-button__text {
+		display: inline-flex;
+		align-items: center;
 	}
 </style>

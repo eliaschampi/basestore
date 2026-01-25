@@ -51,13 +51,22 @@
 	const handleClick = (event: MouseEvent) => {
 		if (onclick) onclick(event);
 	};
+		// Agregar esta función junto a tus otros handlers
+	const handleKeyDown = (event: KeyboardEvent) => {
+		// Activar solo con Enter o Space (comportamiento estándar de botones)
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault(); // Evitar scroll con Space
+			handleClick(event as unknown as MouseEvent);
+		}
+	};
 </script>
 
 <div
 	class={classes()}
-	role="img"
+	role="button"
 	aria-label={alt || text || 'Avatar'}
 	onclick={handleClick}
+	onkeydown={handleKeyDown}
 	tabindex={onclick ? 0 : -1}
 >
 	{#if src && !imageError}

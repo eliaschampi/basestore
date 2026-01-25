@@ -151,6 +151,17 @@
 			unlockBodyScroll();
 		};
 	});
+	const handleKeyDownPresentation = (event: KeyboardEvent) => {
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault();
+			handleOverlayClick();
+		}
+	};
+	const handleKeyDownDialog = (event: KeyboardEvent) => {
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.stopPropagation();
+		}
+	};
 </script>
 
 {#if open}
@@ -158,12 +169,7 @@
 		class={overlayClasses}
 		transition:fade={{ duration: 200 }}
 		onclick={handleOverlayClick}
-		onkeydown={(e) => {
-			if (e.key === 'Enter' || e.key === ' ') {
-				e.preventDefault();
-				handleOverlayClick();
-			}
-		}}
+		onkeydown={handleKeyDownPresentation}
 		role="presentation"
 	>
 		<div
@@ -176,6 +182,7 @@
 			aria-describedby={contentId}
 			tabindex="-1"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={handleKeyDownDialog}
 		>
 			<!-- Dialog Header -->
 			{#if header || title || !hideClose}

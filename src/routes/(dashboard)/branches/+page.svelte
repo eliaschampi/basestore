@@ -223,7 +223,7 @@
 			<Switch bind:checked={formState} name="state" label="Sede activa" />
 
 			<div class="lumi-stack lumi-space--sm">
-				<div class="lumi-text--sm lumi-font--medium lumi-block"> Usuarios asignados </div>
+				<div class="lumi-text--sm lumi-font--medium lumi-block">Usuarios asignados</div>
 
 				<div class="lumi-flex lumi-flex--gap-sm">
 					<div class="lumi-flex-item--grow">

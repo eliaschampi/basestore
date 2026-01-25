@@ -39,9 +39,17 @@
 	const handleClick = (event: MouseEvent) => {
 		if (onclick) onclick(event);
 	};
+
+	const handleKeyDown = (event: KeyboardEvent) => {
+		if (onclick && (event.key === 'Enter' || event.key === ' ')) {
+			event.preventDefault();
+			onclick(event as unknown as MouseEvent);
+		}
+	};
+	
 </script>
 
-<div class={classes()} role="status" onclick={handleClick} tabindex={onclick ? 0 : -1}>
+<div class={classes()} role={onclick ? 'button' : 'status'} onclick={handleClick} onkeydown={handleKeyDown}>
 	{#if icon}
 		<!-- Icon -->
 		<span class="lumi-chip__icon">
