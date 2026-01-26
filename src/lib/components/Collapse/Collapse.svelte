@@ -109,7 +109,7 @@
 <style>
 	/* Modern Collapse Component - Clean & Professional */
 	.lumi-collapse {
-		border: 1px solid var(--lumi-color-border);
+		border: 1px solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-lg);
 		background: var(--lumi-color-surface);
 		overflow: hidden;
@@ -118,12 +118,12 @@
 	}
 
 	.lumi-collapse:hover:not(.lumi-collapse--disabled) {
-		border-color: var(--lumi-color-border-strong);
+		border-color: var(--lumi-color-border);
 		box-shadow: var(--lumi-shadow-sm);
 	}
 
 	.lumi-collapse--open {
-		border-color: var(--lumi-color-border-strong);
+		border-color: var(--lumi-color-border);
 		box-shadow: var(--lumi-shadow-md);
 	}
 

@@ -45,7 +45,7 @@
 
 	let searchQuery = $state('');
 	let currentPage = $state(1);
-	let selectedItems = $state<TableRow[]>(selected ? [...selected] : []);
+	// Use selected prop directly (it's $bindable), no need for internal state
 	let sortColumn = $state<string | null>(null);
 	let sortDirection = $state<'asc' | 'desc' | null>(null);
 
@@ -183,15 +183,13 @@
 		if (checked) {
 			currentData.forEach((row) => {
 				if (!isRowSelected(row)) {
-					selectedItems.push(row);
+					selected = [...selected, row];
 				}
 			});
 		} else {
 			const currentIds = new Set(currentData.map((row) => getRowKey(row, 0)));
-			selectedItems = selectedItems.filter((item) => !currentIds.has(getRowKey(item, 0)));
+			selected = selected.filter((item) => !currentIds.has(getRowKey(item, 0)));
 		}
-
-		selected = selectedItems;
 	};
 
 	const handleRowClick = (row: TableRow, index: number) => {
@@ -201,21 +199,20 @@
 	const handleRowSelect = (row: TableRow, checked: boolean) => {
 		if (!selectable) return;
 
-		const index = selectedItems.findIndex((item) => getRowKey(item, 0) === getRowKey(row, 0));
+		const index = selected.findIndex((item) => getRowKey(item, 0) === getRowKey(row, 0));
 
 		if (checked && index === -1) {
-			selectedItems.push(row);
+			selected = [...selected, row];
 		} else if (!checked && index > -1) {
-			selectedItems.splice(index, 1);
+			selected = selected.filter((_, i) => i !== index);
 		}
 
-		selected = selectedItems;
 		onRowSelect?.(row, checked);
 	};
 
 	const isRowSelected = (row: TableRow): boolean => {
 		if (!selectable) return false;
-		return selectedItems.some((item) => getRowKey(item, 0) === getRowKey(row, 0));
+		return selected.some((item) => getRowKey(item, 0) === getRowKey(row, 0));
 	};
 
 	const goToPage = (page: number) => {
@@ -243,7 +240,7 @@
 		get sortable() {
 			return sortable;
 		},
-		getSelectedItems: () => selectedItems,
+		getSelectedItems: () => selected,
 		getSortColumn: () => sortColumn,
 		getSortDirection: () => sortDirection,
 		handleRowSelect,
@@ -251,9 +248,7 @@
 		isRowSelected
 	});
 
-	$effect(() => {
-		selectedItems = selected ? [...selected] : [];
-	});
+	// selected prop is now used directly (no internal state sync needed)
 
 	$effect(() => {
 		const hasSearch = Boolean(searchQuery && search);
@@ -456,10 +451,18 @@
 		width: 100%;
 		overflow: hidden;
 		background: var(--lumi-color-surface);
-		border: 1px solid var(--lumi-color-border);
+		border: 1px solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-2xl);
-		box-shadow: var(--lumi-shadow-md);
+		box-shadow: var(--lumi-shadow-sm);
 		overflow-x: auto;
+		transition:
+			var(--lumi-transition-shadow),
+			border-color 0.2s ease;
+	}
+
+	.lumi-table__wrapper:hover {
+		box-shadow: var(--lumi-shadow-md);
+		border-color: var(--lumi-color-border);
 	}
 
 	/* ========================================================================== */

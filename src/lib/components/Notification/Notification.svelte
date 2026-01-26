@@ -91,7 +91,7 @@
 		max-width: 480px;
 		padding: var(--lumi-space-md);
 		background: var(--lumi-color-surface);
-		border: 1px solid var(--lumi-color-border);
+		border: 1px solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-lg);
 		box-shadow: var(--lumi-shadow-lg);
 		pointer-events: auto;

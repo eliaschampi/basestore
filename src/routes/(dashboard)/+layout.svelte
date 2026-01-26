@@ -163,7 +163,7 @@
 			{#if page.data.user}
 				{@const user = page.data.user}
 				<Dropdown position="bottom-end">
-					{#snippet children()}
+					{#snippet triggerContent()}
 						<Button type="flat" size="sm">
 							<Avatar text={getInitials(user.name, user.last_name)} size="sm" color="primary" />
 						</Button>

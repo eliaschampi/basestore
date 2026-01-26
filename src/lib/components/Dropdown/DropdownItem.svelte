@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { getContext } from 'svelte';
+	import { resolve } from '$app/paths';
 	import Icon from '../Icon/Icon.svelte';
 
 	interface Props {
@@ -51,7 +52,8 @@
 
 {#if href}
 	<a
-		{href}
+		href={resolve(href as `/`)}
+		data-sveltekit-noscroll
 		class={itemClasses()}
 		role="menuitem"
 		tabindex={disabled ? -1 : 0}

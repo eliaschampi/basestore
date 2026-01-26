@@ -52,10 +52,16 @@
 		width: var(--lumi-sidebar-width);
 		height: 100vh;
 		background: var(--lumi-color-surface);
-		border-right: 1px solid var(--lumi-color-border);
+		border-right: 1px solid var(--lumi-color-border-light);
+		box-shadow: var(--lumi-shadow-sm);
 		transition: all var(--lumi-duration-base) var(--lumi-easing-default);
 		overflow: hidden;
 		z-index: var(--lumi-z-sidebar);
+	}
+
+	.lumi-sidebar:hover {
+		box-shadow: var(--lumi-shadow-md);
+		border-right-color: var(--lumi-color-border);
 	}
 
 	.lumi-sidebar--collapsed {

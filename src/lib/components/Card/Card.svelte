@@ -105,10 +105,7 @@
 		color: var(--lumi-color-text);
 	}
 
-	.lumi-card:hover {
-		box-shadow: var(--lumi-shadow-md);
-		border-color: var(--lumi-color-border-strong);
-	}
+	/* Hover shadow only for clickable cards - base card uses static shadow like Navbar */
 
 	/* Clickable state */
 	.lumi-card--clickable {

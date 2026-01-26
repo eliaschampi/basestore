@@ -87,8 +87,41 @@
 		processFiles(Array.from(event.dataTransfer.files));
 	};
 
+	const handleDropzoneClick = (event: MouseEvent) => {
+		if (disabled) return;
+
+		const target = event.target as HTMLElement;
+
+		// Don't open dialog if clicking on file items or interactive child elements
+		if (
+			target.closest('.lumi-file-upload__file-item') ||
+			target.closest('.lumi-file-upload__add-more')
+		) {
+			return;
+		}
+
+		fileInputRef?.click();
+	};
+
+	const handleDropzoneKeydown = (event: KeyboardEvent) => {
+		if (disabled) return;
+		if (event.key !== 'Enter' && event.key !== ' ') return;
+
+		const target = event.target as HTMLElement;
+
+		// Only handle if the dropzone itself is focused, not child elements
+		if (
+			target.closest('.lumi-file-upload__file-item') ||
+			target.closest('.lumi-file-upload__add-more')
+		) {
+			return;
+		}
+
+		event.preventDefault();
+		fileInputRef?.click();
+	};
+
 	const openFileDialog = () => {
-		// Only open dialog if empty or multiple, otherwise the div acts as container
 		if (!disabled) {
 			fileInputRef?.click();
 		}
@@ -150,20 +183,15 @@
 </script>
 
 <div class="lumi-file-upload {className}">
-	<div
+	<button
+		type="button"
 		class={dropzoneClasses()}
-		onclick={openFileDialog}
-		onkeydown={(e) => {
-			if (e.key === 'Enter' || e.key === ' ') {
-				e.preventDefault();
-				openFileDialog();
-			}
-		}}
+		onclick={handleDropzoneClick}
+		onkeydown={handleDropzoneKeydown}
 		ondragover={handleDragOver}
 		ondragleave={handleDragLeave}
 		ondrop={handleDrop}
-		role="button"
-		tabindex={disabled ? -1 : 0}
+		{disabled}
 		aria-label="File upload dropzone"
 	>
 		<!-- Hidden Input -->
@@ -190,13 +218,12 @@
 			</div>
 		{:else}
 			<!-- File List (Has Files State) -->
-			<div class="lumi-file-upload__file-list">
+			<div class="lumi-file-upload__file-list" role="list" aria-label="Uploaded files">
 				{#each files as fileWrapper (fileWrapper.id)}
 					<div
 						class="lumi-file-upload__file-item lumi-file-upload__file-item--{fileWrapper.status}"
-						onclick={(e) => e.stopPropagation()}
-						role="group"
-						aria-label="File item"
+						role="listitem"
+						aria-label="File: {fileWrapper.file.name}"
 					>
 						<!-- File Icon -->
 						<div class="lumi-file-upload__file-icon">
@@ -205,9 +232,9 @@
 
 						<!-- File Details -->
 						<div class="lumi-file-upload__file-item-details">
-							<span class="lumi-file-upload__file-item-name" title={fileWrapper.file.name}
-								>{fileWrapper.file.name}</span
-							>
+							<span class="lumi-file-upload__file-item-name" title={fileWrapper.file.name}>
+								{fileWrapper.file.name}
+							</span>
 							<span class="lumi-file-upload__file-item-info">
 								{#if fileWrapper.status === 'error'}
 									<span class="lumi-text--danger">{fileWrapper.error}</span>
@@ -229,11 +256,8 @@
 								<button
 									type="button"
 									class="lumi-file-upload__remove-btn"
-									onclick={(e) => {
-										e.stopPropagation();
-										removeFile(fileWrapper.id);
-									}}
-									aria-label="Remove file"
+									onclick={() => removeFile(fileWrapper.id)}
+									aria-label="Remove file {fileWrapper.file.name}"
 								>
 									<Icon icon="x" size="sm" />
 								</button>
@@ -246,6 +270,10 @@
 								<div
 									class="lumi-file-upload__progress-bar"
 									style="width: {fileWrapper.progress}%"
+									role="progressbar"
+									aria-valuenow={fileWrapper.progress}
+									aria-valuemin={0}
+									aria-valuemax={100}
 								></div>
 							</div>
 						{/if}
@@ -256,10 +284,8 @@
 					<button
 						type="button"
 						class="lumi-file-upload__add-more"
-						onclick={(e) => {
-							e.stopPropagation();
-							openFileDialog();
-						}}
+						onclick={openFileDialog}
+						{disabled}
 					>
 						<Icon icon="plus" size="sm" />
 						<span>Add more files</span>
@@ -267,7 +293,7 @@
 				{/if}
 			</div>
 		{/if}
-	</div>
+	</button>
 </div>
 
 <style>
@@ -280,7 +306,7 @@
 		font-family: var(--lumi-font-family-sans);
 	}
 
-	/* Dropzone - core element that transforms based on state */
+	/* Dropzone - using button element for native interactivity */
 	.lumi-file-upload__dropzone {
 		display: flex;
 		flex-direction: column;
@@ -294,9 +320,11 @@
 		position: relative;
 		overflow: hidden;
 		cursor: pointer;
+		font: inherit;
+		text-align: left;
 	}
 
-	.lumi-file-upload__dropzone:not(.lumi-file-upload__dropzone--disabled):hover {
+	.lumi-file-upload__dropzone:not(:disabled):hover {
 		border-color: var(--lumi-color-primary);
 		background-color: var(--lumi-color-background-hover);
 	}
@@ -313,7 +341,8 @@
 		transform: scale(1.01);
 	}
 
-	.lumi-file-upload__dropzone--disabled {
+	.lumi-file-upload__dropzone--disabled,
+	.lumi-file-upload__dropzone:disabled {
 		opacity: 0.6;
 		cursor: not-allowed;
 		background-color: var(--lumi-color-background-secondary);
@@ -492,6 +521,7 @@
 		height: 3px;
 		background-color: transparent;
 		overflow: hidden;
+		grid-column: 1 / -1;
 	}
 
 	.lumi-file-upload__progress-bar {
@@ -518,9 +548,14 @@
 		width: 100%;
 	}
 
-	.lumi-file-upload__add-more:hover {
+	.lumi-file-upload__add-more:hover:not(:disabled) {
 		border-color: var(--lumi-color-primary);
 		color: var(--lumi-color-primary);
 		background-color: var(--lumi-color-primary-bg);
+	}
+
+	.lumi-file-upload__add-more:disabled {
+		cursor: not-allowed;
+		opacity: 0.6;
 	}
 </style>

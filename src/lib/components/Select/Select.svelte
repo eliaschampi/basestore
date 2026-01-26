@@ -479,7 +479,7 @@
 	/* Dropdown */
 	.lumi-select__dropdown {
 		background: var(--lumi-color-surface);
-		border: 1px solid var(--lumi-color-border);
+		border: 1px solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-lg);
 		overflow: hidden;
 		box-shadow: var(--lumi-shadow-lg);

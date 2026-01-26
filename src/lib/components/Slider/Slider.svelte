@@ -16,7 +16,7 @@
 		onchange
 	}: SliderProps = $props();
 
-	let thumbRef = $state<HTMLDivElement>();
+	let trackRef = $state<HTMLDivElement>();
 	let isDragging = $state(false);
 
 	const percentage = $derived(() => {
@@ -35,18 +35,64 @@
 			.join(' ');
 	});
 
-	const handleTrackClick = (event: MouseEvent) => {
-		if (disabled) return;
+	const updateValueFromPosition = (clientX: number) => {
+		if (!trackRef) return;
 
-		const track = event.currentTarget as HTMLDivElement;
-		const rect = track.getBoundingClientRect();
-		const clickX = event.clientX - rect.left;
-		const clickPercentage = (clickX / rect.width) * 100;
+		const rect = trackRef.getBoundingClientRect();
+		const clickX = clientX - rect.left;
+		const clickPercentage = Math.max(0, Math.min(100, (clickX / rect.width) * 100));
 		const newValue = min + (clickPercentage / 100) * (max - min);
 		const steppedValue = Math.round(newValue / step) * step;
 
 		value = Math.max(min, Math.min(max, steppedValue));
+	};
+
+	const handleTrackClick = (event: MouseEvent) => {
+		if (disabled) return;
+		updateValueFromPosition(event.clientX);
 		if (onchange) onchange(value);
+	};
+
+	const handleKeyDown = (event: KeyboardEvent) => {
+		if (disabled) return;
+
+		let newValue = value;
+
+		switch (event.key) {
+			case 'ArrowRight':
+			case 'ArrowUp':
+				event.preventDefault();
+				newValue = Math.min(max, value + step);
+				break;
+			case 'ArrowLeft':
+			case 'ArrowDown':
+				event.preventDefault();
+				newValue = Math.max(min, value - step);
+				break;
+			case 'Home':
+				event.preventDefault();
+				newValue = min;
+				break;
+			case 'End':
+				event.preventDefault();
+				newValue = max;
+				break;
+			case 'PageUp':
+				event.preventDefault();
+				newValue = Math.min(max, value + step * 10);
+				break;
+			case 'PageDown':
+				event.preventDefault();
+				newValue = Math.max(min, value - step * 10);
+				break;
+			default:
+				return;
+		}
+
+		if (newValue !== value) {
+			value = newValue;
+			if (onchange) onchange(value);
+		}
 	};
 
 	const startDragging = (event: MouseEvent | TouchEvent) => {
@@ -55,57 +101,56 @@
 		event.preventDefault();
 		isDragging = true;
 
-		const handleMouseMove = (e: MouseEvent | TouchEvent) => {
+		const handleMove = (e: MouseEvent | TouchEvent) => {
 			if (!isDragging) return;
 
-			const track = thumbRef?.parentElement;
-			if (!track) return;
-
-			const rect = track.getBoundingClientRect();
 			const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-			const clickX = clientX - rect.left;
-			const clickPercentage = Math.max(0, Math.min(100, (clickX / rect.width) * 100));
-			const newValue = min + (clickPercentage / 100) * (max - min);
-			const steppedValue = Math.round(newValue / step) * step;
-
-			value = Math.max(min, Math.min(max, steppedValue));
+			updateValueFromPosition(clientX);
 		};
 
-		const handleMouseUp = () => {
+		const handleEnd = () => {
 			isDragging = false;
 			if (onchange) onchange(value);
-			document.removeEventListener('mousemove', handleMouseMove);
-			document.removeEventListener('mouseup', handleMouseUp);
-			document.removeEventListener('touchmove', handleMouseMove);
-			document.removeEventListener('touchend', handleMouseUp);
+			document.removeEventListener('mousemove', handleMove);
+			document.removeEventListener('mouseup', handleEnd);
+			document.removeEventListener('touchmove', handleMove);
+			document.removeEventListener('touchend', handleEnd);
 		};
 
-		document.addEventListener('mousemove', handleMouseMove);
-		document.addEventListener('mouseup', handleMouseUp);
-		document.addEventListener('touchmove', handleMouseMove);
-		document.addEventListener('touchend', handleMouseUp);
+		document.addEventListener('mousemove', handleMove);
+		document.addEventListener('mouseup', handleEnd);
+		document.addEventListener('touchmove', handleMove);
+		document.addEventListener('touchend', handleEnd);
 	};
 </script>
 
 <div class={classes()}>
 	{#if label}
-		<label class="lumi-slider__label">{label}</label>
+		<label id="slider-label-{label}" class="lumi-slider__label">{label}</label>
 	{/if}
 
 	<div class="lumi-slider__container">
-		<div class="lumi-slider__track" onclick={handleTrackClick}>
+		<div
+			bind:this={trackRef}
+			class="lumi-slider__track"
+			onclick={handleTrackClick}
+			onkeydown={handleKeyDown}
+			onmousedown={startDragging}
+			ontouchstart={startDragging}
+			role="slider"
+			tabindex={disabled ? -1 : 0}
+			aria-valuenow={value}
+			aria-valuemin={min}
+			aria-valuemax={max}
+			aria-label={label || 'Slider'}
+			aria-disabled={disabled}
+		>
 			<div class="lumi-slider__fill" style="width: {percentage()}%"></div>
 			<div
-				bind:this={thumbRef}
 				class="lumi-slider__thumb"
+				class:lumi-slider__thumb--dragging={isDragging}
 				style="left: {percentage()}%"
-				onmousedown={startDragging}
-				ontouchstart={startDragging}
-				role="slider"
-				tabindex={disabled ? -1 : 0}
-				aria-valuenow={value}
-				aria-valuemin={min}
-				aria-valuemax={max}
+				aria-hidden="true"
 			>
 				{#if showTooltip}
 					<div class="lumi-slider__tooltip">
@@ -148,6 +193,15 @@
 		border-radius: var(--lumi-radius-full);
 		cursor: pointer;
 		transition: var(--lumi-transition-all);
+		/* Add padding for easier touch/click targeting */
+		padding: 8px 0;
+		margin: -8px 0;
+		background-clip: content-box;
+	}
+
+	.lumi-slider__track:focus-visible {
+		outline: 2px solid var(--lumi-color-primary);
+		outline-offset: 4px;
 	}
 
 	.lumi-slider--sm .lumi-slider__track {
@@ -160,12 +214,21 @@
 
 	.lumi-slider__fill {
 		position: absolute;
-		top: 0;
+		top: 8px; /* Offset for padding */
 		left: 0;
-		height: 100%;
+		height: 6px;
 		background: var(--lumi-color-primary);
 		border-radius: var(--lumi-radius-full);
 		transition: width 0.1s ease;
+		pointer-events: none;
+	}
+
+	.lumi-slider--sm .lumi-slider__fill {
+		height: 4px;
+	}
+
+	.lumi-slider--lg .lumi-slider__fill {
+		height: 8px;
 	}
 
 	/* Color variants */
@@ -202,22 +265,22 @@
 		background: var(--lumi-color-surface);
 		border: 2px solid var(--lumi-color-primary);
 		border-radius: var(--lumi-radius-full);
-		cursor: grab;
 		transition:
 			transform 0.15s ease,
 			box-shadow 0.15s ease;
 		box-shadow: var(--lumi-shadow-sm);
 		z-index: 2;
+		pointer-events: none;
 	}
 
-	.lumi-slider__thumb:hover {
+	.lumi-slider__track:hover .lumi-slider__thumb {
 		transform: translate(-50%, -50%) scale(1.1);
 		box-shadow: var(--lumi-shadow-md);
 	}
 
-	.lumi-slider__thumb:active {
-		cursor: grabbing;
+	.lumi-slider__thumb--dragging {
 		transform: translate(-50%, -50%) scale(1.2);
+		cursor: grabbing;
 	}
 
 	.lumi-slider--sm .lumi-slider__thumb {
@@ -271,7 +334,8 @@
 		transition: var(--lumi-transition-opacity);
 	}
 
-	.lumi-slider__thumb:hover .lumi-slider__tooltip {
+	.lumi-slider__track:hover .lumi-slider__tooltip,
+	.lumi-slider__track:focus-visible .lumi-slider__tooltip {
 		opacity: 1;
 	}
 

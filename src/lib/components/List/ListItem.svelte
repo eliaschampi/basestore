@@ -51,12 +51,7 @@
 	};
 </script>
 
-<div
-	class={classes()}
-	onclick={handleClick}
-	role={clickable ? 'button' : undefined}
-	tabindex={clickable && !disabled ? 0 : undefined}
->
+{#snippet listItemContent()}
 	{#if avatar}
 		<div class="lumi-list-item__avatar">
 			{@render avatar()}
@@ -96,7 +91,23 @@
 			{@render children()}
 		</div>
 	{/if}
-</div>
+{/snippet}
+
+{#if clickable}
+	<button
+		type="button"
+		class={classes()}
+		onclick={handleClick}
+		{disabled}
+		aria-current={active ? 'true' : undefined}
+	>
+		{@render listItemContent()}
+	</button>
+{:else}
+	<div class={classes()} aria-current={active ? 'true' : undefined}>
+		{@render listItemContent()}
+	</div>
+{/if}
 
 <style>
 	.lumi-list-item {
@@ -111,6 +122,10 @@
 		position: relative;
 		color: var(--lumi-color-text);
 		text-decoration: none;
+		width: 100%;
+		text-align: left;
+		border: none;
+		font: inherit;
 	}
 
 	/* Avatar */
@@ -176,13 +191,18 @@
 		cursor: pointer;
 	}
 
-	.lumi-list-item--clickable:hover:not(.lumi-list-item--active):not(.lumi-list-item--disabled) {
+	.lumi-list-item--clickable:hover:not(.lumi-list-item--active):not(:disabled) {
 		background: var(--lumi-color-background-hover);
 		color: var(--lumi-color-text);
 	}
 
 	.lumi-list-item--clickable:hover .lumi-list-item__icon {
 		color: var(--lumi-color-primary);
+	}
+
+	.lumi-list-item--clickable:focus-visible {
+		outline: 2px solid var(--lumi-color-primary);
+		outline-offset: 2px;
 	}
 
 	/* Active state */

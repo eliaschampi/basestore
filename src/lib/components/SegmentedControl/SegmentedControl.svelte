@@ -272,10 +272,6 @@
 			display: none;
 		}
 
-		.lumi-segmented-control__option:has(svg) .lumi-segmented-control__label {
-			display: none;
-		}
-
 		/* If no icon, show label even on mobile */
 		.lumi-segmented-control__option:not(:has(svg)) .lumi-segmented-control__label {
 			display: block;

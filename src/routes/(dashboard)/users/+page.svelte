@@ -169,7 +169,7 @@
 						style="top: var(--lumi-space-md); right: var(--lumi-space-md); z-index: 10;"
 					>
 						<Dropdown position="bottom-end">
-							{#snippet children()}
+							{#snippet triggerContent()}
 								<Button type="flat" size="sm" icon="moreVertical" />
 							{/snippet}
 
