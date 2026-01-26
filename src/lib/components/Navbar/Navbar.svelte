@@ -73,21 +73,27 @@
 		justify-content: space-between;
 		height: var(--lumi-navbar-height);
 		padding: 0 var(--lumi-space-lg);
-		background: var(--lumi-color-surface-overlay);
-		backdrop-filter: blur(12px);
-		-webkit-backdrop-filter: blur(12px);
-		border-radius: var(--lumi-radius-xl);
+		background: transparent;
 		box-shadow: var(--lumi-shadow-sm);
-		border: 1px solid var(--lumi-color-border-light);
+		border-radius: var(--lumi-radius-xl);
 		z-index: var(--lumi-z-fixed);
 		margin: var(--lumi-space-md);
 		margin-bottom: 0;
 		transition: all 0.3s ease;
+		isolation: isolate;
 	}
 
-	.lumi-navbar:hover {
-		box-shadow: var(--lumi-shadow-md);
-		border-color: var(--lumi-color-border);
+	.lumi-navbar::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: var(--lumi-color-surface-overlay);
+		backdrop-filter: blur(var(--lumi-blur-lg));
+		-webkit-backdrop-filter: blur(var(--lumi-blur-lg));
+		border-radius: inherit;
+		box-shadow: var(--lumi-shadow-sm);
+		border: 1px solid var(--lumi-color-border-light);
+		z-index: -1;
 	}
 
 	.lumi-navbar__left {

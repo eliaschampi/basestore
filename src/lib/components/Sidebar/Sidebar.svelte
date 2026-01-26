@@ -59,11 +59,6 @@
 		z-index: var(--lumi-z-sidebar);
 	}
 
-	.lumi-sidebar:hover {
-		box-shadow: var(--lumi-shadow-md);
-		border-right-color: var(--lumi-color-border);
-	}
-
 	.lumi-sidebar--collapsed {
 		width: var(--lumi-sidebar-width-collapsed);
 	}

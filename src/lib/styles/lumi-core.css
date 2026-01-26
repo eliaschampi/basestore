@@ -53,7 +53,7 @@ body {
 .lumi-dashboard-layout {
 	display: grid;
 	height: 100vh;
-	overflow: hidden;
+
 	grid-template-areas:
 		'sidebar navbar'
 		'sidebar content';
