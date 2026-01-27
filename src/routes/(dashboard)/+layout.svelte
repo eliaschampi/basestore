@@ -170,13 +170,13 @@
 					{/snippet}
 
 					{#snippet content()}
-						<div class="lumi-padding--sm lumi-min-w--md">
+						<div class="lumi-padding--sm" style="max-width: 220px;">
 							<div class="lumi-padding--sm lumi-border lumi-border--light">
-								<p class="lumi-font--medium lumi-margin--none">
+								<p class="lumi-font--medium lumi-margin--none lumi-text-ellipsis">
 									{user.name}
 									{user.last_name}
 								</p>
-								<p class="lumi-text--sm lumi-text--muted lumi-margin-top--2xs">
+								<p class="lumi-text--xs lumi-text--muted lumi-margin-top--2xs lumi-text-ellipsis">
 									{user.email}
 								</p>
 							</div>

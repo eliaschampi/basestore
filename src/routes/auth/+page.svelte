@@ -4,7 +4,6 @@
 	import Input from '$lib/components/Input/Input.svelte';
 	import Button from '$lib/components/Button/Button.svelte';
 	import Alert from '$lib/components/Alert/Alert.svelte';
-	import { Icon } from '$lib/components';
 	import type { ActionData } from './$types';
 
 	const { form }: { form: ActionData } = $props();
@@ -29,7 +28,6 @@
 		<div
 			class="lumi-flex lumi-flex--column lumi-align-items--center lumi-flex--gap-sm lumi-margin-bottom--lg"
 		>
-			<Icon icon="package" size="48" color="var(--lumi-color-primary)" />
 			<h1 class="lumi-text--3xl lumi-font--bold lumi-margin--none">Faztore</h1>
 		</div>
 
@@ -74,25 +72,18 @@
 						required
 					/>
 
-					<div class="lumi-relative">
-						<Input
-							bind:value={password}
-							name="password"
-							type={showPassword ? 'text' : 'password'}
-							label="Contraseña"
-							placeholder="••••••••"
-							icon="lock"
-							required
-						/>
-						<button
-							type="button"
-							class="lumi-password-toggle"
-							onclick={() => (showPassword = !showPassword)}
-							aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-						>
-							<Icon icon={showPassword ? 'eye-off' : 'eye'} size="18" />
-						</button>
-					</div>
+					<Input
+						bind:value={password}
+						name="password"
+						type={showPassword ? 'text' : 'password'}
+						label="Contraseña"
+						placeholder="••••••••"
+						icon="lock"
+						actionIcon={showPassword ? 'eyeOff' : 'eye'}
+						actionLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+						onaction-click={() => (showPassword = !showPassword)}
+						required
+					/>
 
 					<Button
 						button="submit"
@@ -114,24 +105,3 @@
 		</p>
 	</div>
 </div>
-
-<style>
-	.lumi-password-toggle {
-		position: absolute;
-		top: 38px;
-		right: var(--lumi-space-md);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: var(--lumi-space-xs);
-		border: none;
-		background: transparent;
-		color: var(--lumi-color-text-muted);
-		cursor: pointer;
-		transition: color var(--lumi-duration-base) var(--lumi-easing-default);
-	}
-
-	.lumi-password-toggle:hover {
-		color: var(--lumi-color-primary);
-	}
-</style>

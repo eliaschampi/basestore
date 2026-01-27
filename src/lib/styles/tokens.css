@@ -309,6 +309,16 @@
 	/* LAYOUT SYSTEM */
 	/* ========================================================================== */
 
+	/* Dialog dimensions */
+	--lumi-dialog-width-sm: 25rem;
+	--lumi-dialog-width-md: 31.25rem;
+	--lumi-dialog-width-lg: 43.75rem;
+	--lumi-dialog-width-xl: 56.25rem;
+	--lumi-dialog-max-height: 90vh;
+	--lumi-dialog-content-max-height: 60vh;
+	--lumi-dialog-full-width: 100vw;
+	--lumi-dialog-full-height: 100vh;
+
 	/* Sidebar dimensions */
 	--lumi-sidebar-width: 260px;
 	--lumi-sidebar-width-collapsed: 80px;

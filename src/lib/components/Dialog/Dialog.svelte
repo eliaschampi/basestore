@@ -42,7 +42,7 @@
 	const dialogClasses = $derived(() => {
 		return [
 			'lumi-dialog',
-			`lumi-dialog--${size}`,
+			!fullScreen && `lumi-dialog--${size}`,
 			scrollable && 'lumi-dialog--scrollable',
 			fullScreen && 'lumi-dialog--full-screen'
 		]
@@ -225,7 +225,7 @@
 	.lumi-dialog-overlay {
 		position: fixed;
 		inset: 0;
-		background: rgba(0, 0, 0, 0.4);
+		background: var(--lumi-color-overlay);
 		backdrop-filter: blur(var(--lumi-blur-md));
 		-webkit-backdrop-filter: blur(var(--lumi-blur-md));
 		z-index: var(--lumi-z-modal-backdrop);
@@ -235,7 +235,7 @@
 		padding: var(--lumi-space-md);
 		cursor: pointer;
 		overflow-y: auto;
-		transition: opacity 0.2s ease;
+		transition: var(--lumi-transition-opacity);
 	}
 
 	.lumi-dialog-overlay--persistent {
@@ -247,13 +247,13 @@
 		position: relative;
 		background-color: var(--lumi-color-surface);
 		border-radius: var(--lumi-radius-2xl);
-		max-height: 90vh;
+		max-height: var(--lumi-dialog-max-height);
 		width: 100%;
 		display: flex;
 		flex-direction: column;
 		cursor: default;
 		z-index: var(--lumi-z-modal);
-		box-shadow: var(--lumi-shadow-xl);
+		box-shadow: var(--lumi-shadow-md);
 		border: 1px solid var(--lumi-color-border-light);
 	}
 
@@ -263,38 +263,34 @@
 
 	/* Size Variants */
 	.lumi-dialog--sm {
-		max-width: 400px;
+		max-width: var(--lumi-dialog-width-sm);
 		width: 100%;
-		min-width: 300px;
 	}
 	.lumi-dialog--md {
-		max-width: 560px;
+		max-width: var(--lumi-dialog-width-md);
 		width: 100%;
-		min-width: 400px;
 	}
 	.lumi-dialog--lg {
-		max-width: 800px;
+		max-width: var(--lumi-dialog-width-lg);
 		width: 100%;
-		min-width: 600px;
 	}
 	.lumi-dialog--xl {
-		max-width: 1024px;
+		max-width: var(--lumi-dialog-width-xl);
 		width: 100%;
-		min-width: 800px;
 	}
 
 	/* Scrollable Content */
 	.lumi-dialog--scrollable .lumi-dialog__content {
 		overflow-y: auto;
-		max-height: 60vh;
+		max-height: var(--lumi-dialog-content-max-height);
 	}
 
 	/* Full Screen Variant */
 	.lumi-dialog--full-screen {
 		max-width: none;
 		max-height: none;
-		width: 100vw;
-		height: 100vh;
+		width: var(--lumi-dialog-full-width);
+		height: var(--lumi-dialog-full-height);
 		border-radius: 0;
 	}
 
@@ -308,7 +304,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: var(--lumi-space-lg) var(--lumi-space-xl);
+		padding: var(--lumi-space-lg);
 		border-bottom: 1px solid var(--lumi-color-border-light);
 		background-color: var(--lumi-color-surface);
 		border-top-left-radius: var(--lumi-radius-2xl);
@@ -335,31 +331,38 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 32px;
-		height: 32px;
+		width: var(--lumi-space-xl);
+		height: var(--lumi-space-xl);
 		margin-left: var(--lumi-space-md);
 		background: transparent;
-		border: none;
-		border-radius: var(--lumi-radius-full);
+		border: 1px solid transparent;
+		border-radius: var(--lumi-radius-lg);
 		color: var(--lumi-color-text-muted);
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: var(--lumi-transition-all);
 		flex-shrink: 0;
 	}
 
 	.lumi-dialog__close:hover {
 		background: var(--lumi-color-background-hover);
 		color: var(--lumi-color-text);
+		border-color: var(--lumi-color-border);
+		transform: scale(1.02);
 	}
 
 	.lumi-dialog__close:active {
-		transform: scale(0.95);
+		transform: scale(0.98);
+	}
+
+	.lumi-dialog__close:focus-visible {
+		outline: 2px solid var(--lumi-color-primary);
+		outline-offset: var(--lumi-space-2xs);
 	}
 
 	/* Dialog Content */
 	.lumi-dialog__content {
 		flex: 1;
-		padding: var(--lumi-space-xl);
+		padding: var(--lumi-space-lg);
 		color: var(--lumi-color-text);
 		line-height: var(--lumi-line-height-normal);
 		background-color: var(--lumi-color-surface);
@@ -385,7 +388,7 @@
 		align-items: center;
 		justify-content: flex-end;
 		gap: var(--lumi-space-md);
-		padding: var(--lumi-space-lg) var(--lumi-space-xl);
+		padding: var(--lumi-space-lg);
 		border-top: 1px solid var(--lumi-color-border-light);
 		flex-shrink: 0;
 		background: var(--lumi-color-surface);
@@ -404,25 +407,25 @@
 			max-width: 100%;
 			border-bottom-left-radius: 0;
 			border-bottom-right-radius: 0;
-			max-height: 90vh;
+			max-height: var(--lumi-dialog-max-height);
 		}
 
 		.lumi-dialog--full-screen {
-			height: 100vh;
-			max-height: 100vh;
+			height: var(--lumi-dialog-full-height);
+			max-height: var(--lumi-dialog-full-height);
 			border-radius: 0;
 		}
 
 		.lumi-dialog__header {
-			padding: var(--lumi-space-md) var(--lumi-space-lg);
+			padding: var(--lumi-space-md);
 		}
 
 		.lumi-dialog__content {
-			padding: var(--lumi-space-lg);
+			padding: var(--lumi-space-md);
 		}
 
 		.lumi-dialog__footer {
-			padding: var(--lumi-space-md) var(--lumi-space-lg);
+			padding: var(--lumi-space-md);
 			flex-direction: column-reverse;
 			gap: var(--lumi-space-sm);
 		}

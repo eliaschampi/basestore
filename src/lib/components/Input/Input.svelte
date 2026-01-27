@@ -11,6 +11,9 @@
 		labelPlaceholder = '',
 		placeholder = '',
 		icon = '',
+		iconLabel = '',
+		actionIcon = '',
+		actionLabel = '',
 		iconAfter = false,
 		iconNoBorder = false,
 		color = 'primary',
@@ -32,7 +35,8 @@
 		oninput,
 		onfocus,
 		onblur,
-		'onicon-click': onIconClick
+		'onicon-click': onIconClick,
+		'onaction-click': onActionClick
 	}: InputProps = $props();
 
 	// Local state
@@ -133,6 +137,11 @@
 		if (onIconClick) onIconClick(event);
 	}
 
+	function handleActionClick(event: MouseEvent) {
+		inputElement?.focus();
+		if (onActionClick) onActionClick(event);
+	}
+
 	export function focus() {
 		inputElement?.focus();
 	}
@@ -152,6 +161,18 @@
 	{/if}
 
 	<div class="lumi-input__wrapper">
+		{#if icon && !iconAfter}
+			<button
+				type="button"
+				class="lumi-input__icon lumi-input__icon--before"
+				class:lumi-input__icon--no-border={iconNoBorder}
+				aria-label={iconLabel || 'Input icon'}
+				onclick={handleIconClick}
+			>
+				<Icon {icon} size={iconSizePx} />
+			</button>
+		{/if}
+
 		<input
 			bind:this={inputElement}
 			id={inputId}
@@ -163,31 +184,44 @@
 			{required}
 			placeholder={labelPlaceholder || placeholder}
 			class="lumi-input"
-			class:lumi-input--has-icon={!!icon}
-			class:lumi-input--icon-after={iconAfter}
+			class:lumi-input--has-prefix={!!(icon && !iconAfter)}
+			class:lumi-input--has-suffix={!!(validationIcon || actionIcon || (icon && iconAfter))}
 			oninput={handleInput}
 			onfocus={handleFocus}
 			onblur={handleBlur}
 		/>
 
-		{#if validationIcon}
-			<div class="lumi-input__validation-icon">
-				<Icon icon={validationIcon} size={iconSizePx} />
-			</div>
-		{/if}
+		{#if validationIcon || actionIcon || (icon && iconAfter)}
+			<div class="lumi-input__suffix">
+				{#if validationIcon}
+					<div class="lumi-input__validation-icon lumi-input__suffix-item" aria-hidden="true">
+						<Icon icon={validationIcon} size={iconSizePx} />
+					</div>
+				{/if}
 
-		{#if icon}
-			<button
-				type="button"
-				class="lumi-input__icon"
-				class:lumi-input__icon--after={iconAfter}
-				class:lumi-input__icon--no-border={iconNoBorder}
-				onclick={handleIconClick}
-				tabindex="-1"
-				style:order={iconAfter ? 2 : -1}
-			>
-				<Icon {icon} size={iconSizePx} />
-			</button>
+				{#if actionIcon}
+					<button
+						type="button"
+						class="lumi-input__action lumi-input__suffix-item"
+						aria-label={actionLabel || 'Input action'}
+						onclick={handleActionClick}
+					>
+						<Icon icon={actionIcon} size={iconSizePx} />
+					</button>
+				{/if}
+
+				{#if icon && iconAfter}
+					<button
+						type="button"
+						class="lumi-input__icon lumi-input__icon--after lumi-input__suffix-item"
+						class:lumi-input__icon--no-border={iconNoBorder}
+						aria-label={iconLabel || 'Input icon'}
+						onclick={handleIconClick}
+					>
+						<Icon {icon} size={iconSizePx} />
+					</button>
+				{/if}
+			</div>
 		{/if}
 	</div>
 
@@ -238,13 +272,32 @@
 		background: var(--lumi-color-background);
 		border: 1px solid var(--input-border);
 		border-radius: var(--lumi-radius-md);
-		transition: all 0.2s ease;
+		transition: var(--lumi-transition-all);
 		overflow: hidden;
+	}
+
+	.lumi-input__suffix {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--lumi-space-xs);
+		padding-right: var(--lumi-space-sm);
+		flex-shrink: 0;
+	}
+
+	.lumi-input__suffix-item {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.lumi-input-container--focused .lumi-input__wrapper {
 		border-color: var(--input-focus);
 		box-shadow: 0 0 0 3px color-mix(in srgb, var(--input-focus) 20%, transparent);
+	}
+
+	.lumi-input-container--focused .lumi-input__icon,
+	.lumi-input-container--focused .lumi-input__action {
+		color: var(--input-focus);
 	}
 
 	/* State colors */
@@ -270,6 +323,14 @@
 		padding: var(--lumi-space-sm);
 	}
 
+	.lumi-input--has-prefix {
+		padding-left: var(--lumi-space-2xs);
+	}
+
+	.lumi-input--has-suffix {
+		padding-right: var(--lumi-space-2xs);
+	}
+
 	.lumi-input::placeholder {
 		color: var(--lumi-color-text-muted);
 		opacity: 0.7;
@@ -292,9 +353,25 @@
 		font-size: var(--lumi-font-size-xl);
 	}
 
+	.lumi-input-container--sm .lumi-input__icon,
+	.lumi-input-container--sm .lumi-input__action {
+		padding: 0 var(--lumi-space-xs);
+	}
+
+	.lumi-input-container--lg .lumi-input__icon,
+	.lumi-input-container--lg .lumi-input__action {
+		padding: 0 var(--lumi-space-md);
+	}
+
+	.lumi-input-container--xl .lumi-input__icon,
+	.lumi-input-container--xl .lumi-input__action {
+		padding: 0 var(--lumi-space-lg);
+	}
+
 	/* Icons */
-	.lumi-input__icon {
-		display: flex;
+	.lumi-input__icon,
+	.lumi-input__action {
+		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		padding: 0 var(--lumi-space-sm);
@@ -302,27 +379,27 @@
 		background: transparent;
 		border: none;
 		cursor: pointer;
-		transition: color 0.2s;
+		transition: var(--lumi-transition-colors);
 		flex-shrink: 0;
 	}
 
-	.lumi-input__icon:not(.lumi-input__icon--no-border):not(.lumi-input__icon--after) {
+	.lumi-input__icon--before:not(.lumi-input__icon--no-border) {
 		border-right: 1px solid var(--lumi-color-border-light);
 	}
+
 	.lumi-input__icon--after:not(.lumi-input__icon--no-border) {
 		border-left: 1px solid var(--lumi-color-border-light);
 	}
 
-	.lumi-input__icon:hover {
+	.lumi-input__icon:hover,
+	.lumi-input__action:hover {
 		color: var(--input-focus);
 	}
 
 	.lumi-input__validation-icon {
-		display: flex;
+		display: inline-flex;
 		align-items: center;
-		padding-right: var(--lumi-space-sm);
 		color: var(--input-focus);
-		flex-shrink: 0;
 	}
 
 	/* Messages */

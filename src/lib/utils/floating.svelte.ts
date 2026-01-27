@@ -114,34 +114,27 @@ export function createFloating(
 			top = (strategy === 'absolute' ? triggerRect.top + window.scrollY : triggerRect.top) - offset;
 		}
 
-		if (placement.includes('end')) {
-			left = strategy === 'absolute' ? triggerRect.right + window.scrollX : triggerRect.right;
-		} else if (placement === 'bottom' || placement === 'top') {
-			// Center alignment
-			left =
-				(strategy === 'absolute' ? triggerRect.left + window.scrollX : triggerRect.left) +
-				triggerRect.width / 2;
-		}
-
 		// Get floating element dimensions if available
+		const floating = floatingElement();
 		let floatingWidth = calculatedWidth || 200;
 		let floatingHeight = calculatedMaxHeight;
 
-		const floating = floatingElement();
 		if (floating) {
 			const floatingRect = floating.getBoundingClientRect();
 			if (!calculatedWidth) floatingWidth = floatingRect.width || floatingWidth;
 			floatingHeight = Math.min(floatingRect.height || floatingHeight, calculatedMaxHeight);
 		}
 
-		// Adjust for center alignment
-		if (placement === 'bottom' || placement === 'top') {
+		if (placement.includes('end')) {
+			left =
+				(strategy === 'absolute' ? triggerRect.right + window.scrollX : triggerRect.right) -
+				floatingWidth;
+		} else if (placement === 'bottom' || placement === 'top') {
+			// Center alignment
+			left =
+				(strategy === 'absolute' ? triggerRect.left + window.scrollX : triggerRect.left) +
+				triggerRect.width / 2;
 			left -= floatingWidth / 2;
-		}
-
-		// Adjust for end alignment
-		if (placement.includes('end') && !placement.includes('top') && !placement.includes('bottom')) {
-			left -= floatingWidth;
 		}
 
 		// Viewport boundary adjustments - Horizontal

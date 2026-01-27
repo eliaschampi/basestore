@@ -41,11 +41,20 @@ export interface InputProps {
 	/** Icon name to display */
 	icon?: string;
 
+	/** Accessible label for the icon button */
+	iconLabel?: string;
+
 	/** Whether to show icon after input */
 	iconAfter?: boolean;
 
 	/** Whether icon has no border */
 	iconNoBorder?: boolean;
+
+	/** Trailing action icon (e.g. password toggle) */
+	actionIcon?: string;
+
+	/** Accessible label for the action icon */
+	actionLabel?: string;
 
 	/** Color variant */
 	color?: InputColor;
@@ -106,4 +115,7 @@ export interface InputProps {
 
 	/** Icon click handler */
 	'onicon-click'?: (event: MouseEvent) => void;
+
+	/** Action icon click handler */
+	'onaction-click'?: (event: MouseEvent) => void;
 }

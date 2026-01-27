@@ -74,7 +74,6 @@
 		height: var(--lumi-navbar-height);
 		padding: 0 var(--lumi-space-lg);
 		background: transparent;
-		box-shadow: var(--lumi-shadow-lg);
 		border-radius: var(--lumi-radius-xl);
 		z-index: var(--lumi-z-fixed);
 		margin: var(--lumi-space-md);

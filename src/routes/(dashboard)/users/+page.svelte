@@ -156,17 +156,17 @@
 		</Button>
 	</div>
 
-	<div class="lumi-grid lumi-grid--columns-3 lumi-grid--gap-lg">
+	<div class="lumi-grid lumi-grid--columns-3 lumi-grid--gap-md">
 		{#each data.users as user (user.code)}
 			<Card>
 				<div
-					class="lumi-position--relative lumi-flex lumi-flex--column lumi-align-items--center lumi-flex--gap-md lumi-padding--xl"
-					style="min-height: 280px;"
+					class="lumi-position--relative lumi-flex lumi-flex--column lumi-align-items--center lumi-flex--gap-sm lumi-padding--lg"
+					style="min-height: 220px;"
 				>
 					<!-- Dropdown Menu -->
 					<div
 						class="lumi-position--absolute"
-						style="top: var(--lumi-space-md); right: var(--lumi-space-md); z-index: 10;"
+						style="top: var(--lumi-space-sm); right: var(--lumi-space-sm); z-index: 10;"
 					>
 						<Dropdown position="bottom-end">
 							{#snippet triggerContent()}
@@ -198,24 +198,24 @@
 
 					<!-- Avatar and Name -->
 					<div
-						class="lumi-flex lumi-flex--column lumi-align-items--center lumi-flex--gap-sm lumi-text--center"
-						style="width: 100%; margin-top: var(--lumi-space-sm);"
+						class="lumi-flex lumi-flex--column lumi-align-items--center lumi-flex--gap-xs lumi-text--center"
+						style="width: 100%; margin-top: var(--lumi-space-2xs);"
 					>
 						<Avatar
 							text={getInitials(user.name || '', user.last_name || '')}
 							src={user.photo_url ?? undefined}
-							size="lg"
+							size="md"
 							color="primary"
 						/>
 						<h3
-							class="lumi-margin--none lumi-text--lg lumi-font--bold"
+							class="lumi-margin--none lumi-text--base lumi-font--bold"
 							style="line-height: var(--lumi-line-height-tight);"
 						>
 							{user.name || 'Sin nombre'}
 							{user.last_name || ''}
 						</h3>
 						<p
-							class="lumi-margin--none lumi-text--sm lumi-text--muted lumi-text-ellipsis"
+							class="lumi-margin--none lumi-text--xs lumi-text--muted lumi-text-ellipsis"
 							style="max-width: 100%;"
 						>
 							{user.email}
@@ -225,17 +225,19 @@
 					<!-- Stats -->
 					<div
 						class="lumi-flex lumi-flex--column lumi-flex--gap-xs lumi-width--full"
-						style="padding-top: var(--lumi-space-sm); margin-top: var(--lumi-space-xs); border-top: 1px solid var(--lumi-color-border-light);"
+						style="padding-top: var(--lumi-space-xs); margin-top: var(--lumi-space-xs); border-top: 1px solid var(--lumi-color-border-light);"
 					>
-						<div
-							class="lumi-flex lumi-align-items--center lumi-flex--between lumi-text--xs lumi-text--muted"
-						>
-							<div class="lumi-flex lumi-align-items--center lumi-flex--gap-xs">
-								<Icon icon="calendar" size="14px" />
+						<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
+							<div
+								class="lumi-flex lumi-align-items--center lumi-flex--gap-xs lumi-text--xs lumi-text--muted"
+							>
+								<Icon icon="calendar" size="12px" />
 								<span>{formatDate(user.created_at)}</span>
 							</div>
-							<div class="lumi-flex lumi-align-items--center lumi-flex--gap-xs">
-								<Icon icon="clock" size="14px" />
+							<div
+								class="lumi-flex lumi-align-items--center lumi-flex--gap-xs lumi-text--xs lumi-text--muted"
+							>
+								<Icon icon="clock" size="12px" />
 								<span>{user.last_login ? formatDate(user.last_login) : 'Nunca'}</span>
 							</div>
 						</div>
@@ -243,9 +245,9 @@
 
 					<!-- Role Badge -->
 					{#if user.is_super_admin}
-						<Chip color="danger" size="sm">Super Admin</Chip>
+						<Chip color="danger" size="sm" class="lumi-text--xs">Super Admin</Chip>
 					{:else}
-						<Chip color="primary" size="sm">Usuario</Chip>
+						<Chip color="primary" size="sm" class="lumi-text--xs">Usuario</Chip>
 					{/if}
 				</div>
 			</Card>

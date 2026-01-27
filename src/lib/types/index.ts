@@ -44,6 +44,9 @@ export interface InputProps extends BaseComponentProps {
 	readonly?: boolean;
 	required?: boolean;
 	icon?: string;
+	iconLabel?: string;
+	actionIcon?: string;
+	actionLabel?: string;
 	iconAfter?: boolean;
 	iconNoBorder?: boolean;
 	success?: boolean;
@@ -57,6 +60,8 @@ export interface InputProps extends BaseComponentProps {
 	valIconSuccess?: string;
 	valIconDanger?: string;
 	valIconWarning?: string;
+	'onicon-click'?: (event: MouseEvent) => void;
+	'onaction-click'?: (event: MouseEvent) => void;
 }
 
 export interface CardProps extends BaseComponentProps {

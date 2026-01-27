@@ -5,28 +5,34 @@ import { tick } from 'svelte';
  * Default target is document.body
  */
 export function portal(node: HTMLElement, target: HTMLElement | string = 'body') {
-	let targetEl: HTMLElement | null = null;
+	let activeTarget: HTMLElement | null = null;
 
-	async function update(newTarget: HTMLElement | string) {
-		targetEl = typeof newTarget === 'string' ? document.querySelector(newTarget) : newTarget;
-		if (targetEl) {
-			targetEl.appendChild(node);
-			node.hidden = false;
-		} else {
-			// If target doesn't exist yet, wait a tick and try again
-			await tick();
-			targetEl = typeof newTarget === 'string' ? document.querySelector(newTarget) : newTarget;
-			if (targetEl) {
-				targetEl.appendChild(node);
-				node.hidden = false;
-			}
-		}
+	async function resolveTarget(nextTarget: HTMLElement | string): Promise<HTMLElement | null> {
+		const resolved =
+			typeof nextTarget === 'string'
+				? (document.querySelector(nextTarget) as HTMLElement | null)
+				: nextTarget;
+
+		if (resolved) return resolved;
+
+		await tick();
+		return typeof nextTarget === 'string'
+			? (document.querySelector(nextTarget) as HTMLElement | null)
+			: nextTarget;
+	}
+
+	async function update(nextTarget: HTMLElement | string) {
+		const resolved = await resolveTarget(nextTarget);
+		if (!resolved || resolved === activeTarget) return;
+
+		activeTarget = resolved;
+		resolved.appendChild(node);
+		node.hidden = false;
 	}
 
 	function destroy() {
-		if (node.parentNode) {
-			node.parentNode.removeChild(node);
-		}
+		node.parentNode?.removeChild(node);
+		activeTarget = null;
 	}
 
 	update(target);
