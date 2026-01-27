@@ -126,7 +126,7 @@
 
 <div class={classes()}>
 	{#if label}
-		<label id="slider-label-{label}" class="lumi-slider__label">{label}</label>
+		<label id="slider-label-{label}" class="lumi-slider__label" for="slider-{label}">{label}</label>
 	{/if}
 
 	<div class="lumi-slider__container">

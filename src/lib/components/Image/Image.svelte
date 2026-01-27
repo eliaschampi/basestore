@@ -18,7 +18,7 @@
 		onerror
 	}: ImageProps = $props();
 
-	let isLoading = $state(loading === 'lazy');
+	let isLoading = $derived(loading === 'lazy');
 	let hasError = $state(false);
 
 	const classes = $derived(() => {

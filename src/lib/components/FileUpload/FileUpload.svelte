@@ -183,15 +183,16 @@
 </script>
 
 <div class="lumi-file-upload {className}">
-	<button
-		type="button"
+	<div
 		class={dropzoneClasses()}
 		onclick={handleDropzoneClick}
 		onkeydown={handleDropzoneKeydown}
 		ondragover={handleDragOver}
 		ondragleave={handleDragLeave}
 		ondrop={handleDrop}
-		{disabled}
+		role="button"
+		tabindex={disabled ? -1 : 0}
+		aria-disabled={disabled}
 		aria-label="File upload dropzone"
 	>
 		<!-- Hidden Input -->
@@ -293,7 +294,7 @@
 				{/if}
 			</div>
 		{/if}
-	</button>
+	</div>
 </div>
 
 <style>

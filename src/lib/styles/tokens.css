@@ -132,8 +132,8 @@
 	--lumi-color-text-inverse: #ffffff;
 
 	/* Border colors - Better visual hierarchy */
-	--lumi-color-border: rgba(228, 228, 231, 0.8);
-	--lumi-color-border-light: #f4f4f5;
+	--lumi-color-border: rgba(228, 228, 231, 0.5);
+	--lumi-color-border-light: rgba(244, 244, 245, 0.5);
 	--lumi-color-border-strong: #d4d4d8;
 	--lumi-color-border-focus: var(--lumi-color-primary);
 
@@ -244,10 +244,10 @@
 	/* ========================================================================== */
 	/* SHADOW SYSTEM - Refined for minimal aesthetic */
 	/* ========================================================================== */
-	--lumi-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-	--lumi-shadow-md: 0 2px 8px 0 rgba(0, 0, 0, 0.04);
-	--lumi-shadow-lg: 0 4px 16px 0 rgba(0, 0, 0, 0.06);
-	--lumi-shadow-xl: 0 8px 24px 0 rgba(0, 0, 0, 0.08);
+	--lumi-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+	--lumi-shadow-md: 0 4px 20px 0 rgba(0, 0, 0, 0.03);
+	--lumi-shadow-lg: 0 10px 25px 0 rgba(0, 0, 0, 0.1);
+	--lumi-shadow-xl: 0 20px 40px 0 rgba(0, 0, 0, 0.15);
 
 	/* ========================================================================== */
 	/* ICON SIZE SYSTEM */
@@ -465,9 +465,9 @@
 
 	/* Enhanced shadows for dark mode */
 	--lumi-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-	--lumi-shadow-md: 0 2px 8px 0 rgba(0, 0, 0, 0.4);
-	--lumi-shadow-lg: 0 4px 16px 0 rgba(0, 0, 0, 0.5);
-	--lumi-shadow-xl: 0 8px 24px 0 rgba(0, 0, 0, 0.6);
+	--lumi-shadow-md: 0 4px 20px 0 rgba(0, 0, 0, 0.4);
+	--lumi-shadow-lg: 0 10px 25px 0 rgba(0, 0, 0, 0.5);
+	--lumi-shadow-xl: 0 20px 40px 0 rgba(0, 0, 0, 0.6);
 
 	/* Overlay color for dark theme */
 	--lumi-color-overlay: rgba(0, 0, 0, 0.7);

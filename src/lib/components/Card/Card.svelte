@@ -11,6 +11,7 @@
 
 	const {
 		clickable = false,
+		hoverable,
 		image,
 		imageHeight = 200,
 		imageAlt,
@@ -27,7 +28,10 @@
 
 	const cardClasses = $derived(() => {
 		const classes = ['lumi-card'];
+		const isHoverable = hoverable ?? clickable;
+
 		if (clickable) classes.push('lumi-card--clickable');
+		if (isHoverable) classes.push('lumi-card--hoverable');
 		if (image) classes.push('lumi-card--with-image');
 		if (spaced) classes.push('lumi-card--spaced');
 		if (className) classes.push(className);
@@ -98,7 +102,7 @@
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
-		box-shadow: var(--lumi-shadow-sm);
+		box-shadow: var(--lumi-shadow-md);
 		transition: var(--lumi-transition-shadow);
 		width: 100%;
 		text-align: left;
@@ -112,13 +116,13 @@
 		cursor: pointer;
 	}
 
-	.lumi-card--clickable:hover {
+	.lumi-card--hoverable:hover {
 		transform: translateY(-2px);
 		box-shadow: var(--lumi-shadow-md);
 		border-color: var(--lumi-color-primary);
 	}
 
-	.lumi-card--clickable:active {
+	.lumi-card--hoverable:active {
 		transform: translateY(0);
 		box-shadow: var(--lumi-shadow-sm);
 	}
@@ -147,7 +151,7 @@
 		transition: transform 0.5s ease;
 	}
 
-	.lumi-card--clickable:hover .lumi-card__image img {
+	.lumi-card--hoverable:hover .lumi-card__image img {
 		transform: scale(1.05);
 	}
 

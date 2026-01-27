@@ -7,6 +7,8 @@ export interface QuickAccessCardProps {
 	icon: string;
 	/** Semantic color */
 	color?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
+	/** Whether card shows hover effects */
+	hoverable?: boolean;
 	/** Link href */
 	href: string;
 	/** Additional CSS classes */

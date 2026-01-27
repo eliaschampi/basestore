@@ -74,7 +74,7 @@
 		height: var(--lumi-navbar-height);
 		padding: 0 var(--lumi-space-lg);
 		background: transparent;
-		box-shadow: var(--lumi-shadow-sm);
+		box-shadow: var(--lumi-shadow-md);
 		border-radius: var(--lumi-radius-xl);
 		z-index: var(--lumi-z-fixed);
 		margin: var(--lumi-space-md);
@@ -91,7 +91,7 @@
 		backdrop-filter: blur(var(--lumi-blur-lg));
 		-webkit-backdrop-filter: blur(var(--lumi-blur-lg));
 		border-radius: inherit;
-		box-shadow: var(--lumi-shadow-sm);
+		box-shadow: var(--lumi-shadow-md);
 		border: 1px solid var(--lumi-color-border-light);
 		z-index: -1;
 	}

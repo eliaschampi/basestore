@@ -7,6 +7,8 @@ export interface StatCardProps {
 	icon: string;
 	/** Semantic color */
 	color?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
+	/** Whether card shows hover effects */
+	hoverable?: boolean;
 	/** Optional link href */
 	href?: string;
 	/** Optional subtitle text */

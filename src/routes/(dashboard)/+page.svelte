@@ -2,7 +2,6 @@
 	import { Title, StatCard, QuickAccessCard } from '$lib/components';
 
 	const { data } = $props();
-	const { users, branches, categories, brands } = $derived(data.stats);
 
 	interface StatCardData {
 		title: string;
@@ -12,36 +11,36 @@
 		href: string;
 	}
 
-	const statCards: StatCardData[] = [
+	const statCards: StatCardData[] = $derived([
 		{
 			title: 'Usuarios',
-			value: users,
+			value: data.stats.users,
 			icon: 'users',
 			color: 'primary',
 			href: '/users'
 		},
 		{
 			title: 'Sedes',
-			value: branches,
+			value: data.stats.branches,
 			icon: 'building',
 			color: 'secondary',
 			href: '/branches'
 		},
 		{
 			title: 'Categorías',
-			value: categories,
+			value: data.stats.categories,
 			icon: 'tag',
 			color: 'success',
 			href: '/categories'
 		},
 		{
 			title: 'Marcas',
-			value: brands,
+			value: data.stats.brands,
 			icon: 'award',
 			color: 'info',
 			href: '/brands'
 		}
-	];
+	]);
 
 	interface QuickAccessCardData {
 		title: string;

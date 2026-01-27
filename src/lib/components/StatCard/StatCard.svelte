@@ -12,6 +12,7 @@
 		icon,
 		color = 'primary',
 		href,
+		hoverable = false,
 		subtitle = 'Total registrados',
 		class: className = ''
 	}: StatCardProps = $props();
@@ -23,7 +24,7 @@
 
 {#if href}
 	<a href={resolve(href as Pathname)} class="lumi-text-decoration--none">
-		<Card clickable class={cardClasses()}>
+		<Card clickable {hoverable} class={cardClasses()}>
 			<div class="lumi-stat-card__container">
 				<div class="lumi-stat-card__header">
 					<Title {title} size="sm" {color} />
@@ -37,7 +38,7 @@
 		</Card>
 	</a>
 {:else}
-	<Card class={cardClasses()}>
+	<Card {hoverable} class={cardClasses()}>
 		<div class="lumi-stat-card__container">
 			<div class="lumi-stat-card__header">
 				<Title {title} size="sm" {color} />

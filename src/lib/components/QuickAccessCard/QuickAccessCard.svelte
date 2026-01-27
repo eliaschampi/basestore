@@ -12,6 +12,7 @@
 		icon,
 		color = 'primary',
 		href,
+		hoverable = false,
 		class: className = ''
 	}: QuickAccessCardProps = $props();
 
@@ -21,7 +22,7 @@
 </script>
 
 <a href={resolve(href as Pathname)} class="lumi-text-decoration--none">
-	<Card clickable class={cardClasses()}>
+	<Card clickable {hoverable} class={cardClasses()}>
 		<div class="lumi-quick-access-card__container">
 			<div class="lumi-quick-access-card__icon-container lumi-bg--{color}">
 				<Icon {icon} size="xl" color="var(--lumi-color-{color})" />

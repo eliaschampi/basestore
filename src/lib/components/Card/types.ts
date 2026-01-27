@@ -6,6 +6,9 @@ export interface CardProps {
 	/** Whether card is clickable */
 	clickable?: boolean;
 
+	/** Whether card shows hover effects (shadow/transform) */
+	hoverable?: boolean;
+
 	/** Image URL */
 	image?: string;
 

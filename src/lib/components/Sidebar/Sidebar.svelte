@@ -53,7 +53,7 @@
 		height: 100vh;
 		background: var(--lumi-color-surface);
 		border-right: 1px solid var(--lumi-color-border-light);
-		box-shadow: var(--lumi-shadow-sm);
+		box-shadow: var(--lumi-shadow-md);
 		transition: all var(--lumi-duration-base) var(--lumi-easing-default);
 		overflow: hidden;
 		z-index: var(--lumi-z-sidebar);
