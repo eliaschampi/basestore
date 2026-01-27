@@ -224,20 +224,20 @@
 
 					<!-- Stats -->
 					<div
-						class="lumi-flex lumi-flex--column lumi-flex--gap-xs"
-						style="width: 100%; padding-top: var(--lumi-space-md); margin-top: auto; border-top: 1px solid var(--lumi-color-border-light);"
+						class="lumi-flex lumi-flex--column lumi-flex--gap-xs lumi-width--full"
+						style="padding-top: var(--lumi-space-sm); margin-top: var(--lumi-space-xs); border-top: 1px solid var(--lumi-color-border-light);"
 					>
 						<div
-							class="lumi-flex lumi-align-items--center lumi-flex--gap-xs lumi-text--xs lumi-text--muted"
+							class="lumi-flex lumi-align-items--center lumi-flex--between lumi-text--xs lumi-text--muted"
 						>
-							<Icon icon="calendar" size="16px" />
-							<span>Creado {formatDate(user.created_at)}</span>
-						</div>
-						<div
-							class="lumi-flex lumi-align-items--center lumi-flex--gap-xs lumi-text--xs lumi-text--muted"
-						>
-							<Icon icon="clock" size="16px" />
-							<span>Login {user.last_login ? formatDate(user.last_login) : 'Nunca'}</span>
+							<div class="lumi-flex lumi-align-items--center lumi-flex--gap-xs">
+								<Icon icon="calendar" size="14px" />
+								<span>{formatDate(user.created_at)}</span>
+							</div>
+							<div class="lumi-flex lumi-align-items--center lumi-flex--gap-xs">
+								<Icon icon="clock" size="14px" />
+								<span>{user.last_login ? formatDate(user.last_login) : 'Nunca'}</span>
+							</div>
 						</div>
 					</div>
 

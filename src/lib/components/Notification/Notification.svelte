@@ -84,6 +84,9 @@
 	 * ============================================================================ */
 
 	.lumi-notification {
+		--notification-color: var(--lumi-color-primary);
+		--notification-bg: var(--lumi-color-primary-bg);
+
 		display: flex;
 		align-items: flex-start;
 		gap: var(--lumi-space-md);
@@ -92,58 +95,35 @@
 		padding: var(--lumi-space-md);
 		background: var(--lumi-color-surface);
 		border: 1px solid var(--lumi-color-border-light);
-		border-radius: var(--lumi-radius-lg);
-		box-shadow: var(--lumi-shadow-lg);
+		border-left: 4px solid var(--notification-color);
+		border-radius: var(--lumi-radius-xl);
+		box-shadow: var(--lumi-shadow-xl);
 		pointer-events: auto;
 		cursor: default;
 		position: relative;
 		overflow: hidden;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
-	/* Type variants with left border accents */
+	/* Type variants */
 	.lumi-notification--success {
-		border-left: 4px solid var(--lumi-color-success);
-	}
-
-	.lumi-notification--success .lumi-notification__icon {
-		color: var(--lumi-color-success);
-		background-color: var(--lumi-color-success-bg);
+		--notification-color: var(--lumi-color-success);
+		--notification-bg: var(--lumi-color-success-bg);
 	}
 
 	.lumi-notification--warning {
-		border-left: 4px solid var(--lumi-color-warning);
-	}
-
-	.lumi-notification--warning .lumi-notification__icon {
-		color: var(--lumi-color-warning);
-		background-color: var(--lumi-color-warning-bg);
+		--notification-color: var(--lumi-color-warning);
+		--notification-bg: var(--lumi-color-warning-bg);
 	}
 
 	.lumi-notification--error {
-		border-left: 4px solid var(--lumi-color-danger);
-	}
-
-	.lumi-notification--error .lumi-notification__icon {
-		color: var(--lumi-color-danger);
-		background-color: var(--lumi-color-danger-bg);
+		--notification-color: var(--lumi-color-danger);
+		--notification-bg: var(--lumi-color-danger-bg);
 	}
 
 	.lumi-notification--info {
-		border-left: 4px solid var(--lumi-color-info);
-	}
-
-	.lumi-notification--info .lumi-notification__icon {
-		color: var(--lumi-color-info);
-		background-color: var(--lumi-color-info-bg);
-	}
-
-	.lumi-notification--primary {
-		border-left: 4px solid var(--lumi-color-primary);
-	}
-
-	.lumi-notification--primary .lumi-notification__icon {
-		color: var(--lumi-color-primary);
-		background-color: var(--lumi-color-primary-bg);
+		--notification-color: var(--lumi-color-info);
+		--notification-bg: var(--lumi-color-info-bg);
 	}
 
 	/* Icon container */
@@ -155,6 +135,8 @@
 		width: 2.5rem;
 		height: 2.5rem;
 		border-radius: var(--lumi-radius-full);
+		color: var(--notification-color);
+		background-color: var(--notification-bg);
 	}
 
 	/* Content area */

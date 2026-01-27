@@ -3,6 +3,7 @@
 	import { onMount, setContext } from 'svelte';
 	import { scale } from 'svelte/transition';
 	import { createFloating } from '$lib/utils/floating.svelte';
+	import { portal } from '$lib/actions/portal';
 	import type { DropdownProps } from './types';
 
 	interface Props {
@@ -185,6 +186,7 @@
 	{#if open}
 		<div
 			bind:this={menuRef}
+			use:portal
 			class="lumi-dropdown__menu lumi-dropdown__menu--{size}"
 			role="menu"
 			aria-labelledby={triggerId}
@@ -230,12 +232,14 @@
 	.lumi-dropdown__menu {
 		background: var(--lumi-color-surface);
 		border: 1px solid var(--lumi-color-border);
-		border-radius: var(--lumi-radius-lg);
-		box-shadow: var(--lumi-shadow-lg);
+		border-radius: var(--lumi-radius-xl);
+		box-shadow: var(--lumi-shadow-xl);
 		padding: var(--lumi-space-xs);
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
+		backdrop-filter: blur(var(--lumi-blur-sm));
+		-webkit-backdrop-filter: blur(var(--lumi-blur-sm));
 	}
 
 	.lumi-dropdown__content {

@@ -98,7 +98,7 @@
 		position: relative;
 		background: var(--lumi-color-surface);
 		border: 1px solid var(--lumi-color-border);
-		border-radius: var(--lumi-radius-xl);
+		border-radius: var(--lumi-radius-2xl);
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;

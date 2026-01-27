@@ -183,16 +183,18 @@
 		z-index: var(--lumi-z-dropdown);
 		background: var(--lumi-color-surface);
 		border: 1px solid var(--lumi-color-border);
-		border-radius: var(--lumi-radius-lg);
+		border-radius: var(--lumi-radius-xl);
 		padding: var(--lumi-space-xs);
 		min-width: 160px;
 		max-width: 280px;
-		box-shadow: var(--lumi-shadow-lg);
+		box-shadow: var(--lumi-shadow-xl);
 		outline: none;
 		opacity: 0;
 		transform-origin: top left;
 		display: flex;
 		flex-direction: column;
+		backdrop-filter: blur(var(--lumi-blur-sm));
+		-webkit-backdrop-filter: blur(var(--lumi-blur-sm));
 	}
 
 	.lumi-context--visible {

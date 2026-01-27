@@ -132,34 +132,25 @@
 	}
 
 	/* Color variants */
-	.lumi-avatar--primary {
-		background-color: var(--lumi-color-primary);
+	.lumi-avatar {
+		--avatar-color: var(--lumi-color-primary);
+		background-color: var(--avatar-color);
 		color: var(--lumi-color-white);
 	}
-
 	.lumi-avatar--secondary {
-		background-color: var(--lumi-color-secondary);
-		color: var(--lumi-color-white);
+		--avatar-color: var(--lumi-color-secondary);
 	}
-
 	.lumi-avatar--success {
-		background-color: var(--lumi-color-success);
-		color: var(--lumi-color-white);
+		--avatar-color: var(--lumi-color-success);
 	}
-
 	.lumi-avatar--warning {
-		background-color: var(--lumi-color-warning);
-		color: var(--lumi-color-white);
+		--avatar-color: var(--lumi-color-warning);
 	}
-
 	.lumi-avatar--danger {
-		background-color: var(--lumi-color-danger);
-		color: var(--lumi-color-white);
+		--avatar-color: var(--lumi-color-danger);
 	}
-
 	.lumi-avatar--info {
-		background-color: var(--lumi-color-info);
-		color: var(--lumi-color-white);
+		--avatar-color: var(--lumi-color-info);
 	}
 
 	/* Text styling */

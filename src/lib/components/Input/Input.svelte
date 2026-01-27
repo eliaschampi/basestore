@@ -170,6 +170,12 @@
 			onblur={handleBlur}
 		/>
 
+		{#if validationIcon}
+			<div class="lumi-input__validation-icon">
+				<Icon icon={validationIcon} size={iconSizePx} />
+			</div>
+		{/if}
+
 		{#if icon}
 			<button
 				type="button"
@@ -178,15 +184,10 @@
 				class:lumi-input__icon--no-border={iconNoBorder}
 				onclick={handleIconClick}
 				tabindex="-1"
+				style:order={iconAfter ? 2 : -1}
 			>
 				<Icon {icon} size={iconSizePx} />
 			</button>
-		{/if}
-
-		{#if validationIcon}
-			<div class="lumi-input__validation-icon">
-				<Icon icon={validationIcon} size={iconSizePx} />
-			</div>
 		{/if}
 	</div>
 
@@ -302,6 +303,7 @@
 		border: none;
 		cursor: pointer;
 		transition: color 0.2s;
+		flex-shrink: 0;
 	}
 
 	.lumi-input__icon:not(.lumi-input__icon--no-border):not(.lumi-input__icon--after) {
@@ -320,6 +322,7 @@
 		align-items: center;
 		padding-right: var(--lumi-space-sm);
 		color: var(--input-focus);
+		flex-shrink: 0;
 	}
 
 	/* Messages */

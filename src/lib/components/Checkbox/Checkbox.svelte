@@ -168,16 +168,30 @@
 		font-size: var(--lumi-font-size-base);
 	}
 
-	/* Hover effects */
-	.lumi-checkbox:not(.lumi-checkbox--disabled):hover .lumi-checkbox__visual {
-		border-color: var(--lumi-color-primary);
-		background: var(--lumi-color-background-hover);
+	/* Color variants */
+	.lumi-checkbox {
+		--checkbox-color: var(--lumi-color-primary);
+	}
+	.lumi-checkbox--secondary {
+		--checkbox-color: var(--lumi-color-secondary);
+	}
+	.lumi-checkbox--success {
+		--checkbox-color: var(--lumi-color-success);
+	}
+	.lumi-checkbox--warning {
+		--checkbox-color: var(--lumi-color-warning);
+	}
+	.lumi-checkbox--danger {
+		--checkbox-color: var(--lumi-color-danger);
+	}
+	.lumi-checkbox--info {
+		--checkbox-color: var(--lumi-color-info);
 	}
 
 	/* Checked / Indeterminate state */
 	.lumi-checkbox--checked .lumi-checkbox__visual {
-		background: var(--lumi-color-primary);
-		border-color: var(--lumi-color-primary);
+		background: var(--checkbox-color);
+		border-color: var(--checkbox-color);
 	}
 
 	.lumi-checkbox--checked .lumi-checkbox__icon {
@@ -185,11 +199,15 @@
 		transform: scale(1);
 	}
 
-	/* Focus styles */
 	.lumi-checkbox__input:focus-visible + .lumi-checkbox__visual {
 		box-shadow:
 			0 0 0 2px var(--lumi-color-background),
-			0 0 0 4px var(--lumi-color-primary);
+			0 0 0 4px var(--checkbox-color);
+	}
+
+	.lumi-checkbox:not(.lumi-checkbox--disabled):hover .lumi-checkbox__visual {
+		border-color: var(--checkbox-color);
+		background: var(--lumi-color-background-hover);
 	}
 
 	/* Disabled state */
@@ -206,57 +224,6 @@
 	.lumi-checkbox--disabled.lumi-checkbox--checked .lumi-checkbox__visual {
 		background: var(--lumi-color-border);
 		border-color: var(--lumi-color-border);
-	}
-
-	/* Color variants */
-	.lumi-checkbox--secondary.lumi-checkbox--checked .lumi-checkbox__visual {
-		background: var(--lumi-color-secondary);
-		border-color: var(--lumi-color-secondary);
-	}
-	.lumi-checkbox--secondary .lumi-checkbox__input:focus-visible + .lumi-checkbox__visual {
-		box-shadow:
-			0 0 0 2px var(--lumi-color-background),
-			0 0 0 4px var(--lumi-color-secondary);
-	}
-
-	.lumi-checkbox--success.lumi-checkbox--checked .lumi-checkbox__visual {
-		background: var(--lumi-color-success);
-		border-color: var(--lumi-color-success);
-	}
-	.lumi-checkbox--success .lumi-checkbox__input:focus-visible + .lumi-checkbox__visual {
-		box-shadow:
-			0 0 0 2px var(--lumi-color-background),
-			0 0 0 4px var(--lumi-color-success);
-	}
-
-	.lumi-checkbox--warning.lumi-checkbox--checked .lumi-checkbox__visual {
-		background: var(--lumi-color-warning);
-		border-color: var(--lumi-color-warning);
-	}
-	.lumi-checkbox--warning .lumi-checkbox__input:focus-visible + .lumi-checkbox__visual {
-		box-shadow:
-			0 0 0 2px var(--lumi-color-background),
-			0 0 0 4px var(--lumi-color-warning);
-	}
-
-	.lumi-checkbox--danger.lumi-checkbox--checked .lumi-checkbox__visual {
-		background: var(--lumi-color-danger);
-		border-color: var(--lumi-color-danger);
-	}
-	.lumi-checkbox--danger .lumi-checkbox__input:focus-visible + .lumi-checkbox__visual {
-		box-shadow:
-			0 0 0 2px var(--lumi-color-background),
-			0 0 0 4px var(--lumi-color-danger);
-	}
-
-	.lumi-checkbox--info.lumi-checkbox--checked .lumi-checkbox__visual {
-		background: var(--lumi-color-info);
-		border-color: var(--lumi-color-info);
-	}
-	.lumi-checkbox--info .lumi-checkbox__input:focus-visible + .lumi-checkbox__visual {
-		box-shadow:
-			0 0 0 2px var(--lumi-color-background),
-			0 0 0 4px var(--lumi-color-info);
 	}
 
 	/* Animation for checkmark */

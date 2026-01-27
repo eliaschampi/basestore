@@ -226,8 +226,8 @@
 		position: fixed;
 		inset: 0;
 		background: rgba(0, 0, 0, 0.4);
-		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
+		backdrop-filter: blur(var(--lumi-blur-md));
+		-webkit-backdrop-filter: blur(var(--lumi-blur-md));
 		z-index: var(--lumi-z-modal-backdrop);
 		display: flex;
 		align-items: center;
@@ -235,6 +235,7 @@
 		padding: var(--lumi-space-md);
 		cursor: pointer;
 		overflow-y: auto;
+		transition: opacity 0.2s ease;
 	}
 
 	.lumi-dialog-overlay--persistent {
@@ -245,11 +246,6 @@
 	.lumi-dialog {
 		position: relative;
 		background-color: var(--lumi-color-surface);
-		background-image: linear-gradient(
-			180deg,
-			var(--lumi-color-surface) 0%,
-			var(--lumi-color-surface-hover) 100%
-		);
 		border-radius: var(--lumi-radius-2xl);
 		max-height: 90vh;
 		width: 100%;
@@ -257,7 +253,7 @@
 		flex-direction: column;
 		cursor: default;
 		z-index: var(--lumi-z-modal);
-		box-shadow: var(--lumi-shadow-2xl);
+		box-shadow: var(--lumi-shadow-xl);
 		border: 1px solid var(--lumi-color-border-light);
 	}
 
@@ -268,15 +264,23 @@
 	/* Size Variants */
 	.lumi-dialog--sm {
 		max-width: 400px;
+		width: 100%;
+		min-width: 300px;
 	}
 	.lumi-dialog--md {
 		max-width: 560px;
+		width: 100%;
+		min-width: 400px;
 	}
 	.lumi-dialog--lg {
 		max-width: 800px;
+		width: 100%;
+		min-width: 600px;
 	}
 	.lumi-dialog--xl {
 		max-width: 1024px;
+		width: 100%;
+		min-width: 800px;
 	}
 
 	/* Scrollable Content */

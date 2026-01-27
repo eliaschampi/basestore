@@ -157,6 +157,26 @@
 		font-size: var(--lumi-font-size-base);
 	}
 
+	/* Color variants */
+	.lumi-switch {
+		--switch-color: var(--lumi-color-primary);
+	}
+	.lumi-switch--secondary {
+		--switch-color: var(--lumi-color-secondary);
+	}
+	.lumi-switch--success {
+		--switch-color: var(--lumi-color-success);
+	}
+	.lumi-switch--warning {
+		--switch-color: var(--lumi-color-warning);
+	}
+	.lumi-switch--danger {
+		--switch-color: var(--lumi-color-danger);
+	}
+	.lumi-switch--info {
+		--switch-color: var(--lumi-color-info);
+	}
+
 	/* Checked state */
 	.lumi-switch--checked .lumi-switch__thumb {
 		transform: translateX(1.25rem);
@@ -170,29 +190,8 @@
 		transform: translateX(1.5rem);
 	}
 
-	/* Color variants */
-	.lumi-switch--checked.lumi-switch--primary .lumi-switch__track {
-		background: var(--lumi-color-primary);
-	}
-
-	.lumi-switch--checked.lumi-switch--secondary .lumi-switch__track {
-		background: var(--lumi-color-secondary);
-	}
-
-	.lumi-switch--checked.lumi-switch--success .lumi-switch__track {
-		background: var(--lumi-color-success);
-	}
-
-	.lumi-switch--checked.lumi-switch--warning .lumi-switch__track {
-		background: var(--lumi-color-warning);
-	}
-
-	.lumi-switch--checked.lumi-switch--danger .lumi-switch__track {
-		background: var(--lumi-color-danger);
-	}
-
-	.lumi-switch--checked.lumi-switch--info .lumi-switch__track {
-		background: var(--lumi-color-info);
+	.lumi-switch--checked .lumi-switch__track {
+		background: var(--switch-color);
 	}
 
 	/* Hover effects */
@@ -204,37 +203,7 @@
 	.lumi-switch__input:focus-visible + .lumi-switch__track {
 		box-shadow:
 			0 0 0 2px var(--lumi-color-background),
-			0 0 0 4px var(--lumi-color-primary);
-	}
-
-	.lumi-switch--secondary .lumi-switch__input:focus-visible + .lumi-switch__track {
-		box-shadow:
-			0 0 0 2px var(--lumi-color-background),
-			0 0 0 4px var(--lumi-color-secondary);
-	}
-
-	.lumi-switch--success .lumi-switch__input:focus-visible + .lumi-switch__track {
-		box-shadow:
-			0 0 0 2px var(--lumi-color-background),
-			0 0 0 4px var(--lumi-color-success);
-	}
-
-	.lumi-switch--warning .lumi-switch__input:focus-visible + .lumi-switch__track {
-		box-shadow:
-			0 0 0 2px var(--lumi-color-background),
-			0 0 0 4px var(--lumi-color-warning);
-	}
-
-	.lumi-switch--danger .lumi-switch__input:focus-visible + .lumi-switch__track {
-		box-shadow:
-			0 0 0 2px var(--lumi-color-background),
-			0 0 0 4px var(--lumi-color-danger);
-	}
-
-	.lumi-switch--info .lumi-switch__input:focus-visible + .lumi-switch__track {
-		box-shadow:
-			0 0 0 2px var(--lumi-color-background),
-			0 0 0 4px var(--lumi-color-info);
+			0 0 0 4px var(--switch-color);
 	}
 
 	/* Disabled state */

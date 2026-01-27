@@ -50,7 +50,7 @@
 		display: flex;
 		flex-direction: column;
 		width: var(--lumi-sidebar-width);
-		height: 100vh;
+		height: 100%;
 		background: var(--lumi-color-surface);
 		border-right: 1px solid var(--lumi-color-border-light);
 		box-shadow: var(--lumi-shadow-md);
