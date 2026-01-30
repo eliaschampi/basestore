@@ -34,49 +34,38 @@ export const actions: Actions = {
 			});
 		}
 
-		try {
-			// Find user by email
-			const user = await locals.db
-				.selectFrom('users')
-				.selectAll()
-				.where('email', '=', email)
-				.executeTakeFirst();
+		// Find user by email
+		const user = await locals.db
+			.selectFrom('users')
+			.selectAll()
+			.where('email', '=', email)
+			.executeTakeFirst();
 
-			if (!user) {
-				return fail(401, {
-					error: 'Credenciales inválidas'
-				});
-			}
-
-			// Verify password
-			const isValidPassword = await verifyPassword(password, user.password_hash);
-
-			if (!isValidPassword) {
-				return fail(401, {
-					error: 'Credenciales inválidas'
-				});
-			}
-
-			// Create session
-			const session = await createSession(locals.db, user.code, cookies);
-
-			if (!session) {
-				return fail(500, {
-					error: 'Error al crear la sesión'
-				});
-			}
-
-			// Redirect to dashboard
-			throw redirect(303, '/');
-		} catch (error) {
-			if (error instanceof Response) {
-				throw error;
-			}
-
-			console.error('Login error:', error);
-			return fail(500, {
-				error: 'Error al iniciar sesión'
+		if (!user) {
+			return fail(401, {
+				error: 'Credenciales inválidas'
 			});
 		}
+
+		// Verify password
+		const isValidPassword = await verifyPassword(password, user.password_hash);
+
+		if (!isValidPassword) {
+			return fail(401, {
+				error: 'Credenciales inválidas'
+			});
+		}
+
+		// Create session
+		const session = await createSession(locals.db, user.code, cookies);
+
+		if (!session) {
+			return fail(500, {
+				error: 'Error al crear la sesión'
+			});
+		}
+
+		// Redirect to dashboard
+		throw redirect(303, '/');
 	}
 };

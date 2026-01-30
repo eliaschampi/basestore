@@ -25,17 +25,11 @@
 	style="background: linear-gradient(135deg, var(--lumi-color-primary-50) 0%, var(--lumi-color-background) 100%);"
 >
 	<div class="lumi-centered-card">
-		<div
-			class="lumi-flex lumi-flex--column lumi-align-items--center lumi-flex--gap-sm lumi-margin-bottom--lg"
-		>
-			<h1 class="lumi-text--3xl lumi-font--bold lumi-margin--none">Faztore</h1>
-		</div>
-
 		<Card>
 			<div class="lumi-padding--xl">
 				<div class="lumi-text--center lumi-margin-bottom--lg">
 					<h2 class="lumi-text--2xl lumi-font--bold lumi-margin--none lumi-margin-bottom--xs">
-						Iniciar Sesión
+						Faztore
 					</h2>
 					<p class="lumi-text--sm lumi-text--muted lumi-margin--none">
 						Ingresa tus credenciales para continuar

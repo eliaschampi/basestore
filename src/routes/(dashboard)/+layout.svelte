@@ -184,7 +184,7 @@
 							<DropdownItem icon="user" href="/profile">Mi Perfil</DropdownItem>
 
 							<form action="/api/logout" method="POST" class="lumi-margin-top--xs">
-								<DropdownItem icon="log-out" color="danger" submit>Cerrar sesión</DropdownItem>
+								<DropdownItem icon="logOut" color="danger" submit>Cerrar sesión</DropdownItem>
 							</form>
 						</div>
 					{/snippet}

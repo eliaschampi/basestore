@@ -168,6 +168,7 @@
 				class:lumi-input__icon--no-border={iconNoBorder}
 				aria-label={iconLabel || 'Input icon'}
 				onclick={handleIconClick}
+				tabindex="-1"
 			>
 				<Icon {icon} size={iconSizePx} />
 			</button>
@@ -205,6 +206,7 @@
 						class="lumi-input__action lumi-input__suffix-item"
 						aria-label={actionLabel || 'Input action'}
 						onclick={handleActionClick}
+						tabindex="-1"
 					>
 						<Icon icon={actionIcon} size={iconSizePx} />
 					</button>
@@ -217,6 +219,7 @@
 						class:lumi-input__icon--no-border={iconNoBorder}
 						aria-label={iconLabel || 'Input icon'}
 						onclick={handleIconClick}
+						tabindex="-1"
 					>
 						<Icon {icon} size={iconSizePx} />
 					</button>
