@@ -55,13 +55,13 @@ export interface SelectProps {
 	/** Select width */
 	width?: string;
 
-	/** Key for value property */
+	/** Key name used for option value in object options */
 	valueKey?: string;
 
-	/** Key for label property */
+	/** Key name used for option label in object options */
 	labelKey?: string;
 
-	/** Key for disabled property */
+	/** Key name used for option disabled state in object options */
 	disabledKey?: string;
 
 	/** Whether to show clear button */

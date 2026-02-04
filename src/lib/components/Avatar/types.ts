@@ -45,11 +45,6 @@ export interface AvatarProps {
 	class?: string;
 
 	/**
-	 * Click event handler
-	 */
-	onclick?: (event: MouseEvent) => void;
-
-	/**
 	 * Image error event handler
 	 */
 	onerror?: (event: Event) => void;

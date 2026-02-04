@@ -64,7 +64,7 @@ export type { LoadingColor, LoadingProps } from './Loading';
 export { Loading } from './Loading';
 export type { NavbarProps } from './Navbar';
 export { Navbar } from './Navbar';
-export type { NotificationProps, NotificationType } from './Notification';
+export type { NotificationPosition, NotificationProps, NotificationType } from './Notification';
 export { Notification } from './Notification';
 export type { PageHeaderProps } from './PageHeader';
 export { PageHeader } from './PageHeader';

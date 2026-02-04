@@ -333,39 +333,42 @@
 						<div class="lumi-select__spinner"></div>
 						<span>Loading options...</span>
 					</div>
-				{:else if filteredOptions.length === 0}
-					<!-- No Data Message -->
-					<div class="lumi-select__no-data">
-						{noDataText}
-					</div>
 				{:else}
-					<!-- Options List -->
-					{#each filteredOptions() as option, index (getOptionKey(option, index))}
-						{@const isSelected = isOptionSelected(option)}
-						{@const isFocused = focusedIndex === index}
-						{@const isDisabled = option[disabledKey] as boolean}
-						<div
-							id="option-{inputId}-{index}"
-							class="lumi-select__option"
-							class:lumi-select__option--selected={isSelected}
-							class:lumi-select__option--focused={isFocused}
-							class:lumi-select__option--disabled={isDisabled}
-							role="option"
-							tabindex={isDisabled ? -1 : 0}
-							aria-selected={isSelected}
-							aria-disabled={isDisabled}
-							onclick={() => selectOption(option)}
-							onkeydown={(e) => {
-								if (e.key === 'Enter' || e.key === ' ') {
-									e.preventDefault();
-									selectOption(option);
-								}
-							}}
-							onmouseenter={() => (focusedIndex = index)}
-						>
-							{option[labelKey]}
+					{@const filtered = filteredOptions()}
+					{#if filtered.length === 0}
+						<!-- No Data Message -->
+						<div class="lumi-select__no-data">
+							{noDataText}
 						</div>
-					{/each}
+					{:else}
+						<!-- Options List -->
+						{#each filtered as option, index (getOptionKey(option, index))}
+							{@const isSelected = isOptionSelected(option)}
+							{@const isFocused = focusedIndex === index}
+							{@const isDisabled = option[disabledKey] as boolean}
+							<div
+								id="option-{inputId}-{index}"
+								class="lumi-select__option"
+								class:lumi-select__option--selected={isSelected}
+								class:lumi-select__option--focused={isFocused}
+								class:lumi-select__option--disabled={isDisabled}
+								role="option"
+								tabindex={isDisabled ? -1 : 0}
+								aria-selected={isSelected}
+								aria-disabled={isDisabled}
+								onclick={() => selectOption(option)}
+								onkeydown={(e) => {
+									if (e.key === 'Enter' || e.key === ' ') {
+										e.preventDefault();
+										selectOption(option);
+									}
+								}}
+								onmouseenter={() => (focusedIndex = index)}
+							>
+								{option[labelKey]}
+							</div>
+						{/each}
+					{/if}
 				{/if}
 			</div>
 		</div>

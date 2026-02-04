@@ -34,6 +34,7 @@
 	let showDeleteModal = $state(false);
 	let isEditing = $state(false);
 	let errorMessage = $state('');
+	let deleteErrorMessage = $state('');
 	let selectedBranch = $state<Branch | null>(null);
 
 	let formName = $state('');
@@ -86,7 +87,20 @@
 	function openDeleteModal(branch: Branch) {
 		if (!canDelete) return;
 		selectedBranch = branch;
+		deleteErrorMessage = '';
 		showDeleteModal = true;
+	}
+
+	function getActionError(result: { data?: Record<string, unknown> }): string | null {
+		const error = result.data?.error;
+		return typeof error === 'string' && error.length > 0 ? error : null;
+	}
+
+	function submitForm(formId: string): void {
+		const form = document.getElementById(formId);
+		if (form instanceof HTMLFormElement) {
+			form.requestSubmit();
+		}
 	}
 
 	function addUser() {
@@ -112,6 +126,7 @@
 
 	function closeDeleteModal() {
 		showDeleteModal = false;
+		deleteErrorMessage = '';
 		selectedBranch = null;
 	}
 </script>
@@ -183,6 +198,7 @@
 <!-- Create/Edit Modal -->
 <Dialog bind:open={showModal} title={isEditing ? 'Editar Sede' : 'Nueva Sede'} size="md">
 	<form
+		id="branch-form"
 		method="POST"
 		action="?/{isEditing ? 'update' : 'create'}"
 		use:enhance={() => {
@@ -268,11 +284,7 @@
 
 	{#snippet footer()}
 		<Button type="border" onclick={closeModal}>Cancelar</Button>
-		<Button
-			type="filled"
-			color="primary"
-			onclick={() => document.querySelector('form')?.requestSubmit()}
-		>
+		<Button type="filled" color="primary" onclick={() => submitForm('branch-form')}>
 			{isEditing ? 'Actualizar' : 'Crear'}
 		</Button>
 	{/snippet}
@@ -291,14 +303,19 @@
 					await invalidate('branches:load');
 					closeDeleteModal();
 				} else if (result.type === 'failure') {
-					const error = result.data?.error;
-					showToast((typeof error === 'string' ? error : null) || 'Error al eliminar', 'error');
+					deleteErrorMessage = getActionError(result) ?? 'Error al eliminar';
+					showToast(deleteErrorMessage, 'error');
 				}
 			};
 		}}
 	>
 		{#if selectedBranch}
 			<input type="hidden" name="code" value={selectedBranch.code} />
+			{#if deleteErrorMessage}
+				<Alert type="danger" closable onclose={() => (deleteErrorMessage = '')}>
+					{deleteErrorMessage}
+				</Alert>
+			{/if}
 			<p class="lumi-margin--none">
 				¿Estás seguro de que deseas eliminar la sede <strong>{selectedBranch.name}</strong>? Esta
 				acción no se puede deshacer.
@@ -311,10 +328,8 @@
 		<Button
 			type="filled"
 			color="danger"
-			onclick={() => {
-				const form = document.getElementById('delete-branch-form');
-				if (form instanceof HTMLFormElement) form.requestSubmit();
-			}}
+			disabled={!canDelete || !selectedBranch}
+			onclick={() => submitForm('delete-branch-form')}
 		>
 			Eliminar
 		</Button>

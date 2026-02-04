@@ -158,10 +158,13 @@
 
 	<div class="lumi-grid lumi-grid--columns-3 lumi-grid--gap-md">
 		{#each data.users as user (user.code)}
-			<Card>
+			<Card
+				class="lumi-max-w--sm lumi-ml-auto lumi-mr-auto"
+				image="wall.png"
+				imageAlt={user.name || 'Usuario'}
+			>
 				<div
-					class="lumi-position--relative lumi-flex lumi-flex--column lumi-align-items--center lumi-flex--gap-sm lumi-padding--lg"
-					style="min-height: 220px;"
+					class="lumi-position--relative lumi-flex lumi-flex--column lumi-flex--gap-sm lumi-padding--lg"
 				>
 					<!-- Dropdown Menu -->
 					<div
@@ -197,47 +200,38 @@
 					</div>
 
 					<!-- Avatar and Name -->
-					<div
-						class="lumi-flex lumi-flex--column lumi-align-items--center lumi-flex--gap-xs lumi-text--center"
-						style="width: 100%; margin-top: var(--lumi-space-2xs);"
-					>
+					<div class="lumi-flex lumi-flex--gap-sm lumi-align-items--center">
 						<Avatar
 							text={getInitials(user.name || '', user.last_name || '')}
 							src={user.photo_url ?? undefined}
-							size="md"
+							size="lg"
 							color="primary"
 						/>
-						<h3
-							class="lumi-margin--none lumi-text--base lumi-font--bold"
-							style="line-height: var(--lumi-line-height-tight);"
-						>
-							{user.name || 'Sin nombre'}
-							{user.last_name || ''}
-						</h3>
-						<p
-							class="lumi-margin--none lumi-text--xs lumi-text--muted lumi-text-ellipsis"
-							style="max-width: 100%;"
-						>
-							{user.email}
-						</p>
+						<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs" style="min-width: 0;">
+							<h3 class="lumi-margin--none lumi-text--base lumi-font--bold">
+								{user.name || 'Sin nombre'}
+								{user.last_name || ''}
+							</h3>
+							<p class="lumi-margin--none lumi-text--xs lumi-text--muted lumi-text-ellipsis">
+								{user.email}
+							</p>
+						</div>
 					</div>
 
 					<!-- Stats -->
-					<div
-						class="lumi-flex lumi-flex--column lumi-flex--gap-xs lumi-width--full"
-						style="padding-top: var(--lumi-space-xs); margin-top: var(--lumi-space-xs); border-top: 1px solid var(--lumi-color-border-light);"
-					>
+					<div class="lumi-flex lumi-flex--column lumi-flex--gap-xs lumi-width--full">
 						<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
 							<div
 								class="lumi-flex lumi-align-items--center lumi-flex--gap-xs lumi-text--xs lumi-text--muted"
 							>
 								<Icon icon="calendar" size="12px" />
-								<span>{formatDate(user.created_at)}</span>
+								<b>Registrado:</b> <span>{formatDate(user.created_at)}</span>
 							</div>
 							<div
 								class="lumi-flex lumi-align-items--center lumi-flex--gap-xs lumi-text--xs lumi-text--muted"
 							>
 								<Icon icon="clock" size="12px" />
+								<b>Último Login:</b>
 								<span>{user.last_login ? formatDate(user.last_login) : 'Nunca'}</span>
 							</div>
 						</div>

@@ -233,7 +233,7 @@
 		background: var(--lumi-color-surface);
 		border: 1px solid var(--lumi-color-border);
 		border-radius: var(--lumi-radius-xl);
-		box-shadow: var(--lumi-shadow-xl);
+		box-shadow: var(--lumi-shadow-md);
 		padding: var(--lumi-space-xs);
 		overflow: hidden;
 		display: flex;

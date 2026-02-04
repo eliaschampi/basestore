@@ -110,7 +110,7 @@
 		justify-content: center;
 		flex-shrink: 0;
 		color: var(--title-color);
-		opacity: 0.8;
+		opacity: 0.5;
 	}
 
 	.lumi-title__content {
