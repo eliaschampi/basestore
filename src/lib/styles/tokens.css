@@ -128,12 +128,13 @@
 	/* Text colors - Improved readability */
 	--lumi-color-text: #18181b;
 	--lumi-color-text-muted: #71717a;
+	--lumi-color-muted: var(--lumi-color-text-muted);
 	--lumi-color-text-light: #a1a1aa;
 	--lumi-color-text-inverse: #ffffff;
 
 	/* Border colors - Better visual hierarchy */
-	--lumi-color-border: rgba(228, 228, 231, 0.5);
-	--lumi-color-border-light: rgba(244, 244, 245, 0.5);
+	--lumi-color-border: rgba(228, 228, 231, 0.7);
+	--lumi-color-border-light: rgba(228, 228, 231, 0.45);
 	--lumi-color-border-strong: #d4d4d8;
 	--lumi-color-border-focus: var(--lumi-color-primary);
 
@@ -161,6 +162,8 @@
 	--lumi-space-xl: 2rem;
 	/* 32px */
 	--lumi-space-xxl: 2.5rem;
+	--lumi-space-2xl: var(--lumi-space-xxl);
+	/* Alias for naming consistency */
 	/* 40px */
 	--lumi-space-3xl: 3rem;
 	/* 48px */
@@ -283,6 +286,7 @@
 	/* TRANSITION SYSTEM */
 	/* ========================================================================== */
 	--lumi-transition-all: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+	--lumi-transition-base: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	--lumi-transition-colors:
 		color 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
 		border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -491,13 +495,14 @@
 	/* Text colors */
 	--lumi-color-text: rgb(250, 250, 250);
 	--lumi-color-text-muted: rgb(161, 161, 170);
+	--lumi-color-muted: var(--lumi-color-text-muted);
 	--lumi-color-text-light: rgb(113, 113, 122);
 	--lumi-color-text-inverse: rgb(24, 24, 27);
 
 	/* Border colors */
-	--lumi-color-border: rgba(63, 63, 70, 0.8);
-	--lumi-color-border-light: rgb(39, 39, 42);
-	--lumi-color-border-strong: rgb(82, 82, 91);
+	--lumi-color-border: rgba(63, 63, 70, 0.9);
+	--lumi-color-border-light: rgb(55, 55, 61);
+	--lumi-color-border-strong: rgb(96, 96, 105);
 	--lumi-color-border-focus: var(--lumi-color-primary);
 
 	/* State backgrounds */

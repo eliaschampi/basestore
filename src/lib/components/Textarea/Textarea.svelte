@@ -152,8 +152,8 @@
 		);
 		--textarea-bg-focus: color-mix(
 			in srgb,
-			var(--lumi-color-surface) 88%,
-			var(--textarea-color) 12%
+			var(--lumi-color-surface) 95%,
+			var(--textarea-color) 5%
 		);
 	}
 

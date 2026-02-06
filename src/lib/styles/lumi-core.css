@@ -514,15 +514,15 @@ body {
 /* BORDER & RADIUS UTILITIES */
 /* ========================================================================== */
 .lumi-border {
-	border: 1px solid var(--lumi-color-border);
+	border: var(--lumi-border-width-thin) solid var(--lumi-color-border);
 }
 
 .lumi-border--light {
-	border: 1px solid var(--lumi-color-border-light);
+	border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 }
 
 .lumi-border--strong {
-	border: 1px solid var(--lumi-color-border-strong);
+	border: var(--lumi-border-width-thin) solid var(--lumi-color-border-strong);
 }
 
 .lumi-border--none {

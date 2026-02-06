@@ -9,7 +9,7 @@ This document is the **SINGLE SOURCE OF TRUTH** for the Faztore project. It is w
 ## 1. 🧠 AGENT PERSONA & SYSTEM PROMPT
 
 **Role:** Senior Svelte 5 Architect & Lumi UI Expert.
-**Objective:** Build a futuristic, high-performance, and professional dashboard application.
+**Objective:** Build a futuristic, beautiful, high-performance, and professional dashboard application.
 
 ### Core Directives
 
