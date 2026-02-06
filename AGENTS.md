@@ -1,331 +1,389 @@
-# LUMI UI & FAZTORE: TECHNICAL CODEX | CLAUDE | GEMINI & AGENT GUIDE
+# FAZTORE & LUMI UI: TECHNICAL CODEX | AI AGENT SKILL
 
-**Version:** 2.0.0 | **Framework:** Svelte 5 (Runes) | **Style:** CSS Variables & Pure Utility Classes
+**Version:** 4.0.0 (Ultimate Edition) | **Framework:** Svelte 5 (Runes) | **Design System:** Lumi UI
 
-This is the **SINGLE SOURCE OF TRUTH** for the Faztore/Lumi UI project. It combines all technical guidelines into one definitive guide. Follow these rules strictly.
-
----
-
-## it is important to consider using clean code, do not add redundant code, or incompatible code. inspect the code carefully, and follow the rules strictly. always keep the code clean, and consistent, check if functions or something resuable block are defined to use properly.
-
-## 1. 🌟 PROJECT OVERVIEW
-
-### About Faztore
-
-Faztore is a modern, high-performance, secure, and scalable web application designed for efficiency.
-**Key Features:**
-
-- **Authentication & Authorization:** Secure user management.
-- **Drive & Storage:** Interactive file upload and storage system for products.
-- **Product Management:** Complete CRUD for categories, brands, and products.
-- **Dashboard:** Advanced reporting and charting for administrators.
-- **Finance:** Income, expense tracking, and balance sheet management.
-
-### About Lumi UI
-
-Lumi UI is the custom design system built specifically for Faztore using Svelte 5.
-
-- **Philosophy:** Modern, interactive, and consistent (inspired by Glassmorphism, HeroUI, Vuesax).
-- **Theming:** Powered exclusively by CSS variables in `src/lib/styles/tokens.css` and utilities in `src/lib/styles/lumi-core.css`.
-- **Configuration:** `src/lib/config.ts` handles application-level configuration (API endpoints, etc.).
-- **Components:** All components are located in `src/lib/components`.
-
-Rules
-
-- Lumi UI is Wip currently. Some components are not yet implemented and some are in progress.
-- All card components must have rounded corners defined in `--lumi-radius-2xl`. and shadow defined in `--lumi-shadow-md`. and spacing defined in `--lumi-space-md`. Consistency, beautiful, and perfect.
+This document is the **SINGLE SOURCE OF TRUTH** for the Faztore project. It is written specifically for Large Language Models (LLMs) to understand the technical architecture, design system, and coding standards required to contribute effectively.
 
 ---
 
-## 2. 🧠 SYSTEM PROMPT (Mandatory Context)
+## 1. 🧠 AGENT PERSONA & SYSTEM PROMPT
 
-**Act as a Senior Svelte 5 Architect and Lumi UI Expert.**
+**Role:** Senior Svelte 5 Architect & Lumi UI Expert.
+**Objective:** Build a futuristic, high-performance, and professional dashboard application.
 
-**Unbreakable Rules:**
-
-1.  **Svelte 5 Runes Only:** NEVER use `export let` or Svelte 4 syntax.
-    - Use `$state`, `$derived`, `$props`, `$effect`.
-    - Use `{@render children()}` for slots.
-    - Use `children?: Snippet` in props interfaces.
-2.  **Design Tokens:** NEVER hardcode values (px, hex, rem). Use `var(--lumi-...)`.
-3.  **Imports:** Import components from `$lib/components` (e.g., `import { Button } from '$lib/components';`).
-4.  **Icons:** Use `<Icon icon="name" />` (Lucide wrapper). No manual SVGs.
-5.  **Classes:** Use Lumi BEM (`.lumi-button`) and utilities (`.lumi-flex`).
-6.  **Accessibility:** Mandatory `aria-label`, keyboard nav, focus management.
-7.  **No Dependencies:** Keep dependencies minimal (only `lucide-svelte`, `@floating-ui/dom`, `kysely`).
+### Core Directives
+1.  **Svelte 5 Runes Only:** Strictly use `$state`, `$derived`, `$props`, `$effect`, `$bindable`. NEVER use Svelte 4 legacy syntax (`export let`, `$:`, `createEventDispatcher`).
+2.  **Lumi UI Exclusive:** Use ONLY components from `$lib/components`. Do not introduce external UI libraries (Tailwind, Bootstrap, etc. are BANNED).
+3.  **CSS Variables First:** Styling must use `var(--lumi-...)` tokens. No hardcoded hex values or arbitrary pixels.
+4.  **Clean Architecture:** Follow the "Service-Repository" pattern for backend and "Component Composition" for frontend.
+5.  **Futuristic Aesthetic:** Aim for clean, minimal, glassmorphism-inspired designs (using `backdrop-filter`, subtle gradients, and shadows).
 
 ---
 
-## 3. 🎨 DESIGN SYSTEM (The Source of Truth)
+## 2. 🏗️ ARCHITECTURE & STACK
 
-Based on `src/lib/styles/tokens.css`.
+| Layer | Technology | Key Files |
+| :--- | :--- | :--- |
+| **Frontend** | Svelte 5 (Runes), Vite 7, TypeScript 5.9 | `src/routes/` |
+| **Styling** | Native CSS Modules with Lumi Tokens | `src/lib/styles/tokens.css` |
+| **Icons** | Lucide Svelte (Wrapped in `<Icon />`) | `src/lib/components/Icon` |
+| **State** | Svelte 5 Context + Stores | `src/lib/stores/` |
+| **Backend** | SvelteKit Server Actions, Kysely, PostgreSQL 16 | `src/lib/database/` |
+| **Auth** | Custom JWT + Session management | `src/lib/auth/` |
 
-### Golden Rules
-
-- **Consistency:** All components must share the same rounded corners, shadows, and transitions.
-- **Defaults:**
-  - Radius: `--lumi-radius-md` (inputs/buttons) or `--lumi-radius-2xl` (cards/modals).
-  - Shadow: `--lumi-shadow-md` by default.
-  - Spacing: `--lumi-space-md` (16px) is the standard unit.
-
-### Color System (Semantic & Palette)
-
-Each semantic color has a full scale (50-950).
-
-| Semantic      | Token Base               | Usage                  |
-| :------------ | :----------------------- | :--------------------- |
-| **Primary**   | `--lumi-color-primary`   | Brand, Primary Actions |
-| **Secondary** | `--lumi-color-secondary` | Accents, Decoration    |
-| **Success**   | `--lumi-color-success`   | Success states         |
-| **Warning**   | `--lumi-color-warning`   | Alerts                 |
-| **Danger**    | `--lumi-color-danger`    | Errors, Destructive    |
-| **Info**      | `--lumi-color-info`      | Information            |
-
-**Surfaces & Text:**
-
-- `--lumi-color-background`: Page bg (`#f4f4f5` Light / `#09090b` Dark).
-- `--lumi-color-surface`: Card/Container bg.
-- `--lumi-color-text`: Main text.
-- `--lumi-color-text-muted`: Secondary text.
-- `--lumi-color-border`: Subtle borders.
-
-### Spacing System (4px Base)
-
-| Token              | Value | Use                           |
-| :----------------- | :---- | :---------------------------- |
-| `--lumi-space-2xs` | 4px   | Micro gaps                    |
-| `--lumi-space-xs`  | 8px   | Tight grouping                |
-| `--lumi-space-sm`  | 12px  | Small padding                 |
-| `--lumi-space-md`  | 16px  | **STANDARD** (Gaps, Paddings) |
-| `--lumi-space-lg`  | 24px  | Sections                      |
-| `--lumi-space-xl`  | 32px  | Major separation              |
-| `--lumi-space-2xl` | 40px  | Layouts                       |
-| `--lumi-space-3xl` | 48px  | Hero sections                 |
-
-### Radius & Shadows
-
-- **Radius:**
-  - `--lumi-radius-md` (8px): Inputs, Buttons.
-  - `--lumi-radius-2xl` (24px): **Standard** for Cards, Modals, Sidebars.
-  - `--lumi-radius-full` (9999px): Pills, Avatars.
-- **Shadows:**
-  - `--lumi-shadow-sm`: Subtle.
-  - `--lumi-shadow-md`: Standard Cards.
-  - `--lumi-shadow-lg`: Dropdowns.
-  - `--lumi-shadow-xl`: Modals.
-
-### Transitions
-
-- `--lumi-transition-all`: `all 0.25s cubic-bezier(0.4, 0, 0.2, 1)`
-
----
-
-## 4. 🏗️ ARCHITECTURE & STACK
-
-- **Frontend:** Svelte 5 (Runes), Vite 7.
-- **Language:** TypeScript 5.9.
-- **Backend:** PostgreSQL 16, Kysely (Query Builder).
-- **Security:** `bcryptjs`, `jsonwebtoken`, `cookie`.
-- **Environment:** Local Postgres (No Docker required for dev).
-
-### File Structure
-
+### Directory Structure Map
 ```
 src/
 ├── lib/
-│   ├── auth/            # JWT, Session, Password logic
-│   ├── components/      # UI Catalog (40+ components)
-│   ├── config/          # Server config
-│   ├── database/        # DB Types & connection
-│   ├── permissions/     # RBAC definitions
-│   ├── stores/          # Svelte stores (Toast, Permissions, Theme)
-│   ├── styles/          # tokens.css, lumi-core.css
-│   ├── types/           # Global types
-│   ├── utils/           # Icons, formatting, floating-ui
-│   ├── config.ts        # App configuration (API URLs)
-│   └── index.ts         # Lib exports
-├── routes/              # SvelteKit App
-└── database/            # Scripts and Migrations
+│   ├── components/      # 🧩 LUMI UI LIBRARY (See Section 4)
+│   ├── styles/          # 🎨 DESIGN SYSTEM
+│   │   ├── tokens.css   # Global variables (Colors, Spacing, Radius)
+│   │   └── lumi-core.css# Utility classes (Grid, Flex, Layouts)
+│   ├── utils/           # Helpers (formatDate, icons, floating-ui)
+│   ├── stores/          # Global state (Theme, Permissions, Toast)
+│   ├── database/        # Kysely Schema & Connection
+│   └── config.ts        # App Configuration
+├── routes/
+│   ├── (dashboard)/     # Authenticated Layout
+│   │   ├── +layout.svelte # Main Dashboard Shell (Sidebar + Navbar)
+│   │   └── [feature]/   # Feature Pages (e.g., /branches, /users)
+│   └── (auth)/          # Public Layout (Login/Register)
 ```
 
 ---
 
-## 5. 🚀 QUICK START & COMMANDS
+## 3. 🎨 LUMI UI DESIGN SYSTEM
 
-### Prerequisites
+### 3.1. Design Tokens (`tokens.css`)
 
-- Node.js & pnpm (see `package.json`).
-- PostgreSQL 16 (Homebrew recommended).
+**Color Palette (Semantic)**
+*   **Primary:** `--lumi-color-primary` (Blue: #1e40af - Professional)
+*   **Secondary:** `--lumi-color-secondary` (Coral: #fb7185 - Accent)
+*   **Success:** `--lumi-color-success` (Green: #22c55e)
+*   **Warning:** `--lumi-color-warning` (Amber: #f59e0b)
+*   **Danger:** `--lumi-color-danger` (Red: #ef4444)
+*   **Info:** `--lumi-color-info` (Sky: #3b82f6)
+*   **Surface:** `--lumi-color-surface` (Card background)
+*   **Background:** `--lumi-color-background` (App background)
 
-### Setup (Local)
+**Spacing System (4px Grid)**
+*   `--lumi-space-2xs` (4px)
+*   `--lumi-space-xs` (8px)
+*   `--lumi-space-sm` (12px)
+*   `--lumi-space-md` (16px) **[Standard]**
+*   `--lumi-space-lg` (24px)
+*   `--lumi-space-xl` (32px)
+*   `--lumi-space-2xl` (40px)
+*   `--lumi-space-3xl` (48px)
 
-```bash
-cp .env.example .env
-brew services start postgresql@16
-createdb faztore
-pnpm db:setup  # Init DB + generate types
-```
+**Radius & Shadows**
+*   **Cards/Modals:** `border-radius: var(--lumi-radius-2xl)` (24px)
+*   **Buttons/Inputs:** `border-radius: var(--lumi-radius-md)` (8px)
+*   **Card Shadow:** `box-shadow: var(--lumi-shadow-md)`
 
-### Development Commands
+### 3.2. CSS Architecture & Utilities (`lumi-core.css`)
 
-- **Dev Server:** `pnpm dev`
-- **Build:** `pnpm build`
-- **Preview:** `pnpm preview`
-- **Lint:** `pnpm lint` / `pnpm lint:fix`
-- **Format:** `pnpm format` / `pnpm format:fix`
-- **Type Check:** `pnpm check`
+Use these classes to structure your layouts. Do not write custom CSS for basic layout.
 
-### Database Commands
+**Flexbox System (`.lumi-flex`)**
+*   **Container:** `.lumi-flex` (Default: row, gap-md)
+*   **Direction:** `.lumi-flex--column`, `.lumi-flex--row-reverse`
+*   **Alignment:** `.lumi-align-items--center`, `.lumi-align-items--start`, `.lumi-align-items--end`
+*   **Justify:** `.lumi-justify--center`, `.lumi-justify--between`, `.lumi-justify--end`
+*   **Gap:** `.lumi-flex--gap-xs` to `.lumi-flex--gap-3xl`
+*   **Items:** `.lumi-flex-item--grow`, `.lumi-flex-item--shrink`, `.lumi-flex-item--auto`
 
-- **Migrate:** `pnpm db:migrate`
-- **Create Migration:** `pnpm db:create <name>`
-- **Generate Types:** `pnpm db:generate` (Run after schema changes)
-- **Reset DB:** `pnpm db:reset`
-- **Status:** `pnpm db:status`
+**Grid System (`.lumi-grid`)**
+*   **Container:** `.lumi-grid` (Default: gap-md)
+*   **Responsive:** `.lumi-grid--responsive` (Auto-fit min 280px)
+*   **Columns:** `.lumi-grid--columns-2`, `.lumi-grid--columns-3`, `.lumi-grid--columns-4`
+*   **Gap:** `.lumi-grid--gap-sm`, `.lumi-grid--gap-lg`
 
----
-
-## 6. 🧩 COMPONENT CATALOG (Technical Specs)
-
-All components implement `class` prop and native events.
-
-### A. Form Components
-
-1.  **Button**: `type` (filled/border/flat/gradient), `color`, `size`, `loading`.
-2.  **Input**: `value` ($bindable), `label`, `icon`, `success/danger` states.
-3.  **Select**: Floating UI, autocomplete, clearable, multiple.
-4.  **Textarea**: Auto-size, char count.
-5.  **Checkbox**: Indeterminate support.
-6.  **Radio**: Animated scale.
-7.  **Switch**: Loading state, icons inside thumb.
-8.  **FileUpload**: Drag & Drop, progress, validation.
-9.  **Slider**: Min/max, step.
-
-### B. Layout & Structure
-
-10. **Card**: Radius 2xl, Shadow md. Snippets: `header`, `footer`.
-11. **Navbar**: Responsive toggle.
-12. **Sidebar**: Collapsible (260px -> 80px), overlay on mobile.
-13. **PageHeader**: With breadcrumbs and actions.
-14. **QuickAccessCard**: Shortcut dashboard element.
-15. **StatCard**: Dashboard statistic display.
-16. **Title**: Standardized typography.
-
-### C. Feedback & Overlay
-
-17. **Alert**: Closable, variants.
-18. **Dialog (Modal)**: Focus trap, backdrop blur, `size` prop.
-19. **Notification (Toast)**: Auto-dismiss, stackable.
-20. **Progress**: Striped/animated CSS.
-21. **PermissionsModal**: RBAC management UI.
-
-### D. Navigation
-
-22. **Tabs**: Keyboard nav, panels.
-23. **Dropdown**: Floating UI, trigger (click/hover).
-24. **DropdownItem**: With icons/danger style.
-25. **Context**: Right-click menu.
-26. **Fieldset**: Semantic grouping.
-
-### E. Data Display
-
-27. **Table**: Pagination, search, sort, selection, hover. Snippets: `thead`, `row`.
-28. **Avatar**: Initials fallback, status indicator.
-29. **Chip**: Closable, colors.
-30. **TagIndicator**: Compact status.
-31. **StatusIndicator**: Pulse dot.
-32. **SegmentedControl**: Glider animation.
-33. **List / ListItem / ListHeader**: Standard list patterns.
-34. **Image**: Lazy load, skeleton, zoom.
-35. **InfoItem**: Key-value display.
-36. **EmptyState**: Visual placeholder.
-
-### F. Utilities
-
-37. **Icon**: Lucide wrapper.
-38. **Loading**: Spinner/Pulse.
-39. **Divider**: Horizontal line.
-40. **Tooltip**: Floating UI.
-41. **Collapse**: Accordion.
+**Layout Shells**
+*   `.lumi-dashboard-layout`: Sidebar + Content grid.
+*   `.lumi-card`: Standard panel with gradient background.
+*   `.lumi-stack`: Vertical stack with spacing (Shortcut for flex-column).
 
 ---
 
-## 7. 📐 CSS UTILITIES & LAYOUTS
+## 4. 🧩 COMPONENT LIBRARY SPECIFICATIONS
 
-Use `src/lib/styles/lumi-core.css` classes instead of custom CSS.
+**Import Rule:** `import { ComponentName } from '$lib/components';`
 
-- **Flexbox:**
-  - `.lumi-flex`: `display: flex; gap: 16px;`
-  - `.lumi-flex--center`: Center align/justify.
-  - `.lumi-flex--between`: Space between.
-  - `.lumi-stack`: Column flex + gap.
+### A. Layout & Structure
 
-- **Grid:**
-  - `.lumi-grid`: `display: grid; gap: 16px;`
-  - `.lumi-grid--responsive`: Auto-fit columns (min 280px).
+| Component | Props | Snippets | Description |
+| :--- | :--- | :--- | :--- |
+| **Card** | `title`, `subtitle`, `clickable`, `hoverable`, `image`, `imageHeight`, `spaced` | `header`, `footer`, `children` | Main content container. 24px radius. |
+| **Sidebar** | `collapsed`, `mobileOpen`, `headerImage` | `header`, `children` | Collapsible navigation. |
+| **Navbar** | - | `title`, `actions` | Top bar for page title and actions. |
+| **PageHeader**| `title`, `subtitle`, `icon`, `size`, `bordered` | `breadcrumbs`, `actions`, `children` | Standard page header with breadcrumbs. |
+| **Title** | `title`, `subtitle`, `icon`, `size` | - | Standard typography header. |
+| **Divider** | `position`, `icon`, `text`, `spaced` | - | Horizontal separator with optional text/icon. |
+| **Collapse** | `title`, `defaultOpen`, `color`, `size`, `radius` | `titleSnippet`, `children` | Accordion/Expandable section. |
+| **Fieldset** | `legend` | `children` | Grouped content with legend. |
 
-- **Layout Patterns:**
-  - **Dashboard:** Sidebar + Navbar + Content.
-  - **Centered:** `.lumi-centered-layout` for auth/errors.
+### B. Forms & Input
+
+| Component | Props | Snippets | Description |
+| :--- | :--- | :--- | :--- |
+| **Button** | `type` (filled/flat/border), `color`, `size`, `icon`, `loading`, `radius` | `children` | Interactive button. |
+| **Input** | `value` ($), `label`, `placeholder`, `icon`, `success/danger` | - | Text input with validation states. |
+| **Select** | `value` ($), `options`, `searchable`, `multiple`, `clearable` | - | Custom dropdown select (Floating UI). |
+| **Switch** | `checked` ($), `label`, `color`, `size` | `children` | Toggle switch. |
+| **Checkbox** | `checked` ($), `indeterminate` ($), `label`, `color` | `children` | Boolean selection. |
+| **Radio** | `group` ($), `value`, `label`, `color` | `children` | Radio button group. |
+| **FileUpload**| `files` ($), `accept`, `multiple`, `maxSize` | - | Drag & drop zone with progress. |
+| **SegmentedControl**| `value` ($), `options` ({label, value, icon}) | - | Horizontal toggle group (Glider effect). |
+
+### C. Data Display
+
+| Component | Props | Snippets | Description |
+| :--- | :--- | :--- | :--- |
+| **Table** | `data`, `search`, `pagination`, `itemsPerPage`, `sortable`, `selectable` | `thead`, `row` ({row, index}) | Data grid with built-in features. |
+| **StatCard** | `title`, `value`, `icon`, `color`, `subtitle`, `href` | - | Dashboard statistic display. |
+| **InfoItem** | `label`, `value`, `icon`, `layout` (horiz/vert) | `iconSlot`, `labelSlot`, `children` | Key-value display pair. |
+| **Chip** | `color`, `variant`, `closable` | `children` | Small status tag. |
+| **TagIndicator**| `tag` ({name, color}), `selected`, `clickable` | - | Filter/Status tag. |
+| **StatusIndicator**| `active` (bool), `status` (string), `pulse` | - | Dot indicator (Green/Gray). |
+| **Image** | `src`, `alt`, `width`, `height`, `radius`, `isZoomed` | - | Enhanced image with skeleton loading. |
+| **Icon** | `icon` (name), `size`, `color`, `bg`, `round` | - | Lucide icon wrapper. |
+| **Tabs** | `value` ($), `tabs` ({label, value, icon}), `position` | `children` | Tabbed content interface. |
+
+### D. Feedback & Overlay
+
+| Component | Props | Snippets | Description |
+| :--- | :--- | :--- | :--- |
+| **Dialog** | `open` ($), `title`, `size`, `persistent`, `scrollable` | `header`, `footer`, `children` | Modal window. Focus trap enabled. |
+| **Alert** | `type`, `title`, `closable`, `active` ($) | `children` | Inline notification. |
+| **Notification**| `type`, `title`, `message`, `duration` | - | Toast message (via Store). |
+| **EmptyState** | `title`, `description`, `icon`, `image` | `actions`, `visual` | Placeholder for empty data. |
+| **Context** | `size`, `closeOnClick` | `children` | Right-click context menu. |
+| **Dropdown** | `open` ($), `trigger`, `position` | `triggerContent`, `children` | Popover menu. |
+| **Tooltip** | `text`, `position`, `color` | `children`, `content` | Hover information. |
 
 ---
 
-## 8. 💻 CODE STYLE & CONVENTIONS
+## 5. 📦 STATE & UTILITIES
 
-### Svelte 5 Patterns
+### Permissions System (`$lib/stores/permissions`)
+*   **Type:** Context-based Store (SSR Safe).
+*   **Initialization:** `initializePermissions(userPermissions)` in root layout.
+*   **Usage:**
+    ```ts
+    import { can } from '$lib/stores/permissions';
+    const canEdit = $derived(can('users:edit'));
+    ```
+
+### Toast System (`$lib/stores/Toast`)
+*   **Type:** Writable Store.
+*   **Usage:**
+    ```ts
+    import { showToast } from '$lib/stores/Toast';
+    showToast('Operation success', 'success');
+    ```
+
+### Icon Registry (`$lib/utils/icons.ts`)
+*   **Mechanism:** Static registry for tree-shaking.
+*   **Usage:** Use string names in `Icon` component (e.g., `icon="user"`).
+
+---
+
+## 6. 💻 CODING STANDARDS (SVELTE 5)
+
+### 6.1. Component Template
+Every new component MUST follow this structure:
 
 ```svelte
 <script lang="ts">
-	let count = $state(0);
-	let doubled = $derived(count * 2);
-	let { title, open = $bindable() }: Props = $props();
+  import type { Snippet } from 'svelte';
+  
+  interface Props {
+    title: string;
+    active?: boolean;
+    children?: Snippet;
+    onclick?: () => void;
+  }
 
-	$effect(() => {
-		console.log(count);
-	});
+  const { 
+    title, 
+    active = false, 
+    children,
+    onclick 
+  }: Props = $props();
+
+  const classes = $derived([
+    'lumi-component',
+    active && 'lumi-component--active'
+  ].filter(Boolean).join(' '));
 </script>
 
-<!-- Snippets over Slots -->
-{@render children()}
+<div class={classes} onclick={onclick} role="button" tabindex="0">
+  <h1>{title}</h1>
+  {#if children}
+    {@render children()}
+  {/if}
+</div>
+
+<style>
+  .lumi-component {
+    /* Use tokens */
+    padding: var(--lumi-space-md);
+    background: var(--lumi-color-surface);
+  }
+</style>
 ```
 
-### Dynamic Classes
+### 6.2. Page Implementation Pattern
+When creating a page (e.g., `routes/(dashboard)/items/+page.svelte`):
 
-```ts
-const classes = $derived(
-	['lumi-button', `lumi-button--${type}`, disabled && 'lumi-button--disabled']
-		.filter(Boolean)
-		.join(' ')
-);
-```
-
-### Permissions (RBAC)
-
-```ts
-import { can } from '$lib/stores/permissions';
-const canDelete = $derived(can('users:delete'));
-```
-
-### ESLint & Formatting
-
-- **Prettier:** Tabs, single quotes, no trailing commas.
-- **ESLint:** `prefer-const`, `no-var`, `no-console` (warns).
-- **Naming:**
-  - Components: `PascalCase`
-  - Files: `Component/Component.svelte`
-  - Vars/Funcs: `camelCase`
+1.  **Header:** Use `<PageHeader>` or `<Title>` + `<Button>` in a `.lumi-flex--between`.
+2.  **Content:** Wrap main content in `<Card>`.
+3.  **Data:** Use `<Table>` for lists. Pass snippets for customization.
+4.  **State:** Use `$state` for local UI state (modals, selection).
+5.  **Permissions:** Check `can('permission:action')` before showing buttons.
 
 ---
 
-## 9. ✅ DEVELOPER CHECKLIST
+## 7. 🚀 PRACTICAL EXAMPLES
 
-1.  [ ] **Runes Only:** Are you using `$state`? (No `export let`).
-2.  [ ] **Tokens:** Are all colors/spacings using `var(--lumi-...)`?
-3.  [ ] **Imports:** Are components imported from `$lib/components`?
-4.  [ ] **Accessibility:** Do inputs/buttons have labels?
-5.  [ ] **Cleanliness:** No `console.log`? Code formatted?
-6.  [ ] **Visuals:** Checked Light AND Dark mode?
+### Creating a CRUD Page
+```svelte
+<script lang="ts">
+  import { PageHeader, Button, Card, Table, Chip } from '$lib/components';
+  import { can } from '$lib/stores/permissions';
+  
+  const { data } = $props();
+  let showModal = $state(false);
+
+  // Computed permission
+  const canCreate = $derived(can('items:create'));
+</script>
+
+<div class="lumi-stack">
+  <!-- Header -->
+  <PageHeader 
+    title="Items" 
+    subtitle="Manage inventory" 
+    icon="box"
+  >
+    {#snippet actions()}
+      <Button 
+        type="filled" 
+        icon="plus" 
+        disabled={!canCreate} 
+        onclick={() => showModal = true}
+      >
+        New Item
+      </Button>
+    {/snippet}
+  </PageHeader>
+
+  <!-- Content -->
+  <Card>
+    <Table data={data.items} search pagination>
+      {#snippet thead()}
+        <th>Name</th>
+        <th>Status</th>
+        <th>Actions</th>
+      {/snippet}
+      
+      {#snippet row({ row })}
+        <td>{row.name}</td>
+        <td>
+          <Chip color={row.active ? 'success' : 'danger'}>
+            {row.active ? 'Active' : 'Inactive'}
+          </Chip>
+        </td>
+        <td>
+          <Button type="flat" icon="edit" size="sm" />
+        </td>
+      {/snippet}
+    </Table>
+  </Card>
+</div>
+```
 
 ---
 
-**This document replaces all previous guides.**
+## 8. 🛠️ WORKFLOW: CREATING A NEW ENTITY (Golden Path)
+
+To ensure technical perfection and maintainability, follow this strict procedure when adding a new entity (e.g., `Product`, `Customer`).
+
+### Phase 1: Database & Types (The Foundation)
+1.  **Create Migration:**
+    Run `pnpm db:create create_<entity_name>_table`.
+    *   *Standard:* Use snake_case for table names (e.g., `products`).
+    *   *Mandatory Fields:* `id` (uuid/serial), `created_at` (timestamp), `updated_at` (timestamp).
+    *   *Example:*
+        ```ts
+        import { Kysely, sql } from 'kysely';
+
+        export async function up(db: Kysely<any>): Promise<void> {
+          await db.schema
+            .createTable('products')
+            .addColumn('id', 'uuid', (col) => col.primaryKey().defaultTo(sql`gen_random_uuid()`))
+            .addColumn('name', 'text', (col) => col.notNull())
+            .addColumn('created_at', 'timestamp', (col) => col.defaultTo(sql`now()`).notNull())
+            .execute();
+        }
+        ```
+2.  **Apply & Generate:**
+    Run `pnpm db:migrate` then `pnpm db:generate`.
+    *   *Verification:* Check `src/lib/database/types.ts` to ensure the new interface exists.
+
+### Phase 2: Backend Architecture (Service-Repository)
+*Avoid cluttering `+page.server.ts` with raw queries if logic is complex.*
+
+1.  **Repository (Optional for simple CRUD):**
+    For complex queries, create `src/lib/server/repositories/<entity>.repository.ts`.
+    *   *Pattern:*
+        ```ts
+        export class ProductRepository {
+            static async findAll() { ... }
+            static async create(data: NewProduct) { ... }
+        }
+        ```
+2.  **Server Page (`src/routes/(dashboard)/<entity>/+page.server.ts`):**
+    *   **Load Function:** Fetch data using `locals.db` or Repository.
+    *   **Actions:** Implement `create`, `update`, `delete`.
+    *   **Security:** ALWAYS check permissions first.
+        ```ts
+        if (!(await locals.can('products:create'))) {
+            return fail(403, { error: 'Unauthorized' });
+        }
+        ```
+
+### Phase 3: Frontend Implementation (Lumi UI)
+1.  **Page Structure:**
+    Create `src/routes/(dashboard)/<entity>/+page.svelte`.
+    *   Use `<PageHeader>` for title/actions.
+    *   Use `<Card>` + `<Table>` for the list view.
+    *   Use `<Dialog>` for Create/Edit forms.
+2.  **State Management:**
+    *   Use `$state` for modal visibility and form data.
+    *   Use `$derived` for permissions and computed lists.
+    *   *Anti-Pattern:* Do not use `writable()` stores for local page state. Use Runes.
+3.  **Forms:**
+    *   Use `use:enhance` for progressive enhancement.
+    *   Validate inputs on the client using HTML5 attributes or simple logic before submission.
+
+### Phase 4: Clean Code & Principles
+1.  **DRY (Don't Repeat Yourself):**
+    *   If a logic block appears twice, extract it to `$lib/utils` or a shared component.
+2.  **Strict Typing:**
+    *   Never use `any`. Define interfaces in `src/lib/types` if they are shared.
+    *   Use generated DB types: `import type { Row } from '$lib/database/types';`.
+3.  **Lumi UI Compliance:**
+    *   Do not inline styles (`style="..."`).
+    *   Do not use Tailwind classes. Use `lumi-flex`, `lumi-grid`, and `var(--lumi-space-...)`.
+
+---
+
+## 9. 🔮 FUTURE VISION (AI GUIDANCE)
+
+When extending Lumi UI, adhere to these principles:
+1.  **Motion:** Add subtle transitions (`transition: var(--lumi-transition-all)`) to all interactive elements.
+2.  **Glassmorphism:** Use `backdrop-filter: blur(var(--lumi-blur-md))` for overlays and sticky headers.
+3.  **Depth:** Use layered shadows (`--lumi-shadow-lg`) to create hierarchy.
+4.  **Efficiency:** Optimize for Large DOMs (use virtual lists if needed, though `Table` handles pagination).
