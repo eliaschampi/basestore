@@ -1,7 +1,9 @@
 services:
   app:
     container_name: faztore_app
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     ports:
       - '5173:5173'
     environment:
@@ -14,7 +16,7 @@ services:
       JWT_SECRET: your-super-secret-jwt-key-change-in-production-2025
       JWT_EXPIRES_IN: 7d
     volumes:
-      - .:/app
+      - ..:/app
       - pnpm_store:/app/node_modules
     depends_on:
       postgres:
@@ -29,7 +31,7 @@ services:
       POSTGRES_DB: faztore
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/init:/docker-entrypoint-initdb.d
+      - ../database/init:/docker-entrypoint-initdb.d
     ports:
       - '5432:5432'
     healthcheck:
