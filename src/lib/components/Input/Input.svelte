@@ -44,7 +44,6 @@
 	let internalError = $state('');
 	let inputElement: HTMLInputElement;
 
-	// ✅ Fix 1: const simple, sin $derived innecesario
 	const inputId = `lumi-input-${crypto.randomUUID().slice(0, 8)}`;
 
 	const inputState = $derived.by(() => {
@@ -83,7 +82,6 @@
 	const hasPrefix = $derived(!!(icon && !iconAfter));
 	const hasSuffix = $derived(!!(validationIcon || actionIcon || (icon && iconAfter)));
 
-	// ✅ Fix 2: $derived.by consistente, no funciones
 	const styleVars = $derived.by(() => {
 		const colorVar = `var(--lumi-color-${activeColor})`;
 		const colorRgbVar = `var(--lumi-color-${activeColor}-rgb)`;
@@ -151,7 +149,6 @@
 	}
 </script>
 
-<!-- ✅ Fix 3: sin () ya que ahora son valores, no funciones -->
 <div class={containerClasses} style={styleVars}>
 	{#if label && !labelPlaceholder}
 		<label for={inputId} class="lumi-input__label">
@@ -230,7 +227,6 @@
 		{/if}
 	</div>
 
-	<!-- ✅ Fix 6: contenedor persistente para transiciones CSS -->
 	<div
 		id="{inputId}-msg"
 		class="lumi-input__footer"
@@ -298,7 +294,6 @@
 		overflow: hidden;
 	}
 
-	/* ✅ Fix 8: hover no sobreescribe colores de estado */
 	.lumi-input-container:not(
 			.lumi-input-container--success,
 			.lumi-input-container--danger,
@@ -330,7 +325,7 @@
 	.lumi-input {
 		flex: 1;
 		width: 100%;
-		min-width: 0; /* ✅ previene overflow en flex */
+		min-width: 0;
 		background: transparent;
 		border: none;
 		outline: none;
@@ -371,7 +366,6 @@
 	}
 
 	/* ── Sizes ────────────────────────────────── */
-	/* ✅ Fix 5: usar padding-block/inline para no pisar has-prefix/has-suffix */
 	.lumi-input-container--xs .lumi-input {
 		padding-block: var(--lumi-space-2xs);
 		padding-inline: var(--lumi-space-xs);
@@ -397,7 +391,6 @@
 		font-size: var(--lumi-font-size-xl);
 	}
 
-	/* ✅ Fix 5b: has-prefix/has-suffix solo afecta inline, no pisa block */
 	.lumi-input-container--xs .lumi-input--has-prefix,
 	.lumi-input-container--sm .lumi-input--has-prefix,
 	.lumi-input-container--md .lumi-input--has-prefix,
@@ -492,7 +485,6 @@
 	}
 
 	/* ── Footer (messages) ────────────────────── */
-	/* ✅ Fix 6: transición suave para mensajes */
 	.lumi-input__footer {
 		display: grid;
 		grid-template-rows: 0fr;

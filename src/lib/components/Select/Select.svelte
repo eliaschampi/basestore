@@ -63,7 +63,6 @@
 		})
 	);
 
-	// ✅ Fix 12: comparación robusta que ignora orden de keys
 	function isEqual(a: unknown, b: unknown): boolean {
 		if (a === b) return true;
 		if (a == null || b == null) return false;
@@ -92,7 +91,6 @@
 		return `${String(optionValue)}-${index}`;
 	}
 
-	// ✅ Fix 10
 	const uniqueId = crypto.randomUUID().slice(0, 8);
 	const inputId = `lumi-select-${uniqueId}`;
 	const dropdownId = `lumi-select-dropdown-${uniqueId}`;
@@ -136,17 +134,12 @@
 		return selectedOption?.label || '';
 	});
 
-	$effect(() => {
-		searchQuery = selectedOption?.label || '';
-	});
-
 	const hasValue = $derived(
 		value !== null && value !== undefined && !(typeof value === 'string' && value.length === 0)
 	);
 
 	const showClearButton = $derived(clearable && hasValue && !disabled && !loading);
 
-	// ✅ Fix 1: separar opciones visibles (incluyen disabled) de navegables (solo enabled)
 	const visibleOptions = $derived.by(() => {
 		if (!autocomplete || !searchQuery || !floating.isOpen) {
 			return normalizedOptions;
@@ -160,7 +153,6 @@
 		return normalizedOptions.filter((opt) => opt.label.toLowerCase().includes(query));
 	});
 
-	// Indices navegables (solo enabled) para keyboard nav
 	const navigableIndices = $derived(
 		visibleOptions.reduce<number[]>((acc, opt, i) => {
 			if (!opt.disabled) acc.push(i);
@@ -168,7 +160,6 @@
 		}, [])
 	);
 
-	// ── Classes ────────────────────────────────
 	const selectClasses = $derived(
 		[
 			'lumi-select',
@@ -183,7 +174,6 @@
 			.join(' ')
 	);
 
-	// ✅ Fix 3: estilo del dropdown limpio y derivado
 	const dropdownStyle = $derived.by(() => {
 		const s = floating.floatingStyles;
 		const parts = [
@@ -203,12 +193,17 @@
 	}
 
 	function toggleDropdown(): void {
-		floating.isOpen ? closeDropdown() : openDropdown();
+		if (floating.isOpen) {
+			closeDropdown();
+			return;
+		}
+		openDropdown();
 	}
 
 	function openDropdown(): void {
 		if (disabled || loading || floating.isOpen) return;
 		floating.open();
+		searchQuery = selectedOption?.label || '';
 		focusedIndex = selectedOption
 			? visibleOptions.findIndex((opt) => isEqual(opt.value, selectedOption.value))
 			: -1;
@@ -232,7 +227,6 @@
 		onsearch?.(val);
 	}
 
-	// ✅ Fix 6: scroll into view on keyboard nav
 	async function scrollToFocused(): Promise<void> {
 		await tick();
 		const el = dropdownRef?.querySelector(`#${getOptionId(focusedIndex)}`);
@@ -262,7 +256,6 @@
 					openDropdown();
 					break;
 				}
-				// ✅ Salta disabled options
 				const currentDownIdx = navigableIndices.indexOf(focusedIndex);
 				const nextIdx = navigableIndices[currentDownIdx + 1];
 				if (nextIdx !== undefined) {
@@ -387,7 +380,6 @@
 		{/if}
 	</div>
 
-	<!-- ✅ Fix 8: animación de dropdown -->
 	{#if floating.isOpen}
 		<div
 			bind:this={dropdownRef}
@@ -409,8 +401,6 @@
 						{noDataText}
 					</div>
 				{:else}
-					<!-- ✅ Fix 4: sin tabindex en options, sin onkeydown redundante -->
-					<!-- ✅ Fix 2: variables locales renombradas para evitar shadowing -->
 					{#each visibleOptions as option, index (option.key)}
 						{@const isItemSelected = isEqual(option.value, value)}
 						{@const isItemFocused = focusedIndex === index}
@@ -423,12 +413,19 @@
 							role="option"
 							aria-selected={isItemSelected}
 							aria-disabled={option.disabled || undefined}
+							tabindex="-1"
 							onclick={() => selectOption(option)}
+							onkeydown={(event) => {
+								if (option.disabled) return;
+								if (event.key === 'Enter' || event.key === ' ') {
+									event.preventDefault();
+									selectOption(option);
+								}
+							}}
 							onmouseenter={() => {
 								if (!option.disabled) focusedIndex = index;
 							}}
 						>
-							<!-- ✅ Checkmark visual para opción seleccionada -->
 							{#if isItemSelected}
 								<span class="lumi-select__option-check" aria-hidden="true">
 									<Icon icon="check" size={iconSize} />
@@ -442,7 +439,6 @@
 		</div>
 	{/if}
 
-	<!-- ✅ Fix 9: transición consistente con Input mejorado -->
 	<div
 		class="lumi-select__footer"
 		class:lumi-select__footer--visible={!!(error && errorMessage)}
@@ -506,7 +502,6 @@
 		overflow: hidden;
 	}
 
-	/* ✅ Fix 7: hover consistente con Input, respeta estado error */
 	.lumi-select:not(.lumi-select--error, .lumi-select--active, .lumi-select--disabled)
 		.lumi-select__container:hover {
 		border-color: var(--lumi-color-border-strong);
@@ -613,7 +608,6 @@
 	}
 
 	/* ── Dropdown ─────────────────────────────── */
-	/* ✅ Fix 5: sin margin-top, offset viene del floating */
 	.lumi-select__dropdown {
 		background:
 			linear-gradient(
@@ -631,7 +625,6 @@
 		flex-direction: column;
 		backdrop-filter: blur(var(--lumi-blur-md));
 		-webkit-backdrop-filter: blur(var(--lumi-blur-md));
-		/* ✅ Fix 8: animación de entrada */
 		animation: select-dropdown-in 0.15s cubic-bezier(0.2, 0, 0.13, 1.5);
 		transform-origin: top center;
 	}
@@ -693,7 +686,6 @@
 		background: color-mix(in srgb, var(--lumi-color-primary) 12%, transparent);
 	}
 
-	/* ✅ Fix 1: disabled options ahora son visibles con estilo correcto */
 	.lumi-select__option--disabled {
 		opacity: 0.45;
 		cursor: not-allowed;
@@ -725,7 +717,6 @@
 	}
 
 	/* ── Footer (error message) ───────────────── */
-	/* ✅ Fix 9: transición consistente con Input */
 	.lumi-select__footer {
 		display: grid;
 		grid-template-rows: 0fr;
@@ -750,7 +741,6 @@
 	}
 
 	/* ── Size variants ────────────────────────── */
-	/* ✅ Usa padding-block/inline para no pisar espaciado de suffix */
 	.lumi-select--sm .lumi-select__input {
 		padding-block: var(--lumi-space-xs);
 		padding-inline: var(--lumi-space-sm);

@@ -14,7 +14,6 @@
 		'aria-label': ariaLabel = ''
 	}: SwitchProps = $props();
 
-	// ✅ Fix 5: crypto.randomUUID más robusto
 	const switchId = `lumi-switch-${crypto.randomUUID().slice(0, 8)}`;
 
 	const classes = $derived(
@@ -80,7 +79,6 @@
 	 * ============================================================================ */
 
 	.lumi-switch {
-		/* ✅ Fix 8: dimensiones explícitas, fácil de razonar */
 		--switch-track-w: 44px;
 		--switch-track-h: 24px;
 		--switch-inset: 2px;
@@ -109,7 +107,6 @@
 
 	/* ── Track ────────────────────────────────── */
 	.lumi-switch__track {
-		/* ✅ Fix 1: flexbox + padding = thumb siempre centrado, sin cálculos frágiles */
 		display: flex;
 		align-items: center;
 		width: var(--switch-track-w);
@@ -117,11 +114,9 @@
 		padding: var(--switch-inset);
 		box-sizing: border-box;
 		background: var(--lumi-color-border-strong);
-		/* ✅ box-shadow como borde, sin afectar box model */
 		box-shadow: inset 0 0 0 var(--lumi-border-width-thin)
 			color-mix(in srgb, var(--lumi-color-border) 60%, transparent);
 		border-radius: var(--lumi-radius-full);
-		/* ✅ Fix 4: transiciones explícitas */
 		transition:
 			background-color 0.2s ease,
 			box-shadow 0.2s ease;
@@ -163,7 +158,6 @@
 	}
 
 	/* ── Hover ────────────────────────────────── */
-	/* ✅ Fix 2: shadows acumulativos que no se sobreescriben */
 	.lumi-switch:not(.lumi-switch--disabled):hover .lumi-switch__track {
 		box-shadow:
 			inset 0 0 0 var(--lumi-border-width-thin)
@@ -184,7 +178,6 @@
 	}
 
 	/* ── Active / pressed ─────────────────────── */
-	/* ✅ Fix 6: feedback táctil - thumb se estira como iOS/Android */
 	.lumi-switch:not(.lumi-switch--disabled):active .lumi-switch__thumb {
 		width: calc(var(--switch-thumb) + var(--switch-stretch));
 	}
@@ -218,7 +211,6 @@
 	}
 
 	/* ── Color variants ───────────────────────── */
-	/* ✅ Fix 9: primary explícito, consistente con los demás */
 	.lumi-switch--primary {
 		--switch-color: var(--lumi-color-primary);
 	}
@@ -248,7 +240,6 @@
 		cursor: not-allowed;
 	}
 
-	/* ✅ Fix 3: disabled+checked conserva el color (atenuado), se distingue ON de OFF */
 	.lumi-switch--disabled.lumi-switch--checked .lumi-switch__track {
 		background: color-mix(in srgb, var(--switch-color) 55%, var(--lumi-color-border));
 	}

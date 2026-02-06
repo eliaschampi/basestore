@@ -50,7 +50,6 @@
 	let sortDirection = $state<'asc' | 'desc' | null>(null);
 
 	// ── Row identity ──────────────────────────
-	// ✅ Fix 2: función robusta que no depende de un index externo
 	function getRowKey(row: TableRow): string {
 		if (row.id != null) return String(row.id);
 		if (row.key != null) return String(row.key);
@@ -70,7 +69,6 @@
 	}
 
 	// ── Processed data ────────────────────────
-	// ✅ Fix 1: $derived.by consistente
 	const processedData = $derived.by(() => {
 		if (!data) return [];
 
@@ -168,7 +166,6 @@
 	const emptyIconSize = `${getIconSize('2xl')}px`;
 
 	// ── Event handlers ────────────────────────
-	// ✅ Fix 8: una sola fuente de verdad para search → page reset
 	function handleSearch(): void {
 		const trimmed = searchQuery.trim();
 		if (searchQuery !== trimmed) searchQuery = trimmed;
@@ -198,7 +195,6 @@
 		if (!data || !selectable) return;
 
 		if (checked) {
-			// ✅ Fix 2: usa getRowKey sin index
 			const selectedKeys = new Set(selected.map((r) => getRowKey(r)));
 			const newSelections = currentPageData.filter((r) => !selectedKeys.has(getRowKey(r)));
 			selected = [...selected, ...newSelections];
@@ -208,7 +204,6 @@
 		}
 	}
 
-	// ✅ Fix 3: stopPropagation en checkbox cell
 	function handleSelectCellClick(event: MouseEvent): void {
 		event.stopPropagation();
 	}
@@ -217,7 +212,6 @@
 		onRowClick?.(row, index);
 	}
 
-	// ✅ Fix 11: keyboard support para filas
 	function handleRowKeydown(event: KeyboardEvent, row: TableRow, index: number): void {
 		if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault();
@@ -278,7 +272,6 @@
 	});
 
 	// ── Effects ───────────────────────────────
-	// ✅ Fix 8: solo corrección de página fuera de rango
 	$effect(() => {
 		if (!pagination) return;
 		if (totalPages === 0 && currentPage !== 1) {
@@ -309,7 +302,6 @@
 		</header>
 	{/if}
 
-	<!-- ✅ Fix 4: aria-busy en el wrapper, que siempre está en DOM -->
 	<div class="lumi-table__wrapper" aria-busy={loading}>
 		{#if loading}
 			<div class="lumi-table__loading" role="status">
@@ -350,7 +342,6 @@
 								onkeydown={(e) => handleRowKeydown(e, rowData, index)}
 							>
 								{#if selectable}
-									<!-- ✅ Fix 3: stopPropagation en la celda -->
 									<td class="lumi-table__td lumi-table__td--select" onclick={handleSelectCellClick}>
 										<Checkbox
 											aria-label={`Select row ${index + 1}`}
@@ -363,7 +354,6 @@
 								{#if row}
 									{@render row({ row: rowData, index })}
 								{:else}
-									<!-- ✅ Fix 9: auto-render salta id/key internos -->
 									{#each Object.entries(rowData) as [key, cellValue], cellIndex (`cell-${cellIndex}`)}
 										{#if key !== 'id' && key !== 'key'}
 											<td class="lumi-table__td">{cellValue}</td>
@@ -482,8 +472,6 @@
 	}
 
 	/* ── Table wrapper ────────────────────────── */
-	/* ✅ Fix 5: overflow correcto */
-
 	.lumi-table__wrapper {
 		position: relative;
 		width: 100%;
@@ -503,7 +491,6 @@
 			border-color 0.2s ease;
 	}
 
-	/* ✅ Fix 6: hover shadow distinto del default */
 	.lumi-table__wrapper:hover {
 		box-shadow: var(--lumi-shadow-md);
 		border-color: var(--lumi-color-border);
@@ -548,7 +535,6 @@
 
 	.lumi-table__tbody .lumi-table__row {
 		border-bottom: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
-		/* ✅ Fix 7: sin !important, usa border-left invisible */
 		border-left: var(--lumi-border-width-thick) solid transparent;
 		transition:
 			background-color 0.15s ease,
@@ -560,7 +546,6 @@
 		border-bottom: none;
 	}
 
-	/* ✅ Fix 11: cursor + focus visible solo en rows clickables */
 	.lumi-table__row--clickable {
 		cursor: pointer;
 	}
@@ -579,7 +564,6 @@
 		transform: translateY(var(--table-row-lift));
 	}
 
-	/* ✅ Fix 7: selected sin !important, especificidad por doble clase */
 	.lumi-table__tbody .lumi-table__row.lumi-table__row--selected {
 		background: var(--table-row-active-bg);
 		border-left-color: var(--lumi-color-primary);
@@ -692,7 +676,6 @@
 	.lumi-table__pagination-text {
 		font-size: var(--lumi-font-size-xs);
 		color: var(--lumi-color-text-muted);
-		/* ✅ UI: en-dash tipográfico, no guion */
 	}
 
 	.lumi-table__pagination-controls {
@@ -707,7 +690,6 @@
 		gap: var(--lumi-space-2xs);
 	}
 
-	/* ✅ Fix 12: transiciones explícitas */
 	.lumi-table__pagination-page {
 		min-width: var(--lumi-space-xl);
 		height: var(--lumi-space-xl);
