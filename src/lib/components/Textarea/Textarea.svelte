@@ -30,12 +30,17 @@
 	let textareaRef: HTMLTextAreaElement | undefined = $state();
 	let isFocused = $state(false);
 
-	// Generate unique ID
-	const id = `lumi-textarea-${Math.random().toString(36).substring(2, 11)}`;
+	const id = `lumi-textarea-${crypto.randomUUID().slice(0, 8)}`;
+	const hasError = $derived(Boolean(error && typeof error === 'string'));
+	const describedBy = $derived.by(() => {
+		const ids: string[] = [];
+		if (hasError) ids.push(`${id}-error`);
+		if (hint) ids.push(`${id}-hint`);
+		return ids.join(' ');
+	});
 
-	// Computed classes
-	const classes = $derived(() => {
-		return [
+	const classes = $derived(
+		[
 			'lumi-textarea',
 			`lumi-textarea--${size}`,
 			`lumi-textarea--${color}`,
@@ -46,36 +51,34 @@
 			className
 		]
 			.filter(Boolean)
-			.join(' ');
-	});
+			.join(' ')
+	);
 
-	// Character count
-	const charCount = $derived(() => value?.length || 0);
+	const charCount = $derived(value?.length || 0);
 
-	// Event handlers
-	const handleInput = (event: Event) => {
+	function handleInput(event: Event): void {
 		const target = event.target as HTMLTextAreaElement;
 		value = target.value;
 		if (autosize) {
 			target.style.height = 'auto';
 			target.style.height = `${target.scrollHeight}px`;
 		}
-		if (oninput) oninput(event);
-	};
+		oninput?.(event);
+	}
 
-	const handleFocus = (event: FocusEvent) => {
+	function handleFocus(event: FocusEvent): void {
 		isFocused = true;
-		if (onfocus) onfocus(event);
-	};
+		onfocus?.(event);
+	}
 
-	const handleBlur = (event: FocusEvent) => {
+	function handleBlur(event: FocusEvent): void {
 		isFocused = false;
-		if (onblur) onblur(event);
-	};
+		onblur?.(event);
+	}
 
-	const handleKeydown = (event: KeyboardEvent) => {
-		if (onkeydown) onkeydown(event);
-	};
+	function handleKeydown(event: KeyboardEvent): void {
+		onkeydown?.(event);
+	}
 
 	// Public methods (exposed via bind:this)
 	export const focus = () => textareaRef?.focus();
@@ -88,7 +91,7 @@
 	});
 </script>
 
-<div class={classes()}>
+<div class={classes}>
 	{#if label}
 		<label for={id} class="lumi-textarea__label">
 			{label}
@@ -111,6 +114,8 @@
 			{maxlength}
 			{value}
 			aria-label={ariaLabel || label || placeholder || undefined}
+			aria-invalid={Boolean(error) || undefined}
+			aria-describedby={describedBy || undefined}
 			class="lumi-textarea__input"
 			style:resize={resizable ? resize : 'none'}
 			oninput={handleInput}
@@ -120,16 +125,16 @@
 		></textarea>
 
 		{#if maxlength && showCount}
-			<div class="lumi-textarea__counter">{charCount()}/{maxlength}</div>
+			<div class="lumi-textarea__counter">{charCount}/{maxlength}</div>
 		{/if}
 	</div>
 
-	{#if error && typeof error === 'string'}
-		<div class="lumi-textarea__error">{error}</div>
+	{#if hasError}
+		<div id={`${id}-error`} class="lumi-textarea__error">{error}</div>
 	{/if}
 
 	{#if hint}
-		<div class="lumi-textarea__hint">{hint}</div>
+		<div id={`${id}-hint`} class="lumi-textarea__hint">{hint}</div>
 	{/if}
 </div>
 
@@ -139,6 +144,17 @@
 		flex-direction: column;
 		gap: var(--lumi-space-xs);
 		width: 100%;
+		--textarea-color: var(--lumi-color-primary);
+		--textarea-bg: color-mix(
+			in srgb,
+			var(--lumi-color-background-hover) 70%,
+			var(--lumi-color-surface) 30%
+		);
+		--textarea-bg-focus: color-mix(
+			in srgb,
+			var(--lumi-color-surface) 88%,
+			var(--textarea-color) 12%
+		);
 	}
 
 	.lumi-textarea__label {
@@ -146,6 +162,7 @@
 		font-weight: var(--lumi-font-weight-medium);
 		color: var(--lumi-color-text);
 		cursor: pointer;
+		transition: color 0.2s ease;
 	}
 
 	.lumi-textarea__required {
@@ -162,7 +179,7 @@
 	.lumi-textarea__input {
 		width: 100%;
 		padding: var(--lumi-space-sm) var(--lumi-space-md);
-		background: var(--lumi-color-surface-overlay);
+		background: var(--textarea-bg);
 		border: var(--lumi-border-width-thin) solid var(--lumi-color-border);
 		border-radius: var(--lumi-radius-md);
 		font-family: inherit;
@@ -171,7 +188,10 @@
 		color: var(--lumi-color-text);
 		resize: vertical;
 		min-height: calc(var(--lumi-space-3xl) + var(--lumi-space-sm));
-		transition: var(--lumi-transition-all);
+		transition:
+			border-color 0.2s ease,
+			background-color 0.2s ease,
+			box-shadow 0.2s ease;
 	}
 
 	.lumi-textarea__input::placeholder {
@@ -181,14 +201,14 @@
 	.lumi-textarea__input:focus {
 		outline: none;
 		border-color: var(--textarea-color);
-		background: var(--lumi-color-surface);
-		box-shadow:
-			0 0 0 var(--lumi-border-width-thick) color-mix(in srgb, var(--textarea-color) 20%, transparent);
+		background: var(--textarea-bg-focus);
+		box-shadow: 0 0 0 var(--lumi-border-width-thick)
+			color-mix(in srgb, var(--textarea-color) 20%, transparent);
 	}
 
 	.lumi-textarea__input:hover:not(:focus):not(:disabled) {
 		border-color: var(--lumi-color-border-strong);
-		background: var(--lumi-color-surface);
+		background: color-mix(in srgb, var(--textarea-bg) 88%, var(--lumi-color-surface) 12%);
 	}
 
 	.lumi-textarea__input:disabled {
@@ -200,7 +220,24 @@
 
 	.lumi-textarea__input:read-only {
 		cursor: default;
-		background: var(--lumi-color-surface);
+		background: var(--textarea-bg);
+	}
+
+	.lumi-textarea__input:-webkit-autofill,
+	.lumi-textarea__input:-webkit-autofill:hover,
+	.lumi-textarea__input:-webkit-autofill:focus {
+		-webkit-text-fill-color: var(--lumi-color-text);
+		caret-color: var(--lumi-color-text);
+		-webkit-box-shadow: 0 0 0 1000px var(--textarea-bg) inset;
+		box-shadow: 0 0 0 1000px var(--textarea-bg) inset;
+		transition: background-color 99999s ease-out 0s;
+	}
+
+	.lumi-textarea--focused .lumi-textarea__input:-webkit-autofill,
+	.lumi-textarea--focused .lumi-textarea__input:-webkit-autofill:hover,
+	.lumi-textarea--focused .lumi-textarea__input:-webkit-autofill:focus {
+		-webkit-box-shadow: 0 0 0 1000px var(--textarea-bg-focus) inset;
+		box-shadow: 0 0 0 1000px var(--textarea-bg-focus) inset;
 	}
 
 	.lumi-textarea__counter {
@@ -249,9 +286,6 @@
 	}
 
 	/* Color variants */
-	.lumi-textarea {
-		--textarea-color: var(--lumi-color-primary);
-	}
 	.lumi-textarea--secondary {
 		--textarea-color: var(--lumi-color-secondary);
 	}
@@ -271,7 +305,7 @@
 	/* State variants */
 	.lumi-textarea--focused .lumi-textarea__input {
 		border-color: var(--textarea-color);
-		background: var(--lumi-color-surface);
+		background: var(--textarea-bg-focus);
 	}
 
 	.lumi-textarea--error .lumi-textarea__input {
@@ -285,12 +319,12 @@
 	.lumi-textarea--disabled .lumi-textarea__input {
 		opacity: 0.6;
 		cursor: not-allowed;
-		background: var(--lumi-color-surface);
+		background: var(--lumi-color-background-secondary);
 		border-color: var(--lumi-color-border);
 	}
 
 	.lumi-textarea--readonly .lumi-textarea__input {
 		cursor: default;
-		background: var(--lumi-color-surface);
+		background: var(--textarea-bg);
 	}
 </style>

@@ -111,12 +111,19 @@
 
 <style>
 	.lumi-list-item {
+		--list-item-hover-bg: color-mix(in srgb, var(--lumi-color-primary) 4%, transparent);
+		--list-item-active-bg: color-mix(in srgb, var(--lumi-color-primary) 8%, transparent);
+		--list-item-lift: calc(var(--lumi-space-2xs) * -0.25);
 		display: flex;
 		align-items: center;
 		gap: var(--lumi-space-md);
 		padding: var(--list-item-padding, var(--lumi-space-sm) var(--lumi-space-md));
 		border-radius: var(--lumi-radius-md);
-		transition: all 0.2s ease;
+		transition:
+			background-color 0.15s ease,
+			color 0.15s ease,
+			transform 0.15s ease,
+			box-shadow 0.15s ease;
 		cursor: default;
 		background: transparent;
 		position: relative;
@@ -170,7 +177,7 @@
 		font-size: 0.85em;
 		color: var(--lumi-color-text-muted);
 		line-height: var(--lumi-line-height-normal);
-		margin-top: 2px;
+		margin-top: calc(var(--lumi-space-2xs) / 2);
 	}
 
 	/* Actions */
@@ -192,8 +199,9 @@
 	}
 
 	.lumi-list-item--clickable:hover:not(.lumi-list-item--active):not(:disabled) {
-		background: var(--lumi-color-background-hover);
+		background: var(--list-item-hover-bg);
 		color: var(--lumi-color-text);
+		transform: translateY(var(--list-item-lift));
 	}
 
 	.lumi-list-item--clickable:hover .lumi-list-item__icon {
@@ -201,14 +209,20 @@
 	}
 
 	.lumi-list-item--clickable:focus-visible {
-		outline: 2px solid var(--lumi-color-primary);
-		outline-offset: 2px;
+		outline: var(--lumi-border-width-thick) solid
+			color-mix(in srgb, var(--lumi-color-primary) 35%, transparent);
+		outline-offset: var(--lumi-space-2xs);
 	}
 
 	/* Active state */
 	.lumi-list-item--active {
-		background: var(--lumi-color-primary-bg);
+		background: var(--list-item-active-bg);
 		color: var(--lumi-color-primary);
+	}
+
+	.lumi-list-item--clickable.lumi-list-item--active:hover {
+		background: var(--list-item-active-bg);
+		transform: none;
 	}
 
 	.lumi-list-item--active .lumi-list-item__title {

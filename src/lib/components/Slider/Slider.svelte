@@ -16,15 +16,24 @@
 		onchange
 	}: SliderProps = $props();
 
-	let trackRef = $state<HTMLDivElement>();
+	const sliderId = `lumi-slider-${crypto.randomUUID().slice(0, 8)}`;
+	const labelId = `${sliderId}-label`;
+	let trackRef: HTMLDivElement | undefined = $state();
 	let isDragging = $state(false);
 
-	const percentage = $derived(() => {
-		return ((value - min) / (max - min)) * 100;
+	const percentage = $derived.by(() => {
+		const range = max - min;
+		if (range <= 0) return 0;
+		const raw = ((value - min) / range) * 100;
+		return Math.max(0, Math.min(100, raw));
 	});
 
-	const classes = $derived(() => {
-		return [
+	const sliderStyleVars = $derived.by(
+		() => `--slider-fill: ${percentage}%; --slider-color: var(--lumi-color-${color});`
+	);
+
+	const classes = $derived(
+		[
 			'lumi-slider',
 			`lumi-slider--${color}`,
 			`lumi-slider--${size}`,
@@ -32,28 +41,32 @@
 			className
 		]
 			.filter(Boolean)
-			.join(' ');
-	});
+			.join(' ')
+	);
 
-	const updateValueFromPosition = (clientX: number) => {
+	function emitChange(): void {
+		onchange?.(value);
+	}
+
+	function updateValueFromPosition(clientX: number): void {
 		if (!trackRef) return;
 
 		const rect = trackRef.getBoundingClientRect();
 		const clickX = clientX - rect.left;
 		const clickPercentage = Math.max(0, Math.min(100, (clickX / rect.width) * 100));
 		const newValue = min + (clickPercentage / 100) * (max - min);
-		const steppedValue = Math.round(newValue / step) * step;
+		const steppedValue = min + Math.round((newValue - min) / step) * step;
 
 		value = Math.max(min, Math.min(max, steppedValue));
-	};
+	}
 
-	const handleTrackClick = (event: MouseEvent) => {
+	function handleTrackClick(event: MouseEvent): void {
 		if (disabled) return;
 		updateValueFromPosition(event.clientX);
-		if (onchange) onchange(value);
-	};
+		emitChange();
+	}
 
-	const handleKeyDown = (event: KeyboardEvent) => {
+	function handleKeyDown(event: KeyboardEvent): void {
 		if (disabled) return;
 
 		let newValue = value;
@@ -91,11 +104,11 @@
 
 		if (newValue !== value) {
 			value = newValue;
-			if (onchange) onchange(value);
+			emitChange();
 		}
-	};
+	}
 
-	const startDragging = (event: MouseEvent | TouchEvent) => {
+	function startDragging(event: MouseEvent | TouchEvent): void {
 		if (disabled) return;
 
 		event.preventDefault();
@@ -110,7 +123,7 @@
 
 		const handleEnd = () => {
 			isDragging = false;
-			if (onchange) onchange(value);
+			emitChange();
 			document.removeEventListener('mousemove', handleMove);
 			document.removeEventListener('mouseup', handleEnd);
 			document.removeEventListener('touchmove', handleMove);
@@ -121,17 +134,18 @@
 		document.addEventListener('mouseup', handleEnd);
 		document.addEventListener('touchmove', handleMove);
 		document.addEventListener('touchend', handleEnd);
-	};
+	}
 </script>
 
-<div class={classes()}>
+<div class={classes} style={sliderStyleVars}>
 	{#if label}
-		<label id="slider-label-{label}" class="lumi-slider__label" for="slider-{label}">{label}</label>
+		<label id={labelId} class="lumi-slider__label" for={sliderId}>{label}</label>
 	{/if}
 
 	<div class="lumi-slider__container">
 		<div
 			bind:this={trackRef}
+			id={sliderId}
 			class="lumi-slider__track"
 			onclick={handleTrackClick}
 			onkeydown={handleKeyDown}
@@ -142,14 +156,14 @@
 			aria-valuenow={value}
 			aria-valuemin={min}
 			aria-valuemax={max}
-			aria-label={label || 'Slider'}
+			aria-labelledby={label ? labelId : undefined}
+			aria-label={label ? undefined : 'Slider'}
 			aria-disabled={disabled}
 		>
-			<div class="lumi-slider__fill" style="width: {percentage()}%"></div>
+			<div class="lumi-slider__fill"></div>
 			<div
 				class="lumi-slider__thumb"
 				class:lumi-slider__thumb--dragging={isDragging}
-				style="left: {percentage()}%"
 				aria-hidden="true"
 			>
 				{#if showTooltip}
@@ -172,12 +186,25 @@
 		flex-direction: column;
 		gap: var(--lumi-space-sm);
 		width: 100%;
+		--slider-color: var(--lumi-color-primary);
+		--slider-fill: 0%;
+		--slider-track-size: calc(var(--lumi-space-2xs) + var(--lumi-border-width-thick));
+		--slider-track-bg: color-mix(
+			in srgb,
+			var(--lumi-color-background-hover) 70%,
+			var(--lumi-color-surface) 30%
+		);
+		--slider-hit-area: var(--lumi-space-xs);
+		--slider-thumb-size: var(--lumi-space-md);
+		--slider-tooltip-offset: var(--lumi-space-xs);
+		--slider-tooltip-arrow: var(--lumi-space-2xs);
 	}
 
 	.lumi-slider__label {
 		font-size: var(--lumi-font-size-sm);
 		font-weight: var(--lumi-font-weight-medium);
 		color: var(--lumi-color-text);
+		transition: color 0.15s ease;
 	}
 
 	.lumi-slider__container {
@@ -188,82 +215,66 @@
 	.lumi-slider__track {
 		position: relative;
 		width: 100%;
-		height: 6px;
-		background: var(--lumi-color-background-secondary);
+		height: var(--slider-track-size);
+		background: var(--slider-track-bg);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-full);
 		cursor: pointer;
-		transition: var(--lumi-transition-all);
-		/* Add padding for easier touch/click targeting */
-		padding: 8px 0;
-		margin: -8px 0;
+		transition:
+			border-color 0.15s ease,
+			background-color 0.15s ease,
+			box-shadow 0.15s ease;
+		padding-block: var(--slider-hit-area);
 		background-clip: content-box;
+		margin-block: calc(var(--slider-hit-area) * -1);
+		touch-action: none;
+	}
+
+	.lumi-slider__track:hover {
+		border-color: color-mix(in srgb, var(--slider-color) 30%, var(--lumi-color-border-light));
 	}
 
 	.lumi-slider__track:focus-visible {
-		outline: 2px solid var(--lumi-color-primary);
-		outline-offset: 4px;
+		outline: var(--lumi-border-width-thick) solid
+			color-mix(in srgb, var(--slider-color) 35%, transparent);
+		outline-offset: var(--lumi-space-xs);
 	}
 
 	.lumi-slider--sm .lumi-slider__track {
-		height: 4px;
+		--slider-track-size: var(--lumi-space-2xs);
+		--slider-thumb-size: var(--lumi-space-sm);
 	}
 
 	.lumi-slider--lg .lumi-slider__track {
-		height: 8px;
+		--slider-track-size: var(--lumi-space-xs);
+		--slider-thumb-size: calc(var(--lumi-space-md) + var(--lumi-space-2xs));
 	}
 
 	.lumi-slider__fill {
 		position: absolute;
-		top: 8px; /* Offset for padding */
+		top: var(--slider-hit-area);
 		left: 0;
-		height: 6px;
-		background: var(--lumi-color-primary);
+		height: var(--slider-track-size);
+		width: var(--slider-fill);
+		background: linear-gradient(
+			90deg,
+			color-mix(in srgb, var(--slider-color) 82%, var(--lumi-color-white)) 0%,
+			var(--slider-color) 100%
+		);
 		border-radius: var(--lumi-radius-full);
 		transition: width 0.1s ease;
 		pointer-events: none;
 	}
 
-	.lumi-slider--sm .lumi-slider__fill {
-		height: 4px;
-	}
-
-	.lumi-slider--lg .lumi-slider__fill {
-		height: 8px;
-	}
-
-	/* Color variants */
-	.lumi-slider--primary .lumi-slider__fill {
-		background: var(--lumi-color-primary);
-	}
-
-	.lumi-slider--secondary .lumi-slider__fill {
-		background: var(--lumi-color-secondary);
-	}
-
-	.lumi-slider--success .lumi-slider__fill {
-		background: var(--lumi-color-success);
-	}
-
-	.lumi-slider--warning .lumi-slider__fill {
-		background: var(--lumi-color-warning);
-	}
-
-	.lumi-slider--danger .lumi-slider__fill {
-		background: var(--lumi-color-danger);
-	}
-
-	.lumi-slider--info .lumi-slider__fill {
-		background: var(--lumi-color-info);
-	}
-
 	.lumi-slider__thumb {
 		position: absolute;
 		top: 50%;
+		left: var(--slider-fill);
 		transform: translate(-50%, -50%);
-		width: 16px;
-		height: 16px;
+		width: var(--slider-thumb-size);
+		height: var(--slider-thumb-size);
 		background: var(--lumi-color-surface);
-		border: 2px solid var(--lumi-color-primary);
+		border: var(--lumi-border-width-thick) solid var(--slider-color);
 		border-radius: var(--lumi-radius-full);
 		transition:
 			transform 0.15s ease,
@@ -274,53 +285,18 @@
 	}
 
 	.lumi-slider__track:hover .lumi-slider__thumb {
-		transform: translate(-50%, -50%) scale(1.1);
+		transform: translate(-50%, -50%) scale(1.06);
 		box-shadow: var(--lumi-shadow-md);
 	}
 
 	.lumi-slider__thumb--dragging {
-		transform: translate(-50%, -50%) scale(1.2);
+		transform: translate(-50%, -50%) scale(1.14);
 		cursor: grabbing;
-	}
-
-	.lumi-slider--sm .lumi-slider__thumb {
-		width: 12px;
-		height: 12px;
-	}
-
-	.lumi-slider--lg .lumi-slider__thumb {
-		width: 20px;
-		height: 20px;
-	}
-
-	/* Color variants for thumb */
-	.lumi-slider--primary .lumi-slider__thumb {
-		border-color: var(--lumi-color-primary);
-	}
-
-	.lumi-slider--secondary .lumi-slider__thumb {
-		border-color: var(--lumi-color-secondary);
-	}
-
-	.lumi-slider--success .lumi-slider__thumb {
-		border-color: var(--lumi-color-success);
-	}
-
-	.lumi-slider--warning .lumi-slider__thumb {
-		border-color: var(--lumi-color-warning);
-	}
-
-	.lumi-slider--danger .lumi-slider__thumb {
-		border-color: var(--lumi-color-danger);
-	}
-
-	.lumi-slider--info .lumi-slider__thumb {
-		border-color: var(--lumi-color-info);
 	}
 
 	.lumi-slider__tooltip {
 		position: absolute;
-		bottom: calc(100% + 8px);
+		bottom: calc(100% + var(--slider-tooltip-offset));
 		left: 50%;
 		transform: translateX(-50%);
 		padding: var(--lumi-space-xs) var(--lumi-space-sm);
@@ -345,7 +321,7 @@
 		top: 100%;
 		left: 50%;
 		transform: translateX(-50%);
-		border: 4px solid transparent;
+		border: var(--slider-tooltip-arrow) solid transparent;
 		border-top-color: var(--lumi-color-text);
 	}
 
@@ -354,6 +330,25 @@
 		font-weight: var(--lumi-font-weight-medium);
 		color: var(--lumi-color-text-muted);
 		text-align: center;
+	}
+
+	.lumi-slider--primary {
+		--slider-color: var(--lumi-color-primary);
+	}
+	.lumi-slider--secondary {
+		--slider-color: var(--lumi-color-secondary);
+	}
+	.lumi-slider--success {
+		--slider-color: var(--lumi-color-success);
+	}
+	.lumi-slider--warning {
+		--slider-color: var(--lumi-color-warning);
+	}
+	.lumi-slider--danger {
+		--slider-color: var(--lumi-color-danger);
+	}
+	.lumi-slider--info {
+		--slider-color: var(--lumi-color-info);
 	}
 
 	/* Disabled state */

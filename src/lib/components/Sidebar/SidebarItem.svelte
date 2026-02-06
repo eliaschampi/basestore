@@ -65,6 +65,9 @@
 
 <style>
 	.lumi-sidebar-item {
+		--sidebar-item-hover-bg: color-mix(in srgb, var(--lumi-color-primary) 4%, transparent);
+		--sidebar-item-active-bg: color-mix(in srgb, var(--lumi-color-primary) 8%, transparent);
+		--sidebar-item-lift: calc(var(--lumi-space-2xs) * -0.25);
 		position: relative;
 		display: flex;
 		align-items: center;
@@ -80,7 +83,11 @@
 		border: none;
 		cursor: pointer;
 		text-align: left;
-		transition: var(--lumi-transition-all);
+		transition:
+			background-color 0.15s ease,
+			color 0.15s ease,
+			box-shadow 0.15s ease,
+			transform 0.15s ease;
 		width: 100%;
 		outline: none;
 	}
@@ -96,20 +103,24 @@
 		background: var(--lumi-color-primary);
 		opacity: 0;
 		transform: scaleY(0.6);
-		transition: var(--lumi-transition-all);
+		transition:
+			opacity 0.15s ease,
+			transform 0.15s ease;
 	}
 
-	.lumi-sidebar-item:hover {
-		background: var(--lumi-color-background-hover);
+	.lumi-sidebar-item:hover:not(.lumi-sidebar-item--active) {
+		background: var(--sidebar-item-hover-bg);
 		color: var(--lumi-color-text);
+		transform: translateY(var(--sidebar-item-lift));
 	}
 
 	.lumi-sidebar-item:focus-visible {
-		box-shadow: 0 0 0 var(--lumi-border-width-thick) var(--lumi-color-primary-bg);
+		box-shadow: 0 0 0 var(--lumi-border-width-thick)
+			color-mix(in srgb, var(--lumi-color-primary) 20%, transparent);
 	}
 
 	.lumi-sidebar-item--active {
-		background: var(--lumi-color-primary-bg);
+		background: var(--sidebar-item-active-bg);
 		color: var(--lumi-color-primary);
 		box-shadow: var(--lumi-shadow-sm);
 	}
@@ -120,8 +131,9 @@
 	}
 
 	.lumi-sidebar-item--active:hover {
-		background: var(--lumi-color-primary-bg);
+		background: var(--sidebar-item-active-bg);
 		color: var(--lumi-color-primary);
+		transform: none;
 	}
 
 	.lumi-sidebar-item__icon {

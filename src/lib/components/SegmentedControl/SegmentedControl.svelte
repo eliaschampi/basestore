@@ -20,21 +20,22 @@
 	let resizeObserver: ResizeObserver | undefined;
 	const transitionDuration = `${LUMI_CONFIG.transitions.base}ms`;
 
-	const uniqueName = `lumi-sc-${Math.random().toString(36).substring(2, 9)}`;
+	const uniqueName = `lumi-sc-${crypto.randomUUID().slice(0, 8)}`;
 
-	const containerClasses = $derived(() => {
-		return [
+	const containerClasses = $derived(
+		[
 			'lumi-segmented-control',
 			`lumi-segmented-control--${color}`,
 			disabled && 'lumi-segmented-control--disabled',
 			className
 		]
 			.filter(Boolean)
-			.join(' ');
-	});
+			.join(' ')
+	);
 
-	const styleVars = $derived(
-		`--seg-color: var(--lumi-color-${color}); --seg-transition-duration: ${transitionDuration};`
+	const styleVars = $derived.by(
+		() =>
+			`--seg-color: var(--lumi-color-${color}); --seg-transition-duration: ${transitionDuration};`
 	);
 
 	function updateGlider(): void {
@@ -104,7 +105,7 @@
 
 <div
 	bind:this={containerRef}
-	class={containerClasses()}
+	class={containerClasses}
 	style={styleVars}
 	role="radiogroup"
 	aria-label={ariaLabel || 'Segmented control'}
@@ -150,14 +151,17 @@
 		position: relative;
 		display: inline-flex;
 		align-items: center;
+		--seg-hover-bg: color-mix(in srgb, var(--seg-color) 4%, transparent);
+		--seg-active-bg: color-mix(in srgb, var(--seg-color) 8%, transparent);
+		--seg-lift: calc(var(--lumi-space-2xs) * -0.25);
 		background:
 			linear-gradient(
 				180deg,
-				rgba(var(--lumi-color-background-rgb), 0.12) 0%,
-				rgba(var(--lumi-color-background-rgb), 0.28) 100%
+				color-mix(in srgb, var(--seg-color) 4%, transparent) 0%,
+				transparent 30%
 			),
 			var(--lumi-color-background-secondary);
-		border: 1px solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-xl);
 		padding: var(--lumi-space-2xs);
 		gap: var(--lumi-space-2xs);
@@ -166,7 +170,9 @@
 		width: fit-content;
 		max-width: 100%;
 		box-shadow: var(--lumi-shadow-sm);
-		transition: var(--lumi-transition-all);
+		transition:
+			border-color 0.15s ease,
+			box-shadow 0.15s ease;
 	}
 
 	.lumi-segmented-control__glider {
@@ -177,11 +183,12 @@
 		background:
 			linear-gradient(
 				180deg,
-				var(--lumi-color-surface) 0%,
-				var(--lumi-color-background-hover) 100%
+				color-mix(in srgb, var(--lumi-color-surface) 92%, var(--seg-color) 8%) 0%,
+				var(--lumi-color-surface) 100%
 			),
-			var(--lumi-color-surface);
-		border: 1px solid color-mix(in srgb, var(--seg-color) 20%, var(--lumi-color-border-light));
+			var(--seg-active-bg);
+		border: var(--lumi-border-width-thin) solid
+			color-mix(in srgb, var(--seg-color) 20%, var(--lumi-color-border-light));
 		border-radius: var(--lumi-radius-md);
 		box-shadow: var(--lumi-shadow-sm);
 		transition:
@@ -223,7 +230,10 @@
 		font-weight: var(--lumi-font-weight-medium);
 		font-size: var(--lumi-font-size-sm);
 		white-space: nowrap;
-		transition: var(--lumi-transition-colors);
+		transition:
+			color 0.15s ease,
+			background-color 0.15s ease,
+			transform 0.15s ease;
 		border-radius: var(--lumi-radius-md);
 	}
 
@@ -244,12 +254,14 @@
 		):hover
 		.lumi-segmented-control__content {
 		color: var(--lumi-color-text);
-		background-color: var(--lumi-color-background-hover);
+		background-color: var(--seg-hover-bg);
+		transform: translateY(var(--seg-lift));
 	}
 
 	/* Focus State */
 	.lumi-segmented-control__input:focus-visible + .lumi-segmented-control__content {
-		outline: var(--lumi-border-width-thick) solid var(--seg-color);
+		outline: var(--lumi-border-width-thick) solid
+			color-mix(in srgb, var(--seg-color) 35%, transparent);
 		outline-offset: calc(var(--lumi-space-2xs) * -1);
 	}
 
@@ -260,7 +272,8 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.lumi-segmented-control__glider {
+		.lumi-segmented-control__glider,
+		.lumi-segmented-control__content {
 			transition: none;
 		}
 	}

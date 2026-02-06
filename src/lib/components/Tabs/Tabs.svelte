@@ -21,7 +21,7 @@
 	}: Props = $props();
 
 	let previousValue = $state<string | number | undefined>(undefined);
-	const tabsId = `lumi-tabs-${Math.random().toString(36).substring(2, 9)}`;
+	const tabsId = `lumi-tabs-${crypto.randomUUID().slice(0, 8)}`;
 	const transitionDuration = `${LUMI_CONFIG.transitions.base}ms`;
 	$effect(() => {
 		if (value === undefined && tabs.length > 0) {
@@ -140,14 +140,23 @@
 		flex-direction: column;
 		width: 100%;
 		--lumi-tabs-color: var(--lumi-color-primary);
+		--tabs-hover-bg: color-mix(in srgb, var(--lumi-tabs-color) 4%, transparent);
+		--tabs-active-bg: color-mix(in srgb, var(--lumi-tabs-color) 8%, transparent);
+		--tabs-tab-lift: calc(var(--lumi-space-2xs) * -0.25);
 	}
 
 	/* Position variants */
 	.lumi-tabs--horizontal .lumi-tabs__nav {
 		flex-direction: row;
-		border: 1px solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-2xl);
-		background: var(--lumi-color-surface-overlay);
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--lumi-tabs-color) 4%, transparent) 0%,
+				transparent 25%
+			),
+			var(--lumi-color-surface-overlay);
 		padding: var(--lumi-space-2xs);
 		gap: var(--lumi-space-2xs);
 		box-shadow: var(--lumi-shadow-sm);
@@ -165,7 +174,7 @@
 	.lumi-tabs--vertical .lumi-tabs__nav {
 		flex-direction: column;
 		align-items: stretch;
-		border: 1px solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-2xl);
 		min-width: calc(var(--lumi-space-5xl) * 2 + var(--lumi-space-md));
 		padding: var(--lumi-space-2xs);
@@ -209,22 +218,29 @@
 		cursor: pointer;
 		transition:
 			background-color var(--tabs-transition-duration) var(--lumi-easing-default),
-			color var(--tabs-transition-duration) var(--lumi-easing-default);
+			color var(--tabs-transition-duration) var(--lumi-easing-default),
+			transform var(--tabs-transition-duration) var(--lumi-easing-default);
 		user-select: none;
 		white-space: nowrap;
 		position: relative;
 		min-height: var(--lumi-space-xxl);
 	}
 
-	.lumi-tabs__tab:hover:not(:disabled) {
+	.lumi-tabs__tab:hover:not(:disabled):not(.lumi-tabs__tab--active) {
 		color: var(--lumi-color-text);
-		background: var(--lumi-color-surface);
+		background: var(--tabs-hover-bg);
+		transform: translateY(var(--tabs-tab-lift));
 	}
 
 	.lumi-tabs__tab--active {
 		color: var(--lumi-tabs-color);
 		font-weight: var(--lumi-font-weight-semibold);
-		background: color-mix(in srgb, var(--lumi-tabs-color) 10%, transparent);
+		background: var(--tabs-active-bg);
+	}
+
+	.lumi-tabs__tab--active:hover {
+		background: var(--tabs-active-bg);
+		transform: none;
 	}
 
 	.lumi-tabs__tab--active::after {
@@ -254,7 +270,8 @@
 	}
 
 	.lumi-tabs__tab:focus-visible {
-		outline: var(--lumi-border-width-thick) solid color-mix(in srgb, var(--lumi-tabs-color) 35%, transparent);
+		outline: var(--lumi-border-width-thick) solid
+			color-mix(in srgb, var(--lumi-tabs-color) 35%, transparent);
 		outline-offset: calc(var(--lumi-space-2xs) * -1);
 		border-radius: var(--lumi-radius-md);
 	}
@@ -292,7 +309,7 @@
 		}
 
 		.lumi-tabs--vertical .lumi-tabs__nav {
-			border-right: 1px solid var(--lumi-color-border-light);
+			border-right: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 			min-width: auto;
 			margin-bottom: var(--lumi-space-sm);
 		}

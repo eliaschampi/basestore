@@ -40,13 +40,12 @@
 		'onaction-click': onActionClick
 	}: InputProps = $props();
 
-	// Local state
 	let isFocused = $state(false);
 	let internalError = $state('');
 	let inputElement: HTMLInputElement;
 
-	// Computed values
-	const inputId = $derived(`lumi-input-${Math.random().toString(36).substring(2, 11)}`);
+	// ✅ Fix 1: const simple, sin $derived innecesario
+	const inputId = `lumi-input-${crypto.randomUUID().slice(0, 8)}`;
 
 	const inputState = $derived.by(() => {
 		if (success) return 'success';
@@ -61,6 +60,8 @@
 		if (inputState === 'warning') return 'warning';
 		return color;
 	});
+
+	const hasState = $derived(inputState !== 'default');
 
 	const message = $derived.by(() => {
 		if (success && successText) return successText;
@@ -77,71 +78,66 @@
 		return '';
 	});
 
-	const iconSizePx = $derived.by(() => {
-		return `${getIconSize(size as 'xs' | 'sm' | 'md' | 'lg' | 'xl')}px`;
-	});
+	const iconSizePx = $derived(`${getIconSize(size as 'xs' | 'sm' | 'md' | 'lg' | 'xl')}px`);
 
-	// CSS Variables for dynamic styling
-	const styleVars = $derived(() => {
+	const hasPrefix = $derived(!!(icon && !iconAfter));
+	const hasSuffix = $derived(!!(validationIcon || actionIcon || (icon && iconAfter)));
+
+	// ✅ Fix 2: $derived.by consistente, no funciones
+	const styleVars = $derived.by(() => {
 		const colorVar = `var(--lumi-color-${activeColor})`;
 		const colorRgbVar = `var(--lumi-color-${activeColor}-rgb)`;
 		return `--input-color: ${colorVar}; --input-color-rgb: ${colorRgbVar};`;
 	});
 
-	const containerClasses = $derived(() => {
+	const containerClasses = $derived.by(() => {
 		const classes = ['lumi-input-container', `lumi-input-container--${size}`];
 		if (isFocused) classes.push('lumi-input-container--focused');
-		if (inputState !== 'default') classes.push(`lumi-input-container--${inputState}`);
+		if (hasState) classes.push(`lumi-input-container--${inputState}`);
 		if (disabled) classes.push('lumi-input-container--disabled');
 		if (className) classes.push(className);
 		return classes.join(' ');
 	});
 
-	// Event handlers
 	function handleInput(event: Event) {
 		const target = event.target as HTMLInputElement;
 		value = target.value;
-		if (oninput) oninput(event);
+		oninput?.(event);
 	}
 
 	function handleFocus(event: FocusEvent) {
 		isFocused = true;
-		if (onfocus) onfocus(event);
+		onfocus?.(event);
 	}
 
 	function handleBlur(event: FocusEvent) {
 		isFocused = false;
-		// Validation removed from blur - only validates on explicit validate() call
-		if (onblur) onblur(event);
+		onblur?.(event);
 	}
 
-	/**
-	 * Public validation method
-	 * Call this from form submit handlers to validate the input
-	 */
 	export function validate() {
 		if (required && !value) {
 			internalError = 'This field is required';
 			return false;
-		} else if (type === 'email' && value) {
+		}
+		if (type === 'email' && value) {
 			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 			const isValid = emailRegex.test(String(value));
-			internalError = !isValid ? 'Please enter a valid email address' : '';
+			internalError = isValid ? '' : 'Please enter a valid email address';
 			return isValid;
-		} else {
-			internalError = '';
-			return true;
 		}
+		internalError = '';
+		return true;
 	}
 
 	function handleIconClick(event: MouseEvent) {
 		inputElement?.focus();
-		if (onIconClick) onIconClick(event);
+		onIconClick?.(event);
 	}
 
 	function handleActionClick(event: MouseEvent) {
 		inputElement?.focus();
-		if (onActionClick) onActionClick(event);
+		onActionClick?.(event);
 	}
 
 	export function focus() {
@@ -155,7 +151,8 @@
 	}
 </script>
 
-<div class={containerClasses()} style={styleVars()}>
+<!-- ✅ Fix 3: sin () ya que ahora son valores, no funciones -->
+<div class={containerClasses} style={styleVars}>
 	{#if label && !labelPlaceholder}
 		<label for={inputId} class="lumi-input__label">
 			{label}
@@ -163,12 +160,13 @@
 	{/if}
 
 	<div class="lumi-input__wrapper">
-		{#if icon && !iconAfter}
+		{#if hasPrefix}
 			<button
 				type="button"
 				class="lumi-input__icon lumi-input__icon--before"
 				class:lumi-input__icon--no-border={iconNoBorder}
 				aria-label={iconLabel || 'Input icon'}
+				tabindex="-1"
 				onclick={handleIconClick}
 			>
 				<Icon {icon} size={iconSizePx} />
@@ -185,16 +183,18 @@
 			{readonly}
 			{required}
 			aria-label={ariaLabel || label || placeholder || undefined}
+			aria-invalid={inputState === 'danger' || undefined}
+			aria-describedby={message ? `${inputId}-msg` : undefined}
 			placeholder={labelPlaceholder || placeholder}
 			class="lumi-input"
-			class:lumi-input--has-prefix={!!(icon && !iconAfter)}
-			class:lumi-input--has-suffix={!!(validationIcon || actionIcon || (icon && iconAfter))}
+			class:lumi-input--has-prefix={hasPrefix}
+			class:lumi-input--has-suffix={hasSuffix}
 			oninput={handleInput}
 			onfocus={handleFocus}
 			onblur={handleBlur}
 		/>
 
-		{#if validationIcon || actionIcon || (icon && iconAfter)}
+		{#if hasSuffix}
 			<div class="lumi-input__suffix">
 				{#if validationIcon}
 					<div class="lumi-input__validation-icon lumi-input__suffix-item" aria-hidden="true">
@@ -207,6 +207,7 @@
 						type="button"
 						class="lumi-input__action lumi-input__suffix-item"
 						aria-label={actionLabel || 'Input action'}
+						tabindex="-1"
 						onclick={handleActionClick}
 					>
 						<Icon icon={actionIcon} size={iconSizePx} />
@@ -219,6 +220,7 @@
 						class="lumi-input__icon lumi-input__icon--after lumi-input__suffix-item"
 						class:lumi-input__icon--no-border={iconNoBorder}
 						aria-label={iconLabel || 'Input icon'}
+						tabindex="-1"
 						onclick={handleIconClick}
 					>
 						<Icon {icon} size={iconSizePx} />
@@ -228,17 +230,23 @@
 		{/if}
 	</div>
 
-	{#if message}
-		<div class="lumi-input__message lumi-input__message--{inputState}">
-			{message}
-		</div>
-	{/if}
-
-	{#if descriptionText && !message}
-		<div class="lumi-input__description">
-			{descriptionText}
-		</div>
-	{/if}
+	<!-- ✅ Fix 6: contenedor persistente para transiciones CSS -->
+	<div
+		id="{inputId}-msg"
+		class="lumi-input__footer"
+		class:lumi-input__footer--visible={!!(message || (descriptionText && !message))}
+		aria-live="polite"
+	>
+		{#if message}
+			<span class="lumi-input__message lumi-input__message--{inputState}">
+				{message}
+			</span>
+		{:else if descriptionText}
+			<span class="lumi-input__description">
+				{descriptionText}
+			</span>
+		{/if}
+	</div>
 </div>
 
 <style>
@@ -249,6 +257,12 @@
 		width: 100%;
 		--input-border: var(--lumi-color-border);
 		--input-focus: var(--input-color);
+		--input-bg: color-mix(
+			in srgb,
+			var(--lumi-color-background-hover) 60%,
+			var(--lumi-color-surface) 40%
+		);
+		--input-bg-focus: color-mix(in srgb, var(--lumi-color-surface) 95%, var(--input-focus) 5%);
 	}
 
 	.lumi-input-container--disabled {
@@ -256,55 +270,52 @@
 		pointer-events: none;
 	}
 
+	/* ── Label ────────────────────────────────── */
 	.lumi-input__label {
 		font-size: var(--lumi-font-size-sm);
 		font-weight: var(--lumi-font-weight-medium);
 		color: var(--lumi-color-text);
 		cursor: pointer;
-		transition: var(--lumi-transition-colors);
+		transition: color 0.2s ease;
 	}
 
 	.lumi-input-container--focused .lumi-input__label {
 		color: var(--input-focus);
 	}
 
+	/* ── Wrapper ──────────────────────────────── */
 	.lumi-input__wrapper {
 		display: flex;
 		align-items: center;
 		position: relative;
-		background: var(--lumi-color-surface-overlay);
+		background: var(--input-bg);
 		border: var(--lumi-border-width-thin) solid var(--input-border);
 		border-radius: var(--lumi-radius-md);
-		transition: var(--lumi-transition-all);
+		transition:
+			border-color 0.2s ease,
+			background-color 0.2s ease,
+			box-shadow 0.2s ease;
 		overflow: hidden;
 	}
 
-	.lumi-input__suffix {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--lumi-space-xs);
-		padding-right: var(--lumi-space-sm);
-		flex-shrink: 0;
-	}
-
-	.lumi-input__suffix-item {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
+	/* ✅ Fix 8: hover no sobreescribe colores de estado */
+	.lumi-input-container:not(
+			.lumi-input-container--success,
+			.lumi-input-container--danger,
+			.lumi-input-container--warning
+		)
+		.lumi-input__wrapper:hover:not(:focus-within) {
+		border-color: var(--lumi-color-border-strong);
 	}
 
 	.lumi-input-container--focused .lumi-input__wrapper {
 		border-color: var(--input-focus);
-		box-shadow:
-			0 0 0 var(--lumi-border-width-thick) color-mix(in srgb, var(--input-focus) 22%, transparent);
+		background: var(--input-bg-focus);
+		box-shadow: 0 0 0 var(--lumi-border-width-thick)
+			color-mix(in srgb, var(--input-focus) 22%, transparent);
 	}
 
-	.lumi-input-container--focused .lumi-input__icon,
-	.lumi-input-container--focused .lumi-input__action {
-		color: var(--input-focus);
-	}
-
-	/* State colors */
+	/* ── State borders ────────────────────────── */
 	.lumi-input-container--success {
 		--input-border: var(--lumi-color-success);
 	}
@@ -315,9 +326,11 @@
 		--input-border: var(--lumi-color-warning);
 	}
 
+	/* ── Input ────────────────────────────────── */
 	.lumi-input {
 		flex: 1;
 		width: 100%;
+		min-width: 0; /* ✅ previene overflow en flex */
 		background: transparent;
 		border: none;
 		outline: none;
@@ -329,11 +342,10 @@
 	}
 
 	.lumi-input--has-prefix {
-		padding-left: var(--lumi-space-2xs);
+		padding-inline-start: var(--lumi-space-2xs);
 	}
-
 	.lumi-input--has-suffix {
-		padding-right: var(--lumi-space-2xs);
+		padding-inline-end: var(--lumi-space-2xs);
 	}
 
 	.lumi-input::placeholder {
@@ -341,39 +353,82 @@
 		opacity: 0.7;
 	}
 
-	/* Sizes */
+	.lumi-input:-webkit-autofill,
+	.lumi-input:-webkit-autofill:hover,
+	.lumi-input:-webkit-autofill:focus {
+		-webkit-text-fill-color: var(--lumi-color-text);
+		caret-color: var(--lumi-color-text);
+		-webkit-box-shadow: 0 0 0 1000px var(--input-bg) inset;
+		box-shadow: 0 0 0 1000px var(--input-bg) inset;
+		transition: background-color 99999s ease-out 0s;
+	}
+
+	.lumi-input-container--focused .lumi-input:-webkit-autofill,
+	.lumi-input-container--focused .lumi-input:-webkit-autofill:hover,
+	.lumi-input-container--focused .lumi-input:-webkit-autofill:focus {
+		-webkit-box-shadow: 0 0 0 1000px var(--input-bg-focus) inset;
+		box-shadow: 0 0 0 1000px var(--input-bg-focus) inset;
+	}
+
+	/* ── Sizes ────────────────────────────────── */
+	/* ✅ Fix 5: usar padding-block/inline para no pisar has-prefix/has-suffix */
+	.lumi-input-container--xs .lumi-input {
+		padding-block: var(--lumi-space-2xs);
+		padding-inline: var(--lumi-space-xs);
+		font-size: var(--lumi-font-size-xs);
+	}
 	.lumi-input-container--sm .lumi-input {
-		padding: var(--lumi-space-xs) var(--lumi-space-sm);
+		padding-block: var(--lumi-space-xs);
+		padding-inline: var(--lumi-space-sm);
 		font-size: var(--lumi-font-size-sm);
 	}
 	.lumi-input-container--md .lumi-input {
-		padding: var(--lumi-space-sm);
+		padding-block: var(--lumi-space-sm);
+		padding-inline: var(--lumi-space-sm);
 	}
 	.lumi-input-container--lg .lumi-input {
-		padding: var(--lumi-space-md);
+		padding-block: var(--lumi-space-md);
+		padding-inline: var(--lumi-space-md);
 		font-size: var(--lumi-font-size-lg);
 	}
 	.lumi-input-container--xl .lumi-input {
-		padding: var(--lumi-space-md) var(--lumi-space-lg);
+		padding-block: var(--lumi-space-md);
+		padding-inline: var(--lumi-space-lg);
 		font-size: var(--lumi-font-size-xl);
 	}
 
-	.lumi-input-container--sm .lumi-input__icon,
-	.lumi-input-container--sm .lumi-input__action {
-		padding: 0 var(--lumi-space-xs);
+	/* ✅ Fix 5b: has-prefix/has-suffix solo afecta inline, no pisa block */
+	.lumi-input-container--xs .lumi-input--has-prefix,
+	.lumi-input-container--sm .lumi-input--has-prefix,
+	.lumi-input-container--md .lumi-input--has-prefix,
+	.lumi-input-container--lg .lumi-input--has-prefix,
+	.lumi-input-container--xl .lumi-input--has-prefix {
+		padding-inline-start: var(--lumi-space-2xs);
+	}
+	.lumi-input-container--xs .lumi-input--has-suffix,
+	.lumi-input-container--sm .lumi-input--has-suffix,
+	.lumi-input-container--md .lumi-input--has-suffix,
+	.lumi-input-container--lg .lumi-input--has-suffix,
+	.lumi-input-container--xl .lumi-input--has-suffix {
+		padding-inline-end: var(--lumi-space-2xs);
 	}
 
-	.lumi-input-container--lg .lumi-input__icon,
-	.lumi-input-container--lg .lumi-input__action {
-		padding: 0 var(--lumi-space-md);
+	/* ── Suffix ───────────────────────────────── */
+	.lumi-input__suffix {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--lumi-space-xs);
+		padding-inline-end: var(--lumi-space-sm);
+		flex-shrink: 0;
 	}
 
-	.lumi-input-container--xl .lumi-input__icon,
-	.lumi-input-container--xl .lumi-input__action {
-		padding: 0 var(--lumi-space-lg);
+	.lumi-input__suffix-item {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 	}
 
-	/* Icons */
+	/* ── Icons & Actions ──────────────────────── */
 	.lumi-input__icon,
 	.lumi-input__action {
 		display: inline-flex;
@@ -384,27 +439,50 @@
 		background: transparent;
 		border: none;
 		cursor: pointer;
-		transition: var(--lumi-transition-colors);
+		transition: color 0.2s ease;
 		flex-shrink: 0;
+	}
+
+	.lumi-input-container--focused .lumi-input__icon,
+	.lumi-input-container--focused .lumi-input__action {
+		color: var(--input-focus);
+	}
+
+	.lumi-input__icon:hover,
+	.lumi-input__action:hover {
+		color: var(--input-focus);
 	}
 
 	.lumi-input__icon:focus-visible,
 	.lumi-input__action:focus-visible {
-		outline: var(--lumi-border-width-thick) solid color-mix(in srgb, var(--input-focus) 35%, transparent);
+		outline: var(--lumi-border-width-thick) solid
+			color-mix(in srgb, var(--input-focus) 35%, transparent);
 		outline-offset: calc(var(--lumi-space-2xs) * -1);
 	}
 
 	.lumi-input__icon--before:not(.lumi-input__icon--no-border) {
 		border-right: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 	}
-
 	.lumi-input__icon--after:not(.lumi-input__icon--no-border) {
 		border-left: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 	}
 
-	.lumi-input__icon:hover,
-	.lumi-input__action:hover {
-		color: var(--input-focus);
+	/* Icon size scaling per container size */
+	.lumi-input-container--xs .lumi-input__icon,
+	.lumi-input-container--xs .lumi-input__action {
+		padding: 0 var(--lumi-space-2xs);
+	}
+	.lumi-input-container--sm .lumi-input__icon,
+	.lumi-input-container--sm .lumi-input__action {
+		padding: 0 var(--lumi-space-xs);
+	}
+	.lumi-input-container--lg .lumi-input__icon,
+	.lumi-input-container--lg .lumi-input__action {
+		padding: 0 var(--lumi-space-md);
+	}
+	.lumi-input-container--xl .lumi-input__icon,
+	.lumi-input-container--xl .lumi-input__action {
+		padding: 0 var(--lumi-space-lg);
 	}
 
 	.lumi-input__validation-icon {
@@ -413,11 +491,29 @@
 		color: var(--input-focus);
 	}
 
-	/* Messages */
+	/* ── Footer (messages) ────────────────────── */
+	/* ✅ Fix 6: transición suave para mensajes */
+	.lumi-input__footer {
+		display: grid;
+		grid-template-rows: 0fr;
+		transition: grid-template-rows 0.2s ease;
+		overflow: hidden;
+		margin-top: calc(var(--lumi-space-2xs) * -1);
+	}
+
+	.lumi-input__footer--visible {
+		grid-template-rows: 1fr;
+	}
+
+	.lumi-input__footer > span {
+		overflow: hidden;
+		min-height: 0;
+	}
+
 	.lumi-input__message,
 	.lumi-input__description {
 		font-size: var(--lumi-font-size-xs);
-		margin-top: calc(var(--lumi-space-2xs) * -1);
+		padding-top: var(--lumi-space-2xs);
 	}
 
 	.lumi-input__message {

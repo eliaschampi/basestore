@@ -14,7 +14,8 @@
 		'aria-label': ariaLabel = ''
 	}: SwitchProps = $props();
 
-	const switchId = `lumi-switch-${Math.random().toString(36).substring(2, 11)}`;
+	// ✅ Fix 5: crypto.randomUUID más robusto
+	const switchId = `lumi-switch-${crypto.randomUUID().slice(0, 8)}`;
 
 	const classes = $derived(
 		[
@@ -29,21 +30,23 @@
 			.join(' ')
 	);
 
-	const handleChange = (event: Event) => {
+	function handleChange(event: Event) {
 		if (disabled) return;
 		const target = event.target as HTMLInputElement;
 		checked = target.checked;
 		onchange?.(checked, event);
-	};
+	}
 </script>
 
 <label for={switchId} class={classes}>
 	<input
 		id={switchId}
 		type="checkbox"
+		role="switch"
 		{name}
 		{checked}
 		{disabled}
+		aria-checked={checked}
 		aria-label={ariaLabel || label || undefined}
 		class="lumi-switch__input"
 		onchange={handleChange}
@@ -66,14 +69,27 @@
 
 <style>
 	/* ============================================================================
-	 * SWITCH COMPONENT - Modern Toggle Switch
+	 * SWITCH COMPONENT
+	 *
+	 * Arquitectura de dimensiones:
+	 * - track-w/track-h: dimensiones externas del track
+	 * - switch-inset: espacio entre borde del track y thumb
+	 * - thumb = track-h - 2*inset (automático, siempre centrado)
+	 * - travel = track-w - track-h (distancia de desplazamiento)
+	 * - Se usa box-shadow inset como "borde" para evitar cálculos con border-box
 	 * ============================================================================ */
 
 	.lumi-switch {
-		--switch-track-width: calc(var(--lumi-space-xl) + var(--lumi-space-sm));
-		--switch-track-height: var(--lumi-space-lg);
-		--switch-thumb-size: calc(var(--switch-track-height) - var(--lumi-space-xs));
+		/* ✅ Fix 8: dimensiones explícitas, fácil de razonar */
+		--switch-track-w: 44px;
+		--switch-track-h: 24px;
+		--switch-inset: 2px;
+		--switch-thumb: calc(var(--switch-track-h) - var(--switch-inset) * 2);
+		--switch-travel: calc(var(--switch-track-w) - var(--switch-track-h));
+		--switch-stretch: 4px;
+		--switch-color: var(--lumi-color-primary);
 		--switch-label-size: var(--lumi-font-size-sm);
+
 		position: relative;
 		display: inline-flex;
 		align-items: center;
@@ -81,7 +97,6 @@
 		cursor: pointer;
 		user-select: none;
 		font-family: var(--lumi-font-family-sans);
-		transition: var(--lumi-transition-opacity);
 	}
 
 	.lumi-switch__input {
@@ -92,63 +107,119 @@
 		height: 0;
 	}
 
+	/* ── Track ────────────────────────────────── */
 	.lumi-switch__track {
-		position: relative;
-		width: var(--switch-track-width);
-		height: var(--switch-track-height);
-		background:
-			linear-gradient(
-				180deg,
-				var(--lumi-color-border-strong) 0%,
-				var(--lumi-color-border) 100%
-			);
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border);
+		/* ✅ Fix 1: flexbox + padding = thumb siempre centrado, sin cálculos frágiles */
+		display: flex;
+		align-items: center;
+		width: var(--switch-track-w);
+		height: var(--switch-track-h);
+		padding: var(--switch-inset);
+		box-sizing: border-box;
+		background: var(--lumi-color-border-strong);
+		/* ✅ box-shadow como borde, sin afectar box model */
+		box-shadow: inset 0 0 0 var(--lumi-border-width-thin)
+			color-mix(in srgb, var(--lumi-color-border) 60%, transparent);
 		border-radius: var(--lumi-radius-full);
-		transition: var(--lumi-transition-all);
+		/* ✅ Fix 4: transiciones explícitas */
+		transition:
+			background-color 0.2s ease,
+			box-shadow 0.2s ease;
 		flex-shrink: 0;
 	}
 
+	/* ── Thumb ───────────────────���────────────── */
 	.lumi-switch__thumb {
-		position: absolute;
-		top: var(--lumi-space-2xs);
-		left: var(--lumi-space-2xs);
-		width: var(--switch-thumb-size);
-		height: var(--switch-thumb-size);
+		width: var(--switch-thumb);
+		height: var(--switch-thumb);
 		background: var(--lumi-color-white);
 		border-radius: var(--lumi-radius-full);
 		box-shadow: var(--lumi-shadow-sm);
-		transition: var(--lumi-transition-all);
+		flex-shrink: 0;
+		transition:
+			transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+			width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
+	/* ── Label ────────────────────────────────── */
 	.lumi-switch__label {
 		color: var(--lumi-color-text);
 		font-size: var(--switch-label-size);
 		font-weight: var(--lumi-font-weight-medium);
 		line-height: var(--lumi-line-height-normal);
-		cursor: pointer;
 	}
 
-	/* Size variants */
+	/* ── Checked state ────────────────────────── */
+	.lumi-switch--checked .lumi-switch__track {
+		background: var(--switch-color);
+		box-shadow:
+			inset 0 0 0 var(--lumi-border-width-thin)
+				color-mix(in srgb, var(--switch-color) 80%, transparent),
+			0 0 0 var(--lumi-border-width-thin) color-mix(in srgb, var(--switch-color) 20%, transparent);
+	}
+
+	.lumi-switch--checked .lumi-switch__thumb {
+		transform: translateX(var(--switch-travel));
+	}
+
+	/* ── Hover ────────────────────────────────── */
+	/* ✅ Fix 2: shadows acumulativos que no se sobreescriben */
+	.lumi-switch:not(.lumi-switch--disabled):hover .lumi-switch__track {
+		box-shadow:
+			inset 0 0 0 var(--lumi-border-width-thin)
+				color-mix(in srgb, var(--switch-color) 40%, transparent),
+			0 0 8px color-mix(in srgb, var(--switch-color) 12%, transparent);
+	}
+
+	.lumi-switch--checked:not(.lumi-switch--disabled):hover .lumi-switch__track {
+		background: color-mix(in srgb, var(--switch-color) 88%, var(--lumi-color-white));
+		box-shadow:
+			inset 0 0 0 var(--lumi-border-width-thin)
+				color-mix(in srgb, var(--switch-color) 80%, transparent),
+			0 0 12px color-mix(in srgb, var(--switch-color) 22%, transparent);
+	}
+
+	.lumi-switch:not(.lumi-switch--disabled):hover .lumi-switch__thumb {
+		box-shadow: var(--lumi-shadow-md);
+	}
+
+	/* ── Active / pressed ─────────────────────── */
+	/* ✅ Fix 6: feedback táctil - thumb se estira como iOS/Android */
+	.lumi-switch:not(.lumi-switch--disabled):active .lumi-switch__thumb {
+		width: calc(var(--switch-thumb) + var(--switch-stretch));
+	}
+
+	.lumi-switch--checked:not(.lumi-switch--disabled):active .lumi-switch__thumb {
+		transform: translateX(calc(var(--switch-travel) - var(--switch-stretch)));
+	}
+
+	/* ── Focus visible ────────────────────────── */
+	.lumi-switch__input:focus-visible + .lumi-switch__track {
+		box-shadow:
+			0 0 0 var(--lumi-border-width-thick) var(--lumi-color-background),
+			0 0 0 calc(var(--lumi-border-width-thick) * 2) var(--switch-color);
+	}
+
+	/* ── Size variants ────────────────────────── */
 	.lumi-switch--sm {
-		--switch-track-width: calc(var(--lumi-space-xl) + var(--lumi-space-xs));
-		--switch-track-height: calc(var(--lumi-space-md) + var(--lumi-space-2xs));
+		--switch-track-w: 36px;
+		--switch-track-h: 20px;
+		--switch-stretch: 3px;
 		--switch-label-size: var(--lumi-font-size-xs);
-	}
-
-	.lumi-switch--md {
-		--switch-track-width: calc(var(--lumi-space-xl) + var(--lumi-space-sm));
-		--switch-track-height: var(--lumi-space-lg);
-		--switch-label-size: var(--lumi-font-size-sm);
+		gap: var(--lumi-space-xs);
 	}
 
 	.lumi-switch--lg {
-		--switch-track-width: calc(var(--lumi-space-xxl) + var(--lumi-space-sm));
-		--switch-track-height: calc(var(--lumi-space-lg) + var(--lumi-space-2xs));
+		--switch-track-w: 52px;
+		--switch-track-h: 28px;
+		--switch-stretch: 5px;
 		--switch-label-size: var(--lumi-font-size-base);
+		gap: var(--lumi-space-md);
 	}
 
-	/* Color variants */
-	.lumi-switch {
+	/* ── Color variants ───────────────────────── */
+	/* ✅ Fix 9: primary explícito, consistente con los demás */
+	.lumi-switch--primary {
 		--switch-color: var(--lumi-color-primary);
 	}
 	.lumi-switch--secondary {
@@ -167,52 +238,30 @@
 		--switch-color: var(--lumi-color-info);
 	}
 
-	/* Checked state */
-	.lumi-switch--checked .lumi-switch__thumb {
-		transform: translateX(
-			calc(var(--switch-track-width) - var(--switch-thumb-size) - var(--lumi-space-xs))
-		);
-	}
-
-	.lumi-switch--checked .lumi-switch__track {
-		background:
-			linear-gradient(
-				135deg,
-				var(--switch-color) 0%,
-				color-mix(in srgb, var(--switch-color) 80%, var(--lumi-color-surface)) 100%
-			);
-		border-color: color-mix(in srgb, var(--switch-color) 70%, var(--lumi-color-border));
-		box-shadow: 0 0 0 var(--lumi-border-width-thin) color-mix(in srgb, var(--switch-color) 20%, transparent);
-	}
-
-	/* Hover effects */
-	.lumi-switch:not(.lumi-switch--disabled):hover .lumi-switch__track {
-		box-shadow: var(--lumi-shadow-sm);
-		border-color: color-mix(in srgb, var(--switch-color) 45%, var(--lumi-color-border));
-	}
-
-	/* Focus styles */
-	.lumi-switch__input:focus-visible + .lumi-switch__track {
-		box-shadow:
-			0 0 0 var(--lumi-border-width-thick) var(--lumi-color-background),
-			0 0 0 calc(var(--lumi-border-width-thick) * 2) var(--switch-color);
-	}
-
-	/* Disabled state */
+	/* ── Disabled state ───────────────────────── */
 	.lumi-switch--disabled {
 		cursor: not-allowed;
-		opacity: 0.6;
+		opacity: 0.5;
 	}
 
-	.lumi-switch--disabled .lumi-switch__track {
+	.lumi-switch--disabled .lumi-switch__label {
+		cursor: not-allowed;
+	}
+
+	/* ✅ Fix 3: disabled+checked conserva el color (atenuado), se distingue ON de OFF */
+	.lumi-switch--disabled.lumi-switch--checked .lumi-switch__track {
+		background: color-mix(in srgb, var(--switch-color) 55%, var(--lumi-color-border));
+	}
+
+	.lumi-switch--disabled:not(.lumi-switch--checked) .lumi-switch__track {
 		background: var(--lumi-color-border);
-		border-color: var(--lumi-color-border);
+		box-shadow: none;
 	}
 
-	/* Accessibility */
+	/* ── Reduced motion ───────────────────────── */
 	@media (prefers-reduced-motion: reduce) {
-		.lumi-switch__track,
-		.lumi-switch__thumb {
+		.lumi-switch__thumb,
+		.lumi-switch__track {
 			transition: none;
 		}
 	}

@@ -46,11 +46,32 @@
 
 	let searchQuery = $state('');
 	let currentPage = $state(1);
-	// Use selected prop directly (it's $bindable), no need for internal state
 	let sortColumn = $state<string | null>(null);
 	let sortDirection = $state<'asc' | 'desc' | null>(null);
 
-	const processedData = $derived(() => {
+	// ── Row identity ──────────────────────────
+	// ✅ Fix 2: función robusta que no depende de un index externo
+	function getRowKey(row: TableRow): string {
+		if (row.id != null) return String(row.id);
+		if (row.key != null) return String(row.key);
+		// Fallback: hash de contenido para rows sin id/key
+		try {
+			return `row-${JSON.stringify(row)}`;
+		} catch {
+			return `row-${Object.values(row).join('-')}`;
+		}
+	}
+
+	// Para el keyed each, necesitamos un key estable con index como fallback
+	function getRowListKey(row: TableRow, index: number): string {
+		if (row.id != null) return String(row.id);
+		if (row.key != null) return String(row.key);
+		return `row-${index}`;
+	}
+
+	// ── Processed data ────────────────────────
+	// ✅ Fix 1: $derived.by consistente
+	const processedData = $derived.by(() => {
 		if (!data) return [];
 
 		let result = [...data];
@@ -64,68 +85,75 @@
 
 		if (sortColumn && sortDirection && sortable) {
 			const col = sortColumn;
+			const dir = sortDirection;
 			result.sort((a, b) => {
 				const aVal = a[col] as unknown;
 				const bVal = b[col] as unknown;
 
 				if (aVal === bVal) return 0;
-				if (aVal === null || aVal === undefined) return 1;
-				if (bVal === null || bVal === undefined) return -1;
+				if (aVal == null) return 1;
+				if (bVal == null) return -1;
 
+				let comparison: number;
 				if (typeof aVal === 'number' && typeof bVal === 'number') {
-					const comparison = aVal - bVal;
-					return sortDirection === 'asc' ? comparison : -comparison;
+					comparison = aVal - bVal;
+				} else {
+					comparison = String(aVal).localeCompare(String(bVal), undefined, {
+						numeric: true,
+						sensitivity: 'base'
+					});
 				}
 
-				const aString = String(aVal);
-				const bString = String(bVal);
-				const comparison = aString.localeCompare(bString, undefined, {
-					numeric: true,
-					sensitivity: 'base'
-				});
-				return sortDirection === 'asc' ? comparison : -comparison;
+				return dir === 'asc' ? comparison : -comparison;
 			});
 		}
 
 		return result;
 	});
 
-	const totalItems = $derived(() => processedData().length);
+	const totalItems = $derived(processedData.length);
 
-	const totalPages = $derived(() => {
-		if (!totalItems()) return 0;
-		return Math.ceil(totalItems() / itemsPerPage);
-	});
+	const totalPages = $derived(totalItems === 0 ? 0 : Math.ceil(totalItems / itemsPerPage));
 
-	const currentPageData = $derived(() => {
-		if (!pagination) return processedData();
+	const currentPageData = $derived.by(() => {
+		if (!pagination) return processedData;
 		const start = (currentPage - 1) * itemsPerPage;
-		const end = start + itemsPerPage;
-		return processedData().slice(start, end);
+		return processedData.slice(start, start + itemsPerPage);
 	});
 
-	const isAllSelected = $derived(() => {
+	const isAllSelected = $derived.by(() => {
+		if (!data || !selectable || currentPageData.length === 0) return false;
+		return currentPageData.every((item) => isRowSelected(item));
+	});
+
+	const isPartiallySelected = $derived.by(() => {
 		if (!data || !selectable) return false;
-		const currentData = currentPageData();
-		return currentData.length > 0 && currentData.every((item) => isRowSelected(item));
+		const count = currentPageData.filter((item) => isRowSelected(item)).length;
+		return count > 0 && count < currentPageData.length;
 	});
 
-	const isPartiallySelected = $derived(() => {
-		if (!data || !selectable) return false;
-		const currentData = currentPageData();
-		const selectedCount = currentData.filter((item) => isRowSelected(item)).length;
-		return selectedCount > 0 && selectedCount < currentData.length;
-	});
-
-	const paginationData = $derived(() => ({
+	const paginationData = $derived({
 		currentPage,
-		totalPages: totalPages(),
+		totalPages,
 		itemsPerPage,
-		totalItems: totalItems()
-	}));
+		totalItems
+	});
 
-	const tableClasses = $derived(() => {
-		return [
+	// ── Page numbers ──────────────────────────
+	const pageNumbers = $derived.by(() => {
+		if (totalPages <= 5) {
+			return Array.from({ length: totalPages }, (_, i) => i + 1);
+		}
+		if (currentPage <= 3) return [1, 2, 3, 4, 5];
+		if (currentPage >= totalPages - 2) {
+			return Array.from({ length: 5 }, (_, i) => totalPages - 4 + i);
+		}
+		return [currentPage - 2, currentPage - 1, currentPage, currentPage + 1, currentPage + 2];
+	});
+
+	// ── Classes ───────────────────────────────
+	const tableClasses = $derived(
+		[
 			'lumi-table',
 			compact && 'lumi-table--compact',
 			stripe && 'lumi-table--stripe',
@@ -134,31 +162,27 @@
 			className
 		]
 			.filter(Boolean)
-			.join(' ');
-	});
+			.join(' ')
+	);
 
 	const emptyIconSize = `${getIconSize('2xl')}px`;
 
-	const getRowKey = (row: TableRow, index: number): string => {
-		return row.id?.toString() || row.key?.toString() || `row-${index}`;
-	};
+	// ── Event handlers ────────────────────────
+	// ✅ Fix 8: una sola fuente de verdad para search → page reset
+	function handleSearch(): void {
+		const trimmed = searchQuery.trim();
+		if (searchQuery !== trimmed) searchQuery = trimmed;
+		onsearch?.(trimmed);
+		if (pagination) currentPage = 1;
+	}
 
-	const handleSearch = () => {
-		const trimmedQuery = searchQuery.trim();
-		if (searchQuery !== trimmedQuery) {
-			searchQuery = trimmedQuery;
-		}
-		onsearch?.(trimmedQuery);
-		if (pagination && currentPage !== 1) currentPage = 1;
-	};
-
-	const handleSort = (column: string) => {
+	function handleSort(column: string): void {
 		if (!sortable) return;
 
 		if (sortColumn === column) {
 			if (sortDirection === 'asc') {
 				sortDirection = 'desc';
-			} else if (sortDirection === 'desc') {
+			} else {
 				sortDirection = null;
 				sortColumn = null;
 			}
@@ -168,33 +192,44 @@
 		}
 
 		onsort?.(column, sortDirection);
-	};
+	}
 
-	const toggleSelectAll = (checked: boolean) => {
+	function toggleSelectAll(checked: boolean): void {
 		if (!data || !selectable) return;
 
-		const currentData = currentPageData();
-
 		if (checked) {
-			currentData.forEach((row) => {
-				if (!isRowSelected(row)) {
-					selected = [...selected, row];
-				}
-			});
+			// ✅ Fix 2: usa getRowKey sin index
+			const selectedKeys = new Set(selected.map((r) => getRowKey(r)));
+			const newSelections = currentPageData.filter((r) => !selectedKeys.has(getRowKey(r)));
+			selected = [...selected, ...newSelections];
 		} else {
-			const currentIds = new Set(currentData.map((row) => getRowKey(row, 0)));
-			selected = selected.filter((item) => !currentIds.has(getRowKey(item, 0)));
+			const pageKeys = new Set(currentPageData.map((r) => getRowKey(r)));
+			selected = selected.filter((item) => !pageKeys.has(getRowKey(item)));
 		}
-	};
+	}
 
-	const handleRowClick = (row: TableRow, index: number) => {
+	// ✅ Fix 3: stopPropagation en checkbox cell
+	function handleSelectCellClick(event: MouseEvent): void {
+		event.stopPropagation();
+	}
+
+	function handleRowClick(row: TableRow, index: number): void {
 		onRowClick?.(row, index);
-	};
+	}
 
-	const handleRowSelect = (row: TableRow, checked: boolean) => {
+	// ✅ Fix 11: keyboard support para filas
+	function handleRowKeydown(event: KeyboardEvent, row: TableRow, index: number): void {
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault();
+			onRowClick?.(row, index);
+		}
+	}
+
+	function handleRowSelect(row: TableRow, checked: boolean): void {
 		if (!selectable) return;
 
-		const index = selected.findIndex((item) => getRowKey(item, 0) === getRowKey(row, 0));
+		const rowKey = getRowKey(row);
+		const index = selected.findIndex((item) => getRowKey(item) === rowKey);
 
 		if (checked && index === -1) {
 			selected = [...selected, row];
@@ -203,22 +238,21 @@
 		}
 
 		onRowSelect?.(row, checked);
-	};
+	}
 
-	const isRowSelected = (row: TableRow): boolean => {
+	function isRowSelected(row: TableRow): boolean {
 		if (!selectable) return false;
-		return selected.some((item) => getRowKey(item, 0) === getRowKey(row, 0));
-	};
+		const rowKey = getRowKey(row);
+		return selected.some((item) => getRowKey(item) === rowKey);
+	}
 
-	const goToPage = (page: number) => {
-		if (page >= 1 && page <= totalPages()) {
-			currentPage = page;
-			onPageChange?.(page);
-		} else if (totalPages() === 0 && page === 1) {
-			currentPage = 1;
-		}
-	};
+	function goToPage(page: number): void {
+		if (page < 1 || page > totalPages) return;
+		currentPage = page;
+		onPageChange?.(page);
+	}
 
+	// ── Context ───────────────────────────────
 	setContext('table', {
 		get compact() {
 			return compact;
@@ -243,27 +277,19 @@
 		isRowSelected
 	});
 
-	// selected prop is now used directly (no internal state sync needed)
-
+	// ── Effects ───────────────────────────────
+	// ✅ Fix 8: solo corrección de página fuera de rango
 	$effect(() => {
-		const hasSearch = Boolean(searchQuery && search);
-		if (pagination && hasSearch && currentPage !== 1) {
-			currentPage = 1;
-		}
-	});
-
-	$effect(() => {
-		const pages = totalPages();
 		if (!pagination) return;
-		if (pages === 0 && currentPage !== 1) {
+		if (totalPages === 0 && currentPage !== 1) {
 			currentPage = 1;
-		} else if (pages > 0 && currentPage > pages) {
-			currentPage = pages;
+		} else if (totalPages > 0 && currentPage > totalPages) {
+			currentPage = totalPages;
 		}
 	});
 </script>
 
-<div class={tableClasses()}>
+<div class={tableClasses}>
 	{#if search || header}
 		<header class="lumi-table__header">
 			{#if header}
@@ -283,22 +309,23 @@
 		</header>
 	{/if}
 
-	<div class="lumi-table__wrapper">
+	<!-- ✅ Fix 4: aria-busy en el wrapper, que siempre está en DOM -->
+	<div class="lumi-table__wrapper" aria-busy={loading}>
 		{#if loading}
-			<div class="lumi-table__loading">
+			<div class="lumi-table__loading" role="status">
 				<div class="lumi-table__spinner"></div>
 				<span>Loading...</span>
 			</div>
 		{:else}
-			<table class="lumi-table__content" aria-busy={loading}>
+			<table class="lumi-table__content">
 				<thead class="lumi-table__thead">
 					<tr>
 						{#if selectable}
-							<th class="lumi-table__th lumi-table__th--select">
+							<th class="lumi-table__th lumi-table__th--select" scope="col">
 								<Checkbox
 									aria-label="Select all rows"
-									checked={isAllSelected()}
-									indeterminate={isPartiallySelected()}
+									checked={isAllSelected}
+									indeterminate={isPartiallySelected}
 									size="sm"
 									onchange={toggleSelectAll}
 								/>
@@ -310,18 +337,24 @@
 					</tr>
 				</thead>
 				<tbody class="lumi-table__tbody">
-					{#if data && currentPageData().length > 0}
-						{#each currentPageData() as rowData, index (getRowKey(rowData, index))}
+					{#if data && currentPageData.length > 0}
+						{#each currentPageData as rowData, index (getRowListKey(rowData, index))}
+							{@const isSelected = isRowSelected(rowData)}
 							<tr
 								class="lumi-table__row"
-								class:lumi-table__row--selected={isRowSelected(rowData)}
+								class:lumi-table__row--selected={isSelected}
+								class:lumi-table__row--clickable={!!onRowClick}
+								tabindex={onRowClick ? 0 : undefined}
+								aria-selected={selectable ? isSelected : undefined}
 								onclick={() => handleRowClick(rowData, index)}
+								onkeydown={(e) => handleRowKeydown(e, rowData, index)}
 							>
 								{#if selectable}
-									<td class="lumi-table__td lumi-table__td--select">
+									<!-- ✅ Fix 3: stopPropagation en la celda -->
+									<td class="lumi-table__td lumi-table__td--select" onclick={handleSelectCellClick}>
 										<Checkbox
 											aria-label={`Select row ${index + 1}`}
-											checked={isRowSelected(rowData)}
+											checked={isSelected}
 											size="sm"
 											onchange={(checked) => handleRowSelect(rowData, checked)}
 										/>
@@ -330,10 +363,11 @@
 								{#if row}
 									{@render row({ row: rowData, index })}
 								{:else}
-									{#each Object.values(rowData) as value, valueIndex (`cell-${getRowKey(rowData, index)}-${valueIndex}`)}
-										<td class="lumi-table__td">
-											{value}
-										</td>
+									<!-- ✅ Fix 9: auto-render salta id/key internos -->
+									{#each Object.entries(rowData) as [key, cellValue], cellIndex (`cell-${cellIndex}`)}
+										{#if key !== 'id' && key !== 'key'}
+											<td class="lumi-table__td">{cellValue}</td>
+										{/if}
 									{/each}
 								{/if}
 							</tr>
@@ -346,9 +380,9 @@
 				</tbody>
 			</table>
 
-			{#if data && totalItems() === 0}
+			{#if data && totalItems === 0}
 				<div class="lumi-table__empty" role="status" aria-live="polite">
-					<div class="lumi-table__empty-icon">
+					<div class="lumi-table__empty-icon" aria-hidden="true">
 						<Icon icon="inbox" size={emptyIconSize} />
 					</div>
 					<span class="lumi-table__empty-text">{noDataText}</span>
@@ -357,74 +391,81 @@
 		{/if}
 	</div>
 
-	{#if pagination && totalPages() > 1 && !loading}
-		<div class="lumi-table__pagination">
+	{#if pagination && !loading}
+		<div class="lumi-table__pagination" aria-label="Table pagination">
 			{#if paginationSlot}
-				{@render paginationSlot(paginationData())}
+				{@render paginationSlot(paginationData)}
 			{:else}
 				<div class="lumi-table__pagination-info">
 					<span class="lumi-table__pagination-text">
-						Showing {totalItems() === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} - {Math.min(
-							currentPage * itemsPerPage,
-							totalItems()
-						)} of {totalItems()}
+						{#if totalItems === 0}
+							No results
+						{:else}
+							Showing {(currentPage - 1) * itemsPerPage + 1}–{Math.min(
+								currentPage * itemsPerPage,
+								totalItems
+							)} of {totalItems}
+						{/if}
 					</span>
 				</div>
-				<div class="lumi-table__pagination-controls">
-					<Button
-						size="sm"
-						type="border"
-						icon="chevron-left"
-						disabled={currentPage === 1}
-						onclick={() => goToPage(currentPage - 1)}
-						aria-label="Previous page"
-					/>
-					<div class="lumi-table__pagination-pages">
-						{#each Array.from({ length: Math.min(5, totalPages()) }, (_, i) => {
-							const total = totalPages();
-							if (total <= 5) return i + 1;
-							if (currentPage <= 3) return i + 1;
-							if (currentPage >= total - 2) return total - 4 + i;
-							return currentPage - 2 + i;
-						}) as page (page)}
-							<button
-								class="lumi-table__pagination-page"
-								class:lumi-table__pagination-page--active={currentPage === page}
-								onclick={() => goToPage(page)}
-							>
-								{page}
-							</button>
-						{/each}
-					</div>
-					<Button
-						size="sm"
-						type="border"
-						icon="chevron-right"
-						disabled={currentPage === totalPages()}
-						onclick={() => goToPage(currentPage + 1)}
-						aria-label="Next page"
-					/>
-				</div>
+
+				{#if totalPages > 1}
+					<nav class="lumi-table__pagination-controls" aria-label="Page navigation">
+						<Button
+							size="sm"
+							type="border"
+							icon="chevron-left"
+							disabled={currentPage === 1}
+							onclick={() => goToPage(currentPage - 1)}
+							aria-label="Previous page"
+						/>
+
+						<div class="lumi-table__pagination-pages">
+							{#each pageNumbers as page (page)}
+								<button
+									class="lumi-table__pagination-page"
+									class:lumi-table__pagination-page--active={currentPage === page}
+									aria-current={currentPage === page ? 'page' : undefined}
+									aria-label={`Page ${page}`}
+									onclick={() => goToPage(page)}
+								>
+									{page}
+								</button>
+							{/each}
+						</div>
+
+						<Button
+							size="sm"
+							type="border"
+							icon="chevron-right"
+							disabled={currentPage === totalPages}
+							onclick={() => goToPage(currentPage + 1)}
+							aria-label="Next page"
+						/>
+					</nav>
+				{/if}
 			{/if}
 		</div>
 	{/if}
 </div>
 
 <style>
-	/* ========================================================================== */
-	/* LUMI TABLE - Premium 2026 Design */
-	/* ========================================================================== */
+	/* ============================================================================
+	 * TABLE COMPONENT
+	 * ============================================================================ */
 
 	.lumi-table {
 		width: 100%;
 		display: flex;
 		flex-direction: column;
 		gap: var(--lumi-space-md);
+		font-family: var(--lumi-font-family-sans);
+		--table-row-hover-bg: color-mix(in srgb, var(--lumi-color-primary) 4%, transparent);
+		--table-row-active-bg: color-mix(in srgb, var(--lumi-color-primary) 8%, transparent);
+		--table-row-lift: calc(var(--lumi-space-2xs) * -0.25);
 	}
 
-	/* ========================================================================== */
-	/* HEADER */
-	/* ========================================================================== */
+	/* ── Header ───────────────────────────────── */
 
 	.lumi-table__header {
 		display: flex;
@@ -436,42 +477,39 @@
 
 	.lumi-table__search {
 		flex: 1;
-		max-width: calc(var(--lumi-space-4xl) * 5);
-		min-width: calc(var(--lumi-space-4xl) * 3);
+		max-width: 360px;
+		min-width: 200px;
 	}
 
-	/* ========================================================================== */
-	/* TABLE WRAPPER - Premium Container */
-	/* ========================================================================== */
+	/* ── Table wrapper ────────────────────────── */
+	/* ✅ Fix 5: overflow correcto */
 
 	.lumi-table__wrapper {
 		position: relative;
 		width: 100%;
-		overflow: hidden;
 		background:
 			linear-gradient(
 				180deg,
-				rgba(var(--lumi-color-primary-rgb), 0.05) 0%,
-				rgba(var(--lumi-color-primary-rgb), 0) 20%
+				color-mix(in srgb, var(--lumi-color-primary) 4%, transparent) 0%,
+				transparent 20%
 			),
 			var(--lumi-color-surface);
-		border: 1px solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-2xl);
-		box-shadow: var(--lumi-shadow-md);
+		box-shadow: var(--lumi-shadow-sm);
 		overflow-x: auto;
 		transition:
-			var(--lumi-transition-shadow),
-			border-color var(--lumi-duration-base) var(--lumi-easing-default);
+			box-shadow 0.2s ease,
+			border-color 0.2s ease;
 	}
 
+	/* ✅ Fix 6: hover shadow distinto del default */
 	.lumi-table__wrapper:hover {
 		box-shadow: var(--lumi-shadow-md);
 		border-color: var(--lumi-color-border);
 	}
 
-	/* ========================================================================== */
-	/* TABLE CONTENT */
-	/* ========================================================================== */
+	/* ── Table content ────────────────────────── */
 
 	.lumi-table__content {
 		width: 100%;
@@ -479,9 +517,7 @@
 		min-width: 100%;
 	}
 
-	/* ========================================================================== */
-	/* HEADER ROW - Modern Gradient */
-	/* ========================================================================== */
+	/* ── Table header ─────────────────────────── */
 
 	.lumi-table__thead {
 		background: linear-gradient(
@@ -489,7 +525,7 @@
 			var(--lumi-color-surface) 0%,
 			var(--lumi-color-background-hover) 100%
 		);
-		border-bottom: 1px solid var(--lumi-color-border);
+		border-bottom: var(--lumi-border-width-thin) solid var(--lumi-color-border);
 		position: sticky;
 		top: 0;
 		z-index: 1;
@@ -508,43 +544,60 @@
 		background: transparent;
 	}
 
-	/* ========================================================================== */
-	/* BODY ROWS - Premium Styling */
-	/* ========================================================================== */
+	/* ── Body rows ────────────────────────────── */
 
 	.lumi-table__tbody .lumi-table__row {
-		border-bottom: 1px solid var(--lumi-color-border-light);
-		transition:
-			background-color var(--lumi-duration-fast) var(--lumi-easing-default),
-			border-left-color var(--lumi-duration-fast) var(--lumi-easing-default);
+		border-bottom: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
+		/* ✅ Fix 7: sin !important, usa border-left invisible */
 		border-left: var(--lumi-border-width-thick) solid transparent;
+		transition:
+			background-color 0.15s ease,
+			border-left-color 0.15s ease,
+			transform 0.15s ease;
 	}
 
 	.lumi-table__tbody .lumi-table__row:last-child {
 		border-bottom: none;
 	}
 
-	/* Hover effect with accent border */
-	.lumi-table--hover .lumi-table__tbody .lumi-table__row:hover {
-		background: var(--lumi-color-primary-50);
-		border-left-color: var(--lumi-color-primary);
+	/* ✅ Fix 11: cursor + focus visible solo en rows clickables */
+	.lumi-table__row--clickable {
 		cursor: pointer;
 	}
 
-	/* Selected row */
-	.lumi-table__row--selected {
-		background: var(--lumi-color-primary-50) !important;
-		border-left-color: var(--lumi-color-primary) !important;
+	.lumi-table__row--clickable:focus-visible {
+		outline: var(--lumi-border-width-thick) solid
+			color-mix(in srgb, var(--lumi-color-primary) 35%, transparent);
+		outline-offset: -2px;
+		border-radius: var(--lumi-radius-sm);
 	}
 
-	/* Stripe pattern */
-	.lumi-table--stripe .lumi-table__tbody .lumi-table__row:nth-child(even) {
-		background: rgba(var(--lumi-color-background-rgb), 0.5);
+	/* Hover */
+	.lumi-table--hover .lumi-table__tbody .lumi-table__row:hover {
+		background: var(--table-row-hover-bg);
+		border-left-color: var(--lumi-color-primary);
+		transform: translateY(var(--table-row-lift));
 	}
 
-	/* ========================================================================== */
-	/* TABLE CELLS */
-	/* ========================================================================== */
+	/* ✅ Fix 7: selected sin !important, especificidad por doble clase */
+	.lumi-table__tbody .lumi-table__row.lumi-table__row--selected {
+		background: var(--table-row-active-bg);
+		border-left-color: var(--lumi-color-primary);
+	}
+
+	.lumi-table--hover .lumi-table__tbody .lumi-table__row.lumi-table__row--selected:hover {
+		background: var(--table-row-active-bg);
+		transform: none;
+	}
+
+	/* Stripe */
+	.lumi-table--stripe
+		.lumi-table__tbody
+		.lumi-table__row:nth-child(even):not(.lumi-table__row--selected) {
+		background: color-mix(in srgb, var(--lumi-color-background-hover) 50%, transparent);
+	}
+
+	/* ── Table cells ──────────────────────────── */
 
 	.lumi-table__td,
 	.lumi-table__tbody :global(td) {
@@ -554,15 +607,15 @@
 		vertical-align: middle;
 	}
 
-	/* Select Column */
+	/* Select column */
 	.lumi-table__th--select,
 	.lumi-table__td--select {
-		width: calc(var(--lumi-space-3xl) + var(--lumi-space-xs));
+		width: 48px;
 		padding-right: var(--lumi-space-xs);
 		text-align: center;
 	}
 
-	/* Compact variant */
+	/* Compact */
 	.lumi-table--compact .lumi-table__th,
 	.lumi-table--compact .lumi-table__thead :global(th),
 	.lumi-table--compact .lumi-table__td,
@@ -571,9 +624,7 @@
 		font-size: var(--lumi-font-size-xs);
 	}
 
-	/* ========================================================================== */
-	/* LOADING STATE - Skeleton Animation */
-	/* ========================================================================== */
+	/* ── Loading ──────────────────────────────── */
 
 	.lumi-table__loading {
 		padding: var(--lumi-space-4xl);
@@ -583,15 +634,16 @@
 		justify-content: center;
 		gap: var(--lumi-space-md);
 		color: var(--lumi-color-text-muted);
+		font-size: var(--lumi-font-size-sm);
 	}
 
 	.lumi-table__spinner {
-		width: var(--lumi-space-xxl);
-		height: var(--lumi-space-xxl);
+		width: 24px;
+		height: 24px;
 		border: var(--lumi-border-width-thick) solid var(--lumi-color-border);
 		border-top-color: var(--lumi-color-primary);
-		border-radius: var(--lumi-radius-full);
-		animation: lumi-table-spin var(--lumi-duration-slower) linear infinite;
+		border-radius: 50%;
+		animation: lumi-table-spin 0.6s linear infinite;
 	}
 
 	@keyframes lumi-table-spin {
@@ -600,9 +652,7 @@
 		}
 	}
 
-	/* ========================================================================== */
-	/* EMPTY STATE - Premium Design */
-	/* ========================================================================== */
+	/* ── Empty state ──────────────────────────── */
 
 	.lumi-table__empty {
 		padding: var(--lumi-space-4xl);
@@ -614,8 +664,8 @@
 	}
 
 	.lumi-table__empty-icon {
-		color: var(--lumi-color-text-light);
-		opacity: 0.6;
+		color: var(--lumi-color-text-muted);
+		opacity: 0.4;
 	}
 
 	.lumi-table__empty-text {
@@ -624,9 +674,7 @@
 		font-weight: var(--lumi-font-weight-medium);
 	}
 
-	/* ========================================================================== */
-	/* PAGINATION - Modern Controls */
-	/* ========================================================================== */
+	/* ── Pagination ───────────────────────────── */
 
 	.lumi-table__pagination {
 		display: flex;
@@ -639,12 +687,12 @@
 	.lumi-table__pagination-info {
 		display: flex;
 		align-items: center;
-		gap: var(--lumi-space-xs);
 	}
 
 	.lumi-table__pagination-text {
 		font-size: var(--lumi-font-size-xs);
 		color: var(--lumi-color-text-muted);
+		/* ✅ UI: en-dash tipográfico, no guion */
 	}
 
 	.lumi-table__pagination-controls {
@@ -659,6 +707,7 @@
 		gap: var(--lumi-space-2xs);
 	}
 
+	/* ✅ Fix 12: transiciones explícitas */
 	.lumi-table__pagination-page {
 		min-width: var(--lumi-space-xl);
 		height: var(--lumi-space-xl);
@@ -670,31 +719,34 @@
 		font-weight: var(--lumi-font-weight-medium);
 		color: var(--lumi-color-text-muted);
 		background: transparent;
-		border: 1px solid transparent;
+		border: var(--lumi-border-width-thin) solid transparent;
 		border-radius: var(--lumi-radius-md);
 		cursor: pointer;
-		transition: var(--lumi-transition-all);
+		transition:
+			background-color 0.15s ease,
+			color 0.15s ease,
+			border-color 0.15s ease;
 	}
 
-	.lumi-table__pagination-page:hover {
+	.lumi-table__pagination-page:hover:not(.lumi-table__pagination-page--active) {
 		background: var(--lumi-color-background-hover);
 		color: var(--lumi-color-text);
+	}
+
+	.lumi-table__pagination-page:focus-visible {
+		outline: var(--lumi-border-width-thick) solid
+			color-mix(in srgb, var(--lumi-color-primary) 35%, transparent);
+		outline-offset: 1px;
 	}
 
 	.lumi-table__pagination-page--active {
 		background: var(--lumi-color-primary);
 		color: var(--lumi-color-white);
 		font-weight: var(--lumi-font-weight-semibold);
+		border-color: var(--lumi-color-primary);
 	}
 
-	.lumi-table__pagination-page--active:hover {
-		background: var(--lumi-color-primary);
-		color: var(--lumi-color-white);
-	}
-
-	/* ========================================================================== */
-	/* RESPONSIVE */
-	/* ========================================================================== */
+	/* ── Responsive ───────────────────────────── */
 
 	@media (max-width: 768px) {
 		.lumi-table__header {
@@ -704,6 +756,7 @@
 
 		.lumi-table__search {
 			max-width: none;
+			min-width: 0;
 		}
 
 		.lumi-table__pagination {
@@ -713,6 +766,19 @@
 
 		.lumi-table__pagination-pages {
 			display: none;
+		}
+	}
+
+	/* ── Reduced motion ───────────────────────── */
+
+	@media (prefers-reduced-motion: reduce) {
+		.lumi-table__tbody .lumi-table__row,
+		.lumi-table__pagination-page {
+			transition: none;
+		}
+
+		.lumi-table__spinner {
+			animation-duration: 1.5s;
 		}
 	}
 </style>
