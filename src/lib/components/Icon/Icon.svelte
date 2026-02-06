@@ -13,8 +13,23 @@
 		onclick
 	}: IconProps = $props();
 
-	const semanticColors = new Set(['primary', 'secondary', 'success', 'warning', 'danger', 'info', 'muted']);
-	const semanticBackgrounds = new Set(['primary', 'secondary', 'success', 'warning', 'danger', 'info']);
+	const semanticColors = new Set([
+		'primary',
+		'secondary',
+		'success',
+		'warning',
+		'danger',
+		'info',
+		'muted'
+	]);
+	const semanticBackgrounds = new Set([
+		'primary',
+		'secondary',
+		'success',
+		'warning',
+		'danger',
+		'info'
+	]);
 
 	// Get icon component from registry
 	const IconComponent = $derived(icon ? getIcon(icon) : null);

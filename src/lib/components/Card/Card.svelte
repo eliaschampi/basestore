@@ -136,7 +136,8 @@
 	.lumi-card--clickable:focus-visible {
 		outline: none;
 		box-shadow:
-			0 0 0 var(--lumi-border-width-thick) color-mix(in srgb, var(--lumi-color-primary) 18%, transparent),
+			0 0 0 var(--lumi-border-width-thick)
+				color-mix(in srgb, var(--lumi-color-primary) 18%, transparent),
 			var(--lumi-shadow-md);
 	}
 

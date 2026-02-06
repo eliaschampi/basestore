@@ -30,7 +30,13 @@
 	const ariaLabel = $derived(() => text || 'Loading');
 </script>
 
-<div class={classes()} style={styleVars()} role="status" aria-live="polite" aria-label={ariaLabel()}>
+<div
+	class={classes()}
+	style={styleVars()}
+	role="status"
+	aria-live="polite"
+	aria-label={ariaLabel()}
+>
 	<div class="lumi-loading__indicator" aria-hidden="true">
 		<span class="lumi-loading__ring"></span>
 		<span class="lumi-loading__core"></span>

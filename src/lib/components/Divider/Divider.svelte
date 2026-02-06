@@ -69,7 +69,7 @@
 	<button
 		type="button"
 		class={dividerClasses()}
-		onclick={onclick}
+		{onclick}
 		onkeydown={handleKeydown}
 		aria-label={ariaLabel || 'Divider button'}
 	>
@@ -153,7 +153,8 @@
 	}
 
 	.lumi-divider--interactive:focus-visible {
-		outline: var(--lumi-border-width-thick) solid color-mix(in srgb, var(--lumi-color-primary) 30%, transparent);
+		outline: var(--lumi-border-width-thick) solid
+			color-mix(in srgb, var(--lumi-color-primary) 30%, transparent);
 		outline-offset: var(--lumi-space-2xs);
 		border-radius: var(--lumi-radius-md);
 	}
