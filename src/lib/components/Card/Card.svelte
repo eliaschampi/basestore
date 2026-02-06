@@ -7,6 +7,7 @@
 		header?: Snippet;
 		footer?: Snippet;
 		onclick?: (event: MouseEvent) => void;
+		'aria-label'?: string;
 	}
 
 	const {
@@ -20,6 +21,7 @@
 		spaced = false,
 		class: className,
 		style,
+		'aria-label': ariaLabel = '',
 		onclick,
 		children,
 		header,
@@ -38,29 +40,21 @@
 		return classes.join(' ');
 	});
 
+	const cardStyles = $derived(() => {
+		const imageHeightStyle = `--card-image-height: ${imageHeight}px;`;
+		return style ? `${imageHeightStyle} ${style}` : imageHeightStyle;
+	});
+
 	function handleClick(event: MouseEvent) {
 		if (clickable && onclick) {
 			onclick(event);
 		}
 	}
-
-	function handleKeyDown(event: KeyboardEvent) {
-		if (clickable && (event.key === 'Enter' || event.key === ' ')) {
-			event.preventDefault();
-			handleClick(event as unknown as MouseEvent);
-		}
-	}
 </script>
 
-<div
-	class={cardClasses()}
-	{style}
-	onclick={handleClick}
-	onkeydown={handleKeyDown}
-	role={clickable ? 'button' : undefined}
->
+{#snippet cardContent()}
 	{#if image}
-		<div class="lumi-card__image" style="height: {imageHeight}px;">
+		<div class="lumi-card__image">
 			<img src={image} alt={imageAlt || title || 'Card image'} />
 		</div>
 	{/if}
@@ -91,35 +85,65 @@
 			{@render footer()}
 		</div>
 	{/if}
-</div>
+{/snippet}
+
+{#if clickable}
+	<button
+		type="button"
+		class={cardClasses()}
+		style={cardStyles()}
+		onclick={handleClick}
+		aria-label={ariaLabel || title || 'Card'}
+	>
+		{@render cardContent()}
+	</button>
+{:else}
+	<div class={cardClasses()} style={cardStyles()}>
+		{@render cardContent()}
+	</div>
+{/if}
 
 <style>
 	.lumi-card {
 		position: relative;
-		background: var(--lumi-color-surface);
+		background:
+			linear-gradient(
+				180deg,
+				rgba(var(--lumi-color-primary-rgb), 0.04) 0%,
+				rgba(var(--lumi-color-primary-rgb), 0) 30%
+			),
+			var(--lumi-color-surface);
 		border: 1px solid var(--lumi-color-border);
 		border-radius: var(--lumi-radius-2xl);
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
 		box-shadow: var(--lumi-shadow-md);
-		transition: var(--lumi-transition-shadow);
+		transition: var(--lumi-transition-all);
 		width: 100%;
 		text-align: left;
 		color: var(--lumi-color-text);
+		appearance: none;
+		font: inherit;
+		padding: 0;
 	}
-
-	/* Hover shadow only for clickable cards - base card uses static shadow like Navbar */
 
 	/* Clickable state */
 	.lumi-card--clickable {
 		cursor: pointer;
 	}
 
+	.lumi-card--clickable:focus-visible {
+		outline: none;
+		box-shadow:
+			0 0 0 var(--lumi-border-width-thick) color-mix(in srgb, var(--lumi-color-primary) 18%, transparent),
+			var(--lumi-shadow-md);
+	}
+
 	.lumi-card--hoverable:hover {
-		transform: translateY(-2px);
-		box-shadow: var(--lumi-shadow-md);
-		border-color: var(--lumi-color-primary);
+		transform: translateY(calc(var(--lumi-space-2xs) * -1));
+		box-shadow: var(--lumi-shadow-lg);
+		border-color: color-mix(in srgb, var(--lumi-color-primary) 25%, var(--lumi-color-border));
 	}
 
 	.lumi-card--hoverable:active {
@@ -137,6 +161,7 @@
 	/* Image */
 	.lumi-card__image {
 		width: 100%;
+		height: var(--card-image-height);
 		overflow: hidden;
 		flex-shrink: 0;
 		position: relative;
@@ -148,7 +173,7 @@
 		height: 100%;
 		object-fit: cover;
 		display: block;
-		transition: transform 0.5s ease;
+		transition: transform var(--lumi-duration-slow) var(--lumi-easing-default);
 	}
 
 	.lumi-card--hoverable:hover .lumi-card__image img {

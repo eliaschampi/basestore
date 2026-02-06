@@ -27,4 +27,6 @@ export interface CheckboxProps {
 	children?: Snippet;
 	/** Change event handler */
 	onchange?: (checked: boolean, event: Event) => void;
+	/** Accessible label for screen readers when visual label is custom/hidden */
+	'aria-label'?: string;
 }

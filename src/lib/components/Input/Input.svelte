@@ -31,6 +31,7 @@
 		disabled = false,
 		readonly = false,
 		required = false,
+		'aria-label': ariaLabel = '',
 		class: className = '',
 		oninput,
 		onfocus,
@@ -83,7 +84,8 @@
 	// CSS Variables for dynamic styling
 	const styleVars = $derived(() => {
 		const colorVar = `var(--lumi-color-${activeColor})`;
-		return `--input-color: ${colorVar};`;
+		const colorRgbVar = `var(--lumi-color-${activeColor}-rgb)`;
+		return `--input-color: ${colorVar}; --input-color-rgb: ${colorRgbVar};`;
 	});
 
 	const containerClasses = $derived(() => {
@@ -168,7 +170,6 @@
 				class:lumi-input__icon--no-border={iconNoBorder}
 				aria-label={iconLabel || 'Input icon'}
 				onclick={handleIconClick}
-				tabindex="-1"
 			>
 				<Icon {icon} size={iconSizePx} />
 			</button>
@@ -183,6 +184,7 @@
 			{disabled}
 			{readonly}
 			{required}
+			aria-label={ariaLabel || label || placeholder || undefined}
 			placeholder={labelPlaceholder || placeholder}
 			class="lumi-input"
 			class:lumi-input--has-prefix={!!(icon && !iconAfter)}
@@ -206,7 +208,6 @@
 						class="lumi-input__action lumi-input__suffix-item"
 						aria-label={actionLabel || 'Input action'}
 						onclick={handleActionClick}
-						tabindex="-1"
 					>
 						<Icon icon={actionIcon} size={iconSizePx} />
 					</button>
@@ -219,7 +220,6 @@
 						class:lumi-input__icon--no-border={iconNoBorder}
 						aria-label={iconLabel || 'Input icon'}
 						onclick={handleIconClick}
-						tabindex="-1"
 					>
 						<Icon {icon} size={iconSizePx} />
 					</button>
@@ -261,7 +261,7 @@
 		font-weight: var(--lumi-font-weight-medium);
 		color: var(--lumi-color-text);
 		cursor: pointer;
-		transition: color 0.2s;
+		transition: var(--lumi-transition-colors);
 	}
 
 	.lumi-input-container--focused .lumi-input__label {
@@ -272,8 +272,8 @@
 		display: flex;
 		align-items: center;
 		position: relative;
-		background: var(--lumi-color-background);
-		border: 1px solid var(--input-border);
+		background: var(--lumi-color-surface-overlay);
+		border: var(--lumi-border-width-thin) solid var(--input-border);
 		border-radius: var(--lumi-radius-md);
 		transition: var(--lumi-transition-all);
 		overflow: hidden;
@@ -295,7 +295,8 @@
 
 	.lumi-input-container--focused .lumi-input__wrapper {
 		border-color: var(--input-focus);
-		box-shadow: 0 0 0 3px color-mix(in srgb, var(--input-focus) 20%, transparent);
+		box-shadow:
+			0 0 0 var(--lumi-border-width-thick) color-mix(in srgb, var(--input-focus) 22%, transparent);
 	}
 
 	.lumi-input-container--focused .lumi-input__icon,
@@ -323,6 +324,7 @@
 		color: var(--lumi-color-text);
 		font-family: inherit;
 		font-size: var(--lumi-font-size-base);
+		line-height: var(--lumi-line-height-normal);
 		padding: var(--lumi-space-sm);
 	}
 
@@ -386,12 +388,18 @@
 		flex-shrink: 0;
 	}
 
+	.lumi-input__icon:focus-visible,
+	.lumi-input__action:focus-visible {
+		outline: var(--lumi-border-width-thick) solid color-mix(in srgb, var(--input-focus) 35%, transparent);
+		outline-offset: calc(var(--lumi-space-2xs) * -1);
+	}
+
 	.lumi-input__icon--before:not(.lumi-input__icon--no-border) {
-		border-right: 1px solid var(--lumi-color-border-light);
+		border-right: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 	}
 
 	.lumi-input__icon--after:not(.lumi-input__icon--no-border) {
-		border-left: 1px solid var(--lumi-color-border-light);
+		border-left: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 	}
 
 	.lumi-input__icon:hover,
@@ -409,7 +417,7 @@
 	.lumi-input__message,
 	.lumi-input__description {
 		font-size: var(--lumi-font-size-xs);
-		margin-top: -4px;
+		margin-top: calc(var(--lumi-space-2xs) * -1);
 	}
 
 	.lumi-input__message {

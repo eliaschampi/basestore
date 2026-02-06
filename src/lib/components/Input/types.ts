@@ -101,6 +101,9 @@ export interface InputProps {
 	/** Whether input is required */
 	required?: boolean;
 
+	/** Accessible label when visual label is not provided */
+	'aria-label'?: string;
+
 	/** Additional CSS classes */
 	class?: string;
 

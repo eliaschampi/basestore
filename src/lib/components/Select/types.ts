@@ -31,6 +31,9 @@ export interface SelectProps {
 	/** Name attribute */
 	name?: string;
 
+	/** Accessible label when visual label is omitted */
+	'aria-label'?: string;
+
 	/** Label text */
 	label?: string;
 

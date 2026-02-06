@@ -13,6 +13,9 @@
 		onclick
 	}: IconProps = $props();
 
+	const semanticColors = new Set(['primary', 'secondary', 'success', 'warning', 'danger', 'info', 'muted']);
+	const semanticBackgrounds = new Set(['primary', 'secondary', 'success', 'warning', 'danger', 'info']);
+
 	// Get icon component from registry
 	const IconComponent = $derived(icon ? getIcon(icon) : null);
 
@@ -21,8 +24,10 @@
 		const baseClasses = ['lumi-icon', `lumi-icon--${size}`];
 
 		if (round) baseClasses.push('lumi-icon--round');
-		if (bg) baseClasses.push(`lumi-icon--bg-${bg}`);
-		if (color && color !== 'inherit') baseClasses.push(`lumi-icon--color-${color}`);
+		if (bg && semanticBackgrounds.has(bg)) baseClasses.push(`lumi-icon--bg-${bg}`);
+		if (color && color !== 'inherit' && semanticColors.has(color)) {
+			baseClasses.push(`lumi-icon--color-${color}`);
+		}
 		if (className) baseClasses.push(className);
 
 		return baseClasses.join(' ');
@@ -32,10 +37,20 @@
 	const iconStyle = $derived(() => {
 		const styles: Record<string, string> = {};
 
-		// Handle custom size (px, em, rem)
-		if (size && /(px|em|rem)/.test(size)) {
+		// Handle custom size (e.g. var(--token), clamp(), px/rem)
+		if (size && !['xs', 'sm', 'md', 'lg', 'xl', '2xl'].includes(size)) {
 			styles.width = size;
 			styles.height = size;
+		}
+
+		// Support custom CSS colors (e.g. var(--token), rgba())
+		if (color && color !== 'inherit' && !semanticColors.has(color)) {
+			styles.color = color;
+		}
+
+		// Support custom background colors outside semantic variants
+		if (bg && !semanticBackgrounds.has(bg)) {
+			styles.backgroundColor = bg;
 		}
 
 		return Object.keys(styles).length > 0

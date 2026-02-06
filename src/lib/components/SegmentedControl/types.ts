@@ -40,4 +40,7 @@ export interface SegmentedControlProps {
 
 	/** Change event handler */
 	onchange?: (value: string | number) => void;
+
+	/** Accessible group label */
+	'aria-label'?: string;
 }

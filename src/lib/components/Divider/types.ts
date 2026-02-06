@@ -20,4 +20,7 @@ export interface DividerProps {
 
 	/** Click event handler */
 	onclick?: (event: MouseEvent) => void;
+
+	/** Accessible label when used as interactive separator */
+	'aria-label'?: string;
 }

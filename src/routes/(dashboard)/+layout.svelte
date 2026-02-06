@@ -62,6 +62,13 @@
 		const last = lastName?.charAt(0) || '';
 		return (first + last).toUpperCase() || 'U';
 	}
+
+	const sidebarName = $derived(() => {
+		if (!page.data.user) return 'Faztore';
+		return `${page.data.user.name ?? ''} ${page.data.user.last_name ?? ''}`.trim();
+	});
+
+	const sidebarMeta = $derived(() => page.data.user?.email || 'Panel administrativo');
 </script>
 
 <svelte:head>
@@ -81,10 +88,18 @@
 	<!-- Sidebar -->
 	<Sidebar collapsed={sidebarCollapsed && !isMobile} mobileOpen={sidebarMobileOpen && isMobile}>
 		{#snippet header()}
-			<div class="lumi-flex lumi-align-items--center lumi-flex--gap-sm">
-				<Icon icon="package" size="32px" color="var(--lumi-color-primary)" />
+			<div class="lumi-sidebar-profile">
+				<Avatar
+					text={getInitials(page.data.user?.name, page.data.user?.last_name)}
+					size={sidebarCollapsed ? 'md' : 'xl'}
+					color="primary"
+				/>
 				{#if !sidebarCollapsed}
-					<span class="lumi-text--lg lumi-font--bold"> Faztore </span>
+					<div class="lumi-sidebar-profile__content">
+						<p class="lumi-sidebar-profile__brand">Faztore</p>
+						<p class="lumi-sidebar-profile__name">{sidebarName()}</p>
+						<p class="lumi-sidebar-profile__meta">{sidebarMeta()}</p>
+					</div>
 				{/if}
 			</div>
 		{/snippet}
@@ -198,3 +213,48 @@
 		{@render children()}
 	</main>
 </div>
+
+<style>
+	.lumi-sidebar-profile {
+		display: flex;
+		align-items: center;
+		gap: var(--lumi-space-sm);
+		width: 100%;
+	}
+
+	.lumi-sidebar-profile__content {
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--lumi-space-2xs);
+	}
+
+	.lumi-sidebar-profile__brand,
+	.lumi-sidebar-profile__name,
+	.lumi-sidebar-profile__meta {
+		margin: 0;
+		line-height: var(--lumi-line-height-tight);
+	}
+
+	.lumi-sidebar-profile__brand {
+		font-size: var(--lumi-font-size-xs);
+		font-weight: var(--lumi-font-weight-semibold);
+		color: var(--lumi-color-primary);
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+	}
+
+	.lumi-sidebar-profile__name {
+		font-size: var(--lumi-font-size-sm);
+		font-weight: var(--lumi-font-weight-semibold);
+		color: var(--lumi-color-text);
+	}
+
+	.lumi-sidebar-profile__meta {
+		font-size: var(--lumi-font-size-xs);
+		color: var(--lumi-color-text-muted);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+</style>

@@ -29,4 +29,6 @@ export interface RadioProps {
 	children?: Snippet;
 	/** Change event handler */
 	onchange?: (value: unknown, event: Event) => void;
+	/** Accessible label for screen readers when visual label is custom/hidden */
+	'aria-label'?: string;
 }

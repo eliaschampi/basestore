@@ -33,4 +33,7 @@ export interface ProgressProps {
 
 	/** Complete event handler */
 	oncomplete?: () => void;
+
+	/** Accessible label for progressbar */
+	'aria-label'?: string;
 }

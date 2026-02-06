@@ -4,6 +4,7 @@
 	import { scale } from 'svelte/transition';
 	import { createFloating } from '$lib/utils/floating.svelte';
 	import { portal } from '$lib/actions/portal';
+	import { LUMI_CONFIG } from '../config';
 	import type { DropdownProps } from './types';
 
 	interface Props {
@@ -16,6 +17,7 @@
 		maxHeight?: number;
 		offset?: number;
 		viewportPadding?: number;
+		'aria-label'?: string;
 		class?: string;
 		onshow?: () => void;
 		onhide?: () => void;
@@ -34,6 +36,7 @@
 		maxHeight = 320,
 		offset = 8,
 		viewportPadding = 12,
+		'aria-label': ariaLabel = '',
 		class: className = '',
 		onshow,
 		onhide,
@@ -46,6 +49,8 @@
 	let menuRef: HTMLDivElement | undefined = $state();
 
 	const triggerId = `lumi-dropdown-trigger-${Math.random().toString(36).substring(2, 11)}`;
+	const menuId = `lumi-dropdown-menu-${Math.random().toString(36).substring(2, 11)}`;
+	const transitionDuration = LUMI_CONFIG.transitions.fast;
 	// Floating element management
 	const floating = createFloating(
 		() => dropdownRef,
@@ -75,6 +80,8 @@
 	const dropdownClasses = $derived(() => {
 		return ['lumi-dropdown', open && 'lumi-dropdown--open', className].filter(Boolean).join(' ');
 	});
+
+	const styleVars = `--dropdown-transition-duration: ${transitionDuration}ms;`;
 
 	function openDropdown(): void {
 		if (disabled) return;
@@ -161,17 +168,22 @@
 <div
 	bind:this={dropdownRef}
 	class={dropdownClasses()}
+	style={styleVars}
 	onmouseenter={handleMouseEnter}
 	onmouseleave={handleMouseLeave}
 	role="presentation"
 >
 	<!-- Trigger -->
 	<div
+		id={triggerId}
 		class="lumi-dropdown__trigger"
 		aria-expanded={open}
-		aria-haspopup="true"
+		aria-haspopup="menu"
+		aria-controls={open ? menuId : undefined}
+		aria-disabled={disabled}
+		aria-label={ariaLabel || undefined}
 		role="button"
-		tabindex="0"
+		tabindex={disabled ? -1 : 0}
 		onclick={handleTriggerClick}
 		onkeydown={handleTriggerKeydown}
 	>
@@ -187,6 +199,7 @@
 		<div
 			bind:this={menuRef}
 			use:portal
+			id={menuId}
 			class="lumi-dropdown__menu lumi-dropdown__menu--{size}"
 			role="menu"
 			aria-labelledby={triggerId}
@@ -195,7 +208,7 @@
 				.zIndex}; {floating.floatingStyles.maxHeight
 				? `max-height: ${floating.floatingStyles.maxHeight}`
 				: ''}"
-			transition:scale={{ duration: 150, start: 0.95 }}
+			transition:scale={{ duration: transitionDuration, start: 0.96 }}
 		>
 			<div class="lumi-dropdown__content">
 				{#if content}
@@ -225,21 +238,30 @@
 	}
 
 	.lumi-dropdown__trigger:focus-visible {
-		outline: 2px solid var(--lumi-color-primary);
+		outline: var(--lumi-border-width-thick) solid var(--lumi-color-primary);
 		border-radius: var(--lumi-radius-md);
 	}
 
 	.lumi-dropdown__menu {
-		background: var(--lumi-color-surface);
+		background:
+			linear-gradient(
+				180deg,
+				rgba(var(--lumi-color-primary-rgb), 0.05) 0%,
+				rgba(var(--lumi-color-primary-rgb), 0) 22%
+			),
+			var(--lumi-color-surface-overlay);
 		border: 1px solid var(--lumi-color-border);
-		border-radius: var(--lumi-radius-xl);
+		border-radius: var(--lumi-radius-2xl);
 		box-shadow: var(--lumi-shadow-md);
 		padding: var(--lumi-space-xs);
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
-		backdrop-filter: blur(var(--lumi-blur-sm));
-		-webkit-backdrop-filter: blur(var(--lumi-blur-sm));
+		backdrop-filter: blur(var(--lumi-blur-md));
+		-webkit-backdrop-filter: blur(var(--lumi-blur-md));
+		transition:
+			opacity var(--dropdown-transition-duration) var(--lumi-easing-default),
+			transform var(--dropdown-transition-duration) var(--lumi-easing-default);
 	}
 
 	.lumi-dropdown__content {
@@ -247,11 +269,11 @@
 		max-height: inherit;
 		display: flex;
 		flex-direction: column;
-		gap: 1px;
+		gap: var(--lumi-space-2xs);
 	}
 
 	.lumi-dropdown__content::-webkit-scrollbar {
-		width: 4px;
+		width: var(--lumi-space-2xs);
 	}
 
 	.lumi-dropdown__content::-webkit-scrollbar-track {
@@ -264,11 +286,11 @@
 	}
 
 	.lumi-dropdown__menu--sm {
-		min-width: 140px;
+		min-width: calc(var(--lumi-space-4xl) + var(--lumi-space-xl) + var(--lumi-space-sm));
 	}
 
 	.lumi-dropdown__menu--md {
-		min-width: 180px;
+		min-width: calc(var(--lumi-space-5xl) * 2 + var(--lumi-space-sm));
 	}
 
 	@media (prefers-reduced-motion: reduce) {

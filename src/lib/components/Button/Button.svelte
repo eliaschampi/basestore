@@ -67,7 +67,7 @@
 
 	{#if icon && !iconAfter && !loading}
 		<span class="lumi-button__icon">
-			<Icon {icon} size="{iconPixelSize}px" />
+			<Icon {icon} size={`${iconPixelSize}px`} />
 		</span>
 	{/if}
 
@@ -79,7 +79,7 @@
 
 	{#if icon && iconAfter && !loading}
 		<span class="lumi-button__icon">
-			<Icon {icon} size="{iconPixelSize}px" />
+			<Icon {icon} size={`${iconPixelSize}px`} />
 		</span>
 	{/if}
 </button>
@@ -113,22 +113,16 @@
 		overflow: hidden;
 		outline: none;
 
-		/* Smooth premium transitions */
-		transition:
-			transform var(--lumi-duration-fast) var(--lumi-easing-out),
-			box-shadow var(--lumi-duration-base) var(--lumi-easing-default),
-			background-color var(--lumi-duration-base) var(--lumi-easing-default),
-			border-color var(--lumi-duration-base) var(--lumi-easing-default),
-			opacity var(--lumi-duration-base) var(--lumi-easing-default);
+		transition: var(--lumi-transition-all);
 	}
 
 	/* Focus visible - Modern ring with glow */
 	.lumi-button:focus-visible {
 		outline: none;
 		box-shadow:
-			0 0 0 2px var(--lumi-color-background),
-			0 0 0 4px var(--btn-color),
-			0 0 16px rgba(var(--btn-color-rgb), 0.3);
+			0 0 0 var(--lumi-border-width-thick) var(--lumi-color-background),
+			0 0 0 calc(var(--lumi-border-width-thick) * 2) var(--btn-color),
+			0 0 var(--lumi-space-xl) color-mix(in srgb, var(--btn-color) 30%, transparent);
 	}
 
 	/* Disabled - Elegant fade */
@@ -141,7 +135,7 @@
 
 	/* Hover lift effect */
 	.lumi-button:hover:not(:disabled) {
-		transform: translateY(-2px);
+		transform: translateY(calc(var(--lumi-space-2xs) * -1));
 	}
 
 	/* Active press effect */
@@ -213,22 +207,16 @@
 		background: var(--btn-color);
 		color: var(--lumi-color-white);
 		border-color: transparent;
-		box-shadow:
-			0 2px 8px rgba(var(--btn-color-rgb), 0.25),
-			0 4px 16px rgba(var(--btn-color-rgb), 0.15);
+		box-shadow: var(--lumi-shadow-sm);
 	}
 
 	.lumi-button--filled:hover:not(:disabled) {
 		background: color-mix(in srgb, var(--btn-color) 88%, black);
-		box-shadow:
-			0 4px 12px rgba(var(--btn-color-rgb), 0.35),
-			0 8px 24px rgba(var(--btn-color-rgb), 0.2);
+		box-shadow: var(--lumi-shadow-md);
 	}
 
 	.lumi-button--filled:active:not(:disabled) {
-		box-shadow:
-			0 1px 4px rgba(var(--btn-color-rgb), 0.25),
-			0 2px 8px rgba(var(--btn-color-rgb), 0.15);
+		box-shadow: var(--lumi-shadow-sm);
 	}
 
 	/* BORDER - Glass morphism outline */
@@ -242,7 +230,7 @@
 	.lumi-button--border:hover:not(:disabled) {
 		background: rgba(var(--btn-color-rgb), 0.1);
 		border-color: rgba(var(--btn-color-rgb), 0.5);
-		box-shadow: 0 4px 16px rgba(var(--btn-color-rgb), 0.12);
+		box-shadow: var(--lumi-shadow-sm);
 	}
 
 	.lumi-button--border:active:not(:disabled) {
@@ -258,7 +246,7 @@
 
 	.lumi-button--flat:hover:not(:disabled) {
 		background: rgba(var(--btn-color-rgb), 0.08);
-		box-shadow: 0 2px 8px rgba(var(--btn-color-rgb), 0.08);
+		box-shadow: var(--lumi-shadow-sm);
 	}
 
 	.lumi-button--flat:active:not(:disabled) {
@@ -274,17 +262,13 @@
 		);
 		color: var(--lumi-color-white);
 		border-color: transparent;
-		box-shadow:
-			0 4px 16px rgba(var(--btn-color-rgb), 0.3),
-			0 8px 32px rgba(var(--btn-color-rgb), 0.15);
+		box-shadow: var(--lumi-shadow-md);
 		background-size: 200% 200%;
-		animation: lumi-gradient-shift 3s ease infinite;
+		animation: lumi-gradient-shift var(--lumi-duration-slower) var(--lumi-easing-in-out) infinite;
 	}
 
 	.lumi-button--gradient:hover:not(:disabled) {
-		box-shadow:
-			0 6px 20px rgba(var(--btn-color-rgb), 0.4),
-			0 12px 40px rgba(var(--btn-color-rgb), 0.2);
+		box-shadow: var(--lumi-shadow-lg);
 		animation-play-state: paused;
 		background-position: 100% 100%;
 	}
@@ -307,10 +291,10 @@
 		position: absolute;
 		width: 1.2em;
 		height: 1.2em;
-		border: 2px solid currentColor;
+		border: var(--lumi-border-width-thick) solid currentColor;
 		border-right-color: transparent;
 		border-radius: var(--lumi-radius-full);
-		animation: lumi-spin 0.7s linear infinite;
+		animation: lumi-spin var(--lumi-duration-slower) linear infinite;
 	}
 
 	.lumi-button--loading {
@@ -352,5 +336,14 @@
 	.lumi-button__text {
 		display: inline-flex;
 		align-items: center;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.lumi-button,
+		.lumi-button__spinner,
+		.lumi-button--gradient {
+			transition: none;
+			animation: none;
+		}
 	}
 </style>

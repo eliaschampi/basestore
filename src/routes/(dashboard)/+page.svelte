@@ -356,9 +356,11 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--lumi-space-sm);
-		padding: var(--lumi-space-lg);
+		padding: var(--lumi-notification-zone-offset);
 		inline-size: 100%;
-		max-inline-size: calc((var(--lumi-space-6xl) * 5) + var(--lumi-space-xl));
+		max-inline-size: calc(
+			var(--lumi-notification-max-inline-size) + (var(--lumi-notification-zone-offset) * 2)
+		);
 		pointer-events: none;
 	}
 
@@ -402,5 +404,12 @@
 
 	.lumi-notification-zone :global(.lumi-notification) {
 		pointer-events: auto;
+	}
+
+	@media (max-width: 768px) {
+		.lumi-notification-zone {
+			padding: var(--lumi-notification-zone-offset-mobile);
+			max-inline-size: 100%;
+		}
 	}
 </style>

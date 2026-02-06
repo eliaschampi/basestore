@@ -1,28 +1,41 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { LUMI_CONFIG } from '../config';
 	import type { LoadingProps } from './types';
 
 	interface Props extends LoadingProps {
 		children?: Snippet;
 	}
 
-	const { color = 'primary', text = '', class: className = '', children }: Props = $props();
+	const {
+		size = 'md',
+		color = 'primary',
+		text = '',
+		class: className = '',
+		children
+	}: Props = $props();
+
+	const transitionDuration = `${LUMI_CONFIG.transitions.base}ms`;
 
 	const classes = $derived(() => {
-		const baseClasses = ['lumi-loading', `lumi-loading--${color}`];
+		const baseClasses = ['lumi-loading', `lumi-loading--${size}`, `lumi-loading--${color}`];
 
 		if (text || children) baseClasses.push('lumi-loading--with-text');
 		if (className) baseClasses.push(className);
 
 		return baseClasses.join(' ');
 	});
+
+	const styleVars = $derived(() => `--loading-transition-duration: ${transitionDuration};`);
+	const ariaLabel = $derived(() => text || 'Loading');
 </script>
 
-<div class={classes()}>
-	<div class="lumi-loading__pulse-container">
-		<div class="lumi-loading__pulse-outer"></div>
-		<div class="lumi-loading__pulse-inner"></div>
+<div class={classes()} style={styleVars()} role="status" aria-live="polite" aria-label={ariaLabel()}>
+	<div class="lumi-loading__indicator" aria-hidden="true">
+		<span class="lumi-loading__ring"></span>
+		<span class="lumi-loading__core"></span>
 	</div>
+
 	{#if text || children}
 		<div class="lumi-loading__text">
 			{#if children}
@@ -35,61 +48,67 @@
 </div>
 
 <style>
-	/* ============================================================================
-	   LOADING COMPONENT - Clean and consistent design (Lumi UI Design System)
-	   ============================================================================ */
-
 	.lumi-loading {
-		display: flex;
+		display: inline-flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		gap: var(--lumi-space-md);
 		font-family: var(--lumi-font-family-sans);
-		transition: var(--lumi-transition-all);
-		color: var(--lumi-color-primary); /* Default color */
+		color: var(--lumi-color-primary);
+		transition:
+			color var(--loading-transition-duration) var(--lumi-easing-default),
+			transform var(--loading-transition-duration) var(--lumi-easing-default);
+		--loading-ring-size: var(--lumi-space-3xl);
+		--loading-core-size: var(--lumi-space-lg);
 	}
 
-	/* Container for the pulse animation */
-	.lumi-loading__pulse-container {
+	.lumi-loading__indicator {
 		position: relative;
-		width: var(--lumi-space-3xl);
-		height: var(--lumi-space-3xl);
-		display: flex;
-		align-items: center;
-		justify-content: center;
+		display: grid;
+		place-items: center;
+		inline-size: var(--loading-ring-size);
+		block-size: var(--loading-ring-size);
 	}
 
-	/* Outer pulse (expands infinitely) */
-	.lumi-loading__pulse-outer {
+	.lumi-loading__ring {
 		position: absolute;
-		width: 100%;
-		height: 100%;
-		border-radius: 50%;
-		background-color: currentColor;
-		opacity: 0.1;
-		animation: lumi-pulse-expand 2.5s ease-out infinite;
+		inset: 0;
+		border-radius: var(--lumi-radius-full);
+		border: var(--lumi-border-width-thick) solid color-mix(in srgb, currentColor 18%, transparent);
+		border-top-color: currentColor;
+		animation: lumi-loading-spin var(--lumi-duration-slower) linear infinite;
 	}
 
-	/* Inner circle (main indicator) */
-	.lumi-loading__pulse-inner {
-		width: var(--lumi-space-lg);
-		height: var(--lumi-space-lg);
-		border-radius: 50%;
-		background-color: currentColor;
-		animation: lumi-pulse-inner 2.5s ease-in-out infinite;
+	.lumi-loading__core {
+		inline-size: var(--loading-core-size);
+		block-size: var(--loading-core-size);
+		border-radius: var(--lumi-radius-full);
+		background: currentColor;
+		box-shadow: 0 0 var(--lumi-space-md) color-mix(in srgb, currentColor 35%, transparent);
+		animation: lumi-loading-pulse var(--lumi-duration-base) var(--lumi-easing-in-out) infinite;
 	}
 
-	/* Loading text */
 	.lumi-loading__text {
-		font-size: var(--lumi-font-size-base);
+		font-size: var(--lumi-font-size-sm);
 		font-weight: var(--lumi-font-weight-medium);
 		color: var(--lumi-color-text-muted);
 		text-align: center;
-		animation: lumi-fade-in 0.5s ease;
+		line-height: var(--lumi-line-height-normal);
 	}
 
-	/* Color variants */
+	.lumi-loading--sm {
+		--loading-ring-size: var(--lumi-space-xxl);
+		--loading-core-size: var(--lumi-space-sm);
+		gap: var(--lumi-space-sm);
+	}
+
+	.lumi-loading--lg {
+		--loading-ring-size: var(--lumi-space-4xl);
+		--loading-core-size: var(--lumi-space-xl);
+		gap: var(--lumi-space-lg);
+	}
+
 	.lumi-loading--primary {
 		color: var(--lumi-color-primary);
 	}
@@ -114,37 +133,35 @@
 		color: var(--lumi-color-info);
 	}
 
-	/* Keyframe Animations */
-	@keyframes lumi-pulse-expand {
-		0% {
-			transform: scale(0.5);
-			opacity: 0.2;
-		}
-
-		100% {
-			transform: scale(2.5);
-			opacity: 0;
-		}
-	}
-
-	@keyframes lumi-pulse-inner {
-		0%,
-		100% {
-			transform: scale(0.8);
-		}
-
-		50% {
-			transform: scale(1.1);
-		}
-	}
-
-	@keyframes lumi-fade-in {
+	@keyframes lumi-loading-spin {
 		from {
-			opacity: 0;
+			transform: rotate(0deg);
 		}
 
 		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	@keyframes lumi-loading-pulse {
+		0%,
+		100% {
+			transform: scale(0.78);
+			opacity: 0.65;
+		}
+
+		50% {
+			transform: scale(1);
 			opacity: 1;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.lumi-loading,
+		.lumi-loading__ring,
+		.lumi-loading__core {
+			transition: none;
+			animation: none;
 		}
 	}
 </style>

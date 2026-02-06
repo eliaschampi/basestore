@@ -4,6 +4,12 @@
 	import Button from '../Button/Button.svelte';
 	import Select from '../Select/Select.svelte';
 	import Alert from '../Alert/Alert.svelte';
+	import Fieldset from '../Fieldset/Fieldset.svelte';
+	import InfoItem from '../InfoItem/InfoItem.svelte';
+	import List from '../List/List.svelte';
+	import ListHeader from '../List/ListHeader.svelte';
+	import ListItem from '../List/ListItem.svelte';
+	import Loading from '../Loading/Loading.svelte';
 	import { showToast } from '$lib/stores/Toast';
 	import { PERMISSION_DEFINITIONS, getPermissionByKey } from '$lib/permissions/definitions';
 
@@ -48,6 +54,12 @@
 		}))
 	);
 
+	const permissionSummary = $derived(
+		userPermissions.length === 0
+			? 'Este usuario no tiene permisos asignados'
+			: `${userPermissions.length} permiso${userPermissions.length === 1 ? '' : 's'} configurado${userPermissions.length === 1 ? '' : 's'}`
+	);
+
 	// Load permissions from API
 	async function loadPermissions() {
 		if (!user?.code) return;
@@ -70,7 +82,6 @@
 			userPermissions = permissionsData.map((p) => `${p.entity}:${p.action}`);
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Error loading permissions';
-			console.error('Permission loading error:', err);
 		} finally {
 			loading = false;
 		}
@@ -120,7 +131,6 @@
 			closeModal();
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Error guardando permisos';
-			console.error('Permission saving error:', err);
 		} finally {
 			saving = false;
 		}
@@ -147,79 +157,78 @@
 >
 	{#if loading}
 		<div class="lumi-flex lumi-flex--center lumi-padding--xl">
-			<div class="lumi-loading-spinner"></div>
-		</div>
-	{:else if error}
-		<div class="lumi-margin-bottom--md">
-			<Alert type="danger" closable onclose={() => (error = '')}>
-				{error}
-			</Alert>
-			<div class="lumi-flex lumi-flex--center lumi-margin-top--md">
-				<Button type="filled" color="primary" size="sm" onclick={loadPermissions}>
-					Reintentar
-				</Button>
-			</div>
+			<Loading text="Cargando permisos..." />
 		</div>
 	{:else}
-		<!-- Add Permission Section -->
-		<div class="lumi-margin-bottom--lg lumi-padding--md lumi-bg--surface lumi-rounded--lg">
-			<h4 class="lumi-font--semibold lumi-margin-bottom--md">Agregar Permiso</h4>
-			<div class="lumi-flex lumi-flex--gap-sm">
-				<div class="lumi-flex-item--grow">
-					<Select
-						bind:value={selectedPermission}
-						options={availablePermissionOptions}
-						placeholder="Seleccionar permiso..."
-						clearable={false}
-					/>
-				</div>
-				<Button
-					type="filled"
-					color="primary"
-					icon="plus"
-					onclick={addPermission}
-					disabled={!selectedPermission}
-				>
-					Agregar
-				</Button>
-			</div>
-		</div>
-
-		<!-- Current Permissions -->
-		<div class="lumi-margin-bottom--md">
-			<h4 class="lumi-font--semibold lumi-margin-bottom--md">
-				Permisos Actuales ({userPermissions.length})
-			</h4>
-			{#if userPermissions.length === 0}
-				<div class="lumi-text--center lumi-padding--xl lumi-text--muted">
-					No hay permisos asignados
-				</div>
-			{:else}
-				<div class="lumi-stack lumi-space--sm lumi-max-h--md lumi-overflow--auto">
-					{#each userPermissions as permissionKey (permissionKey)}
-						{@const permission = getPermissionByKey(permissionKey)}
-						{#if permission}
-							<div
-								class="lumi-flex lumi-flex--between lumi-align-items--center lumi-padding--md lumi-bg--background lumi-rounded--md lumi-border lumi-border--light"
-							>
-								<div class="lumi-flex-item--grow">
-									<div class="lumi-font--medium">{permission.label}</div>
-									<div class="lumi-text--sm lumi-text--muted">
-										{permission.category} • {permission.description}
-									</div>
-								</div>
-								<Button
-									type="flat"
-									color="danger"
-									size="sm"
-									icon="x"
-									onclick={() => removePermission(permissionKey)}
-								/>
-							</div>
-						{/if}
-					{/each}
+		<div class="lumi-stack lumi-space--md">
+			{#if error}
+				<div>
+					<Alert type="danger" closable onclose={() => (error = '')}>
+						{error}
+					</Alert>
+					<div class="lumi-flex lumi-flex--center lumi-margin-top--md">
+						<Button type="filled" color="primary" size="sm" onclick={loadPermissions}>
+							Reintentar
+						</Button>
+					</div>
 				</div>
 			{/if}
+
+			<Fieldset legend="Agregar permiso">
+				<div class="lumi-flex lumi-flex--gap-sm lumi-flex--mobile-column">
+					<div class="lumi-flex-item--grow">
+						<Select
+							bind:value={selectedPermission}
+							options={availablePermissionOptions}
+							placeholder="Seleccionar permiso..."
+							clearable={false}
+						/>
+					</div>
+					<Button
+						type="filled"
+						color="primary"
+						icon="plus"
+						onclick={addPermission}
+						disabled={!selectedPermission || saving}
+					>
+						Agregar
+					</Button>
+				</div>
+			</Fieldset>
+
+			<Fieldset legend={`Permisos actuales (${userPermissions.length})`}>
+				<div class="lumi-stack lumi-space--sm">
+					<InfoItem icon="shieldCheck" label="Estado" value={permissionSummary} />
+					{#if userPermissions.length === 0}
+						<div class="lumi-text--center lumi-padding--xl lumi-text--muted">
+							No hay permisos asignados
+						</div>
+					{:else}
+						<List size="sm" class="permissions-modal__list">
+							<ListHeader title="Lista de permisos" icon="key" />
+							{#each userPermissions as permissionKey (permissionKey)}
+								{@const permission = getPermissionByKey(permissionKey)}
+								{#if permission}
+									<ListItem
+										title={permission.label}
+										subtitle={`${permission.category} • ${permission.description}`}
+										icon="shield"
+									>
+										<Button
+											type="flat"
+											color="danger"
+											size="sm"
+											icon="x"
+											aria-label={`Quitar permiso ${permission.label}`}
+											onclick={() => removePermission(permissionKey)}
+										/>
+									</ListItem>
+								{/if}
+							{/each}
+						</List>
+					{/if}
+				</div>
+			</Fieldset>
 		</div>
 	{/if}
 
@@ -230,63 +239,34 @@
 			color="primary"
 			onclick={savePermissions}
 			disabled={loading || saving || !!error}
+			loading={saving}
 		>
-			{#if saving}
-				<div class="lumi-loading-spinner lumi-loading-spinner--sm"></div>
-			{/if}
 			Guardar Permisos
 		</Button>
 	{/snippet}
 </Dialog>
 
 <style>
-	.lumi-loading-spinner {
-		width: 32px;
-		height: 32px;
-		border: 3px solid var(--lumi-color-border);
-		border-top: 3px solid var(--lumi-color-primary);
-		border-radius: 50%;
-		animation: lumi-spin 1s linear infinite;
-	}
-
-	.lumi-loading-spinner--sm {
-		width: 16px;
-		height: 16px;
-		border-width: 2px;
-	}
-
-	.lumi-max-h--md {
-		max-height: 400px;
-	}
-
-	.lumi-overflow--auto {
+	:global(.permissions-modal__list) {
+		max-height: calc(var(--lumi-space-6xl) + var(--lumi-space-5xl));
 		overflow-y: auto;
 	}
 
-	.lumi-overflow--auto::-webkit-scrollbar {
-		width: 6px;
+	:global(.permissions-modal__list::-webkit-scrollbar) {
+		width: var(--lumi-space-2xs);
 	}
 
-	.lumi-overflow--auto::-webkit-scrollbar-track {
+	:global(.permissions-modal__list::-webkit-scrollbar-track) {
 		background: var(--lumi-color-background);
 		border-radius: var(--lumi-radius-base);
 	}
 
-	.lumi-overflow--auto::-webkit-scrollbar-thumb {
+	:global(.permissions-modal__list::-webkit-scrollbar-thumb) {
 		background: var(--lumi-color-border-strong);
 		border-radius: var(--lumi-radius-base);
 	}
 
-	.lumi-overflow--auto::-webkit-scrollbar-thumb:hover {
+	:global(.permissions-modal__list::-webkit-scrollbar-thumb:hover) {
 		background: var(--lumi-color-text-muted);
-	}
-
-	@keyframes lumi-spin {
-		0% {
-			transform: rotate(0deg);
-		}
-		100% {
-			transform: rotate(360deg);
-		}
 	}
 </style>

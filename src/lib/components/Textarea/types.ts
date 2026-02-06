@@ -35,6 +35,8 @@ export interface TextareaProps {
 	resize?: 'none' | 'vertical' | 'horizontal' | 'both';
 	/** Required field indicator */
 	required?: boolean;
+	/** Accessible label when visible label is not provided */
+	'aria-label'?: string;
 	/** Show character counter */
 	showCount?: boolean;
 	/** Auto-resize based on content */

@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { onMount } from 'svelte';
 	import { scale } from 'svelte/transition';
+	import { LUMI_CONFIG } from '../config';
 	import type { ContextProps } from './types';
 
 	interface Props extends ContextProps {
@@ -15,6 +16,7 @@
 		itemSelector = '.lumi-context-item',
 		maxHeight = 300,
 		viewportPadding = 12,
+		'aria-label': ariaLabel = '',
 		class: className = '',
 		onopen,
 		onclose,
@@ -38,6 +40,7 @@
 			.filter(Boolean)
 			.join(' ');
 	});
+	const transitionDuration = LUMI_CONFIG.transitions.fast;
 
 	const contextStyle = $derived(() => ({
 		top: `${top}px`,
@@ -88,7 +91,7 @@
 		setTimeout(() => {
 			show = false;
 			contextData = null;
-		}, 150);
+		}, transitionDuration);
 
 		if (closeOnScroll) {
 			window.removeEventListener('scroll', close);
@@ -165,7 +168,8 @@
 			.maxHeight}"
 		tabindex="-1"
 		role="menu"
-		transition:scale={{ duration: 150, start: 0.95 }}
+		aria-label={ariaLabel || 'Context menu'}
+		transition:scale={{ duration: transitionDuration, start: 0.96 }}
 		onkeydown={handleKeydown}
 		onclick={handleClick}
 	>
@@ -181,20 +185,26 @@
 	.lumi-context {
 		position: fixed;
 		z-index: var(--lumi-z-dropdown);
-		background: var(--lumi-color-surface);
+		background:
+			linear-gradient(
+				180deg,
+				rgba(var(--lumi-color-primary-rgb), 0.05) 0%,
+				rgba(var(--lumi-color-primary-rgb), 0) 22%
+			),
+			var(--lumi-color-surface-overlay);
 		border: 1px solid var(--lumi-color-border);
-		border-radius: var(--lumi-radius-xl);
+		border-radius: var(--lumi-radius-2xl);
 		padding: var(--lumi-space-xs);
-		min-width: 160px;
-		max-width: 280px;
+		min-width: calc(var(--lumi-space-5xl) * 2);
+		max-width: calc(var(--lumi-space-5xl) * 3 + var(--lumi-space-xl));
 		box-shadow: var(--lumi-shadow-xl);
 		outline: none;
 		opacity: 0;
 		transform-origin: top left;
 		display: flex;
 		flex-direction: column;
-		backdrop-filter: blur(var(--lumi-blur-sm));
-		-webkit-backdrop-filter: blur(var(--lumi-blur-sm));
+		backdrop-filter: blur(var(--lumi-blur-md));
+		-webkit-backdrop-filter: blur(var(--lumi-blur-md));
 	}
 
 	.lumi-context--visible {
@@ -206,12 +216,12 @@
 		max-height: inherit;
 		display: flex;
 		flex-direction: column;
-		gap: 1px;
+		gap: var(--lumi-space-2xs);
 	}
 
 	/* Scrollbar */
 	.lumi-context__content::-webkit-scrollbar {
-		width: 4px;
+		width: var(--lumi-space-2xs);
 	}
 
 	.lumi-context__content::-webkit-scrollbar-track {
@@ -225,13 +235,13 @@
 
 	/* Sizes */
 	.lumi-context--sm {
-		min-width: 140px;
+		min-width: calc(var(--lumi-space-4xl) + var(--lumi-space-xl) + var(--lumi-space-sm));
 	}
 	.lumi-context--md {
-		min-width: 180px;
+		min-width: calc(var(--lumi-space-5xl) * 2 + var(--lumi-space-sm));
 	}
 	.lumi-context--lg {
-		min-width: 240px;
+		min-width: calc(var(--lumi-space-5xl) * 3);
 	}
 
 	@media (prefers-reduced-motion: reduce) {

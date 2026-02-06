@@ -5,6 +5,7 @@
 	import Checkbox from '../Checkbox/Checkbox.svelte';
 	import Input from '../Input/Input.svelte';
 	import Icon from '../Icon/Icon.svelte';
+	import { getIconSize } from '../config';
 	import type { TableProps, TableRow } from './types';
 
 	interface Props extends TableProps {
@@ -89,19 +90,11 @@
 		return result;
 	});
 
-	const filteredData = $derived(() => {
-		if (!data) return [];
-		if (!searchQuery || !search) return [...data];
-		const query = searchQuery.toLowerCase();
-		return data.filter((item) =>
-			Object.values(item).some((val) => String(val).toLowerCase().includes(query))
-		);
-	});
+	const totalItems = $derived(() => processedData().length);
 
 	const totalPages = $derived(() => {
-		const totalItems = filteredData().length;
-		if (!totalItems) return 0;
-		return Math.ceil(totalItems / itemsPerPage);
+		if (!totalItems()) return 0;
+		return Math.ceil(totalItems() / itemsPerPage);
 	});
 
 	const currentPageData = $derived(() => {
@@ -128,7 +121,7 @@
 		currentPage,
 		totalPages: totalPages(),
 		itemsPerPage,
-		totalItems: filteredData().length
+		totalItems: totalItems()
 	}));
 
 	const tableClasses = $derived(() => {
@@ -143,6 +136,8 @@
 			.filter(Boolean)
 			.join(' ');
 	});
+
+	const emptyIconSize = `${getIconSize('2xl')}px`;
 
 	const getRowKey = (row: TableRow, index: number): string => {
 		return row.id?.toString() || row.key?.toString() || `row-${index}`;
@@ -301,6 +296,7 @@
 						{#if selectable}
 							<th class="lumi-table__th lumi-table__th--select">
 								<Checkbox
+									aria-label="Select all rows"
 									checked={isAllSelected()}
 									indeterminate={isPartiallySelected()}
 									size="sm"
@@ -314,7 +310,7 @@
 					</tr>
 				</thead>
 				<tbody class="lumi-table__tbody">
-					{#if data && data.length > 0}
+					{#if data && currentPageData().length > 0}
 						{#each currentPageData() as rowData, index (getRowKey(rowData, index))}
 							<tr
 								class="lumi-table__row"
@@ -324,6 +320,7 @@
 								{#if selectable}
 									<td class="lumi-table__td lumi-table__td--select">
 										<Checkbox
+											aria-label={`Select row ${index + 1}`}
 											checked={isRowSelected(rowData)}
 											size="sm"
 											onchange={(checked) => handleRowSelect(rowData, checked)}
@@ -349,10 +346,10 @@
 				</tbody>
 			</table>
 
-			{#if data && data.length === 0}
+			{#if data && totalItems() === 0}
 				<div class="lumi-table__empty" role="status" aria-live="polite">
 					<div class="lumi-table__empty-icon">
-						<Icon icon="inbox" size="48px" />
+						<Icon icon="inbox" size={emptyIconSize} />
 					</div>
 					<span class="lumi-table__empty-text">{noDataText}</span>
 				</div>
@@ -367,10 +364,10 @@
 			{:else}
 				<div class="lumi-table__pagination-info">
 					<span class="lumi-table__pagination-text">
-						Showing {filteredData().length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} - {Math.min(
+						Showing {totalItems() === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} - {Math.min(
 							currentPage * itemsPerPage,
-							filteredData().length
-						)} of {filteredData().length}
+							totalItems()
+						)} of {totalItems()}
 					</span>
 				</div>
 				<div class="lumi-table__pagination-controls">
@@ -439,8 +436,8 @@
 
 	.lumi-table__search {
 		flex: 1;
-		max-width: 320px;
-		min-width: 200px;
+		max-width: calc(var(--lumi-space-4xl) * 5);
+		min-width: calc(var(--lumi-space-4xl) * 3);
 	}
 
 	/* ========================================================================== */
@@ -448,16 +445,23 @@
 	/* ========================================================================== */
 
 	.lumi-table__wrapper {
+		position: relative;
 		width: 100%;
 		overflow: hidden;
-		background: var(--lumi-color-surface);
+		background:
+			linear-gradient(
+				180deg,
+				rgba(var(--lumi-color-primary-rgb), 0.05) 0%,
+				rgba(var(--lumi-color-primary-rgb), 0) 20%
+			),
+			var(--lumi-color-surface);
 		border: 1px solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-2xl);
-		box-shadow: var(--lumi-shadow-sm);
+		box-shadow: var(--lumi-shadow-md);
 		overflow-x: auto;
 		transition:
 			var(--lumi-transition-shadow),
-			border-color 0.2s ease;
+			border-color var(--lumi-duration-base) var(--lumi-easing-default);
 	}
 
 	.lumi-table__wrapper:hover {
@@ -513,7 +517,7 @@
 		transition:
 			background-color var(--lumi-duration-fast) var(--lumi-easing-default),
 			border-left-color var(--lumi-duration-fast) var(--lumi-easing-default);
-		border-left: 3px solid transparent;
+		border-left: var(--lumi-border-width-thick) solid transparent;
 	}
 
 	.lumi-table__tbody .lumi-table__row:last-child {
@@ -553,7 +557,7 @@
 	/* Select Column */
 	.lumi-table__th--select,
 	.lumi-table__td--select {
-		width: 56px;
+		width: calc(var(--lumi-space-3xl) + var(--lumi-space-xs));
 		padding-right: var(--lumi-space-xs);
 		text-align: center;
 	}
@@ -582,12 +586,12 @@
 	}
 
 	.lumi-table__spinner {
-		width: 40px;
-		height: 40px;
-		border: 3px solid var(--lumi-color-border);
+		width: var(--lumi-space-xxl);
+		height: var(--lumi-space-xxl);
+		border: var(--lumi-border-width-thick) solid var(--lumi-color-border);
 		border-top-color: var(--lumi-color-primary);
 		border-radius: var(--lumi-radius-full);
-		animation: lumi-table-spin 0.8s linear infinite;
+		animation: lumi-table-spin var(--lumi-duration-slower) linear infinite;
 	}
 
 	@keyframes lumi-table-spin {
@@ -656,8 +660,8 @@
 	}
 
 	.lumi-table__pagination-page {
-		min-width: 32px;
-		height: 32px;
+		min-width: var(--lumi-space-xl);
+		height: var(--lumi-space-xl);
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -669,10 +673,7 @@
 		border: 1px solid transparent;
 		border-radius: var(--lumi-radius-md);
 		cursor: pointer;
-		transition:
-			background-color var(--lumi-duration-fast) var(--lumi-easing-default),
-			color var(--lumi-duration-fast) var(--lumi-easing-default),
-			border-color var(--lumi-duration-fast) var(--lumi-easing-default);
+		transition: var(--lumi-transition-all);
 	}
 
 	.lumi-table__pagination-page:hover {

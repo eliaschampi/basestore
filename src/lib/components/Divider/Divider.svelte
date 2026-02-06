@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '../Icon/Icon.svelte';
+	import { getIconSize } from '../config';
 	import type { DividerProps } from './types';
 
 	const {
@@ -7,16 +8,19 @@
 		icon = undefined,
 		text = undefined,
 		spaced = true,
+		'aria-label': ariaLabel = '',
 		class: className = '',
 		onclick
 	}: DividerProps = $props();
 
 	const hasContent = $derived(!!icon || !!text);
+	const iconSize = `${getIconSize('sm')}px`;
 
 	const dividerClasses = $derived(() => {
 		return [
 			'lumi-divider',
 			`lumi-divider--${position}`,
+			onclick && 'lumi-divider--interactive',
 			hasContent && 'lumi-divider--with-content',
 			spaced && 'lumi-divider--spaced',
 			className
@@ -39,13 +43,7 @@
 	}
 </script>
 
-<div
-	class={dividerClasses()}
-	{onclick}
-	onkeydown={handleKeydown}
-	role={onclick ? 'button' : 'separator'}
-	aria-label={onclick ? 'Divider button' : undefined}
->
+{#snippet dividerContent()}
 	{#if hasContent && position !== 'left'}
 		<span class="lumi-divider__line lumi-divider__line--before"></span>
 	{/if}
@@ -53,7 +51,7 @@
 	{#if hasContent}
 		<span class="lumi-divider__content">
 			{#if icon}
-				<Icon {icon} size="16px" class="lumi-divider__icon" />
+				<Icon {icon} size={iconSize} class="lumi-divider__icon" />
 			{:else}
 				<span>{text}</span>
 			{/if}
@@ -65,7 +63,23 @@
 	{:else if !hasContent}
 		<span class="lumi-divider__line lumi-divider__line--full"></span>
 	{/if}
-</div>
+{/snippet}
+
+{#if onclick}
+	<button
+		type="button"
+		class={dividerClasses()}
+		onclick={onclick}
+		onkeydown={handleKeydown}
+		aria-label={ariaLabel || 'Divider button'}
+	>
+		{@render dividerContent()}
+	</button>
+{:else}
+	<div class={dividerClasses()} role="separator">
+		{@render dividerContent()}
+	</div>
+{/if}
 
 <style>
 	.lumi-divider {
@@ -73,6 +87,9 @@
 		align-items: center;
 		width: 100%;
 		color: var(--lumi-color-text-muted);
+		background: transparent;
+		border: none;
+		padding: 0;
 	}
 
 	.lumi-divider--spaced {
@@ -81,8 +98,13 @@
 
 	.lumi-divider__line {
 		flex: 1;
-		height: 1px;
-		background: var(--lumi-color-border);
+		height: var(--lumi-border-width-thin);
+		background: linear-gradient(
+			90deg,
+			var(--lumi-color-border-light),
+			var(--lumi-color-border),
+			var(--lumi-color-border-light)
+		);
 	}
 
 	.lumi-divider__line--full {
@@ -106,11 +128,14 @@
 		font-size: var(--lumi-font-size-sm);
 		font-weight: var(--lumi-font-weight-medium);
 		white-space: nowrap;
-		background: var(--lumi-color-surface);
+		background: var(--lumi-color-surface-overlay);
 		border-radius: var(--lumi-radius-2xl);
 		border: none;
 		min-width: fit-content;
 		flex-shrink: 0;
+		backdrop-filter: blur(var(--lumi-blur-sm));
+		-webkit-backdrop-filter: blur(var(--lumi-blur-sm));
+		transition: var(--lumi-transition-colors);
 	}
 
 	.lumi-divider__icon {
@@ -121,6 +146,16 @@
 
 	.lumi-divider:hover .lumi-divider__line {
 		background: var(--lumi-color-border-strong);
+	}
+
+	.lumi-divider--interactive {
+		cursor: pointer;
+	}
+
+	.lumi-divider--interactive:focus-visible {
+		outline: var(--lumi-border-width-thick) solid color-mix(in srgb, var(--lumi-color-primary) 30%, transparent);
+		outline-offset: var(--lumi-space-2xs);
+		border-radius: var(--lumi-radius-md);
 	}
 
 	.lumi-divider--left .lumi-divider__line--after {

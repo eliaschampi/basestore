@@ -28,10 +28,18 @@
 	.lumi-fieldset {
 		border: 1px solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-2xl);
-		padding: var(--lumi-space-lg);
+		padding: var(--lumi-space-md);
 		margin: 0;
-		background: rgba(var(--lumi-color-background-rgb), 0.3);
+		background:
+			linear-gradient(
+				180deg,
+				rgba(var(--lumi-color-primary-rgb), 0.06) 0%,
+				rgba(var(--lumi-color-primary-rgb), 0) 35%
+			),
+			rgba(var(--lumi-color-background-rgb), 0.3);
 		position: relative;
+		box-shadow: var(--lumi-shadow-sm);
+		transition: var(--lumi-transition-all);
 	}
 
 	.lumi-fieldset__legend {
@@ -44,5 +52,11 @@
 		border-radius: var(--lumi-radius-base);
 		position: relative;
 		z-index: 1;
+	}
+
+	.lumi-fieldset__content {
+		display: flex;
+		flex-direction: column;
+		gap: var(--lumi-space-md);
 	}
 </style>

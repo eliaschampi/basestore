@@ -1,20 +1,10 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { onMount } from 'svelte';
-	import type { ProgressColor, ProgressSize } from './types';
+	import { LUMI_CONFIG } from '../config';
+	import type { ProgressProps } from './types';
 
-	interface Props {
-		value?: number;
-		color?: ProgressColor;
-		size?: ProgressSize;
-		indeterminate?: boolean;
-		striped?: boolean;
-		animated?: boolean;
-		showLabel?: boolean;
-		label?: string;
+	interface Props extends ProgressProps {
 		labelSnippet?: Snippet<[{ value: number; max: number }]>;
-		class?: string;
-		oncomplete?: () => void;
 	}
 
 	const {
@@ -27,21 +17,20 @@
 		showLabel = false,
 		label,
 		labelSnippet,
+		'aria-label': ariaLabel = '',
 		class: className = '',
 		oncomplete
 	}: Props = $props();
 
-	let currentValue = $state(0);
-	let isAnimating = $state(false);
+	let completionNotified = $state(false);
 
-	const progressStyle = $derived(() => {
-		if (indeterminate) {
-			return {};
-		}
-		return {
-			width: `${Math.min(Math.max(currentValue, 0), 100)}%`
-		};
-	});
+	const clampedValue = $derived(() => Math.min(Math.max(value, 0), 100));
+	const transitionDuration = `${LUMI_CONFIG.transitions.base}ms`;
+	const styleVars = $derived(
+		() =>
+			`--progress-color: var(--lumi-color-${color}); --progress-transition-duration: ${transitionDuration};`
+	);
+	const progressStyle = $derived(() => (indeterminate ? '' : `width: ${clampedValue()}%`));
 
 	const progressClasses = $derived(() => {
 		return [
@@ -57,60 +46,29 @@
 			.join(' ');
 	});
 
-	function animateToValue(targetValue: number): void {
-		if (isAnimating) return;
-
-		isAnimating = true;
-		const startValue = currentValue;
-		const difference = targetValue - startValue;
-		const duration = Math.abs(difference) * 10;
-		const startTime = performance.now();
-
-		const animate = (currentTime: number) => {
-			const elapsed = currentTime - startTime;
-			const progress = Math.min(elapsed / duration, 1);
-			const easeOut = 1 - (1 - progress) ** 3;
-
-			currentValue = startValue + difference * easeOut;
-
-			if (progress < 1) {
-				requestAnimationFrame(animate);
-			} else {
-				currentValue = targetValue;
-				isAnimating = false;
-
-				if (targetValue >= 100) {
-					oncomplete?.();
-				}
-			}
-		};
-
-		requestAnimationFrame(animate);
-	}
-
 	$effect(() => {
-		if (value !== currentValue) {
-			animateToValue(value);
+		const reachedComplete = !indeterminate && clampedValue() >= 100;
+		if (reachedComplete && !completionNotified) {
+			completionNotified = true;
+			oncomplete?.();
 		}
-	});
-
-	onMount(() => {
-		setTimeout(() => {
-			animateToValue(value);
-		}, 100);
+		if (!reachedComplete) {
+			completionNotified = false;
+		}
 	});
 </script>
 
-<div class={progressClasses()}>
+<div class={progressClasses()} style={styleVars()}>
 	<!-- Progress track -->
 	<div class="lumi-progress__track">
 		<!-- Progress bar -->
 		<div
 			class="lumi-progress__bar"
 			class:lumi-progress__bar--indeterminate={indeterminate}
-			style="width: {progressStyle().width}"
+			style={progressStyle()}
 			role="progressbar"
-			aria-valuenow={indeterminate ? undefined : currentValue}
+			aria-label={ariaLabel || label || 'Progress'}
+			aria-valuenow={indeterminate ? undefined : clampedValue()}
 			aria-valuemin="0"
 			aria-valuemax="100"
 		>
@@ -125,11 +83,11 @@
 	{#if showLabel}
 		<div class="lumi-progress__label">
 			{#if labelSnippet}
-				{@render labelSnippet({ value: currentValue, max: 100 })}
+				{@render labelSnippet({ value: clampedValue(), max: 100 })}
 			{:else if label}
 				{label}
 			{:else}
-				{Math.round(currentValue)}%
+				{Math.round(clampedValue())}%
 			{/if}
 		</div>
 	{/if}
@@ -147,6 +105,7 @@
 		flex: 1;
 		height: var(--lumi-space-md);
 		background: var(--lumi-color-background-secondary);
+		border: 1px solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-full);
 		overflow: hidden;
 		position: relative;
@@ -154,9 +113,9 @@
 
 	.lumi-progress__bar {
 		height: 100%;
-		background: var(--lumi-color-primary);
+		background: var(--progress-color);
 		border-radius: var(--lumi-radius-full);
-		transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		transition: width var(--progress-transition-duration) var(--lumi-easing-default);
 		position: relative;
 		overflow: hidden;
 	}
@@ -164,7 +123,8 @@
 	.lumi-progress__bar--indeterminate {
 		width: 30% !important;
 		position: absolute;
-		animation: lumi-progress-indeterminate 1.5s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+		animation: lumi-progress-indeterminate var(--lumi-duration-slower) var(--lumi-easing-default)
+			infinite;
 	}
 
 	.lumi-progress__stripes {
@@ -180,66 +140,66 @@
 			transparent 75%,
 			transparent
 		);
-		background-size: 1rem 1rem;
+		background-size: var(--lumi-space-md) var(--lumi-space-md);
 	}
 
 	.lumi-progress--animated .lumi-progress__stripes {
-		animation: lumi-progress-stripes 1s linear infinite;
+		animation: lumi-progress-stripes var(--lumi-duration-slower) linear infinite;
 	}
 
 	.lumi-progress__label {
 		font-size: var(--lumi-font-size-sm);
 		font-weight: var(--lumi-font-weight-medium);
 		color: var(--lumi-color-text);
-		min-width: 3rem;
+		min-width: calc(var(--lumi-space-md) * 3);
 		text-align: right;
 		font-variant-numeric: tabular-nums;
 	}
 
 	/* Size Variants */
 	.lumi-progress--xs .lumi-progress__track {
-		height: 4px;
+		height: var(--lumi-space-2xs);
 	}
 
 	.lumi-progress--sm .lumi-progress__track {
-		height: 8px;
+		height: var(--lumi-space-xs);
 	}
 
 	.lumi-progress--md .lumi-progress__track {
-		height: 12px;
+		height: var(--lumi-space-sm);
 	}
 
 	.lumi-progress--lg .lumi-progress__track {
-		height: 16px;
+		height: var(--lumi-space-md);
 	}
 
 	.lumi-progress--xl .lumi-progress__track {
-		height: 24px;
+		height: var(--lumi-space-lg);
 	}
 
 	/* Color Variants */
 	.lumi-progress--primary .lumi-progress__bar {
-		background: var(--lumi-color-primary);
+		--progress-color: var(--lumi-color-primary);
 	}
 
 	.lumi-progress--secondary .lumi-progress__bar {
-		background: var(--lumi-color-secondary);
+		--progress-color: var(--lumi-color-secondary);
 	}
 
 	.lumi-progress--success .lumi-progress__bar {
-		background: var(--lumi-color-success);
+		--progress-color: var(--lumi-color-success);
 	}
 
 	.lumi-progress--warning .lumi-progress__bar {
-		background: var(--lumi-color-warning);
+		--progress-color: var(--lumi-color-warning);
 	}
 
 	.lumi-progress--danger .lumi-progress__bar {
-		background: var(--lumi-color-danger);
+		--progress-color: var(--lumi-color-danger);
 	}
 
 	.lumi-progress--info .lumi-progress__bar {
-		background: var(--lumi-color-info);
+		--progress-color: var(--lumi-color-info);
 	}
 
 	@keyframes lumi-progress-indeterminate {
@@ -259,7 +219,7 @@
 
 	@keyframes lumi-progress-stripes {
 		0% {
-			background-position: 1rem 0;
+			background-position: var(--lumi-space-md) 0;
 		}
 		100% {
 			background-position: 0 0;

@@ -1,12 +1,15 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import Icon from '../Icon/Icon.svelte';
+	import { getIconSize } from '../config';
+	import type { LumiSize } from '../config';
 	import type { TitleColor, TitleSize } from './types';
 
 	interface Props {
 		size?: TitleSize;
 		color?: TitleColor;
 		icon?: string;
+		iconColor?: TitleColor;
 		title?: string;
 		subtitle?: string;
 		class?: string;
@@ -20,6 +23,7 @@
 		size = 'md',
 		color = 'text',
 		icon = '',
+		iconColor,
 		title = '',
 		subtitle = '',
 		class: className = '',
@@ -28,6 +32,15 @@
 		subtitleSnippet,
 		right
 	}: Props = $props();
+
+	const iconSizeMap: Record<TitleSize, LumiSize> = {
+		sm: 'sm',
+		md: 'md',
+		lg: 'lg',
+		xl: 'xl'
+	};
+
+	const iconSize = $derived(() => `${getIconSize(iconSizeMap[size])}px`);
 
 	const titleClasses = $derived(() => {
 		return [
@@ -43,11 +56,12 @@
 	});
 
 	const styleVars = $derived(() => {
-		const colorVar =
+		const titleColorVar =
 			color === 'text'
 				? 'var(--lumi-color-text)'
 				: `var(--lumi-color-${color as Exclude<TitleColor, 'text'>})`;
-		return `--title-color: ${colorVar};`;
+		const resolvedIconColor = iconColor ? `var(--lumi-color-${iconColor})` : titleColorVar;
+		return `--title-color: ${titleColorVar}; --title-icon-color: ${resolvedIconColor};`;
 	});
 </script>
 
@@ -58,7 +72,7 @@
 			{#if iconSnippet}
 				{@render iconSnippet()}
 			{:else if icon}
-				<Icon {icon} size={size === 'lg' || size === 'xl' ? '32px' : '24px'} />
+				<Icon {icon} size={iconSize()} />
 			{/if}
 		</div>
 	{/if}
@@ -109,8 +123,8 @@
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		color: var(--title-color);
-		opacity: 0.5;
+		color: var(--title-icon-color);
+		opacity: 0.8;
 	}
 
 	.lumi-title__content {
@@ -128,7 +142,7 @@
 	}
 
 	.lumi-title__subtitle {
-		margin-top: 2px;
+		margin-top: var(--lumi-space-2xs);
 		font-weight: var(--lumi-font-weight-normal);
 		color: var(--lumi-color-text-muted);
 		line-height: var(--lumi-line-height-normal);

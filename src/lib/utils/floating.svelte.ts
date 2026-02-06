@@ -61,6 +61,7 @@ export function createFloating(
 
 	let isOpen = $state(false);
 	let position = $state<FloatingPosition>({ top: 0, left: 0 });
+	let hasPosition = $state(false);
 
 	const floatingStyles = $derived(() => {
 		const { strategy, zIndex, matchWidth } = resolvedOptions();
@@ -68,7 +69,8 @@ export function createFloating(
 			position: strategy,
 			top: `${position.top}px`,
 			left: `${position.left}px`,
-			zIndex
+			zIndex,
+			visibility: hasPosition ? 'visible' : 'hidden'
 		};
 
 		if (position.width && matchWidth) {
@@ -188,16 +190,20 @@ export function createFloating(
 			width: calculatedWidth,
 			maxHeight: calculatedMaxHeight
 		};
+		hasPosition = true;
 	}
 
 	function open(): void {
+		hasPosition = false;
 		isOpen = true;
-		// Use setTimeout to ensure DOM is updated
-		setTimeout(() => calculatePosition(), 0);
+		// Try immediate position to avoid first-frame flash at 0,0.
+		calculatePosition();
+		requestAnimationFrame(() => calculatePosition());
 	}
 
 	function close(): void {
 		isOpen = false;
+		hasPosition = false;
 	}
 
 	function toggle(): void {

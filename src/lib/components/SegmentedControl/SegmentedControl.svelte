@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import Icon from '../Icon/Icon.svelte';
+	import { LUMI_CONFIG } from '../config';
 	import type { SegmentedControlProps } from './types';
 
 	let {
@@ -9,13 +10,15 @@
 		color = 'primary',
 		disabled = false,
 		class: className = '',
-		onchange
+		onchange,
+		'aria-label': ariaLabel = ''
 	}: SegmentedControlProps = $props();
 
 	let containerRef: HTMLDivElement | undefined = $state();
 	const optionRefs: (HTMLElement | null)[] = $state([]);
 	let gliderStyle = $state<{ width: string; transform: string } | null>(null);
 	let resizeObserver: ResizeObserver | undefined;
+	const transitionDuration = `${LUMI_CONFIG.transitions.base}ms`;
 
 	const uniqueName = `lumi-sc-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -29,6 +32,10 @@
 			.filter(Boolean)
 			.join(' ');
 	});
+
+	const styleVars = $derived(
+		`--seg-color: var(--lumi-color-${color}); --seg-transition-duration: ${transitionDuration};`
+	);
 
 	function updateGlider(): void {
 		if (!containerRef || !options.length) return;
@@ -95,7 +102,13 @@
 	});
 </script>
 
-<div bind:this={containerRef} class={containerClasses()} role="group">
+<div
+	bind:this={containerRef}
+	class={containerClasses()}
+	style={styleVars}
+	role="radiogroup"
+	aria-label={ariaLabel || 'Segmented control'}
+>
 	<!-- Glider -->
 	{#if gliderStyle}
 		<div
@@ -120,6 +133,7 @@
 				checked={value === option.value}
 				disabled={disabled || option.disabled}
 				onchange={() => handleChange(option.value)}
+				aria-label={option.label}
 			/>
 			<span class="lumi-segmented-control__content">
 				{#if option.icon}
@@ -136,25 +150,44 @@
 		position: relative;
 		display: inline-flex;
 		align-items: center;
-		background: var(--lumi-color-background-secondary);
-		border-radius: var(--lumi-radius-lg);
-		padding: 4px;
-		gap: 0; /* Gap handled by padding/margins if needed, but 0 is better for glider */
+		background:
+			linear-gradient(
+				180deg,
+				rgba(var(--lumi-color-background-rgb), 0.12) 0%,
+				rgba(var(--lumi-color-background-rgb), 0.28) 100%
+			),
+			var(--lumi-color-background-secondary);
+		border: 1px solid var(--lumi-color-border-light);
+		border-radius: var(--lumi-radius-xl);
+		padding: var(--lumi-space-2xs);
+		gap: var(--lumi-space-2xs);
 		user-select: none;
-		isolation: isolate; /* Create stacking context */
+		isolation: isolate;
 		width: fit-content;
 		max-width: 100%;
+		box-shadow: var(--lumi-shadow-sm);
+		transition: var(--lumi-transition-all);
 	}
 
 	.lumi-segmented-control__glider {
 		position: absolute;
-		top: 4px;
+		top: var(--lumi-space-2xs);
 		left: 0;
-		height: calc(100% - 8px);
-		background: var(--lumi-color-surface);
+		height: calc(100% - var(--lumi-space-xs));
+		background:
+			linear-gradient(
+				180deg,
+				var(--lumi-color-surface) 0%,
+				var(--lumi-color-background-hover) 100%
+			),
+			var(--lumi-color-surface);
+		border: 1px solid color-mix(in srgb, var(--seg-color) 20%, var(--lumi-color-border-light));
 		border-radius: var(--lumi-radius-md);
 		box-shadow: var(--lumi-shadow-sm);
-		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		transition:
+			transform var(--seg-transition-duration) var(--lumi-easing-default),
+			width var(--seg-transition-duration) var(--lumi-easing-default),
+			border-color var(--seg-transition-duration) var(--lumi-easing-default);
 		z-index: 1;
 		pointer-events: none;
 	}
@@ -190,7 +223,7 @@
 		font-weight: var(--lumi-font-weight-medium);
 		font-size: var(--lumi-font-size-sm);
 		white-space: nowrap;
-		transition: color 0.2s ease;
+		transition: var(--lumi-transition-colors);
 		border-radius: var(--lumi-radius-md);
 	}
 
@@ -201,7 +234,8 @@
 
 	/* Active State */
 	.lumi-segmented-control__option--active .lumi-segmented-control__content {
-		color: var(--lumi-color-text);
+		color: var(--seg-color);
+		font-weight: var(--lumi-font-weight-semibold);
 	}
 
 	/* Hover State */
@@ -210,72 +244,19 @@
 		):hover
 		.lumi-segmented-control__content {
 		color: var(--lumi-color-text);
-		background-color: rgba(0, 0, 0, 0.03);
+		background-color: var(--lumi-color-background-hover);
 	}
 
 	/* Focus State */
 	.lumi-segmented-control__input:focus-visible + .lumi-segmented-control__content {
-		outline: 2px solid var(--lumi-color-primary);
-		outline-offset: -2px;
+		outline: var(--lumi-border-width-thick) solid var(--seg-color);
+		outline-offset: calc(var(--lumi-space-2xs) * -1);
 	}
 
 	.lumi-segmented-control--disabled {
 		opacity: 0.6;
 		cursor: not-allowed;
 		pointer-events: none;
-	}
-
-	/* Color Variants - Active Text Color */
-	.lumi-segmented-control--primary
-		.lumi-segmented-control__option--active
-		.lumi-segmented-control__content {
-		color: var(--lumi-color-primary);
-	}
-
-	.lumi-segmented-control--secondary
-		.lumi-segmented-control__option--active
-		.lumi-segmented-control__content {
-		color: var(--lumi-color-secondary);
-	}
-
-	.lumi-segmented-control--success
-		.lumi-segmented-control__option--active
-		.lumi-segmented-control__content {
-		color: var(--lumi-color-success);
-	}
-
-	.lumi-segmented-control--warning
-		.lumi-segmented-control__option--active
-		.lumi-segmented-control__content {
-		color: var(--lumi-color-warning);
-	}
-
-	.lumi-segmented-control--danger
-		.lumi-segmented-control__option--active
-		.lumi-segmented-control__content {
-		color: var(--lumi-color-danger);
-	}
-
-	.lumi-segmented-control--info
-		.lumi-segmented-control__option--active
-		.lumi-segmented-control__content {
-		color: var(--lumi-color-info);
-	}
-
-	/* Responsive */
-	@media (max-width: 640px) {
-		.lumi-segmented-control__content {
-			padding: var(--lumi-space-xs) var(--lumi-space-sm);
-		}
-
-		.lumi-segmented-control__label {
-			display: none;
-		}
-
-		/* If no icon, show label even on mobile */
-		.lumi-segmented-control__option:not(:has(svg)) .lumi-segmented-control__label {
-			display: block;
-		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {

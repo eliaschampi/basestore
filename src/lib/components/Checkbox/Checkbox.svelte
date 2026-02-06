@@ -1,5 +1,7 @@
 <script lang="ts">
 	import type { CheckboxProps } from './types';
+	import Icon from '../Icon/Icon.svelte';
+	import { getIconSize } from '../config';
 
 	let {
 		checked = $bindable(false),
@@ -10,7 +12,8 @@
 		disabled = false,
 		class: className = '',
 		children,
-		onchange
+		onchange,
+		'aria-label': ariaLabel = ''
 	}: CheckboxProps = $props();
 
 	// Generate unique ID
@@ -30,6 +33,8 @@
 			.join(' ');
 	});
 
+	const iconSize = $derived(() => `${size === 'sm' ? getIconSize('xs') : getIconSize('sm')}px`);
+
 	// Handle change event
 	const handleChange = (event: Event) => {
 		if (disabled) return;
@@ -47,37 +52,18 @@
 		type="checkbox"
 		{checked}
 		{disabled}
+		aria-label={ariaLabel || label || undefined}
 		class="lumi-checkbox__input"
 		onchange={handleChange}
 		bind:indeterminate
 	/>
 
 	<!-- Visual checkbox -->
-	<div class="lumi-checkbox__visual">
+	<div class="lumi-checkbox__visual" aria-hidden="true">
 		{#if indeterminate}
-			<svg
-				class="lumi-checkbox__icon"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="3"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<line x1="5" y1="12" x2="19" y2="12"></line>
-			</svg>
+			<Icon icon="minus" size={iconSize()} class="lumi-checkbox__icon" stroke={3} />
 		{:else if checked}
-			<svg
-				class="lumi-checkbox__icon"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="3"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<polyline points="20 6 9 17 4 12"></polyline>
-			</svg>
+			<Icon icon="check" size={iconSize()} class="lumi-checkbox__icon" stroke={3} />
 		{/if}
 	</div>
 
@@ -95,6 +81,9 @@
 
 <style>
 	.lumi-checkbox {
+		--checkbox-size: var(--lumi-icon-md);
+		--checkbox-label-size: var(--lumi-font-size-base);
+		--checkbox-radius: var(--lumi-radius-md);
 		position: relative;
 		display: inline-flex;
 		align-items: center;
@@ -102,7 +91,7 @@
 		cursor: pointer;
 		user-select: none;
 		font-family: var(--lumi-font-family-sans);
-		transition: opacity 0.2s ease;
+		transition: var(--lumi-transition-opacity);
 	}
 
 	/* Hidden input */
@@ -120,52 +109,45 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		border: 2px solid var(--lumi-color-border);
-		border-radius: var(--lumi-radius-md);
+		width: var(--checkbox-size);
+		height: var(--checkbox-size);
+		border: var(--lumi-border-width-thick) solid var(--lumi-color-border);
+		border-radius: var(--checkbox-radius);
 		background: var(--lumi-color-surface);
-		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		transition: var(--lumi-transition-all);
 		flex-shrink: 0;
 		overflow: hidden;
 	}
 
 	/* Check mark icon */
-	.lumi-checkbox__icon {
+	:global(.lumi-checkbox__icon) {
 		color: var(--lumi-color-white);
-		width: 100%;
-		height: 100%;
-		padding: 2px;
 		opacity: 0;
-		transform: scale(0.5);
-		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		transform: scale(0.6);
+		transition: var(--lumi-transition-all);
+		pointer-events: none;
 	}
 
 	/* Label */
 	.lumi-checkbox__label {
 		color: var(--lumi-color-text);
-		font-size: var(--lumi-font-size-base);
+		font-size: var(--checkbox-label-size);
 		font-weight: var(--lumi-font-weight-medium);
 		line-height: var(--lumi-line-height-tight);
 		cursor: pointer;
 	}
 
 	/* Sizes */
-	.lumi-checkbox--sm .lumi-checkbox__visual {
-		width: 16px;
-		height: 16px;
-		border-radius: var(--lumi-radius-sm);
+	.lumi-checkbox--sm {
+		--checkbox-size: var(--lumi-icon-sm);
+		--checkbox-label-size: var(--lumi-font-size-sm);
+		--checkbox-radius: var(--lumi-radius-sm);
 	}
 
-	.lumi-checkbox--sm .lumi-checkbox__label {
-		font-size: var(--lumi-font-size-sm);
-	}
-
-	.lumi-checkbox--md .lumi-checkbox__visual {
-		width: 20px;
-		height: 20px;
-	}
-
-	.lumi-checkbox--md .lumi-checkbox__label {
-		font-size: var(--lumi-font-size-base);
+	.lumi-checkbox--md {
+		--checkbox-size: var(--lumi-icon-md);
+		--checkbox-label-size: var(--lumi-font-size-base);
+		--checkbox-radius: var(--lumi-radius-md);
 	}
 
 	/* Color variants */
@@ -194,20 +176,24 @@
 		border-color: var(--checkbox-color);
 	}
 
-	.lumi-checkbox--checked .lumi-checkbox__icon {
+	.lumi-checkbox--checked :global(.lumi-checkbox__icon) {
 		opacity: 1;
 		transform: scale(1);
 	}
 
 	.lumi-checkbox__input:focus-visible + .lumi-checkbox__visual {
 		box-shadow:
-			0 0 0 2px var(--lumi-color-background),
-			0 0 0 4px var(--checkbox-color);
+			0 0 0 var(--lumi-border-width-thick) var(--lumi-color-background),
+			0 0 0 calc(var(--lumi-border-width-thick) * 2) var(--checkbox-color);
 	}
 
 	.lumi-checkbox:not(.lumi-checkbox--disabled):hover .lumi-checkbox__visual {
 		border-color: var(--checkbox-color);
 		background: var(--lumi-color-background-hover);
+	}
+
+	.lumi-checkbox--checked:not(.lumi-checkbox--disabled):hover .lumi-checkbox__visual {
+		background: var(--checkbox-color);
 	}
 
 	/* Disabled state */
@@ -224,19 +210,5 @@
 	.lumi-checkbox--disabled.lumi-checkbox--checked .lumi-checkbox__visual {
 		background: var(--lumi-color-border);
 		border-color: var(--lumi-color-border);
-	}
-
-	/* Animation for checkmark */
-	@keyframes check-draw {
-		from {
-			stroke-dasharray: 0 100;
-		}
-		to {
-			stroke-dasharray: 100 0;
-		}
-	}
-
-	.lumi-checkbox--checked .lumi-checkbox__icon polyline {
-		animation: check-draw 0.2s ease forwards;
 	}
 </style>

@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { setContext } from 'svelte';
 	import { Icon } from '../Icon';
+	import { LUMI_CONFIG } from '../config';
 	import type { TabsProps } from './types';
 
 	interface Props extends TabsProps {
@@ -13,12 +14,15 @@
 		tabs = [],
 		color = 'primary',
 		position = 'horizontal',
+		'aria-label': ariaLabel = '',
 		class: className = '',
 		children,
 		onchange
 	}: Props = $props();
 
 	let previousValue = $state<string | number | undefined>(undefined);
+	const tabsId = `lumi-tabs-${Math.random().toString(36).substring(2, 9)}`;
+	const transitionDuration = `${LUMI_CONFIG.transitions.base}ms`;
 	$effect(() => {
 		if (value === undefined && tabs.length > 0) {
 			const firstEnabledTab = tabs.find((tab) => !tab.disabled);
@@ -39,6 +43,8 @@
 			.filter(Boolean)
 			.join(' ')
 	);
+
+	const styleVars = `--tabs-transition-duration: ${transitionDuration};`;
 
 	const selectTab = (tabValue: string | number) => {
 		if (value === tabValue) return;
@@ -77,16 +83,23 @@
 	};
 </script>
 
-<div class={classes}>
+<div class={classes} style={styleVars}>
 	<!-- Tab Navigation -->
-	<div class="lumi-tabs__nav" role="tablist" aria-orientation={position}>
+	<div
+		class="lumi-tabs__nav"
+		role="tablist"
+		aria-orientation={position}
+		aria-label={ariaLabel || 'Tabs'}
+	>
 		{#each tabs as tab (tab.value)}
 			<button
+				id={`${tabsId}-tab-${tab.value}`}
 				type="button"
 				role="tab"
 				class="lumi-tabs__tab {value === tab.value ? 'lumi-tabs__tab--active' : ''} {tab.disabled
 					? 'lumi-tabs__tab--disabled'
 					: ''}"
+				aria-controls={`${tabsId}-panel-${tab.value}`}
 				disabled={tab.disabled}
 				aria-selected={value === tab.value}
 				aria-disabled={tab.disabled}
@@ -105,7 +118,12 @@
 	</div>
 
 	<!-- Tab Content -->
-	<div class="lumi-tabs__content" role="tabpanel">
+	<div
+		id={value !== undefined ? `${tabsId}-panel-${value}` : undefined}
+		class="lumi-tabs__content"
+		role="tabpanel"
+		aria-labelledby={value !== undefined ? `${tabsId}-tab-${value}` : undefined}
+	>
 		{#if children}
 			{@render children()}
 		{/if}
@@ -127,46 +145,43 @@
 	/* Position variants */
 	.lumi-tabs--horizontal .lumi-tabs__nav {
 		flex-direction: row;
-		border-bottom: 1px solid var(--lumi-color-border);
+		border: 1px solid var(--lumi-color-border-light);
+		border-radius: var(--lumi-radius-2xl);
+		background: var(--lumi-color-surface-overlay);
+		padding: var(--lumi-space-2xs);
+		gap: var(--lumi-space-2xs);
+		box-shadow: var(--lumi-shadow-sm);
 	}
 
 	.lumi-tabs--horizontal .lumi-tabs__tab {
-		border-bottom: 2px solid transparent;
-		margin-bottom: -2px;
 		flex: 1;
-	}
-
-	.lumi-tabs--horizontal .lumi-tabs__tab--active {
-		border-bottom-color: var(--lumi-tabs-color);
 	}
 
 	.lumi-tabs--vertical {
 		flex-direction: row;
+		gap: var(--lumi-space-md);
 	}
 
 	.lumi-tabs--vertical .lumi-tabs__nav {
 		flex-direction: column;
 		align-items: stretch;
-		border-right: 1px solid var(--lumi-color-border);
-		min-width: 200px;
+		border: 1px solid var(--lumi-color-border-light);
+		border-radius: var(--lumi-radius-2xl);
+		min-width: calc(var(--lumi-space-5xl) * 2 + var(--lumi-space-md));
+		padding: var(--lumi-space-2xs);
+		gap: var(--lumi-space-2xs);
+		box-shadow: var(--lumi-shadow-sm);
 	}
 
 	.lumi-tabs--vertical .lumi-tabs__tab {
-		border-right: 2px solid transparent;
-		margin-right: -2px;
 		justify-content: flex-start;
 		text-align: left;
 		width: 100%;
 	}
 
-	.lumi-tabs--vertical .lumi-tabs__tab--active {
-		border-right-color: var(--lumi-tabs-color);
-		background: var(--lumi-color-surface);
-	}
-
 	.lumi-tabs--vertical .lumi-tabs__content {
 		flex: 1;
-		padding-left: var(--lumi-space-md);
+		padding-top: var(--lumi-space-2xs);
 	}
 
 	/* Tab navigation */
@@ -190,9 +205,11 @@
 		color: var(--lumi-color-text-muted);
 		background: transparent;
 		border: none;
-		border-radius: var(--lumi-radius-md) var(--lumi-radius-md) 0 0;
+		border-radius: var(--lumi-radius-md);
 		cursor: pointer;
-		transition: var(--lumi-transition-all);
+		transition:
+			background-color var(--tabs-transition-duration) var(--lumi-easing-default),
+			color var(--tabs-transition-duration) var(--lumi-easing-default);
 		user-select: none;
 		white-space: nowrap;
 		position: relative;
@@ -207,6 +224,27 @@
 	.lumi-tabs__tab--active {
 		color: var(--lumi-tabs-color);
 		font-weight: var(--lumi-font-weight-semibold);
+		background: color-mix(in srgb, var(--lumi-tabs-color) 10%, transparent);
+	}
+
+	.lumi-tabs__tab--active::after {
+		content: '';
+		position: absolute;
+		left: var(--lumi-space-sm);
+		right: var(--lumi-space-sm);
+		bottom: calc(var(--lumi-space-2xs) * -1);
+		height: var(--lumi-border-width-thick);
+		border-radius: var(--lumi-radius-full);
+		background: var(--lumi-tabs-color);
+	}
+
+	.lumi-tabs--vertical .lumi-tabs__tab--active::after {
+		left: calc(var(--lumi-space-2xs) * -1);
+		right: auto;
+		top: var(--lumi-space-xs);
+		bottom: var(--lumi-space-xs);
+		width: var(--lumi-border-width-thick);
+		height: auto;
 	}
 
 	.lumi-tabs__tab--disabled {
@@ -216,8 +254,8 @@
 	}
 
 	.lumi-tabs__tab:focus-visible {
-		outline: 2px solid var(--lumi-tabs-color);
-		outline-offset: 2px;
+		outline: var(--lumi-border-width-thick) solid color-mix(in srgb, var(--lumi-tabs-color) 35%, transparent);
+		outline-offset: calc(var(--lumi-space-2xs) * -1);
 		border-radius: var(--lumi-radius-md);
 	}
 
@@ -254,22 +292,22 @@
 		}
 
 		.lumi-tabs--vertical .lumi-tabs__nav {
-			border-right: none;
-			border-bottom: 1px solid var(--lumi-color-border);
+			border-right: 1px solid var(--lumi-color-border-light);
 			min-width: auto;
 			margin-bottom: var(--lumi-space-sm);
 		}
 
 		.lumi-tabs--vertical .lumi-tabs__tab {
-			border-right: none;
-			border-bottom: 2px solid transparent;
 			margin-right: 0;
-			margin-bottom: -2px;
 		}
 
-		.lumi-tabs--vertical .lumi-tabs__tab--active {
-			border-right-color: transparent;
-			border-bottom-color: var(--lumi-tabs-color);
+		.lumi-tabs--vertical .lumi-tabs__tab--active::after {
+			left: var(--lumi-space-sm);
+			right: var(--lumi-space-sm);
+			top: auto;
+			bottom: calc(var(--lumi-space-2xs) * -1);
+			width: auto;
+			height: var(--lumi-border-width-thick);
 		}
 
 		.lumi-tabs--vertical .lumi-tabs__content {
@@ -280,7 +318,7 @@
 		.lumi-tabs__tab {
 			padding: var(--lumi-space-xs) var(--lumi-space-sm);
 			font-size: var(--lumi-font-size-sm);
-			min-height: 2rem;
+			min-height: var(--lumi-space-xl);
 		}
 	}
 

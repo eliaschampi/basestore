@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import Icon from '../Icon/Icon.svelte';
+	import { getIconSize } from '../config';
 	import type { InfoItemProps } from './types';
 
 	interface Props extends InfoItemProps {
@@ -31,15 +32,18 @@
 			.filter(Boolean)
 			.join(' ');
 	});
+
+	const iconSize = $derived(() => `${getIconSize('md')}px`);
+	const styleVars = $derived(() => `--info-item-icon-color: var(--lumi-color-${iconColor});`);
 </script>
 
-<div class={classes()}>
+<div class={classes()} style={styleVars()}>
 	{#if icon || iconSlot}
 		<div class="lumi-info-item__icon">
 			{#if iconSlot}
 				{@render iconSlot()}
 			{:else}
-				<Icon {icon} size="20px" color={`var(--lumi-color-${iconColor})`} />
+				<Icon {icon} size={iconSize()} />
 			{/if}
 		</div>
 	{/if}
@@ -68,6 +72,7 @@
 		padding: var(--lumi-space-sm);
 		border-radius: var(--lumi-radius-md);
 		transition: var(--lumi-transition-colors);
+		background: rgba(var(--lumi-color-background-rgb), 0.2);
 	}
 
 	.lumi-info-item--horizontal {
@@ -88,6 +93,7 @@
 		flex-shrink: 0;
 		width: var(--lumi-space-lg);
 		height: var(--lumi-space-lg);
+		color: var(--info-item-icon-color);
 	}
 
 	.lumi-info-item__label {
@@ -99,7 +105,7 @@
 	}
 
 	.lumi-info-item--horizontal .lumi-info-item__label {
-		min-width: 120px;
+		min-width: calc(var(--lumi-space-3xl) * 2 + var(--lumi-space-xl));
 	}
 
 	.lumi-info-item__value {

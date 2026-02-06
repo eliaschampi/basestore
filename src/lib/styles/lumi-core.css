@@ -53,17 +53,19 @@ body {
 .lumi-dashboard-layout {
 	display: grid;
 	height: 100vh;
-
+	height: 100dvh;
+	padding: var(--lumi-layout-shell-padding);
+	gap: var(--lumi-layout-shell-gap);
 	grid-template-areas:
 		'sidebar navbar'
 		'sidebar content';
-	grid-template-columns: var(--lumi-sidebar-width) 1fr;
-	grid-template-rows: auto 1fr;
+	grid-template-columns: var(--lumi-sidebar-width) minmax(0, 1fr);
+	grid-template-rows: auto minmax(0, 1fr);
 	transition: grid-template-columns var(--lumi-duration-base) var(--lumi-easing-default);
 }
 
 .lumi-dashboard-layout.lumi-sidebar--is-collapsed {
-	grid-template-columns: var(--lumi-sidebar-width-collapsed) 1fr;
+	grid-template-columns: var(--lumi-sidebar-width-collapsed) minmax(0, 1fr);
 }
 
 /* ========================================================================== */
@@ -72,15 +74,17 @@ body {
 .lumi-dashboard__content {
 	grid-area: content;
 	position: relative;
+	min-width: 0;
+	min-height: 0;
 	background: var(--lumi-color-background);
-	padding: var(--lumi-space-lg);
-	height: calc(100vh - var(--lumi-navbar-height));
+	border-radius: var(--lumi-layout-floating-radius);
+	padding: var(--lumi-layout-content-padding);
 	overflow-y: auto;
 	overflow-x: hidden;
 }
 
 .lumi-dashboard__content::-webkit-scrollbar {
-	width: 6px;
+	width: var(--lumi-space-2xs);
 }
 
 .lumi-dashboard__content::-webkit-scrollbar-track {
@@ -1104,7 +1108,8 @@ body {
 			'navbar'
 			'content';
 		grid-template-columns: 1fr;
-		grid-template-rows: auto 1fr;
+		grid-template-rows: auto minmax(0, 1fr);
+		padding: var(--lumi-layout-shell-padding-tablet);
 	}
 
 	/* Override any collapsed state classes */
@@ -1113,39 +1118,12 @@ body {
 			'navbar'
 			'content';
 		grid-template-columns: 1fr;
+		padding: var(--lumi-layout-shell-padding-tablet);
 	}
 
 	/* When mobile sidebar is open, prevent body scroll */
 	.lumi-dashboard-layout.lumi-sidebar--mobile-open {
 		overflow: hidden;
-	}
-
-	/* Sidebar becomes fixed overlay with higher specificity */
-	.lumi-dashboard-layout .lumi-sidebar {
-		position: fixed !important;
-		left: 0;
-		top: 0;
-		width: var(--lumi-sidebar-width-mobile);
-		height: 100vh;
-		transform: translateX(-100%);
-		transition: transform var(--lumi-duration-base) var(--lumi-easing-default);
-		box-shadow: var(--lumi-shadow-xl);
-		z-index: var(--lumi-z-sidebar);
-	}
-
-	/* Mobile open state */
-	.lumi-dashboard-layout .lumi-sidebar.lumi-sidebar--mobile-open {
-		transform: translateX(0);
-	}
-
-	/* Reset collapsed state behavior on mobile */
-	.lumi-dashboard-layout .lumi-sidebar.lumi-sidebar--collapsed {
-		width: var(--lumi-sidebar-width-mobile);
-		transform: translateX(-100%);
-	}
-
-	.lumi-dashboard-layout .lumi-sidebar.lumi-sidebar--collapsed.lumi-sidebar--mobile-open {
-		transform: translateX(0);
 	}
 
 	/* Mobile overlay */
@@ -1167,8 +1145,8 @@ body {
 	/* Content adjustments */
 	.lumi-dashboard__content {
 		grid-area: content;
-		padding: var(--lumi-space-md);
-		height: calc(100vh - var(--lumi-navbar-height));
+		padding: var(--lumi-layout-content-padding-tablet);
+		border-radius: var(--lumi-layout-floating-radius-tablet);
 	}
 
 	/* Two-column layout becomes single column */
@@ -1185,8 +1163,13 @@ body {
 
 /* Tablet & Mobile Layout (768px and below) */
 @media (max-width: 768px) {
+	.lumi-dashboard-layout {
+		padding: var(--lumi-layout-shell-padding-mobile);
+	}
+
 	.lumi-dashboard__content {
-		padding: var(--lumi-space-sm);
+		padding: var(--lumi-layout-content-padding-mobile);
+		border-radius: var(--lumi-layout-floating-radius-mobile);
 	}
 
 	/* Grid utilities - Responsive behavior */
@@ -1272,7 +1255,7 @@ body {
 /* Small Mobile (480px and below) */
 @media (max-width: 480px) {
 	.lumi-dashboard__content {
-		padding: var(--lumi-space-xs);
+		padding: var(--lumi-layout-content-padding-compact);
 	}
 
 	/* All grids become single column */

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { onMount } from 'svelte';
 	import { fade, scale } from 'svelte/transition';
 	import Icon from '../Icon/Icon.svelte';
+	import { LUMI_CONFIG } from '../config';
 	import type { DialogProps } from './types';
 
 	interface Props extends DialogProps {
@@ -21,7 +21,7 @@
 		hideClose = false,
 		closeLabel = 'Close dialog',
 		closeOnEscape = true,
-		class: _className = '',
+		class: className = '',
 		onclose,
 		onopen,
 		onafteropen,
@@ -34,66 +34,78 @@
 	let dialogElement: HTMLDivElement | undefined = $state();
 	let previousActiveElement: HTMLElement | null = null;
 	let bodyOverflow = '';
+	let afterCloseTimer: number | undefined;
 
 	const uniqueId = Math.random().toString(36).substring(2, 11);
 	const titleId = `lumi-dialog-title-${uniqueId}`;
 	const contentId = `lumi-dialog-content-${uniqueId}`;
+	const transitionDuration = LUMI_CONFIG.transitions.base;
+	const transitionDurationMs = `${transitionDuration}ms`;
+	const focusableSelector =
+		'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 	const dialogClasses = $derived(() => {
 		return [
 			'lumi-dialog',
 			!fullScreen && `lumi-dialog--${size}`,
 			scrollable && 'lumi-dialog--scrollable',
-			fullScreen && 'lumi-dialog--full-screen'
+			fullScreen && 'lumi-dialog--full-screen',
+			className
 		]
 			.filter(Boolean)
 			.join(' ');
 	});
 
-	const overlayClasses = $derived(
-		['lumi-dialog-overlay', persistent && 'lumi-dialog-overlay--persistent']
+	const overlayClasses = $derived(() => {
+		return ['lumi-dialog-overlay', persistent && 'lumi-dialog-overlay--persistent']
 			.filter(Boolean)
-			.join(' ')
-	);
+			.join(' ');
+	});
+
+	const styleVars = $derived(() => `--dialog-transition-duration: ${transitionDurationMs};`);
 
 	function handleClose(): void {
-		if (!persistent) {
-			open = false;
-			onclose?.();
-		}
+		if (!open) return;
+		open = false;
+		onclose?.();
 	}
 
-	function handleOverlayClick(): void {
-		if (!persistent) {
-			handleClose();
-		}
+	function handleOverlayClick(event: MouseEvent): void {
+		if (persistent || event.target !== event.currentTarget) return;
+		handleClose();
 	}
 
 	function handleEscapeKey(event: KeyboardEvent): void {
-		if (event.key === 'Escape' && closeOnEscape && open) {
-			handleClose();
-		}
+		if (!open || !closeOnEscape || event.key !== 'Escape') return;
+		event.preventDefault();
+		handleClose();
 	}
 
 	function trapFocus(event: KeyboardEvent): void {
 		if (!dialogElement || event.key !== 'Tab') return;
 
-		const focusableElements = dialogElement.querySelectorAll(
-			'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+		const focusableElements = Array.from(
+			dialogElement.querySelectorAll<HTMLElement>(focusableSelector)
 		);
 
-		const firstElement = focusableElements[0] as HTMLElement;
-		const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+		if (focusableElements.length === 0) {
+			event.preventDefault();
+			dialogElement.focus();
+			return;
+		}
+
+		const firstElement = focusableElements[0];
+		const lastElement = focusableElements[focusableElements.length - 1];
 
 		if (event.shiftKey) {
 			if (document.activeElement === firstElement) {
 				event.preventDefault();
-				lastElement?.focus();
+				lastElement.focus();
 			}
 		} else {
 			if (document.activeElement === lastElement) {
 				event.preventDefault();
-				firstElement?.focus();
+				firstElement.focus();
 			}
 		}
 	}
@@ -108,76 +120,79 @@
 	}
 
 	function focusDialog(): void {
-		setTimeout(() => {
-			if (dialogElement) {
-				const firstFocusable = dialogElement.querySelector(
-					'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-				) as HTMLElement;
-
-				if (firstFocusable) {
-					firstFocusable.focus();
-				} else {
-					dialogElement.focus();
-				}
-			}
-		}, 0);
+		requestAnimationFrame(() => {
+			if (!dialogElement) return;
+			const firstFocusable = dialogElement.querySelector<HTMLElement>(focusableSelector);
+			(firstFocusable ?? dialogElement).focus();
+		});
 	}
 
 	$effect(() => {
-		if (open) {
-			previousActiveElement = document.activeElement as HTMLElement;
-			lockBodyScroll();
-			document.addEventListener('keydown', handleEscapeKey);
-			document.addEventListener('keydown', trapFocus);
-			onopen?.();
-			focusDialog();
-			setTimeout(() => onafteropen?.(), 300);
-		} else {
+		if (!open) return;
+
+		previousActiveElement =
+			document.activeElement instanceof HTMLElement ? document.activeElement : null;
+		lockBodyScroll();
+		document.addEventListener('keydown', handleEscapeKey);
+		document.addEventListener('keydown', trapFocus);
+		onopen?.();
+		focusDialog();
+
+		const afterOpenTimer = window.setTimeout(() => {
+			onafteropen?.();
+		}, transitionDuration);
+
+		return () => {
+			window.clearTimeout(afterOpenTimer);
 			document.removeEventListener('keydown', handleEscapeKey);
 			document.removeEventListener('keydown', trapFocus);
 			unlockBodyScroll();
-			if (previousActiveElement) {
+
+			if (previousActiveElement?.isConnected) {
 				previousActiveElement.focus();
-				previousActiveElement = null;
 			}
-			setTimeout(() => onafterclose?.(), 300);
-		}
+			previousActiveElement = null;
+
+			if (afterCloseTimer) {
+				window.clearTimeout(afterCloseTimer);
+			}
+			afterCloseTimer = window.setTimeout(() => {
+				onafterclose?.();
+			}, transitionDuration);
+		};
 	});
 
-	onMount(() => {
+	$effect(() => {
 		return () => {
+			if (afterCloseTimer) {
+				window.clearTimeout(afterCloseTimer);
+			}
 			document.removeEventListener('keydown', handleEscapeKey);
 			document.removeEventListener('keydown', trapFocus);
 			unlockBodyScroll();
 		};
 	});
-	const handleKeyDownDialog = (event: KeyboardEvent) => {
-		if (event.key === 'Enter' || event.key === ' ') {
-			event.stopPropagation();
-		}
-	};
 </script>
 
 {#if open}
 	<div
-		class={overlayClasses}
-		transition:fade={{ duration: 200 }}
+		class={overlayClasses()}
+		style={styleVars()}
+		transition:fade={{ duration: transitionDuration }}
 		onclick={handleOverlayClick}
 		role="presentation"
 	>
 		<div
 			bind:this={dialogElement}
-			class={dialogClasses}
-			transition:scale={{ duration: 200, start: 0.95 }}
+			class={dialogClasses()}
+			transition:scale={{ duration: transitionDuration, start: 0.96 }}
 			role="dialog"
 			aria-modal="true"
-			aria-labelledby={titleId}
+			aria-labelledby={title ? titleId : undefined}
+			aria-label={!title ? 'Dialog' : undefined}
 			aria-describedby={contentId}
 			tabindex="-1"
-			onclick={(e) => e.stopPropagation()}
-			onkeydown={handleKeyDownDialog}
 		>
-			<!-- Dialog Header -->
 			{#if header || title || !hideClose}
 				<header class="lumi-dialog__header">
 					<div class="lumi-dialog__header-content">
@@ -203,14 +218,12 @@
 				</header>
 			{/if}
 
-			<!-- Dialog Content -->
 			<div id={contentId} class="lumi-dialog__content">
 				{#if children}
 					{@render children()}
 				{/if}
 			</div>
 
-			<!-- Dialog Footer -->
 			{#if footer}
 				<footer class="lumi-dialog__footer">
 					{@render footer()}
@@ -221,71 +234,81 @@
 {/if}
 
 <style>
-	/* Dialog Overlay (Backdrop) */
 	.lumi-dialog-overlay {
 		position: fixed;
 		inset: 0;
-		background: var(--lumi-color-overlay);
+		background:
+			radial-gradient(circle at top, rgba(var(--lumi-color-primary-rgb), 0.18), transparent 45%),
+			var(--lumi-color-overlay);
 		backdrop-filter: blur(var(--lumi-blur-md));
 		-webkit-backdrop-filter: blur(var(--lumi-blur-md));
 		z-index: var(--lumi-z-modal-backdrop);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: var(--lumi-space-md);
+		padding: var(--lumi-dialog-overlay-padding);
 		cursor: pointer;
 		overflow-y: auto;
-		transition: var(--lumi-transition-opacity);
+		transition: opacity var(--dialog-transition-duration) var(--lumi-easing-default);
 	}
 
 	.lumi-dialog-overlay--persistent {
 		cursor: default;
 	}
 
-	/* Dialog Container */
 	.lumi-dialog {
 		position: relative;
-		background-color: var(--lumi-color-surface);
-		border-radius: var(--lumi-radius-2xl);
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--lumi-color-primary-bg) 42%, transparent),
+				transparent 35%
+			),
+			var(--lumi-color-surface-overlay);
+		border-radius: var(--lumi-layout-floating-radius);
 		max-height: var(--lumi-dialog-max-height);
 		width: 100%;
 		display: flex;
 		flex-direction: column;
 		cursor: default;
 		z-index: var(--lumi-z-modal);
-		box-shadow: var(--lumi-shadow-md);
+		box-shadow: var(--lumi-shadow-xl);
 		border: 1px solid var(--lumi-color-border-light);
+		transition: var(--lumi-transition-all);
+		overflow: hidden;
+		backdrop-filter: blur(var(--lumi-blur-lg));
+		-webkit-backdrop-filter: blur(var(--lumi-blur-lg));
 	}
 
 	.lumi-dialog:focus {
 		outline: none;
 	}
 
-	/* Size Variants */
 	.lumi-dialog--sm {
 		max-width: var(--lumi-dialog-width-sm);
 		width: 100%;
 	}
+
 	.lumi-dialog--md {
 		max-width: var(--lumi-dialog-width-md);
 		width: 100%;
 	}
+
 	.lumi-dialog--lg {
 		max-width: var(--lumi-dialog-width-lg);
 		width: 100%;
 	}
+
 	.lumi-dialog--xl {
 		max-width: var(--lumi-dialog-width-xl);
 		width: 100%;
 	}
 
-	/* Scrollable Content */
 	.lumi-dialog--scrollable .lumi-dialog__content {
 		overflow-y: auto;
 		max-height: var(--lumi-dialog-content-max-height);
 	}
 
-	/* Full Screen Variant */
 	.lumi-dialog--full-screen {
 		max-width: none;
 		max-height: none;
@@ -299,16 +322,20 @@
 		overflow-y: auto;
 	}
 
-	/* Dialog Header */
 	.lumi-dialog__header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		padding: var(--lumi-space-lg);
 		border-bottom: 1px solid var(--lumi-color-border-light);
-		background-color: var(--lumi-color-surface);
-		border-top-left-radius: var(--lumi-radius-2xl);
-		border-top-right-radius: var(--lumi-radius-2xl);
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--lumi-color-surface) 92%, var(--lumi-color-primary-bg)),
+				var(--lumi-color-surface)
+			);
+		border-top-left-radius: var(--lumi-layout-floating-radius);
+		border-top-right-radius: var(--lumi-layout-floating-radius);
 		flex-shrink: 0;
 	}
 
@@ -317,7 +344,6 @@
 		min-width: 0;
 	}
 
-	/* Dialog Title */
 	.lumi-dialog__title {
 		margin: 0;
 		font-size: var(--lumi-font-size-xl);
@@ -326,7 +352,6 @@
 		line-height: var(--lumi-line-height-tight);
 	}
 
-	/* Dialog Close Button */
 	.lumi-dialog__close {
 		display: flex;
 		align-items: center;
@@ -344,9 +369,9 @@
 	}
 
 	.lumi-dialog__close:hover {
-		background: var(--lumi-color-background-hover);
+		background: color-mix(in srgb, var(--lumi-color-primary-bg) 45%, transparent);
 		color: var(--lumi-color-text);
-		border-color: var(--lumi-color-border);
+		border-color: color-mix(in srgb, var(--lumi-color-primary) 20%, var(--lumi-color-border));
 		transform: scale(1.02);
 	}
 
@@ -355,22 +380,21 @@
 	}
 
 	.lumi-dialog__close:focus-visible {
-		outline: 2px solid var(--lumi-color-primary);
+		outline: var(--lumi-border-width-thick) solid var(--lumi-color-primary);
 		outline-offset: var(--lumi-space-2xs);
 	}
 
-	/* Dialog Content */
 	.lumi-dialog__content {
 		flex: 1;
 		padding: var(--lumi-space-lg);
 		color: var(--lumi-color-text);
 		line-height: var(--lumi-line-height-normal);
-		background-color: var(--lumi-color-surface);
+		background: color-mix(in srgb, var(--lumi-color-surface) 94%, transparent);
 		overflow-y: auto;
 	}
 
 	.lumi-dialog__content::-webkit-scrollbar {
-		width: 6px;
+		width: var(--lumi-space-2xs);
 	}
 
 	.lumi-dialog__content::-webkit-scrollbar-track {
@@ -382,7 +406,6 @@
 		border-radius: var(--lumi-radius-full);
 	}
 
-	/* Dialog Footer */
 	.lumi-dialog__footer {
 		display: flex;
 		align-items: center;
@@ -391,23 +414,26 @@
 		padding: var(--lumi-space-lg);
 		border-top: 1px solid var(--lumi-color-border-light);
 		flex-shrink: 0;
-		background: var(--lumi-color-surface);
-		border-bottom-left-radius: var(--lumi-radius-2xl);
-		border-bottom-right-radius: var(--lumi-radius-2xl);
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--lumi-color-surface) 92%, transparent),
+				var(--lumi-color-surface)
+			);
+		border-bottom-left-radius: var(--lumi-layout-floating-radius);
+		border-bottom-right-radius: var(--lumi-layout-floating-radius);
 	}
 
-	/* Responsive Design */
 	@media (max-width: 768px) {
 		.lumi-dialog-overlay {
-			padding: 0;
-			align-items: flex-end;
+			padding: var(--lumi-dialog-overlay-padding-mobile);
+			align-items: center;
 		}
 
 		.lumi-dialog {
-			max-width: 100%;
-			border-bottom-left-radius: 0;
-			border-bottom-right-radius: 0;
-			max-height: var(--lumi-dialog-max-height);
+			max-width: var(--lumi-dialog-mobile-max-width);
+			max-height: var(--lumi-dialog-mobile-max-height);
+			border-radius: var(--lumi-layout-floating-radius-mobile);
 		}
 
 		.lumi-dialog--full-screen {
@@ -418,6 +444,8 @@
 
 		.lumi-dialog__header {
 			padding: var(--lumi-space-md);
+			border-top-left-radius: var(--lumi-layout-floating-radius-mobile);
+			border-top-right-radius: var(--lumi-layout-floating-radius-mobile);
 		}
 
 		.lumi-dialog__content {
@@ -428,6 +456,8 @@
 			padding: var(--lumi-space-md);
 			flex-direction: column-reverse;
 			gap: var(--lumi-space-sm);
+			border-bottom-left-radius: var(--lumi-layout-floating-radius-mobile);
+			border-bottom-right-radius: var(--lumi-layout-floating-radius-mobile);
 		}
 
 		.lumi-dialog__footer :global(.lumi-button) {
@@ -435,11 +465,11 @@
 		}
 	}
 
-	/* Reduced Motion Support */
 	@media (prefers-reduced-motion: reduce) {
 		.lumi-dialog-overlay,
-		.lumi-dialog {
-			transition-duration: 0.01ms !important;
+		.lumi-dialog,
+		.lumi-dialog__close {
+			transition: none;
 		}
 	}
 </style>

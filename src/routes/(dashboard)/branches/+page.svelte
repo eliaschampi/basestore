@@ -1,17 +1,23 @@
 <script lang="ts">
 	import { invalidate } from '$app/navigation';
 	import { enhance } from '$app/forms';
-	import Card from '$lib/components/Card/Card.svelte';
-	import Title from '$lib/components/Title/Title.svelte';
-	import Table from '$lib/components/Table/Table.svelte';
-	import Button from '$lib/components/Button/Button.svelte';
-	import Chip from '$lib/components/Chip/Chip.svelte';
-	import StatusIndicator from '$lib/components/StatusIndicator/StatusIndicator.svelte';
-	import Dialog from '$lib/components/Dialog/Dialog.svelte';
-	import Input from '$lib/components/Input/Input.svelte';
-	import Switch from '$lib/components/Switch/Switch.svelte';
-	import Select from '$lib/components/Select/Select.svelte';
-	import Alert from '$lib/components/Alert/Alert.svelte';
+	import {
+		Alert,
+		Button,
+		Card,
+		Chip,
+		Dialog,
+		Fieldset,
+		InfoItem,
+		Input,
+		List,
+		ListItem,
+		Select,
+		StatusIndicator,
+		Switch,
+		Table,
+		Title
+	} from '$lib/components';
 	import { showToast } from '$lib/stores/Toast';
 	import { can } from '$lib/stores/permissions';
 	import type { PageData } from './$types';
@@ -114,8 +120,12 @@
 		selectedUsers = selectedUsers.filter((code) => code !== userCode);
 	}
 
+	function getUser(userCode: string) {
+		return data.users.find((u) => u.code === userCode);
+	}
+
 	function getUserName(userCode: string): string {
-		const user = data.users.find((u) => u.code === userCode);
+		const user = getUser(userCode);
 		return user ? `${user.name ?? ''} ${user.last_name ?? ''}` : 'Usuario no disponible';
 	}
 
@@ -238,47 +248,54 @@
 
 			<Switch bind:checked={formState} name="state" label="Sede activa" />
 
-			<div class="lumi-stack lumi-space--sm">
-				<div class="lumi-text--sm lumi-font--medium lumi-block">Usuarios asignados</div>
-
-				<div class="lumi-flex lumi-flex--gap-sm">
-					<div class="lumi-flex-item--grow">
-						<Select
-							bind:value={selectedUserCode}
-							options={availableUserOptions}
-							placeholder="Seleccione un usuario"
-							clearable
-						/>
+			<Fieldset legend="Usuarios asignados">
+				<div class="lumi-stack lumi-space--sm">
+					<div class="lumi-flex lumi-flex--gap-sm lumi-flex--mobile-column">
+						<div class="lumi-flex-item--grow">
+							<Select
+								bind:value={selectedUserCode}
+								options={availableUserOptions}
+								placeholder="Seleccione un usuario"
+								clearable
+							/>
+						</div>
+						<Button type="border" icon="plus" onclick={addUser} disabled={!selectedUserCode}>
+							Agregar
+						</Button>
 					</div>
-					<Button type="border" icon="plus" onclick={addUser} disabled={!selectedUserCode}>
-						Agregar
-					</Button>
+
+					<InfoItem
+						icon="users"
+						label="Estado"
+						value={`${selectedUsers.length} usuario${selectedUsers.length === 1 ? '' : 's'} asignado${selectedUsers.length === 1 ? '' : 's'}`}
+					/>
+
+					{#if selectedUsers.length > 0}
+						<List size="sm">
+							{#each selectedUsers as userCode (userCode)}
+								{@const user = getUser(userCode)}
+								<input type="hidden" name="selectedUsers" value={userCode} />
+								<ListItem
+									title={getUserName(userCode)}
+									subtitle={user?.email || 'Sin correo'}
+									icon="user"
+								>
+									<Button
+										type="flat"
+										size="sm"
+										icon="x"
+										color="danger"
+										aria-label={`Quitar usuario ${getUserName(userCode)}`}
+										onclick={() => removeUser(userCode)}
+									/>
+								</ListItem>
+							{/each}
+						</List>
+					{:else}
+						<p class="lumi-text--sm lumi-text--muted">No hay usuarios asignados</p>
+					{/if}
 				</div>
-
-				{#if selectedUsers.length > 0}
-					<div class="lumi-stack lumi-space--xs">
-						{#each selectedUsers as userCode (userCode)}
-							<input type="hidden" name="selectedUsers" value={userCode} />
-							<div
-								class="lumi-flex lumi-flex--between lumi-align-items--center lumi-padding--sm lumi-bg--surface lumi-rounded--md"
-							>
-								<span class="lumi-text--sm">
-									{getUserName(userCode)}
-								</span>
-								<Button
-									type="flat"
-									size="sm"
-									icon="x"
-									color="danger"
-									onclick={() => removeUser(userCode)}
-								/>
-							</div>
-						{/each}
-					</div>
-				{:else}
-					<p class="lumi-text--sm lumi-text--muted">No hay usuarios asignados</p>
-				{/if}
-			</div>
+			</Fieldset>
 		</div>
 	</form>
 

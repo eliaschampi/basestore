@@ -320,12 +320,46 @@
 	--lumi-dialog-full-height: 100vh;
 
 	/* Sidebar dimensions */
-	--lumi-sidebar-width: 260px;
-	--lumi-sidebar-width-collapsed: 80px;
-	--lumi-sidebar-width-mobile: 280px;
+	--lumi-sidebar-width: 16.25rem;
+	--lumi-sidebar-width-collapsed: 5rem;
+	--lumi-sidebar-width-mobile: 17.5rem;
+	--lumi-sidebar-header-image: url('/sidebar-header.svg');
 
 	/* Navbar dimensions */
-	--lumi-navbar-height: 64px;
+	--lumi-navbar-height: 4rem;
+
+	/* Shell layout spacing */
+	--lumi-layout-shell-padding: var(--lumi-space-md);
+	--lumi-layout-shell-padding-tablet: var(--lumi-space-sm);
+	--lumi-layout-shell-padding-mobile: var(--lumi-space-xs);
+	--lumi-layout-shell-gap: var(--lumi-space-md);
+	--lumi-layout-content-padding: var(--lumi-space-lg);
+	--lumi-layout-content-padding-tablet: var(--lumi-space-md);
+	--lumi-layout-content-padding-mobile: var(--lumi-space-sm);
+	--lumi-layout-content-padding-compact: var(--lumi-space-xs);
+	--lumi-layout-floating-radius: var(--lumi-radius-2xl);
+	--lumi-layout-floating-radius-tablet: var(--lumi-radius-xl);
+	--lumi-layout-floating-radius-mobile: var(--lumi-radius-lg);
+
+	/* Sidebar responsive geometry */
+	--lumi-sidebar-mobile-offset: var(--lumi-layout-shell-padding-tablet);
+	--lumi-sidebar-mobile-width: min(
+		var(--lumi-sidebar-width-mobile),
+		calc(100vw - (var(--lumi-sidebar-mobile-offset) * 2))
+	);
+	--lumi-sidebar-mobile-height: calc(100dvh - (var(--lumi-sidebar-mobile-offset) * 2));
+	--lumi-sidebar-mobile-closed-shift: calc(-100% - var(--lumi-sidebar-mobile-offset));
+
+	/* Dialog responsive geometry */
+	--lumi-dialog-overlay-padding: var(--lumi-space-lg);
+	--lumi-dialog-overlay-padding-mobile: var(--lumi-space-sm);
+	--lumi-dialog-mobile-max-width: calc(100vw - (var(--lumi-dialog-overlay-padding-mobile) * 2));
+	--lumi-dialog-mobile-max-height: calc(100dvh - (var(--lumi-dialog-overlay-padding-mobile) * 2));
+
+	/* Notification responsive geometry */
+	--lumi-notification-max-inline-size: calc(var(--lumi-space-6xl) * 5);
+	--lumi-notification-zone-offset: var(--lumi-space-lg);
+	--lumi-notification-zone-offset-mobile: var(--lumi-space-sm);
 
 	/* Breakpoints */
 	--lumi-breakpoint-mobile: 480px;

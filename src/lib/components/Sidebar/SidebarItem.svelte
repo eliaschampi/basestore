@@ -20,7 +20,12 @@
 	}: Props = $props();
 
 	const itemClasses = $derived(() => {
-		return ['lumi-sidebar-item', active && 'lumi-sidebar-item--active', className]
+		return [
+			'lumi-sidebar-item',
+			active && 'lumi-sidebar-item--active',
+			collapsed && 'lumi-sidebar-item--collapsed',
+			className
+		]
 			.filter(Boolean)
 			.join(' ');
 	});
@@ -65,19 +70,33 @@
 		align-items: center;
 		gap: var(--lumi-space-md);
 		padding: var(--lumi-space-sm) var(--lumi-space-md);
-		min-height: 44px;
+		min-height: calc(var(--lumi-space-xxl) + var(--lumi-space-2xs));
 		border-radius: var(--lumi-radius-md);
 		color: var(--lumi-color-text-muted);
 		font-weight: var(--lumi-font-weight-medium);
-		font-size: var(--lumi-font-size-base);
+		font-size: var(--lumi-font-size-sm);
 		text-decoration: none;
 		background: transparent;
 		border: none;
 		cursor: pointer;
 		text-align: left;
-		transition: all 0.2s ease;
+		transition: var(--lumi-transition-all);
 		width: 100%;
 		outline: none;
+	}
+
+	.lumi-sidebar-item::before {
+		content: '';
+		position: absolute;
+		left: var(--lumi-space-2xs);
+		top: var(--lumi-space-xs);
+		bottom: var(--lumi-space-xs);
+		width: var(--lumi-border-width-thick);
+		border-radius: var(--lumi-radius-full);
+		background: var(--lumi-color-primary);
+		opacity: 0;
+		transform: scaleY(0.6);
+		transition: var(--lumi-transition-all);
 	}
 
 	.lumi-sidebar-item:hover {
@@ -86,12 +105,18 @@
 	}
 
 	.lumi-sidebar-item:focus-visible {
-		box-shadow: 0 0 0 2px var(--lumi-color-primary);
+		box-shadow: 0 0 0 var(--lumi-border-width-thick) var(--lumi-color-primary-bg);
 	}
 
 	.lumi-sidebar-item--active {
 		background: var(--lumi-color-primary-bg);
 		color: var(--lumi-color-primary);
+		box-shadow: var(--lumi-shadow-sm);
+	}
+
+	.lumi-sidebar-item--active::before {
+		opacity: 1;
+		transform: scaleY(1);
 	}
 
 	.lumi-sidebar-item--active:hover {
@@ -104,8 +129,8 @@
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		width: 20px;
-		height: 20px;
+		width: var(--lumi-icon-md);
+		height: var(--lumi-icon-md);
 	}
 
 	.lumi-sidebar-item__text {
@@ -113,6 +138,16 @@
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-		line-height: 1.5;
+		line-height: var(--lumi-line-height-normal);
+	}
+
+	.lumi-sidebar-item--collapsed {
+		justify-content: center;
+		padding-left: var(--lumi-space-sm);
+		padding-right: var(--lumi-space-sm);
+	}
+
+	.lumi-sidebar-item--collapsed::before {
+		display: none;
 	}
 </style>

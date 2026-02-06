@@ -3,6 +3,7 @@
 
 	let {
 		value = $bindable(''),
+		name = '',
 		label = '',
 		placeholder = '',
 		error = false,
@@ -15,8 +16,9 @@
 		color = 'primary',
 		resize = 'vertical',
 		required = false,
+		'aria-label': ariaLabel = '',
 		showCount = false,
-		autosize: _autosize = false,
+		autosize = false,
 		resizable = true,
 		class: className = '',
 		oninput,
@@ -54,6 +56,10 @@
 	const handleInput = (event: Event) => {
 		const target = event.target as HTMLTextAreaElement;
 		value = target.value;
+		if (autosize) {
+			target.style.height = 'auto';
+			target.style.height = `${target.scrollHeight}px`;
+		}
 		if (oninput) oninput(event);
 	};
 
@@ -74,6 +80,12 @@
 	// Public methods (exposed via bind:this)
 	export const focus = () => textareaRef?.focus();
 	export const blur = () => textareaRef?.blur();
+
+	$effect(() => {
+		if (!autosize || !textareaRef) return;
+		textareaRef.style.height = 'auto';
+		textareaRef.style.height = `${textareaRef.scrollHeight}px`;
+	});
 </script>
 
 <div class={classes()}>
@@ -90,12 +102,15 @@
 		<textarea
 			{id}
 			bind:this={textareaRef}
+			{name}
 			{placeholder}
 			{disabled}
 			{readonly}
+			{required}
 			{rows}
 			{maxlength}
 			{value}
+			aria-label={ariaLabel || label || placeholder || undefined}
 			class="lumi-textarea__input"
 			style:resize={resizable ? resize : 'none'}
 			oninput={handleInput}
@@ -147,15 +162,15 @@
 	.lumi-textarea__input {
 		width: 100%;
 		padding: var(--lumi-space-sm) var(--lumi-space-md);
-		background: var(--lumi-color-background);
-		border: 2px solid var(--lumi-color-border);
+		background: var(--lumi-color-surface-overlay);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border);
 		border-radius: var(--lumi-radius-md);
 		font-family: inherit;
 		font-size: var(--lumi-font-size-base);
-		line-height: 1.5;
+		line-height: var(--lumi-line-height-normal);
 		color: var(--lumi-color-text);
 		resize: vertical;
-		min-height: calc(var(--lumi-space-md) * 2 + 1.5em);
+		min-height: calc(var(--lumi-space-3xl) + var(--lumi-space-sm));
 		transition: var(--lumi-transition-all);
 	}
 
@@ -167,6 +182,8 @@
 		outline: none;
 		border-color: var(--textarea-color);
 		background: var(--lumi-color-surface);
+		box-shadow:
+			0 0 0 var(--lumi-border-width-thick) color-mix(in srgb, var(--textarea-color) 20%, transparent);
 	}
 
 	.lumi-textarea__input:hover:not(:focus):not(:disabled) {
@@ -193,19 +210,19 @@
 		font-size: var(--lumi-font-size-xs);
 		color: var(--lumi-color-text-muted);
 		background: var(--lumi-color-surface);
-		padding: var(--lumi-space-2xs) var(--lumi-space-xs);
+		padding: var(--lumi-space-2xs);
 		border-radius: var(--lumi-radius-xl);
 		pointer-events: none;
 	}
 
 	.lumi-textarea__error {
-		font-size: var(--lumi-font-size-sm);
+		font-size: var(--lumi-font-size-xs);
 		color: var(--lumi-color-danger);
 		margin-top: var(--lumi-space-2xs);
 	}
 
 	.lumi-textarea__hint {
-		font-size: var(--lumi-font-size-sm);
+		font-size: var(--lumi-font-size-xs);
 		color: var(--lumi-color-text-muted);
 		margin-top: var(--lumi-space-2xs);
 	}
@@ -249,12 +266,6 @@
 	}
 	.lumi-textarea--info {
 		--textarea-color: var(--lumi-color-info);
-	}
-
-	.lumi-textarea__input:focus {
-		outline: none;
-		border-color: var(--textarea-color);
-		background: var(--lumi-color-surface);
 	}
 
 	/* State variants */

@@ -24,6 +24,9 @@ export interface ContextProps {
 	/** Custom class */
 	class?: string;
 
+	/** Accessible label for the context menu */
+	'aria-label'?: string;
+
 	/** Open event handler */
 	onopen?: (event: MouseEvent, data?: unknown, top?: number, left?: number) => void;
 

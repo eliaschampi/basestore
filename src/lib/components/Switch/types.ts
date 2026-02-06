@@ -27,4 +27,7 @@ export interface SwitchProps {
 	children?: Snippet;
 	/** Change event handler */
 	onchange?: (checked: boolean, event: Event) => void;
+
+	/** Accessible label when visible label is not provided */
+	'aria-label'?: string;
 }

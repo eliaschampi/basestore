@@ -7,6 +7,9 @@ export interface SidebarProps {
 	/** Whether sidebar is open on mobile */
 	mobileOpen?: boolean;
 
+	/** Sidebar header cover image URL */
+	headerImage?: string;
+
 	/** Custom class */
 	class?: string;
 }

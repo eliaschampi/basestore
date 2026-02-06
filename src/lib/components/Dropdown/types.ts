@@ -37,6 +37,9 @@ export interface DropdownProps {
 	/** Custom class */
 	class?: string;
 
+	/** Accessible label for trigger when trigger content has no text */
+	'aria-label'?: string;
+
 	/** Show event handler */
 	onshow?: () => void;
 
