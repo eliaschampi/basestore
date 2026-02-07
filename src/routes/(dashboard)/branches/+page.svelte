@@ -14,7 +14,6 @@
 		ListItem,
 		PageHeader,
 		Select,
-		StatusIndicator,
 		Switch,
 		Table
 	} from '$lib/components';
