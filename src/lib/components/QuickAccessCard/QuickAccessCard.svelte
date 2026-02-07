@@ -24,8 +24,8 @@
 <a href={resolve(href as Pathname)} class="lumi-text-decoration--none">
 	<Card clickable {hoverable} class={cardClasses()}>
 		<div class="lumi-quick-access-card__container">
-			<div class="lumi-quick-access-card__icon-container lumi-bg--{color}">
-				<Icon {icon} size="xl" color="var(--lumi-color-{color})" />
+			<div class="lumi-quick-access-card__icon-container lumi-quick-access-card__icon-container--{color}">
+				<Icon {icon} size="xl" {color} />
 			</div>
 			<Title {title} size="md" {color} />
 			<p class="lumi-quick-access-card__description">{description}</p>
@@ -50,8 +50,31 @@
 		width: 64px;
 		height: 64px;
 		border-radius: var(--lumi-radius-2xl);
-		opacity: 0.1;
 		margin-bottom: var(--lumi-space-xs);
+	}
+
+	.lumi-quick-access-card__icon-container--primary {
+		background: color-mix(in srgb, var(--lumi-color-primary) 15%, transparent);
+	}
+
+	.lumi-quick-access-card__icon-container--secondary {
+		background: color-mix(in srgb, var(--lumi-color-secondary) 15%, transparent);
+	}
+
+	.lumi-quick-access-card__icon-container--success {
+		background: color-mix(in srgb, var(--lumi-color-success) 15%, transparent);
+	}
+
+	.lumi-quick-access-card__icon-container--info {
+		background: color-mix(in srgb, var(--lumi-color-info) 15%, transparent);
+	}
+
+	.lumi-quick-access-card__icon-container--warning {
+		background: color-mix(in srgb, var(--lumi-color-warning) 15%, transparent);
+	}
+
+	.lumi-quick-access-card__icon-container--danger {
+		background: color-mix(in srgb, var(--lumi-color-danger) 15%, transparent);
 	}
 
 	.lumi-quick-access-card__description {

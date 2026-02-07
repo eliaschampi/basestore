@@ -28,8 +28,8 @@
 			<div class="lumi-stat-card__container">
 				<div class="lumi-stat-card__header">
 					<Title {title} size="sm" {color} />
-					<div class="lumi-stat-card__icon-container lumi-bg--{color}">
-						<Icon {icon} size="lg" color="var(--lumi-color-{color})" />
+					<div class="lumi-stat-card__icon-container lumi-stat-card__icon-container--{color}">
+						<Icon {icon} size="lg" {color} />
 					</div>
 				</div>
 				<div class="lumi-stat-card__value">{value}</div>
@@ -42,8 +42,8 @@
 		<div class="lumi-stat-card__container">
 			<div class="lumi-stat-card__header">
 				<Title {title} size="sm" {color} />
-				<div class="lumi-stat-card__icon-container lumi-bg--{color}">
-					<Icon {icon} size="lg" color="var(--lumi-color-{color})" />
+				<div class="lumi-stat-card__icon-container lumi-stat-card__icon-container--{color}">
+					<Icon {icon} size="lg" {color} />
 				</div>
 			</div>
 			<div class="lumi-stat-card__value">{value}</div>
@@ -74,7 +74,30 @@
 		width: 48px;
 		height: 48px;
 		border-radius: var(--lumi-radius-md);
-		opacity: 0.1;
+	}
+
+	.lumi-stat-card__icon-container--primary {
+		background: color-mix(in srgb, var(--lumi-color-primary) 15%, transparent);
+	}
+
+	.lumi-stat-card__icon-container--secondary {
+		background: color-mix(in srgb, var(--lumi-color-secondary) 15%, transparent);
+	}
+
+	.lumi-stat-card__icon-container--success {
+		background: color-mix(in srgb, var(--lumi-color-success) 15%, transparent);
+	}
+
+	.lumi-stat-card__icon-container--info {
+		background: color-mix(in srgb, var(--lumi-color-info) 15%, transparent);
+	}
+
+	.lumi-stat-card__icon-container--warning {
+		background: color-mix(in srgb, var(--lumi-color-warning) 15%, transparent);
+	}
+
+	.lumi-stat-card__icon-container--danger {
+		background: color-mix(in srgb, var(--lumi-color-danger) 15%, transparent);
 	}
 
 	.lumi-stat-card__value {
