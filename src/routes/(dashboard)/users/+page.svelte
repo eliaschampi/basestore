@@ -3,9 +3,8 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import Card from '$lib/components/Card/Card.svelte';
-	import Title from '$lib/components/Title/Title.svelte';
 	import Button from '$lib/components/Button/Button.svelte';
-	import Avatar from '$lib/components/Avatar/Avatar.svelte';
+	import { PageHeader, UserInfo } from '$lib/components';
 	import Chip from '$lib/components/Chip/Chip.svelte';
 	import Dialog from '$lib/components/Dialog/Dialog.svelte';
 	import Input from '$lib/components/Input/Input.svelte';
@@ -17,7 +16,7 @@
 	import PermissionsModal from '$lib/components/PermissionsModal';
 	import { showToast } from '$lib/stores/Toast';
 	import { can } from '$lib/stores/permissions';
-	import { getInitials, formatDate } from '$lib/utils';
+	import { formatDate } from '$lib/utils';
 	import type { PageData } from './$types';
 
 	const { data }: { data: PageData } = $props();
@@ -143,18 +142,19 @@
 </script>
 
 <div class="lumi-stack lumi-space--lg">
-	<div class="lumi-flex lumi-flex--between lumi-align-items--center lumi-flex--gap-md">
-		<Title title="Usuarios" subtitle="Gestiona los usuarios del sistema" icon="users" size="lg" />
-		<Button
-			type="filled"
-			color="primary"
-			icon="plus"
-			onclick={openCreateModal}
-			disabled={!canCreate}
-		>
-			Nuevo Usuario
-		</Button>
-	</div>
+	<PageHeader title="Usuarios" subtitle="Gestiona los usuarios del sistema" icon="users">
+		{#snippet actions()}
+			<Button
+				type="filled"
+				color="primary"
+				icon="plus"
+				onclick={openCreateModal}
+				disabled={!canCreate}
+			>
+				Nuevo Usuario
+			</Button>
+		{/snippet}
+	</PageHeader>
 
 	<div class="lumi-grid lumi-grid--columns-3 lumi-grid--gap-md">
 		{#each data.users as user (user.code)}
@@ -162,61 +162,44 @@
 				class="lumi-max-w--sm lumi-ml-auto lumi-mr-auto"
 				image="wall.png"
 				imageAlt={user.name || 'Usuario'}
+				imageHeight={150}
 			>
-				<div
-					class="lumi-position--relative lumi-flex lumi-flex--column lumi-flex--gap-sm lumi-padding--lg"
-				>
-					<!-- Dropdown Menu -->
-					<div
-						class="lumi-position--absolute"
-						style="top: var(--lumi-space-sm); right: var(--lumi-space-sm); z-index: 10;"
+				<div class="lumi-flex lumi-flex--column lumi-flex--gap-sm lumi-padding--sm">
+					<UserInfo
+						name={user.name || ''}
+						lastName={user.last_name || ''}
+						description={user.email}
+						photoUrl={user.photo_url || ''}
 					>
-						<Dropdown position="bottom-end">
-							{#snippet triggerContent()}
-								<Button type="flat" size="sm" icon="moreVertical" />
-							{/snippet}
+						{#snippet actions()}
+							<Dropdown position="bottom-end">
+								{#snippet triggerContent()}
+									<Button type="flat" size="sm" icon="moreVertical" />
+								{/snippet}
 
-							{#snippet content()}
-								{#if canManagePermissions}
-									<DropdownItem icon="shield" onclick={() => openPermissionsModal(user)}>
-										Gestionar Permisos
-									</DropdownItem>
-								{/if}
-								{#if mySelf(user.code) || canUpdate}
-									<DropdownItem icon="edit" onclick={() => openEditModal(user)}>
-										Editar Información
-									</DropdownItem>
-									<DropdownItem icon="key" onclick={() => openPasswordModal(user)}>
-										Cambiar Contraseña
-									</DropdownItem>
-								{/if}
-								{#if canDelete && !mySelf(user.code)}
-									<DropdownItem icon="trash" danger onclick={() => openDeleteModal(user)}>
-										Eliminar
-									</DropdownItem>
-								{/if}
-							{/snippet}
-						</Dropdown>
-					</div>
-
-					<!-- Avatar and Name -->
-					<div class="lumi-flex lumi-flex--gap-sm lumi-align-items--center">
-						<Avatar
-							text={getInitials(user.name || '', user.last_name || '')}
-							src={user.photo_url ?? undefined}
-							size="lg"
-							color="primary"
-						/>
-						<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs" style="min-width: 0;">
-							<h3 class="lumi-margin--none lumi-text--base lumi-font--bold">
-								{user.name || 'Sin nombre'}
-								{user.last_name || ''}
-							</h3>
-							<p class="lumi-margin--none lumi-text--xs lumi-text--muted lumi-text-ellipsis">
-								{user.email}
-							</p>
-						</div>
-					</div>
+								{#snippet content()}
+									{#if canManagePermissions}
+										<DropdownItem icon="shield" onclick={() => openPermissionsModal(user)}>
+											Gestionar Permisos
+										</DropdownItem>
+									{/if}
+									{#if mySelf(user.code) || canUpdate}
+										<DropdownItem icon="edit" onclick={() => openEditModal(user)}>
+											Editar Información
+										</DropdownItem>
+										<DropdownItem icon="key" onclick={() => openPasswordModal(user)}>
+											Cambiar Contraseña
+										</DropdownItem>
+									{/if}
+									{#if canDelete && !mySelf(user.code)}
+										<DropdownItem icon="trash" danger onclick={() => openDeleteModal(user)}>
+											Eliminar
+										</DropdownItem>
+									{/if}
+								{/snippet}
+							</Dropdown>
+						{/snippet}
+					</UserInfo>
 
 					<!-- Stats -->
 					<div class="lumi-flex lumi-flex--column lumi-flex--gap-xs lumi-width--full">

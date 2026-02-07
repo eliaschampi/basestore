@@ -2,7 +2,7 @@
 	import { invalidate } from '$app/navigation';
 	import { enhance } from '$app/forms';
 	import Card from '$lib/components/Card/Card.svelte';
-	import Title from '$lib/components/Title/Title.svelte';
+	import PageHeader from '$lib/components/PageHeader/PageHeader.svelte';
 	import Table from '$lib/components/Table/Table.svelte';
 	import Button from '$lib/components/Button/Button.svelte';
 	import Dialog from '$lib/components/Dialog/Dialog.svelte';
@@ -81,16 +81,17 @@
 </script>
 
 <div class="lumi-stack lumi-space--lg">
-	<div class="lumi-flex lumi-flex--between lumi-align-items--center lumi-flex--gap-md">
-		<Title title="Marcas" subtitle="Gestiona las marcas del sistema" icon="award" size="xl" />
-		<Button
-			type="filled"
-			color="primary"
-			icon="plus"
-			onclick={openCreateModal}
-			disabled={!canCreate}>Nueva Marca</Button
-		>
-	</div>
+	<PageHeader title="Marcas" subtitle="Gestiona las marcas del sistema" icon="award">
+		{#snippet actions()}
+			<Button
+				type="filled"
+				color="primary"
+				icon="plus"
+				onclick={openCreateModal}
+				disabled={!canCreate}>Nueva Marca</Button
+			>
+		{/snippet}
+	</PageHeader>
 
 	<Card>
 		<Table data={data.brands} search pagination hover itemsPerPage={10}>

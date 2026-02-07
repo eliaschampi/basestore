@@ -59,12 +59,18 @@
 
 <style>
 	.lumi-context-item {
+		--context-item-hover-bg: color-mix(in srgb, var(--lumi-color-primary) 4%, transparent);
+		--context-item-lift: calc(var(--lumi-space-2xs) * -0.25);
 		display: flex;
 		align-items: center;
 		gap: var(--lumi-space-md);
 		padding: var(--lumi-space-sm) var(--lumi-space-md);
 		cursor: pointer;
-		transition: all 0.1s ease;
+		transition:
+			background-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			color var(--lumi-duration-fast) var(--lumi-easing-default),
+			box-shadow var(--lumi-duration-fast) var(--lumi-easing-default),
+			transform var(--lumi-duration-fast) var(--lumi-easing-default);
 		user-select: none;
 		color: var(--lumi-color-text);
 		font-size: var(--lumi-font-size-sm);
@@ -75,13 +81,15 @@
 	}
 
 	.lumi-context-item:hover:not(.lumi-context-item--disabled) {
-		background: var(--lumi-color-background-hover);
+		background: var(--context-item-hover-bg);
 		color: var(--lumi-color-text);
+		transform: translateY(var(--context-item-lift));
 	}
 
 	.lumi-context-item:focus-visible {
-		background: var(--lumi-color-background-hover);
-		box-shadow: inset 0 0 0 2px var(--lumi-color-primary);
+		background: var(--context-item-hover-bg);
+		box-shadow: 0 0 0 var(--lumi-border-width-thick)
+			color-mix(in srgb, var(--lumi-color-primary) 20%, transparent);
 	}
 
 	.lumi-context-item__icon {
@@ -129,5 +137,6 @@
 	.lumi-context-item--danger:hover:not(.lumi-context-item--disabled) {
 		background: var(--lumi-color-danger-bg);
 		color: var(--lumi-color-danger);
+		transform: translateY(var(--context-item-lift));
 	}
 </style>

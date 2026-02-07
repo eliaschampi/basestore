@@ -3,6 +3,7 @@
 		Button,
 		Card,
 		Notification,
+		PageHeader,
 		QuickAccessCard,
 		StatCard,
 		Title,
@@ -183,9 +184,7 @@
 </script>
 
 <div class="lumi-stack lumi-space--xl">
-	<div>
-		<Title title="Dashboard" subtitle="Bienvenido a Faztore" size="xl" icon="home" />
-	</div>
+	<PageHeader title="Dashboard" subtitle="Bienvenido a Faztore" size="xl" icon="home" />
 
 	<Card class="lumi-notification-lab">
 		{#snippet header()}

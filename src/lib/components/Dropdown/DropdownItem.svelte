@@ -107,10 +107,16 @@
 
 <style>
 	.lumi-dropdown-item {
+		--dropdown-item-hover-bg: color-mix(in srgb, var(--lumi-color-primary) 4%, transparent);
+		--dropdown-item-lift: calc(var(--lumi-space-2xs) * -0.25);
 		width: 100%;
 		padding: var(--lumi-space-sm) var(--lumi-space-md);
 		cursor: pointer;
-		transition: all 0.1s ease;
+		transition:
+			background-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			color var(--lumi-duration-fast) var(--lumi-easing-default),
+			box-shadow var(--lumi-duration-fast) var(--lumi-easing-default),
+			transform var(--lumi-duration-fast) var(--lumi-easing-default);
 		user-select: none;
 		color: var(--lumi-color-text);
 		font-size: var(--lumi-font-size-sm);
@@ -126,18 +132,20 @@
 	}
 
 	.lumi-dropdown-item:hover:not(.lumi-dropdown-item--disabled) {
-		background: var(--lumi-color-background-hover);
+		background: var(--dropdown-item-hover-bg);
 		color: var(--lumi-color-text);
+		transform: translateY(var(--dropdown-item-lift));
 	}
 
 	.lumi-dropdown-item:focus-visible {
 		outline: none;
-		background: var(--lumi-color-background-hover);
-		box-shadow: inset 0 0 0 2px var(--lumi-color-primary);
+		background: var(--dropdown-item-hover-bg);
+		box-shadow: 0 0 0 var(--lumi-border-width-thick)
+			color-mix(in srgb, var(--lumi-color-primary) 20%, transparent);
 	}
 
 	.lumi-dropdown-item:active:not(.lumi-dropdown-item--disabled) {
-		transform: scale(0.98);
+		transform: none;
 	}
 
 	.lumi-dropdown-item__icon {
@@ -178,6 +186,7 @@
 	.lumi-dropdown-item--danger:hover:not(.lumi-dropdown-item--disabled) {
 		background: var(--lumi-color-danger-bg);
 		color: var(--lumi-color-danger);
+		transform: translateY(var(--dropdown-item-lift));
 	}
 
 	/* Link styles */

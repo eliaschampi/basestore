@@ -12,7 +12,7 @@
 		icon,
 		color = 'primary',
 		href,
-		hoverable = false,
+		hoverable = true,
 		class: className = ''
 	}: QuickAccessCardProps = $props();
 

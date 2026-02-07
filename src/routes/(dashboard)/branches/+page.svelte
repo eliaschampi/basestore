@@ -12,11 +12,11 @@
 		Input,
 		List,
 		ListItem,
+		PageHeader,
 		Select,
 		StatusIndicator,
 		Switch,
-		Table,
-		Title
+		Table
 	} from '$lib/components';
 	import { showToast } from '$lib/stores/Toast';
 	import { can } from '$lib/stores/permissions';
@@ -142,16 +142,17 @@
 </script>
 
 <div class="lumi-stack lumi-space--lg">
-	<div class="lumi-flex lumi-flex--between lumi-align-items--center lumi-flex--gap-md">
-		<Title title="Sedes" subtitle="Gestiona las sedes del sistema" icon="building" size="xl" />
-		<Button
-			type="filled"
-			color="primary"
-			icon="plus"
-			onclick={openCreateModal}
-			disabled={!canCreate}>Nueva Sede</Button
-		>
-	</div>
+	<PageHeader title="Sedes" subtitle="Gestiona las sedes del sistema" icon="building">
+		{#snippet actions()}
+			<Button
+				type="filled"
+				color="primary"
+				icon="plus"
+				onclick={openCreateModal}
+				disabled={!canCreate}>Nueva Sede</Button
+			>
+		{/snippet}
+	</PageHeader>
 
 	<Card>
 		<Table data={data.branches} search pagination hover itemsPerPage={10}>

@@ -12,7 +12,7 @@
 		icon,
 		color = 'primary',
 		href,
-		hoverable = false,
+		hoverable = true,
 		subtitle = 'Total registrados',
 		class: className = ''
 	}: StatCardProps = $props();

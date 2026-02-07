@@ -30,7 +30,7 @@
 
 	const cardClasses = $derived(() => {
 		const classes = ['lumi-card'];
-		const isHoverable = hoverable ?? clickable;
+		const isHoverable = hoverable ?? Boolean(clickable || image);
 
 		if (clickable) classes.push('lumi-card--clickable');
 		if (isHoverable) classes.push('lumi-card--hoverable');
@@ -105,6 +105,7 @@
 
 <style>
 	.lumi-card {
+		--card-hover-lift: calc(var(--lumi-space-2xs) * -0.25);
 		position: relative;
 		background:
 			linear-gradient(
@@ -119,7 +120,11 @@
 		display: flex;
 		flex-direction: column;
 		box-shadow: var(--lumi-shadow-md);
-		transition: var(--lumi-transition-all);
+		transition:
+			background-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			border-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			box-shadow var(--lumi-duration-fast) var(--lumi-easing-default),
+			transform var(--lumi-duration-fast) var(--lumi-easing-default);
 		width: 100%;
 		text-align: left;
 		color: var(--lumi-color-text);
@@ -142,9 +147,8 @@
 	}
 
 	.lumi-card--hoverable:hover {
-		transform: translateY(calc(var(--lumi-space-2xs) * -1));
+		transform: translateY(var(--card-hover-lift));
 		box-shadow: var(--lumi-shadow-lg);
-		border-color: color-mix(in srgb, var(--lumi-color-primary) 25%, var(--lumi-color-border));
 	}
 
 	.lumi-card--hoverable:active {

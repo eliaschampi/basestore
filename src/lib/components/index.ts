@@ -101,6 +101,8 @@ export type { TitleColor, TitleProps, TitleSize } from './Title';
 // DATA DISPLAY COMPONENTS
 // ============================================================================
 export { Title } from './Title';
+export type { UserInfoProps } from './UserInfo';
+export { UserInfo } from './UserInfo';
 export type { TooltipColor, TooltipPosition, TooltipProps } from './Tooltip';
 export { Tooltip } from './Tooltip';
 export { default as PermissionsModal } from './PermissionsModal';

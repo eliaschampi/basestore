@@ -99,7 +99,6 @@
 	.lumi-sidebar__header {
 		position: relative;
 		padding: var(--lumi-space-md);
-		border-bottom: 1px solid var(--lumi-color-border-light);
 		flex-shrink: 0;
 		min-height: calc(var(--lumi-space-5xl) + var(--lumi-space-3xl));
 		display: flex;
@@ -176,7 +175,7 @@
 			transform: translateX(var(--lumi-sidebar-mobile-closed-shift));
 			width: var(--lumi-sidebar-mobile-width);
 			border-radius: var(--lumi-layout-floating-radius-tablet);
-			box-shadow: var(--lumi-shadow-xl);
+			box-shadow: var(--lumi-shadow-lg);
 			border: 1px solid var(--lumi-color-border-light);
 		}
 
