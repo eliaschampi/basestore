@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Card from '../Card/Card.svelte';
 	import Title from '../Title/Title.svelte';
-	import Icon from '../Icon/Icon.svelte';
+	import IconBadge from '../IconBadge/IconBadge.svelte';
 	import { resolve } from '$app/paths';
 	import type { Pathname } from '$app/types';
 	import type { StatCardProps } from './types';
@@ -28,9 +28,7 @@
 			<div class="lumi-stat-card__container">
 				<div class="lumi-stat-card__header">
 					<Title {title} size="sm" {color} />
-					<div class="lumi-stat-card__icon-container lumi-stat-card__icon-container--{color}">
-						<Icon {icon} size="lg" {color} />
-					</div>
+					<IconBadge {icon} {color} size="md" />
 				</div>
 				<div class="lumi-stat-card__value">{value}</div>
 				<div class="lumi-stat-card__subtitle">{subtitle}</div>
@@ -42,9 +40,7 @@
 		<div class="lumi-stat-card__container">
 			<div class="lumi-stat-card__header">
 				<Title {title} size="sm" {color} />
-				<div class="lumi-stat-card__icon-container lumi-stat-card__icon-container--{color}">
-					<Icon {icon} size="lg" {color} />
-				</div>
+				<IconBadge {icon} {color} size="md" />
 			</div>
 			<div class="lumi-stat-card__value">{value}</div>
 			<div class="lumi-stat-card__subtitle">{subtitle}</div>
@@ -65,39 +61,6 @@
 		justify-content: space-between;
 		align-items: center;
 		margin-bottom: var(--lumi-space-md);
-	}
-
-	.lumi-stat-card__icon-container {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 48px;
-		height: 48px;
-		border-radius: var(--lumi-radius-md);
-	}
-
-	.lumi-stat-card__icon-container--primary {
-		background: color-mix(in srgb, var(--lumi-color-primary) 15%, transparent);
-	}
-
-	.lumi-stat-card__icon-container--secondary {
-		background: color-mix(in srgb, var(--lumi-color-secondary) 15%, transparent);
-	}
-
-	.lumi-stat-card__icon-container--success {
-		background: color-mix(in srgb, var(--lumi-color-success) 15%, transparent);
-	}
-
-	.lumi-stat-card__icon-container--info {
-		background: color-mix(in srgb, var(--lumi-color-info) 15%, transparent);
-	}
-
-	.lumi-stat-card__icon-container--warning {
-		background: color-mix(in srgb, var(--lumi-color-warning) 15%, transparent);
-	}
-
-	.lumi-stat-card__icon-container--danger {
-		background: color-mix(in srgb, var(--lumi-color-danger) 15%, transparent);
 	}
 
 	.lumi-stat-card__value {

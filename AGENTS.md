@@ -150,12 +150,14 @@ Use these classes to structure your layouts. Do not write custom CSS for basic l
 | :------------------ | :----------------------------------------------------------------------- | :---------------------------------- | :------------------------------------ |
 | **Table**           | `data`, `search`, `pagination`, `itemsPerPage`, `sortable`, `selectable` | `thead`, `row` ({row, index})       | Data grid with built-in features.     |
 | **StatCard**        | `title`, `value`, `icon`, `color`, `subtitle`, `href`                    | -                                   | Dashboard statistic display.          |
+| **QuickAccessCard** | `title`, `description`, `icon`, `color`, `href`                          | -                                   | Dashboard quick access card.          |
 | **InfoItem**        | `label`, `value`, `icon`, `layout` (horiz/vert)                          | `iconSlot`, `labelSlot`, `children` | Key-value display pair.               |
 | **Chip**            | `color`, `variant`, `closable`                                           | `children`                          | Small status tag.                     |
-| **TagIndicator**    | `tag` ({name, color}), `selected`, `clickable`                           | -                                   | Filter/Status tag.                    |
 | **StatusIndicator** | `active` (bool), `status` (string), `pulse`                              | -                                   | Dot indicator (Green/Gray).           |
 | **Image**           | `src`, `alt`, `width`, `height`, `radius`, `isZoomed`                    | -                                   | Enhanced image with skeleton loading. |
-| **Icon**            | `icon` (name), `size`, `color`, `bg`, `round`                            | -                                   | Lucide icon wrapper.                  |
+| **Icon**            | `icon` (name), `size`, `color`, `stroke`                                 | -                                   | Lucide icon wrapper.                  |
+| **IconBadge**       | `icon`, `color`, `size`                                                  | -                                   | Icon with colored background badge.   |
+| **UserInfo**        | `name`, `email`, `avatar`, `size`, `layout`                              | -                                   | User profile display component.       |
 | **Tabs**            | `value` ($), `tabs` ({label, value, icon}), `position`                   | `children`                          | Tabbed content interface.             |
 
 ### D. Feedback & Overlay

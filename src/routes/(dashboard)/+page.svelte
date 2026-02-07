@@ -252,8 +252,8 @@
 					<Button
 						type={demoPosition === option.value ? 'filled' : 'border'}
 						size="sm"
-						color={demoPosition === option.value ? 'primary' : 'secondary'}
 						onclick={() => (demoPosition = option.value)}
+						color="info"
 					>
 						{option.label}
 					</Button>

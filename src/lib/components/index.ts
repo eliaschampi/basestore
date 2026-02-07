@@ -52,6 +52,8 @@ export type { IconProps } from './Icon';
 // UTILITY COMPONENTS
 // ============================================================================
 export { Icon } from './Icon';
+export type { IconBadgeProps } from './IconBadge';
+export { IconBadge } from './IconBadge';
 export type { ImageProps } from './Image';
 export { Image } from './Image';
 export type { InfoItemColor, InfoItemLayout, InfoItemProps } from './InfoItem';
@@ -92,8 +94,6 @@ export type { TableProps, TableRow, TdProps, ThProps, TrProps } from './Table';
 export { Table } from './Table';
 export type { Tab, TabsColor, TabsPosition, TabsProps } from './Tabs';
 export { Tabs } from './Tabs';
-export type { Tag, TagIndicatorProps } from './TagIndicator';
-export { TagIndicator } from './TagIndicator';
 export type { TextareaColor, TextareaProps, TextareaSize } from './Textarea';
 export { Textarea } from './Textarea';
 export type { TitleColor, TitleProps, TitleSize } from './Title';
