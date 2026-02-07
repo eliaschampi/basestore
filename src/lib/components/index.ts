@@ -11,6 +11,8 @@ export type { AlertProps } from './Alert';
 export { Alert } from './Alert';
 export type { AvatarColor, AvatarProps, AvatarSize } from './Avatar';
 export { Avatar } from './Avatar';
+export type { AvatarOption, AvatarPickerProps } from './AvatarPicker';
+export { AvatarPicker } from './AvatarPicker';
 export type { ButtonProps } from './Button';
 // ============================================================================
 // FORM COMPONENTS

@@ -21,9 +21,6 @@ export interface StatusIndicatorProps {
 	active?: boolean;
 
 	/** Whether to show pulse animation */
-	animated?: boolean;
-
-	/** Whether to show pulse animation (alias for animated) */
 	pulse?: boolean;
 
 	/** Tooltip text */

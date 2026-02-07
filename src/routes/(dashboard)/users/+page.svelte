@@ -4,7 +4,7 @@
 	import { page } from '$app/state';
 	import Card from '$lib/components/Card/Card.svelte';
 	import Button from '$lib/components/Button/Button.svelte';
-	import { PageHeader, UserInfo } from '$lib/components';
+	import { PageHeader, UserInfo, AvatarPicker } from '$lib/components';
 	import Chip from '$lib/components/Chip/Chip.svelte';
 	import Dialog from '$lib/components/Dialog/Dialog.svelte';
 	import Input from '$lib/components/Input/Input.svelte';
@@ -18,6 +18,7 @@
 	import { can } from '$lib/stores/permissions';
 	import { formatDate } from '$lib/utils';
 	import type { PageData } from './$types';
+	import type { AvatarOption } from '$lib/components/AvatarPicker/types';
 
 	const { data }: { data: PageData } = $props();
 
@@ -47,12 +48,12 @@
 	let formPassword = $state('');
 
 	// Available avatars
-	const avatars = [
-		{ src: 'avatar.svg', label: 'Default' },
-		{ src: 'woman1.svg', label: 'Woman 1' },
-		{ src: 'woman2.svg', label: 'Woman 2' },
-		{ src: 'man1.svg', label: 'Man 1' },
-		{ src: 'man2.svg', label: 'Man 2' }
+	const avatars: AvatarOption[] = [
+		{ src: 'avatar.svg', value: 'avatar.svg', label: 'Default' },
+		{ src: 'woman1.svg', value: 'woman1.svg', label: 'Woman 1' },
+		{ src: 'woman2.svg', value: 'woman2.svg', label: 'Woman 2' },
+		{ src: 'man1.svg', value: 'man1.svg', label: 'Man 1' },
+		{ src: 'man2.svg', value: 'man2.svg', label: 'Man 2' }
 	];
 
 	const mySelf = (userId: string) => {
@@ -304,37 +305,7 @@
 
 			<!-- Avatar Selection -->
 			<Fieldset legend="Avatar">
-				<div class="lumi-flex lumi-flex--wrap lumi-flex--gap-sm lumi-justify--center">
-					{#each avatars as avatar (avatar.src)}
-						<label class="lumi-pointer">
-							<input
-								type="radio"
-								name="avatar"
-								value={avatar.src}
-								checked={selectedAvatar === avatar.src}
-								onchange={() => (selectedAvatar = avatar.src)}
-								style="display: none;"
-							/>
-							<div
-								class="lumi-rounded--full lumi-overflow-hidden"
-								style="width: 64px; height: 64px; border: {selectedAvatar === avatar.src
-									? '3px'
-									: '2px'} solid {selectedAvatar === avatar.src
-									? 'var(--lumi-color-primary)'
-									: 'var(--lumi-color-border)'}; transition: var(--lumi-transition-all); transform: {selectedAvatar ===
-								avatar.src
-									? 'scale(1.1)'
-									: 'scale(1)'};"
-							>
-								<img
-									src={avatar.src}
-									alt={avatar.label}
-									style="width: 100%; height: 100%; object-fit: cover;"
-								/>
-							</div>
-						</label>
-					{/each}
-				</div>
+				<AvatarPicker options={avatars} bind:value={selectedAvatar} />
 			</Fieldset>
 		</div>
 	</form>

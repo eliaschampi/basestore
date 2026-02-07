@@ -4,22 +4,17 @@
 	const {
 		status = 'default',
 		active,
-		animated = false,
 		pulse = false,
 		tooltip = '',
 		class: className = ''
 	}: StatusIndicatorProps = $props();
 
-	// Derive status from active prop if provided
 	const effectiveStatus = $derived(() => {
 		if (active !== undefined) {
 			return active ? 'active' : 'inactive';
 		}
 		return status;
 	});
-
-	// pulse is an alias for animated
-	const isAnimated = $derived(animated || pulse);
 
 	const predefinedStatuses: StatusIndicatorStatus[] = [
 		'default',
@@ -44,7 +39,7 @@
 			'lumi-status-indicator',
 			isPredefined() && `lumi-status-indicator--${effectiveStatus()}`,
 			!isPredefined() && 'lumi-status-indicator--custom',
-			isAnimated && 'lumi-status-indicator--animated',
+			pulse && 'lumi-status-indicator--pulse',
 			className
 		]
 			.filter(Boolean)
@@ -72,13 +67,12 @@
 
 	.lumi-status-indicator {
 		display: inline-block;
-		width: 8px;
-		height: 8px;
+		width: var(--lumi-space-xs);
+		height: var(--lumi-space-xs);
 		border-radius: var(--lumi-radius-full);
 		transition: var(--lumi-transition-all);
 	}
 
-	/* Predefined statuses */
 	.lumi-status-indicator--default {
 		background: var(--lumi-color-gray-400);
 	}
@@ -123,17 +117,15 @@
 		background: var(--lumi-color-info);
 	}
 
-	/* Custom color */
 	.lumi-status-indicator--custom {
 		background: var(--lumi-status-indicator-custom-color);
 	}
 
-	/* Animated pulse */
-	.lumi-status-indicator--animated {
-		animation: lumi-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+	.lumi-status-indicator--pulse {
+		animation: lumi-status-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 	}
 
-	@keyframes lumi-pulse {
+	@keyframes lumi-status-pulse {
 		0%,
 		100% {
 			opacity: 1;
@@ -143,9 +135,8 @@
 		}
 	}
 
-	/* Reduced motion support */
 	@media (prefers-reduced-motion: reduce) {
-		.lumi-status-indicator--animated {
+		.lumi-status-indicator--pulse {
 			animation: none;
 		}
 	}

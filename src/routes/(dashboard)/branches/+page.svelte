@@ -167,7 +167,6 @@
 			{#snippet row({ row })}
 				<td>
 					<div class="lumi-flex lumi-align-items--center lumi-flex--gap-sm">
-						<StatusIndicator active={row.state as boolean} />
 						<span class="lumi-font--medium">{row.name as string}</span>
 					</div>
 				</td>

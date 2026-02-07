@@ -142,6 +142,7 @@ Use these classes to structure your layouts. Do not write custom CSS for basic l
 | **Checkbox**         | `checked` ($), `indeterminate` ($), `label`, `color`                      | `children` | Boolean selection.                       |
 | **Radio**            | `group` ($), `value`, `label`, `color`                                    | `children` | Radio button group.                      |
 | **FileUpload**       | `files` ($), `accept`, `multiple`, `maxSize`                              | -          | Drag & drop zone with progress.          |
+| **AvatarPicker**     | `options`, `value` ($), `name`                                            | -          | Avatar selection with visual preview.    |
 | **SegmentedControl** | `value` ($), `options` ({label, value, icon})                             | -          | Horizontal toggle group (Glider effect). |
 
 ### C. Data Display
