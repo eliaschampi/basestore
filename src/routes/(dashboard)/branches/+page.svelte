@@ -11,6 +11,7 @@
 		InfoItem,
 		Input,
 		List,
+		ListHeader,
 		ListItem,
 		PageHeader,
 		Select,
@@ -271,6 +272,7 @@
 
 					{#if selectedUsers.length > 0}
 						<List size="sm">
+							<ListHeader title="Usuarios seleccionados" icon="users" />
 							{#each selectedUsers as userCode (userCode)}
 								{@const user = getUser(userCode)}
 								<input type="hidden" name="selectedUsers" value={userCode} />

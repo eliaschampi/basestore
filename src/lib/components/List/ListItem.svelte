@@ -1,21 +1,6 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
 	import Icon from '../Icon/Icon.svelte';
-
-	interface Props {
-		title?: string;
-		subtitle?: string;
-		icon?: string;
-		disabled?: boolean;
-		clickable?: boolean;
-		active?: boolean;
-		class?: string;
-		onclick?: (event: MouseEvent) => void;
-		children?: Snippet;
-		avatar?: Snippet;
-		titleSlot?: Snippet;
-		subtitleSlot?: Snippet;
-	}
+	import type { ListItemProps } from './types';
 
 	const {
 		title,
@@ -30,7 +15,7 @@
 		avatar,
 		titleSlot,
 		subtitleSlot
-	}: Props = $props();
+	}: ListItemProps = $props();
 
 	const classes = $derived(() => {
 		return [
@@ -60,7 +45,7 @@
 
 	{#if icon}
 		<div class="lumi-list-item__icon">
-			<Icon {icon} size="var(--list-icon-size, 20px)" />
+			<Icon {icon} size="var(--list-icon-size, var(--lumi-icon-md))" />
 		</div>
 	{/if}
 
@@ -104,57 +89,79 @@
 		{@render listItemContent()}
 	</button>
 {:else}
-	<div class={classes()} aria-current={active ? 'true' : undefined}>
+	<div
+		class={classes()}
+		aria-current={active ? 'true' : undefined}
+		aria-disabled={disabled ? 'true' : undefined}
+	>
 		{@render listItemContent()}
 	</div>
 {/if}
 
 <style>
 	.lumi-list-item {
-		--list-item-hover-bg: color-mix(in srgb, var(--lumi-color-primary) 4%, transparent);
-		--list-item-active-bg: color-mix(in srgb, var(--lumi-color-primary) 8%, transparent);
+		--list-item-hover-bg: color-mix(
+			in srgb,
+			var(--list-accent, var(--lumi-color-primary)) 4%,
+			transparent
+		);
+		--list-item-active-bg: color-mix(
+			in srgb,
+			var(--list-accent, var(--lumi-color-primary)) 8%,
+			transparent
+		);
+		--list-item-focus-ring: color-mix(
+			in srgb,
+			var(--list-accent, var(--lumi-color-primary)) 20%,
+			transparent
+		);
 		--list-item-lift: calc(var(--lumi-space-2xs) * -0.25);
+		position: relative;
 		display: flex;
 		align-items: center;
 		gap: var(--lumi-space-md);
+		min-height: calc(var(--lumi-space-xxl) + var(--lumi-space-2xs));
 		padding: var(--list-item-padding, var(--lumi-space-sm) var(--lumi-space-md));
 		border-radius: var(--lumi-radius-md);
 		transition:
-			background-color 0.15s ease,
-			color 0.15s ease,
-			transform 0.15s ease,
-			box-shadow 0.15s ease;
+			background-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			color var(--lumi-duration-fast) var(--lumi-easing-default),
+			transform var(--lumi-duration-fast) var(--lumi-easing-default),
+			box-shadow var(--lumi-duration-fast) var(--lumi-easing-default);
 		cursor: default;
 		background: transparent;
-		position: relative;
 		color: var(--lumi-color-text);
 		text-decoration: none;
 		width: 100%;
 		text-align: left;
-		border: none;
+		line-height: var(--lumi-line-height-normal);
 		font: inherit;
+		outline: none;
+		border: none;
+		user-select: none;
 	}
 
-	/* Avatar */
+	/* Media */
 	.lumi-list-item__avatar {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 32px;
-		height: 32px;
+		width: var(--lumi-space-xl);
+		height: var(--lumi-space-xl);
 		flex-shrink: 0;
 		border-radius: var(--lumi-radius-full);
 		overflow: hidden;
 	}
 
-	/* Icon */
 	.lumi-list-item__icon {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--lumi-color-text-muted);
+		width: var(--list-icon-size, 16px);
+		height: var(--list-icon-size, 16px);
 		flex-shrink: 0;
-		transition: color 0.2s;
+		color: var(--lumi-color-text-muted);
+		transition: color var(--lumi-duration-fast) var(--lumi-easing-default);
 	}
 
 	/* Content */
@@ -164,20 +171,23 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
+		gap: var(--lumi-space-2xs);
 	}
 
 	.lumi-list-item__title {
-		font-size: var(--list-font-size, var(--lumi-font-size-base));
+		font-size: var(--list-item-title-size, var(--lumi-font-size-base));
 		font-weight: var(--lumi-font-weight-medium);
 		color: inherit;
 		line-height: var(--lumi-line-height-tight);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.lumi-list-item__subtitle {
-		font-size: 0.85em;
+		font-size: var(--list-item-subtitle-size, var(--lumi-font-size-sm));
 		color: var(--lumi-color-text-muted);
 		line-height: var(--lumi-line-height-normal);
-		margin-top: calc(var(--lumi-space-2xs) / 2);
 	}
 
 	/* Actions */
@@ -198,26 +208,39 @@
 		cursor: pointer;
 	}
 
-	.lumi-list-item--clickable:hover:not(.lumi-list-item--active):not(:disabled) {
+	.lumi-list-item--clickable:hover:not(.lumi-list-item--active):not(.lumi-list-item--disabled) {
 		background: var(--list-item-hover-bg);
-		color: var(--lumi-color-text);
 		transform: translateY(var(--list-item-lift));
 	}
 
 	.lumi-list-item--clickable:hover .lumi-list-item__icon {
-		color: var(--lumi-color-primary);
+		color: inherit;
 	}
 
 	.lumi-list-item--clickable:focus-visible {
-		outline: var(--lumi-border-width-thick) solid
-			color-mix(in srgb, var(--lumi-color-primary) 35%, transparent);
-		outline-offset: var(--lumi-space-2xs);
+		background: var(--list-item-hover-bg);
+		box-shadow: 0 0 0 var(--lumi-border-width-thick) var(--list-item-focus-ring);
+	}
+
+	.lumi-list-item--clickable:active:not(.lumi-list-item--disabled) {
+		transform: none;
 	}
 
 	/* Active state */
 	.lumi-list-item--active {
 		background: var(--list-item-active-bg);
-		color: var(--lumi-color-primary);
+		box-shadow: var(--lumi-shadow-sm);
+	}
+
+	.lumi-list-item--active::before {
+		content: '';
+		position: absolute;
+		left: var(--lumi-space-2xs);
+		top: var(--lumi-space-xs);
+		bottom: var(--lumi-space-xs);
+		width: var(--lumi-border-width-thick);
+		border-radius: var(--lumi-radius-full);
+		background: var(--list-accent, var(--lumi-color-primary));
 	}
 
 	.lumi-list-item--clickable.lumi-list-item--active:hover {
@@ -230,10 +253,14 @@
 	}
 
 	.lumi-list-item--active .lumi-list-item__icon {
-		color: var(--lumi-color-primary);
+		color: var(--list-accent, var(--lumi-color-primary));
 	}
 
 	.lumi-list-item--active .lumi-list-item__subtitle {
-		color: color-mix(in srgb, var(--lumi-color-primary) 70%, transparent);
+		color: color-mix(
+			in srgb,
+			var(--list-accent, var(--lumi-color-primary)) 70%,
+			var(--lumi-color-text-muted)
+		);
 	}
 </style>

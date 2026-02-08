@@ -15,16 +15,12 @@
 			.filter(Boolean)
 			.join(' ');
 	});
-
-	const styleVars = $derived(() => {
-		return color ? `--header-color: var(--lumi-color-${color});` : '';
-	});
 </script>
 
-<div class={classes()} style={styleVars()}>
+<div class={classes()}>
 	{#if icon}
 		<div class="lumi-list-header__icon">
-			<Icon {icon} size="16px" />
+			<Icon {icon} size="sm" />
 		</div>
 	{/if}
 
@@ -49,14 +45,13 @@
 
 <style>
 	.lumi-list-header {
+		--list-header-color: var(--lumi-color-text-muted);
 		display: flex;
 		align-items: center;
 		gap: var(--lumi-space-sm);
-		padding: var(--lumi-space-sm) var(--lumi-space-md);
-		font-weight: var(--lumi-font-weight-semibold);
-		color: var(--lumi-color-text-muted);
-		background: transparent;
-		margin-top: var(--lumi-space-xs);
+		padding: var(--lumi-space-xs) var(--lumi-space-sm);
+		color: var(--list-header-color);
+		border-bottom: 1px solid var(--lumi-color-border-light);
 		margin-bottom: var(--lumi-space-2xs);
 	}
 
@@ -65,7 +60,8 @@
 		align-items: center;
 		justify-content: center;
 		color: inherit;
-		opacity: 0.8;
+		opacity: 0.85;
+		flex-shrink: 0;
 	}
 
 	.lumi-list-header__content {
@@ -75,10 +71,14 @@
 
 	.lumi-list-header__title {
 		font-size: var(--lumi-font-size-xs);
-		font-weight: var(--lumi-font-weight-bold);
+		font-weight: var(--lumi-font-weight-semibold);
 		color: inherit;
+		letter-spacing: 0.04em;
+		line-height: var(--lumi-line-height-tight);
 		text-transform: uppercase;
-		letter-spacing: 0.05em;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.lumi-list-header__actions {
@@ -90,21 +90,26 @@
 
 	/* Color variants */
 	.lumi-list-header--primary {
-		color: var(--lumi-color-primary);
+		--list-header-color: var(--lumi-color-primary);
 	}
+
 	.lumi-list-header--secondary {
-		color: var(--lumi-color-secondary);
+		--list-header-color: var(--lumi-color-secondary);
 	}
+
 	.lumi-list-header--success {
-		color: var(--lumi-color-success);
+		--list-header-color: var(--lumi-color-success);
 	}
+
 	.lumi-list-header--warning {
-		color: var(--lumi-color-warning);
+		--list-header-color: var(--lumi-color-warning);
 	}
+
 	.lumi-list-header--danger {
-		color: var(--lumi-color-danger);
+		--list-header-color: var(--lumi-color-danger);
 	}
+
 	.lumi-list-header--info {
-		color: var(--lumi-color-info);
+		--list-header-color: var(--lumi-color-info);
 	}
 </style>

@@ -249,24 +249,5 @@
 <style>
 	:global(.permissions-modal__list) {
 		max-height: calc(var(--lumi-space-6xl) + var(--lumi-space-5xl));
-		overflow-y: auto;
-	}
-
-	:global(.permissions-modal__list::-webkit-scrollbar) {
-		width: var(--lumi-space-2xs);
-	}
-
-	:global(.permissions-modal__list::-webkit-scrollbar-track) {
-		background: var(--lumi-color-background);
-		border-radius: var(--lumi-radius-base);
-	}
-
-	:global(.permissions-modal__list::-webkit-scrollbar-thumb) {
-		background: var(--lumi-color-border-strong);
-		border-radius: var(--lumi-radius-base);
-	}
-
-	:global(.permissions-modal__list::-webkit-scrollbar-thumb:hover) {
-		background: var(--lumi-color-text-muted);
 	}
 </style>

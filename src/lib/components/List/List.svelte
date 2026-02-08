@@ -21,7 +21,7 @@
 	});
 </script>
 
-<div class={classes()}>
+<div class={classes()} role="list">
 	{#if children}
 		{@render children()}
 	{/if}
@@ -29,41 +29,52 @@
 
 <style>
 	.lumi-list {
+		--list-accent: var(--lumi-color-primary);
+		--list-hover-border: color-mix(in srgb, var(--list-accent) 20%, var(--lumi-color-border));
+		--list-item-padding: var(--lumi-space-sm) var(--lumi-space-md);
+		--list-item-title-size: var(--lumi-font-size-sm);
+		--list-item-subtitle-size: var(--lumi-font-size-xs);
+		--list-icon-size: 16px;
+		--list-scroll-track: var(--lumi-color-background);
+		--list-scroll-thumb: var(--lumi-color-border-strong);
 		width: 100%;
-		position: relative;
 		font-family: var(--lumi-font-family-sans);
 		display: flex;
 		flex-direction: column;
 		gap: var(--lumi-space-2xs);
-		padding: var(--lumi-space-2xs);
-		background:
-			linear-gradient(
-				180deg,
-				rgba(var(--lumi-color-primary-rgb), 0.04) 0%,
-				rgba(var(--lumi-color-primary-rgb), 0) 30%
-			),
-			var(--lumi-color-surface-overlay);
-		border: 1px solid
-			color-mix(
-				in srgb,
-				var(--list-accent, var(--lumi-color-border-light)) 18%,
-				var(--lumi-color-border-light)
-			);
+		padding: var(--lumi-space-xs);
+		background: color-mix(in srgb, var(--lumi-color-surface) 96%, transparent);
+		border: 1px solid var(--lumi-color-border);
 		border-radius: var(--lumi-radius-2xl);
 		box-shadow: var(--lumi-shadow-sm);
+		transition:
+			border-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			box-shadow var(--lumi-duration-fast) var(--lumi-easing-default);
+		overflow-x: hidden;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		scrollbar-width: thin;
+		scrollbar-color: var(--list-scroll-thumb) var(--list-scroll-track);
+	}
+
+	.lumi-list:hover:not(.lumi-list--disabled) {
+		border-color: var(--list-hover-border);
+		box-shadow: var(--lumi-shadow-md);
 	}
 
 	/* Size variants */
 	.lumi-list--sm {
 		--list-item-padding: var(--lumi-space-xs) var(--lumi-space-sm);
-		--list-font-size: var(--lumi-font-size-sm);
-		--list-icon-size: var(--lumi-icon-sm);
+		--list-item-title-size: var(--lumi-font-size-sm);
+		--list-item-subtitle-size: var(--lumi-font-size-xs);
+		--list-icon-size: 14px;
 	}
 
 	.lumi-list--md {
 		--list-item-padding: var(--lumi-space-sm) var(--lumi-space-md);
-		--list-font-size: var(--lumi-font-size-base);
-		--list-icon-size: var(--lumi-icon-md);
+		--list-item-title-size: var(--lumi-font-size-sm);
+		--list-item-subtitle-size: var(--lumi-font-size-xs);
+		--list-icon-size: 16px;
 	}
 
 	.lumi-list--primary {
@@ -90,9 +101,28 @@
 		--list-accent: var(--lumi-color-info);
 	}
 
+	.lumi-list::-webkit-scrollbar {
+		width: var(--lumi-space-2xs);
+	}
+
+	.lumi-list::-webkit-scrollbar-track {
+		background: var(--list-scroll-track);
+		border-radius: var(--lumi-radius-full);
+	}
+
+	.lumi-list::-webkit-scrollbar-thumb {
+		background: var(--list-scroll-thumb);
+		border-radius: var(--lumi-radius-full);
+	}
+
+	.lumi-list::-webkit-scrollbar-thumb:hover {
+		background: var(--lumi-color-text-muted);
+	}
+
 	/* Disabled state */
 	.lumi-list--disabled {
-		opacity: 0.6;
+		opacity: 0.65;
+		filter: saturate(0.8);
 		pointer-events: none;
 	}
 </style>

@@ -1,4 +1,5 @@
 // Lumi UI - List Component Types
+import type { Snippet } from 'svelte';
 
 export type ListSize = 'sm' | 'md';
 export type ListColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
@@ -27,8 +28,8 @@ export interface ListItemProps {
 	/** Icon name */
 	icon?: string;
 
-	/** Whether item has avatar */
-	avatar?: boolean;
+	/** Avatar snippet */
+	avatar?: Snippet;
 
 	/** Disabled state */
 	disabled?: boolean;
@@ -44,6 +45,15 @@ export interface ListItemProps {
 
 	/** Click handler */
 	onclick?: (event: MouseEvent) => void;
+
+	/** Right-side actions snippet */
+	children?: Snippet;
+
+	/** Custom title snippet */
+	titleSlot?: Snippet;
+
+	/** Custom subtitle snippet */
+	subtitleSlot?: Snippet;
 }
 
 export interface ListHeaderProps {
@@ -58,4 +68,10 @@ export interface ListHeaderProps {
 
 	/** Custom class */
 	class?: string;
+
+	/** Actions snippet */
+	actions?: Snippet;
+
+	/** Alternative actions snippet */
+	children?: Snippet;
 }

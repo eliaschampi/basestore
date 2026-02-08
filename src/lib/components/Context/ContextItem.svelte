@@ -60,6 +60,7 @@
 <style>
 	.lumi-context-item {
 		--context-item-hover-bg: color-mix(in srgb, var(--lumi-color-primary) 4%, transparent);
+		--context-item-focus-ring: color-mix(in srgb, var(--lumi-color-primary) 20%, transparent);
 		--context-item-lift: calc(var(--lumi-space-2xs) * -0.25);
 		display: flex;
 		align-items: center;
@@ -88,8 +89,11 @@
 
 	.lumi-context-item:focus-visible {
 		background: var(--context-item-hover-bg);
-		box-shadow: 0 0 0 var(--lumi-border-width-thick)
-			color-mix(in srgb, var(--lumi-color-primary) 20%, transparent);
+		box-shadow: 0 0 0 var(--lumi-border-width-thick) var(--context-item-focus-ring);
+	}
+
+	.lumi-context-item:active:not(.lumi-context-item--disabled) {
+		transform: none;
 	}
 
 	.lumi-context-item__icon {

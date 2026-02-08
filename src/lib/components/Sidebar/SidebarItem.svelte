@@ -67,6 +67,7 @@
 	.lumi-sidebar-item {
 		--sidebar-item-hover-bg: color-mix(in srgb, var(--lumi-color-primary) 4%, transparent);
 		--sidebar-item-active-bg: color-mix(in srgb, var(--lumi-color-primary) 8%, transparent);
+		--sidebar-item-focus-ring: color-mix(in srgb, var(--lumi-color-primary) 20%, transparent);
 		--sidebar-item-lift: calc(var(--lumi-space-2xs) * -0.25);
 		position: relative;
 		display: flex;
@@ -84,10 +85,10 @@
 		cursor: pointer;
 		text-align: left;
 		transition:
-			background-color 0.15s ease,
-			color 0.15s ease,
-			box-shadow 0.15s ease,
-			transform 0.15s ease;
+			background-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			color var(--lumi-duration-fast) var(--lumi-easing-default),
+			box-shadow var(--lumi-duration-fast) var(--lumi-easing-default),
+			transform var(--lumi-duration-fast) var(--lumi-easing-default);
 		width: 100%;
 		outline: none;
 	}
@@ -104,8 +105,8 @@
 		opacity: 0;
 		transform: scaleY(0.6);
 		transition:
-			opacity 0.15s ease,
-			transform 0.15s ease;
+			opacity var(--lumi-duration-fast) var(--lumi-easing-default),
+			transform var(--lumi-duration-fast) var(--lumi-easing-default);
 	}
 
 	.lumi-sidebar-item:hover:not(.lumi-sidebar-item--active) {
@@ -115,8 +116,12 @@
 	}
 
 	.lumi-sidebar-item:focus-visible {
-		box-shadow: 0 0 0 var(--lumi-border-width-thick)
-			color-mix(in srgb, var(--lumi-color-primary) 20%, transparent);
+		background: var(--sidebar-item-hover-bg);
+		box-shadow: 0 0 0 var(--lumi-border-width-thick) var(--sidebar-item-focus-ring);
+	}
+
+	.lumi-sidebar-item:active:not(.lumi-sidebar-item--active) {
+		transform: none;
 	}
 
 	.lumi-sidebar-item--active {

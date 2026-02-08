@@ -108,6 +108,7 @@
 <style>
 	.lumi-dropdown-item {
 		--dropdown-item-hover-bg: color-mix(in srgb, var(--lumi-color-primary) 4%, transparent);
+		--dropdown-item-focus-ring: color-mix(in srgb, var(--lumi-color-primary) 20%, transparent);
 		--dropdown-item-lift: calc(var(--lumi-space-2xs) * -0.25);
 		width: 100%;
 		padding: var(--lumi-space-sm) var(--lumi-space-md);
@@ -140,8 +141,7 @@
 	.lumi-dropdown-item:focus-visible {
 		outline: none;
 		background: var(--dropdown-item-hover-bg);
-		box-shadow: 0 0 0 var(--lumi-border-width-thick)
-			color-mix(in srgb, var(--lumi-color-primary) 20%, transparent);
+		box-shadow: 0 0 0 var(--lumi-border-width-thick) var(--dropdown-item-focus-ring);
 	}
 
 	.lumi-dropdown-item:active:not(.lumi-dropdown-item--disabled) {
