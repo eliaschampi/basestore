@@ -1,5 +1,6 @@
 import type { Database } from '$lib/database';
 import type { PermissionKey } from '$lib/stores/permissions.ts';
+import { hasSuperUserAccess, type SuperUserCandidate } from './super-user';
 
 /**
  * Get user permissions from database
@@ -22,7 +23,12 @@ export async function getUserPermissions(db: Database, userCode: string): Promis
 /**
  * Check if user has a specific permission
  */
-export function hasPermission(permissions: PermissionKey[], permissionKey: string): boolean {
+export function hasPermission(
+	permissions: PermissionKey[],
+	permissionKey: string,
+	user?: SuperUserCandidate | null
+): boolean {
+	if (hasSuperUserAccess(user)) return true;
 	return permissions.includes(permissionKey);
 }
 
@@ -31,8 +37,10 @@ export function hasPermission(permissions: PermissionKey[], permissionKey: strin
  */
 export function hasAnyPermission(
 	permissions: PermissionKey[],
+	user: SuperUserCandidate | null | undefined,
 	...permissionKeys: string[]
 ): boolean {
+	if (hasSuperUserAccess(user)) return true;
 	return permissionKeys.some((key) => permissions.includes(key));
 }
 
@@ -41,7 +49,9 @@ export function hasAnyPermission(
  */
 export function hasAllPermissions(
 	permissions: PermissionKey[],
+	user: SuperUserCandidate | null | undefined,
 	...permissionKeys: string[]
 ): boolean {
+	if (hasSuperUserAccess(user)) return true;
 	return permissionKeys.every((key) => permissions.includes(key));
 }

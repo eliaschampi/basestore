@@ -396,3 +396,24 @@ When extending Lumi UI, adhere to these principles:
 2.  **Glassmorphism:** Use `backdrop-filter: blur(var(--lumi-blur-md))` for overlays and sticky headers.
 3.  **Depth:** Use layered shadows (`--lumi-shadow-lg`) to create hierarchy.
 4.  **Efficiency:** Optimize for Large DOMs (use virtual lists if needed, though `Table` handles pagination).
+
+---
+
+## 10. 📘 ENTITY MODULE BLUEPRINT (MANDATORY)
+
+For all future modules/entities, this project now has a strict implementation blueprint:
+
+- **File:** `docs/ENTITY_MODULE_BLUEPRINT.md`
+- **Status:** Mandatory for AI agents and human contributors
+- **Scope:** All new entities (Drive, Products, Compras, Ventas, Product Transfers, Inventory, Cashbox, Expenses, Income, Cash Transfers, etc.)
+
+### Required Usage Rules
+
+1.  Always follow the routing decision matrix (`+page.server.ts` vs `src/routes/api/.../+server.ts`) from the blueprint.
+2.  Keep frontend form action names and backend action handlers perfectly aligned (`create/update/delete`).
+3.  Enforce permission checks in all server reads/writes using `locals.can(...)`.
+4.  Validate IDs and required fields before DB writes.
+5.  Verify `update/delete` affected rows and return `404` when target records do not exist.
+6.  Wrap multi-step writes in DB transactions.
+7.  Never expose sensitive fields (e.g., `password_hash`) to `PageData`.
+8.  Run `pnpm check` and `pnpm lint` before finalizing changes.

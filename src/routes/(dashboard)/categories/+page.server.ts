@@ -1,6 +1,11 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 
+function readFormField(formData: FormData, key: string): string {
+	const value = formData.get(key);
+	return typeof value === 'string' ? value.trim() : '';
+}
+
 export const load: PageServerLoad = async ({ locals, depends }) => {
 	depends('categories:load');
 
@@ -27,10 +32,10 @@ export const actions: Actions = {
 		}
 
 		const formData = await request.formData();
-		const name = formData.get('name') as string;
-		const description = formData.get('description') as string;
+		const name = readFormField(formData, 'name');
+		const description = readFormField(formData, 'description');
 
-		if (!name?.trim()) {
+		if (!name) {
 			return fail(400, { error: 'El nombre es obligatorio' });
 		}
 
@@ -38,8 +43,8 @@ export const actions: Actions = {
 			await locals.db
 				.insertInto('categories')
 				.values({
-					name: name.trim(),
-					description: description?.trim() || null
+					name,
+					description: description || null
 				})
 				.execute();
 			return { success: true, type: 'success' };
@@ -55,24 +60,33 @@ export const actions: Actions = {
 		}
 
 		const formData = await request.formData();
-		const categoryCode = formData.get('code') as string;
-		const name = formData.get('name') as string;
-		const description = formData.get('description') as string;
+		const categoryCode = readFormField(formData, 'code');
+		const name = readFormField(formData, 'name');
+		const description = readFormField(formData, 'description');
 
-		if (!name?.trim()) {
+		if (!categoryCode) {
+			return fail(400, { error: 'Categoría inválida' });
+		}
+
+		if (!name) {
 			return fail(400, { error: 'El nombre es obligatorio' });
 		}
 
 		try {
-			await locals.db
+			const result = await locals.db
 				.updateTable('categories')
 				.set({
-					name: name.trim(),
-					description: description?.trim() || null,
+					name,
+					description: description || null,
 					updated_at: new Date()
 				})
 				.where('code', '=', categoryCode)
-				.execute();
+				.executeTakeFirst();
+
+			if (Number(result.numUpdatedRows ?? 0) === 0) {
+				return fail(404, { error: 'Categoría no encontrada' });
+			}
+
 			return { success: true, type: 'success' };
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Error actualizando categoría';
@@ -86,10 +100,21 @@ export const actions: Actions = {
 		}
 
 		const formData = await request.formData();
-		const categoryCode = formData.get('code') as string;
+		const categoryCode = readFormField(formData, 'code');
+		if (!categoryCode) {
+			return fail(400, { error: 'Categoría inválida' });
+		}
 
 		try {
-			await locals.db.deleteFrom('categories').where('code', '=', categoryCode).execute();
+			const result = await locals.db
+				.deleteFrom('categories')
+				.where('code', '=', categoryCode)
+				.executeTakeFirst();
+
+			if (Number(result.numDeletedRows ?? 0) === 0) {
+				return fail(404, { error: 'Categoría no encontrada' });
+			}
+
 			return { success: true, type: 'success' };
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Error eliminando categoría';

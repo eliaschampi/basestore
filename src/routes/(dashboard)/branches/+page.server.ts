@@ -1,6 +1,11 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 
+function readFormField(formData: FormData, key: string): string {
+	const value = formData.get(key);
+	return typeof value === 'string' ? value.trim() : '';
+}
+
 export const load: PageServerLoad = async ({ locals, depends }) => {
 	depends('branches:load');
 
@@ -33,11 +38,14 @@ export const actions: Actions = {
 		}
 
 		const formData = await request.formData();
-		const name = formData.get('name') as string;
+		const name = readFormField(formData, 'name');
 		const state = formData.get('state') === 'on';
-		const selectedUsers = formData.getAll('selectedUsers') as string[];
+		const selectedUsers = formData
+			.getAll('selectedUsers')
+			.map((user) => (typeof user === 'string' ? user.trim() : ''))
+			.filter(Boolean);
 
-		if (!name?.trim()) {
+		if (!name) {
 			return fail(400, { error: 'El nombre es obligatorio' });
 		}
 
@@ -48,7 +56,7 @@ export const actions: Actions = {
 		try {
 			await locals.db
 				.insertInto('branches')
-				.values({ name: name.trim(), state, users: selectedUsers })
+				.values({ name, state, users: selectedUsers })
 				.execute();
 			return { success: true, type: 'success' };
 		} catch (error) {
@@ -63,12 +71,19 @@ export const actions: Actions = {
 		}
 
 		const formData = await request.formData();
-		const branchCode = formData.get('code') as string;
-		const name = formData.get('name') as string;
+		const branchCode = readFormField(formData, 'code');
+		const name = readFormField(formData, 'name');
 		const state = formData.get('state') === 'on';
-		const selectedUsers = formData.getAll('selectedUsers') as string[];
+		const selectedUsers = formData
+			.getAll('selectedUsers')
+			.map((user) => (typeof user === 'string' ? user.trim() : ''))
+			.filter(Boolean);
 
-		if (!name?.trim()) {
+		if (!branchCode) {
+			return fail(400, { error: 'Sede inválida' });
+		}
+
+		if (!name) {
 			return fail(400, { error: 'El nombre es obligatorio' });
 		}
 
@@ -77,11 +92,16 @@ export const actions: Actions = {
 		}
 
 		try {
-			await locals.db
+			const result = await locals.db
 				.updateTable('branches')
-				.set({ name: name.trim(), state, users: selectedUsers })
+				.set({ name, state, users: selectedUsers })
 				.where('code', '=', branchCode)
-				.execute();
+				.executeTakeFirst();
+
+			if (Number(result.numUpdatedRows ?? 0) === 0) {
+				return fail(404, { error: 'Sede no encontrada' });
+			}
+
 			return { success: true, type: 'success' };
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Error actualizando sede';
@@ -95,10 +115,21 @@ export const actions: Actions = {
 		}
 
 		const formData = await request.formData();
-		const branchCode = formData.get('code') as string;
+		const branchCode = readFormField(formData, 'code');
+		if (!branchCode) {
+			return fail(400, { error: 'Sede inválida' });
+		}
 
 		try {
-			await locals.db.deleteFrom('branches').where('code', '=', branchCode).execute();
+			const result = await locals.db
+				.deleteFrom('branches')
+				.where('code', '=', branchCode)
+				.executeTakeFirst();
+
+			if (Number(result.numDeletedRows ?? 0) === 0) {
+				return fail(404, { error: 'Sede no encontrada' });
+			}
+
 			return { success: true, type: 'success' };
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Error eliminando sede';

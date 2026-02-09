@@ -150,6 +150,12 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
 
 	// Sistema
 	{
+		key: 'dashboard:read',
+		label: 'Ver dashboard',
+		category: 'Sistema',
+		description: 'Ver métricas generales del dashboard'
+	},
+	{
 		key: 'system:config',
 		label: 'Configuración',
 		category: 'Sistema',

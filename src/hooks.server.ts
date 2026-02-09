@@ -1,8 +1,9 @@
-import { type Handle, redirect } from '@sveltejs/kit';
+import { error, type Handle, redirect } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { getSession } from '$lib/auth/session';
 import { dbInstance } from '$lib/config/server';
 import { getUserPermissions, hasPermission } from '$lib/permissions/server';
+import { hasSuperUserAccess } from '$lib/permissions/super-user';
 
 // Database handle - attach database instance to locals
 const databaseHandle: Handle = async ({ event, resolve }) => {
@@ -12,24 +13,29 @@ const databaseHandle: Handle = async ({ event, resolve }) => {
 
 // Authentication handle - get session and user from cookies
 const authHandle: Handle = async ({ event, resolve }) => {
-	const session = await getSession(dbInstance, event.cookies);
+	const session = await getSession(event.locals.db, event.cookies);
 	event.locals.session = session;
 	event.locals.user = session?.user ?? null;
 
 	// Get user permissions ONCE per session and store in locals
 	// This avoids multiple database calls per request
 	if (event.locals.user?.code) {
-		event.locals.userPermissions = await getUserPermissions(
-			event.locals.db,
-			event.locals.user.code
-		);
+		if (hasSuperUserAccess(event.locals.user)) {
+			// Super users bypass explicit permissions.
+			event.locals.userPermissions = [];
+		} else {
+			event.locals.userPermissions = await getUserPermissions(
+				event.locals.db,
+				event.locals.user.code
+			);
+		}
 	} else {
 		event.locals.userPermissions = [];
 	}
 
 	// Simple permission checker using cached permissions
 	event.locals.can = async (permissionKey: string): Promise<boolean> => {
-		return hasPermission(event.locals.userPermissions || [], permissionKey);
+		return hasPermission(event.locals.userPermissions || [], permissionKey, event.locals.user);
 	};
 
 	return resolve(event);
@@ -39,9 +45,13 @@ const authHandle: Handle = async ({ event, resolve }) => {
 const authGuard: Handle = async ({ event, resolve }) => {
 	const isAuthPage = event.url.pathname.startsWith('/auth');
 	const isApiRoute = event.url.pathname.startsWith('/api');
+	const isPublicApiRoute = event.url.pathname === '/api/logout';
 
-	// Skip auth guard for API routes (they handle auth internally)
+	// API routes require authentication by default.
 	if (isApiRoute) {
+		if (!isPublicApiRoute && !event.locals.user) {
+			throw error(401, 'No autorizado');
+		}
 		return resolve(event);
 	}
 

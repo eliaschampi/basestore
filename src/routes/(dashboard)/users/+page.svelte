@@ -14,6 +14,7 @@
 	import DropdownItem from '$lib/components/Dropdown/DropdownItem.svelte';
 	import Icon from '$lib/components/Icon/Icon.svelte';
 	import PermissionsModal from '$lib/components/PermissionsModal';
+	import { hasSuperUserAccess } from '$lib/permissions/super-user';
 	import { showToast } from '$lib/stores/Toast';
 	import { can } from '$lib/stores/permissions';
 	import { formatDate } from '$lib/utils';
@@ -222,8 +223,8 @@
 					</div>
 
 					<!-- Role Badge -->
-					{#if user.is_super_admin}
-						<Chip color="danger" size="sm" class="lumi-text--xs">Super Admin</Chip>
+					{#if hasSuperUserAccess(user)}
+						<Chip color="danger" size="sm" class="lumi-text--xs">Admin</Chip>
 					{:else}
 						<Chip color="primary" size="sm" class="lumi-text--xs">Usuario</Chip>
 					{/if}

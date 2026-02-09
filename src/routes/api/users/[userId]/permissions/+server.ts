@@ -1,6 +1,51 @@
-import { json, error } from '@sveltejs/kit';
+import { json, error, isHttpError } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { dbInstance as db } from '$lib/config/server';
+import { PERMISSION_DEFINITIONS } from '$lib/permissions/definitions';
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const ALLOWED_PERMISSION_KEYS = new Set(PERMISSION_DEFINITIONS.map((permission) => permission.key));
+
+interface PermissionInput {
+	entity?: unknown;
+	action?: unknown;
+	user_action?: unknown;
+}
+
+function normalizePermissionsInput(value: unknown): { entity: string; action: string }[] {
+	if (!Array.isArray(value)) {
+		throw error(400, 'Formato de permisos inválido');
+	}
+
+	const normalized = value.map((item) => {
+		const permission = item as PermissionInput;
+		const entity = typeof permission.entity === 'string' ? permission.entity.trim() : '';
+		const actionCandidate =
+			typeof permission.user_action === 'string'
+				? permission.user_action
+				: typeof permission.action === 'string'
+					? permission.action
+					: '';
+		const action = actionCandidate.trim();
+
+		if (!entity || !action) {
+			throw error(400, 'Cada permiso debe incluir entity y action');
+		}
+
+		const key = `${entity}:${action}`;
+		if (!ALLOWED_PERMISSION_KEYS.has(key)) {
+			throw error(400, `Permiso inválido: ${key}`);
+		}
+
+		return { entity, action };
+	});
+
+	const unique = new Map<string, { entity: string; action: string }>();
+	for (const permission of normalized) {
+		unique.set(`${permission.entity}:${permission.action}`, permission);
+	}
+
+	return [...unique.values()];
+}
 
 // GET - Fetch user permissions
 export const GET: RequestHandler = async ({ params, locals }) => {
@@ -9,17 +54,29 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 	}
 
 	const { userId } = params;
+	if (!UUID_REGEX.test(userId)) {
+		throw error(400, 'userId inválido');
+	}
+
+	if (!(await locals.can('users:manage_permissions'))) {
+		throw error(403, 'Permiso requerido: users:manage_permissions');
+	}
 
 	try {
 		// Fetch permissions for the user
-		const permissions = await db
+		const permissions = await locals.db
 			.selectFrom('permissions')
-			.selectAll()
+			.select(['code', 'user_code', 'entity', 'action'])
 			.where('user_code', '=', userId)
+			.orderBy('entity', 'asc')
+			.orderBy('action', 'asc')
 			.execute();
 
 		return json({ permissions });
 	} catch (err) {
+		if (isHttpError(err)) {
+			throw err;
+		}
 		console.error('Error fetching permissions:', err);
 		throw error(500, 'Error al obtener permisos');
 	}
@@ -32,29 +89,43 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 	}
 
 	const { userId } = params;
+	if (!UUID_REGEX.test(userId)) {
+		throw error(400, 'userId inválido');
+	}
+
+	if (!(await locals.can('users:manage_permissions'))) {
+		throw error(403, 'Permiso requerido: users:manage_permissions');
+	}
 
 	try {
-		const { permissions } = await request.json();
+		const payload = (await request.json()) as { permissions?: unknown };
+		const normalizedPermissions = normalizePermissionsInput(payload.permissions ?? []);
 
-		// Delete existing permissions
-		await db.deleteFrom('permissions').where('user_code', '=', userId).execute();
+		await locals.db.transaction().execute(async (trx) => {
+			await trx.deleteFrom('permissions').where('user_code', '=', userId).execute();
 
-		// Insert new permissions
-		if (permissions && permissions.length > 0) {
-			const permissionsToInsert = permissions.map((p: { entity: string; user_action: string }) => ({
-				user_code: userId,
-				entity: p.entity,
-				action: p.user_action
-			}));
-
-			await db.insertInto('permissions').values(permissionsToInsert).execute();
-		}
+			if (normalizedPermissions.length > 0) {
+				await trx
+					.insertInto('permissions')
+					.values(
+						normalizedPermissions.map((permission) => ({
+							user_code: userId,
+							entity: permission.entity,
+							action: permission.action
+						}))
+					)
+					.execute();
+			}
+		});
 
 		return json({
 			success: true,
-			count: permissions?.length || 0
+			count: normalizedPermissions.length
 		});
 	} catch (err) {
+		if (isHttpError(err)) {
+			throw err;
+		}
 		console.error('Error updating permissions:', err);
 		throw error(500, 'Error al actualizar permisos');
 	}

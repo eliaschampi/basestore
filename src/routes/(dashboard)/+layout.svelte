@@ -8,10 +8,11 @@
 	import Dropdown from '$lib/components/Dropdown/Dropdown.svelte';
 	import DropdownItem from '$lib/components/Dropdown/DropdownItem.svelte';
 	import { initializePermissions } from '$lib/stores/permissions';
+	import { hasSuperUserAccess } from '$lib/permissions/super-user';
 	import { theme } from '$lib/stores/theme';
 	import { page } from '$app/state';
 
-	initializePermissions(page.data.userPermissions || [], page.data.user?.is_super_admin || false);
+	initializePermissions(page.data.userPermissions || [], hasSuperUserAccess(page.data.user));
 
 	const { children } = $props();
 

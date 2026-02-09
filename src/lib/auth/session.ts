@@ -1,11 +1,25 @@
 import type { Cookies } from '@sveltejs/kit';
-import { generateToken, verifyToken } from './jwt';
+import { decodeTokenExpiration, generateToken, verifyToken } from './jwt';
 import type { Database } from '$lib/database';
 import type { Users } from '$lib/database/types';
 import type { Selectable } from 'kysely';
 
+const SESSION_USER_COLUMNS = [
+	'code',
+	'name',
+	'last_name',
+	'email',
+	'photo_url',
+	'is_super_admin',
+	'last_login',
+	'created_at',
+	'updated_at'
+] as const;
+
+export type SessionUser = Pick<Selectable<Users>, (typeof SESSION_USER_COLUMNS)[number]>;
+
 export interface Session {
-	user: Selectable<Users>;
+	user: SessionUser;
 	token: string;
 	expiresAt: number;
 }
@@ -20,6 +34,16 @@ const cookieConfig = {
 	maxAge: 60 * 60 * 24 * 7 // 7 days
 };
 
+async function getSessionUser(db: Database, userCode: string): Promise<SessionUser | null> {
+	const user = await db
+		.selectFrom('users')
+		.select(SESSION_USER_COLUMNS)
+		.where('code', '=', userCode)
+		.executeTakeFirst();
+
+	return user ?? null;
+}
+
 /**
  * Create a new session for a user
  */
@@ -29,12 +53,8 @@ export async function createSession(
 	cookies: Cookies
 ): Promise<Session | null> {
 	try {
-		// Get user from database
-		const user = await db
-			.selectFrom('users')
-			.selectAll()
-			.where('code', '=', userCode)
-			.executeTakeFirst();
+		// Get user from database (safe shape, no password hash)
+		const user = await getSessionUser(db, userCode);
 
 		if (!user) {
 			console.error('User not found:', userCode);
@@ -43,12 +63,7 @@ export async function createSession(
 
 		// Generate JWT token
 		const token = generateToken({ userCode: user.code, email: user.email });
-		const payload = verifyToken(token);
-
-		if (!payload) {
-			console.error('Failed to generate session token:', userCode);
-			return null;
-		}
+		const expiresAt = decodeTokenExpiration(token) ?? Date.now() + cookieConfig.maxAge * 1000;
 
 		// Set session cookie
 		cookies.set(SESSION_COOKIE_NAME, token, cookieConfig);
@@ -63,7 +78,7 @@ export async function createSession(
 		return {
 			user,
 			token,
-			expiresAt: payload.exp! * 1000
+			expiresAt
 		};
 	} catch (error) {
 		console.error('Error creating session:', error);
@@ -88,12 +103,8 @@ export async function getSession(db: Database, cookies: Cookies): Promise<Sessio
 			return null;
 		}
 
-		// Get fresh user data
-		const user = await db
-			.selectFrom('users')
-			.selectAll()
-			.where('code', '=', payload.userCode)
-			.executeTakeFirst();
+		// Get fresh user data (safe shape, no password hash)
+		const user = await getSessionUser(db, payload.userCode);
 
 		if (!user) {
 			destroySession(cookies);

@@ -78,6 +78,13 @@
 		showDeleteModal = false;
 		selectedBrand = null;
 	}
+
+	function submitForm(formId: string): void {
+		const form = document.getElementById(formId);
+		if (form instanceof HTMLFormElement) {
+			form.requestSubmit();
+		}
+	}
 </script>
 
 <div class="lumi-stack lumi-space--lg">
@@ -111,7 +118,7 @@
 					{#if row.description}
 						<span class="lumi-text--sm lumi-text--muted">{row.description as string}</span>
 					{:else}
-						<span class="lumi-text--sm lumi-text--muted" style="font-style: italic;"
+						<span class="lumi-text--sm lumi-text--muted brand-table__muted-italic"
 							>Sin descripción</span
 						>
 					{/if}
@@ -145,6 +152,7 @@
 <!-- Create/Edit Modal -->
 <Dialog bind:open={showModal} title={isEditing ? 'Editar Marca' : 'Nueva Marca'} size="md">
 	<form
+		id="brand-form"
 		method="POST"
 		action="?/{isEditing ? 'update' : 'create'}"
 		use:enhance={() => {
@@ -194,11 +202,7 @@
 
 	{#snippet footer()}
 		<Button type="border" onclick={closeModal}>Cancelar</Button>
-		<Button
-			type="filled"
-			color="primary"
-			onclick={() => document.querySelector('form')?.requestSubmit()}
-		>
+		<Button type="filled" color="primary" onclick={() => submitForm('brand-form')}>
 			{isEditing ? 'Actualizar' : 'Crear'}
 		</Button>
 	{/snippet}
@@ -207,7 +211,7 @@
 <!-- Delete Confirmation Modal -->
 <Dialog bind:open={showDeleteModal} title="Confirmar eliminación" size="sm">
 	<form
-		id="delete-form"
+		id="delete-brand-form"
 		method="POST"
 		action="?/delete"
 		use:enhance={() => {
@@ -238,7 +242,7 @@
 			type="filled"
 			color="danger"
 			onclick={() => {
-				const form = document.getElementById('delete-form');
+				const form = document.getElementById('delete-brand-form');
 				if (form instanceof HTMLFormElement) form.requestSubmit();
 			}}
 		>
@@ -246,3 +250,9 @@
 		</Button>
 	{/snippet}
 </Dialog>
+
+<style>
+	.brand-table__muted-italic {
+		font-style: italic;
+	}
+</style>

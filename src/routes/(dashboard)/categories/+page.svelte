@@ -78,6 +78,13 @@
 		showDeleteModal = false;
 		selectedCategory = null;
 	}
+
+	function submitForm(formId: string): void {
+		const form = document.getElementById(formId);
+		if (form instanceof HTMLFormElement) {
+			form.requestSubmit();
+		}
+	}
 </script>
 
 <div class="lumi-stack lumi-space--lg">
@@ -111,7 +118,7 @@
 					{#if row.description}
 						<span class="lumi-text--sm lumi-text--muted">{row.description as string}</span>
 					{:else}
-						<span class="lumi-text--sm lumi-text--muted" style="font-style: italic;"
+						<span class="lumi-text--sm lumi-text--muted category-table__muted-italic"
 							>Sin descripción</span
 						>
 					{/if}
@@ -145,6 +152,7 @@
 <!-- Create/Edit Modal -->
 <Dialog bind:open={showModal} title={isEditing ? 'Editar Categoría' : 'Nueva Categoría'} size="md">
 	<form
+		id="category-form"
 		method="POST"
 		action="?/{isEditing ? 'update' : 'create'}"
 		use:enhance={() => {
@@ -194,11 +202,7 @@
 
 	{#snippet footer()}
 		<Button type="border" onclick={closeModal}>Cancelar</Button>
-		<Button
-			type="filled"
-			color="primary"
-			onclick={() => document.querySelector('form')?.requestSubmit()}
-		>
+		<Button type="filled" color="primary" onclick={() => submitForm('category-form')}>
 			{isEditing ? 'Actualizar' : 'Crear'}
 		</Button>
 	{/snippet}
@@ -246,3 +250,9 @@
 		</Button>
 	{/snippet}
 </Dialog>
+
+<style>
+	.category-table__muted-italic {
+		font-style: italic;
+	}
+</style>

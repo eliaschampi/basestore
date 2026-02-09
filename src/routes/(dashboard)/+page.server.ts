@@ -2,6 +2,22 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const db = locals.db;
+	const canReadAnyEntity = locals.userPermissions.some((permission) =>
+		permission.endsWith(':read')
+	);
+	const canViewDashboard = (await locals.can('dashboard:read')) || canReadAnyEntity;
+
+	if (!canViewDashboard) {
+		return {
+			title: 'Dashboard',
+			stats: {
+				users: 0,
+				branches: 0,
+				categories: 0,
+				brands: 0
+			}
+		};
+	}
 
 	// Get statistics
 	const [usersCount, branchesCount, categoriesCount, brandsCount] = await Promise.all([
