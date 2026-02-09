@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { Icon } from '../Icon';
 	import type { ChipProps } from './types';
+	import { getIconSize } from '../config';
 
 	interface Props extends ChipProps {
 		children?: Snippet;
@@ -25,10 +26,8 @@
 			.join(' ');
 	});
 
-	// Icon size based on chip size
-	const iconSize = $derived(() => {
-		return size === 'sm' ? 'sm' : size === 'md' ? 'md' : 'lg';
-	});
+	// Icon size based on chip size - using centralized config
+	const iconSizePx = $derived(() => `${getIconSize(size)}px`);
 
 	// Event handlers
 	const handleClose = (event: MouseEvent) => {
@@ -57,7 +56,7 @@
 	{#if icon}
 		<!-- Icon -->
 		<span class="lumi-chip__icon">
-			<Icon {icon} size={iconSize()} />
+			<Icon {icon} size={iconSizePx()} />
 		</span>
 	{/if}
 

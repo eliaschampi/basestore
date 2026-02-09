@@ -79,8 +79,10 @@
 	 * ============================================================================ */
 
 	.lumi-switch {
-		--switch-track-w: 44px;
-		--switch-track-h: 24px;
+		/* Track dimensions using design tokens */
+		/* md size: 44px x 24px using closest token values */
+		--switch-track-w: calc(var(--lumi-space-xxl) + var(--lumi-space-2xs));
+		--switch-track-h: var(--lumi-space-lg);
 		--switch-inset: 2px;
 		--switch-thumb: calc(var(--switch-track-h) - var(--switch-inset) * 2);
 		--switch-travel: calc(var(--switch-track-w) - var(--switch-track-h));
@@ -195,16 +197,20 @@
 
 	/* ── Size variants ────────────────────────── */
 	.lumi-switch--sm {
-		--switch-track-w: 36px;
-		--switch-track-h: 20px;
+		/* 36px x 20px track using tokens */
+		--switch-track-w: calc(var(--lumi-space-xl) + var(--lumi-space-2xs));
+		--switch-track-h: var(--lumi-icon-md);
 		--switch-stretch: 3px;
 		--switch-label-size: var(--lumi-font-size-xs);
 		gap: var(--lumi-space-xs);
 	}
 
+	/* md size uses base values from .lumi-switch */
+
 	.lumi-switch--lg {
-		--switch-track-w: 52px;
-		--switch-track-h: 28px;
+		/* 52px x 28px track using tokens */
+		--switch-track-w: calc(var(--lumi-space-3xl) + var(--lumi-space-2xs));
+		--switch-track-h: calc(var(--lumi-space-lg) + var(--lumi-space-2xs));
 		--switch-stretch: 5px;
 		--switch-label-size: var(--lumi-font-size-base);
 		gap: var(--lumi-space-md);

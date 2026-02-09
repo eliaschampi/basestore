@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import Icon from '../Icon/Icon.svelte';
 	import type { EmptyStateProps } from './types';
+	import { getIconSize } from '../config';
 
 	interface Props extends EmptyStateProps {
 		visual?: Snippet;
@@ -22,6 +23,10 @@
 		descriptionSlot,
 		actions
 	}: Props = $props();
+
+	// Use 2xl icon size (40px) for empty states - as per design system
+	// Note: For a 64px icon, consider adding --lumi-icon-3xl to tokens.css
+	const emptyStateIconSize = `${getIconSize('2xl')}px`;
 
 	const classes = $derived(() => {
 		return ['lumi-empty-state', className].filter(Boolean).join(' ');
@@ -49,11 +54,11 @@
 			<img src={imageUrl()} alt={title || 'Empty state'} class="lumi-empty-state__image" />
 		{:else if icon}
 			<div class="lumi-empty-state__icon">
-				<Icon {icon} size="64px" color={`var(--lumi-color-${iconColor})`} />
+				<Icon {icon} size={emptyStateIconSize} color={`var(--lumi-color-${iconColor})`} />
 			</div>
 		{:else}
 			<div class="lumi-empty-state__default-icon">
-				<Icon icon="inbox" size="64px" color="var(--lumi-color-text-muted)" />
+				<Icon icon="inbox" size={emptyStateIconSize} color="var(--lumi-color-text-muted)" />
 			</div>
 		{/if}
 	</div>

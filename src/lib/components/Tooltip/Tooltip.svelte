@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import type { TooltipProps } from './types';
+	import { LUMI_CONFIG } from '../config';
 
 	interface Props extends TooltipProps {
 		children?: Snippet;
@@ -20,6 +21,8 @@
 
 	let isVisible = $state(false);
 	let showTimeout: number | null = null;
+
+	const transitionDuration = LUMI_CONFIG.transitions.fast;
 
 	const tooltipClasses = $derived(() => {
 		return [
@@ -63,7 +66,7 @@
 	{/if}
 
 	{#if isVisible}
-		<div class={tooltipClasses()} transition:fade={{ duration: 150 }}>
+		<div class={tooltipClasses()} transition:fade={{ duration: transitionDuration }}>
 			{#if content}
 				{@render content()}
 			{:else}

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Icon } from '../Icon';
 	import type { AvatarProps } from './types';
+	import { getIconSize } from '../config';
 
 	const {
 		text = '',
@@ -20,6 +21,9 @@
 			imageError = false;
 		}
 	});
+
+	// Compute icon size based on avatar size
+	const iconSizePx = $derived(() => `${getIconSize(size)}px`);
 
 	const displayText = $derived(() => {
 		if (!text) return '';
@@ -55,7 +59,7 @@
 		<img {src} {alt} class="lumi-avatar__image" onerror={handleImageError} />
 	{:else if icon}
 		<span class="lumi-avatar__icon">
-			<Icon {icon} size="md" />
+			<Icon {icon} size={iconSizePx()} />
 		</span>
 	{:else if text || (src && imageError)}
 		<span class="lumi-avatar__text">
