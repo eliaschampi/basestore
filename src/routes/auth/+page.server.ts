@@ -1,5 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
+import { sql } from 'kysely';
 import type { Actions, PageServerLoad } from './$types';
+import type { Database } from '$lib/database';
 import { verifyPassword } from '$lib/auth/password';
 import { createSession } from '$lib/auth/session';
 
@@ -8,6 +10,8 @@ const LOGIN_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const LOGIN_BLOCK_MS = 15 * 60 * 1000; // 15 minutes
 const MAX_LOGIN_ATTEMPTS = 10;
 const DUMMY_BCRYPT_HASH = '$2a$10$7EqJtq98hPqEX7fNZaFWoOeN3rYQe4S1Qe7YQDdyCjTiMQuu2fo6e';
+const DB_RATE_LIMIT_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+const DB_RATE_LIMIT_RETENTION_MS = 2 * 24 * 60 * 60 * 1000;
 
 interface LoginAttemptState {
 	firstAttemptAt: number;
@@ -15,7 +19,17 @@ interface LoginAttemptState {
 	blockedUntil: number;
 }
 
-const loginAttempts = new Map<string, LoginAttemptState>();
+interface DbRateLimitRow {
+	blocked_until: Date | string;
+	failed_count: number | string;
+	first_attempt_at: Date | string;
+}
+
+// Memory fallback keeps compatibility if DB rate-limit store is temporarily unavailable.
+const memoryLoginAttempts = new Map<string, LoginAttemptState>();
+let isRateLimitTableReady = false;
+let rateLimitTableUnavailable = false;
+let lastDbRateLimitCleanupAt = 0;
 
 function getClientIp(request: Request): string {
 	const forwardedFor = request.headers.get('x-forwarded-for');
@@ -30,45 +44,232 @@ function getLoginAttemptKey(request: Request, email: string): string {
 	return `${getClientIp(request)}:${email}`;
 }
 
-function cleanupLoginAttempts(now: number): void {
-	if (loginAttempts.size < 2000) return;
+function getDefaultAttemptState(now: number): LoginAttemptState {
+	return {
+		firstAttemptAt: now,
+		failedCount: 0,
+		blockedUntil: 0
+	};
+}
 
-	for (const [key, value] of loginAttempts) {
+function parseTimestampMs(value: Date | string): number {
+	if (value instanceof Date) {
+		return value.getTime();
+	}
+
+	const parsed = new Date(value).getTime();
+	return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function cleanupMemoryLoginAttempts(now: number): void {
+	if (memoryLoginAttempts.size < 2000) return;
+
+	for (const [key, value] of memoryLoginAttempts) {
 		if (value.blockedUntil < now - LOGIN_BLOCK_MS && value.firstAttemptAt < now - LOGIN_WINDOW_MS) {
-			loginAttempts.delete(key);
+			memoryLoginAttempts.delete(key);
 		}
 	}
 }
 
-function getAttemptState(key: string, now: number): LoginAttemptState {
-	const existing = loginAttempts.get(key);
+function getMemoryAttemptState(key: string, now: number): LoginAttemptState {
+	const existing = memoryLoginAttempts.get(key);
 	if (!existing || now - existing.firstAttemptAt > LOGIN_WINDOW_MS) {
-		const nextState: LoginAttemptState = {
-			firstAttemptAt: now,
-			failedCount: 0,
-			blockedUntil: 0
-		};
-		loginAttempts.set(key, nextState);
+		const nextState = getDefaultAttemptState(now);
+		memoryLoginAttempts.set(key, nextState);
 		return nextState;
 	}
 
 	return existing;
 }
 
-function registerFailedAttempt(key: string, now: number): LoginAttemptState {
-	const attemptState = getAttemptState(key, now);
-	attemptState.failedCount += 1;
+function registerMemoryFailedAttempt(key: string, now: number): LoginAttemptState {
+	const attemptState = getMemoryAttemptState(key, now);
+	const nextFailedCount = attemptState.failedCount + 1;
+	const nextState: LoginAttemptState = {
+		firstAttemptAt: attemptState.firstAttemptAt,
+		failedCount: nextFailedCount,
+		blockedUntil: nextFailedCount >= MAX_LOGIN_ATTEMPTS ? now + LOGIN_BLOCK_MS : 0
+	};
 
-	if (attemptState.failedCount >= MAX_LOGIN_ATTEMPTS) {
-		attemptState.blockedUntil = now + LOGIN_BLOCK_MS;
-	}
-
-	loginAttempts.set(key, attemptState);
-	return attemptState;
+	memoryLoginAttempts.set(key, nextState);
+	return nextState;
 }
 
-function clearLoginAttempts(key: string): void {
-	loginAttempts.delete(key);
+function clearMemoryAttemptState(key: string): void {
+	memoryLoginAttempts.delete(key);
+}
+
+async function ensureRateLimitTable(db: Database): Promise<boolean> {
+	if (isRateLimitTableReady) {
+		return true;
+	}
+
+	if (rateLimitTableUnavailable) {
+		return false;
+	}
+
+	try {
+		await sql`
+			create table if not exists auth_login_rate_limits (
+				rate_key text primary key,
+				first_attempt_at timestamptz not null,
+				failed_count integer not null default 0,
+				blocked_until timestamptz not null,
+				updated_at timestamptz not null default now()
+			)
+		`.execute(db);
+
+		await sql`
+			create index if not exists auth_login_rate_limits_updated_at_idx
+			on auth_login_rate_limits (updated_at)
+		`.execute(db);
+
+		isRateLimitTableReady = true;
+		return true;
+	} catch (error) {
+		rateLimitTableUnavailable = true;
+		console.error('Rate-limit DB store unavailable. Falling back to memory store.', error);
+		return false;
+	}
+}
+
+async function cleanupDbRateLimitAttempts(db: Database, now: number): Promise<void> {
+	if (now - lastDbRateLimitCleanupAt < DB_RATE_LIMIT_CLEANUP_INTERVAL_MS) {
+		return;
+	}
+
+	lastDbRateLimitCleanupAt = now;
+	await sql`
+		delete from auth_login_rate_limits
+		where updated_at < ${new Date(now - DB_RATE_LIMIT_RETENTION_MS)}
+	`.execute(db);
+}
+
+async function getDbAttemptState(
+	db: Database,
+	key: string,
+	now: number
+): Promise<LoginAttemptState> {
+	await cleanupDbRateLimitAttempts(db, now);
+
+	const result = await sql<DbRateLimitRow>`
+		select first_attempt_at, failed_count, blocked_until
+		from auth_login_rate_limits
+		where rate_key = ${key}
+		limit 1
+	`.execute(db);
+
+	const row = result.rows[0];
+	if (!row) {
+		return getDefaultAttemptState(now);
+	}
+
+	const firstAttemptAt = parseTimestampMs(row.first_attempt_at);
+	const blockedUntil = parseTimestampMs(row.blocked_until);
+	const failedCount = Number(row.failed_count) || 0;
+
+	if (now - firstAttemptAt > LOGIN_WINDOW_MS) {
+		return getDefaultAttemptState(now);
+	}
+
+	return {
+		firstAttemptAt,
+		failedCount,
+		blockedUntil
+	};
+}
+
+async function saveDbAttemptState(
+	db: Database,
+	key: string,
+	state: LoginAttemptState,
+	now: number
+): Promise<void> {
+	await sql`
+		insert into auth_login_rate_limits (
+			rate_key,
+			first_attempt_at,
+			failed_count,
+			blocked_until,
+			updated_at
+		)
+		values (
+			${key},
+			${new Date(state.firstAttemptAt)},
+			${state.failedCount},
+			${new Date(state.blockedUntil)},
+			${new Date(now)}
+		)
+		on conflict (rate_key)
+		do update set
+			first_attempt_at = excluded.first_attempt_at,
+			failed_count = excluded.failed_count,
+			blocked_until = excluded.blocked_until,
+			updated_at = excluded.updated_at
+	`.execute(db);
+}
+
+async function clearDbAttemptState(db: Database, key: string): Promise<void> {
+	await sql`delete from auth_login_rate_limits where rate_key = ${key}`.execute(db);
+}
+
+async function getAttemptState(
+	db: Database,
+	key: string,
+	now: number,
+	useDbStore: boolean
+): Promise<LoginAttemptState> {
+	if (!useDbStore) {
+		return getMemoryAttemptState(key, now);
+	}
+
+	try {
+		return await getDbAttemptState(db, key, now);
+	} catch (error) {
+		console.error('Error reading DB rate-limit state. Falling back to memory store.', error);
+		return getMemoryAttemptState(key, now);
+	}
+}
+
+async function registerFailedAttempt(
+	db: Database,
+	key: string,
+	now: number,
+	useDbStore: boolean
+): Promise<LoginAttemptState> {
+	if (!useDbStore) {
+		return registerMemoryFailedAttempt(key, now);
+	}
+
+	try {
+		const attemptState = await getDbAttemptState(db, key, now);
+		const nextFailedCount = attemptState.failedCount + 1;
+		const nextState: LoginAttemptState = {
+			firstAttemptAt: attemptState.firstAttemptAt,
+			failedCount: nextFailedCount,
+			blockedUntil: nextFailedCount >= MAX_LOGIN_ATTEMPTS ? now + LOGIN_BLOCK_MS : 0
+		};
+
+		await saveDbAttemptState(db, key, nextState, now);
+		return nextState;
+	} catch (error) {
+		console.error('Error writing DB rate-limit state. Falling back to memory store.', error);
+		return registerMemoryFailedAttempt(key, now);
+	}
+}
+
+async function clearLoginAttempts(db: Database, key: string, useDbStore: boolean): Promise<void> {
+	if (!useDbStore) {
+		clearMemoryAttemptState(key);
+		return;
+	}
+
+	try {
+		await clearDbAttemptState(db, key);
+	} catch (error) {
+		console.error('Error clearing DB rate-limit state. Falling back to memory store.', error);
+		clearMemoryAttemptState(key);
+	}
 }
 
 export const load: PageServerLoad = async () => {
@@ -83,8 +284,9 @@ export const actions: Actions = {
 		const email = formData.get('email')?.toString().trim().toLowerCase();
 		const password = formData.get('password')?.toString();
 		const now = Date.now();
+		const useDbRateLimitStore = await ensureRateLimitTable(locals.db);
 
-		cleanupLoginAttempts(now);
+		cleanupMemoryLoginAttempts(now);
 
 		// Validate input
 		if (!email || !password) {
@@ -106,7 +308,7 @@ export const actions: Actions = {
 		}
 
 		const attemptKey = getLoginAttemptKey(request, email);
-		const attemptState = getAttemptState(attemptKey, now);
+		const attemptState = await getAttemptState(locals.db, attemptKey, now, useDbRateLimitStore);
 		if (attemptState.blockedUntil > now) {
 			return fail(429, {
 				error: 'Demasiados intentos fallidos. Intenta nuevamente más tarde.'
@@ -123,7 +325,7 @@ export const actions: Actions = {
 		if (!user) {
 			// Keep a similar timing profile to avoid user enumeration.
 			await verifyPassword(password, DUMMY_BCRYPT_HASH);
-			registerFailedAttempt(attemptKey, now);
+			await registerFailedAttempt(locals.db, attemptKey, now, useDbRateLimitStore);
 			return fail(401, {
 				error: 'Credenciales inválidas'
 			});
@@ -133,13 +335,13 @@ export const actions: Actions = {
 		const isValidPassword = await verifyPassword(password, user.password_hash);
 
 		if (!isValidPassword) {
-			registerFailedAttempt(attemptKey, now);
+			await registerFailedAttempt(locals.db, attemptKey, now, useDbRateLimitStore);
 			return fail(401, {
 				error: 'Credenciales inválidas'
 			});
 		}
 
-		clearLoginAttempts(attemptKey);
+		await clearLoginAttempts(locals.db, attemptKey, useDbRateLimitStore);
 
 		// Create session
 		const session = await createSession(locals.db, user.code, cookies);

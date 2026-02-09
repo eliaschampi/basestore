@@ -1,5 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
+import { isUuid } from '$lib/utils/validation';
 
 function readFormField(formData: FormData, key: string): string {
 	const value = formData.get(key);
@@ -68,6 +69,10 @@ export const actions: Actions = {
 			return fail(400, { error: 'Categoría inválida' });
 		}
 
+		if (!isUuid(categoryCode)) {
+			return fail(400, { error: 'Identificador de categoría inválido' });
+		}
+
 		if (!name) {
 			return fail(400, { error: 'El nombre es obligatorio' });
 		}
@@ -103,6 +108,10 @@ export const actions: Actions = {
 		const categoryCode = readFormField(formData, 'code');
 		if (!categoryCode) {
 			return fail(400, { error: 'Categoría inválida' });
+		}
+
+		if (!isUuid(categoryCode)) {
+			return fail(400, { error: 'Identificador de categoría inválido' });
 		}
 
 		try {

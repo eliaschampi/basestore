@@ -16,7 +16,7 @@ declare global {
 			session: Session | null;
 			user: SessionUser | null;
 			userPermissions: PermissionKey[];
-			can: (permissionKey: string) => Promise<boolean>;
+			can: (permissionKey: string) => boolean;
 		}
 
 		interface PageData {

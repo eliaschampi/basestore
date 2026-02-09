@@ -16,11 +16,12 @@ const authHandle: Handle = async ({ event, resolve }) => {
 	const session = await getSession(event.locals.db, event.cookies);
 	event.locals.session = session;
 	event.locals.user = session?.user ?? null;
+	const isSuperUser = hasSuperUserAccess(event.locals.user);
 
 	// Get user permissions ONCE per session and store in locals
 	// This avoids multiple database calls per request
 	if (event.locals.user?.code) {
-		if (hasSuperUserAccess(event.locals.user)) {
+		if (isSuperUser) {
 			// Super users bypass explicit permissions.
 			event.locals.userPermissions = [];
 		} else {
@@ -34,8 +35,27 @@ const authHandle: Handle = async ({ event, resolve }) => {
 	}
 
 	// Simple permission checker using cached permissions
-	event.locals.can = async (permissionKey: string): Promise<boolean> => {
-		return hasPermission(event.locals.userPermissions || [], permissionKey, event.locals.user);
+	const auditedSuperUserBypasses = new Set<string>();
+	event.locals.can = (permissionKey: string): boolean => {
+		const allowed = hasPermission(
+			event.locals.userPermissions || [],
+			permissionKey,
+			event.locals.user
+		);
+
+		// Audit super-user bypass usage once per permission per request.
+		if (allowed && isSuperUser && !auditedSuperUserBypasses.has(permissionKey)) {
+			auditedSuperUserBypasses.add(permissionKey);
+			console.warn('[AUTH][SUPER_USER_BYPASS]', {
+				userCode: event.locals.user?.code,
+				email: event.locals.user?.email,
+				permissionKey,
+				path: event.url.pathname,
+				method: event.request.method
+			});
+		}
+
+		return allowed;
 	};
 
 	return resolve(event);

@@ -1,8 +1,8 @@
 import { json, error, isHttpError } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { PERMISSION_DEFINITIONS } from '$lib/permissions/definitions';
+import { isUuid } from '$lib/utils/validation';
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ALLOWED_PERMISSION_KEYS = new Set(PERMISSION_DEFINITIONS.map((permission) => permission.key));
 
 interface PermissionInput {
@@ -54,7 +54,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 	}
 
 	const { userId } = params;
-	if (!UUID_REGEX.test(userId)) {
+	if (!isUuid(userId)) {
 		throw error(400, 'userId inválido');
 	}
 
@@ -89,7 +89,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 	}
 
 	const { userId } = params;
-	if (!UUID_REGEX.test(userId)) {
+	if (!isUuid(userId)) {
 		throw error(400, 'userId inválido');
 	}
 

@@ -2,6 +2,7 @@ import { sql } from 'kysely';
 import { fail } from '@sveltejs/kit';
 import { hashPassword } from '$lib/auth/password';
 import type { Database } from '$lib/database';
+import { isUuid } from '$lib/utils/validation';
 import type { Actions, PageServerLoad } from './$types';
 
 let cachedSuperUserColumn: 'is_super_user' | 'is_super_admin' | null | undefined;
@@ -159,6 +160,10 @@ export const actions: Actions = {
 			return fail(400, { error: 'Usuario inválido' });
 		}
 
+		if (!isUuid(userId)) {
+			return fail(400, { error: 'Identificador de usuario inválido' });
+		}
+
 		if (!name || !last_name) {
 			return fail(400, { error: 'Nombre y apellidos son obligatorios' });
 		}
@@ -223,6 +228,10 @@ export const actions: Actions = {
 			return fail(400, { error: 'Usuario inválido' });
 		}
 
+		if (!isUuid(userId)) {
+			return fail(400, { error: 'Identificador de usuario inválido' });
+		}
+
 		if (password !== confirmPassword) {
 			return fail(400, { error: 'Las contraseñas no coinciden' });
 		}
@@ -272,6 +281,10 @@ export const actions: Actions = {
 
 		if (!userId) {
 			return fail(400, { error: 'Usuario inválido' });
+		}
+
+		if (!isUuid(userId)) {
+			return fail(400, { error: 'Identificador de usuario inválido' });
 		}
 
 		if (locals.user?.code === userId) {

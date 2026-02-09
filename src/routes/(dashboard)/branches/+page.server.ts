@@ -1,5 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
+import { areUuids, isUuid } from '$lib/utils/validation';
 
 function readFormField(formData: FormData, key: string): string {
 	const value = formData.get(key);
@@ -53,6 +54,10 @@ export const actions: Actions = {
 			return fail(400, { error: 'Debe seleccionar al menos un usuario' });
 		}
 
+		if (!areUuids(selectedUsers)) {
+			return fail(400, { error: 'Lista de usuarios inválida' });
+		}
+
 		try {
 			await locals.db
 				.insertInto('branches')
@@ -83,12 +88,20 @@ export const actions: Actions = {
 			return fail(400, { error: 'Sede inválida' });
 		}
 
+		if (!isUuid(branchCode)) {
+			return fail(400, { error: 'Identificador de sede inválido' });
+		}
+
 		if (!name) {
 			return fail(400, { error: 'El nombre es obligatorio' });
 		}
 
 		if (selectedUsers.length === 0) {
 			return fail(400, { error: 'Debe seleccionar al menos un usuario' });
+		}
+
+		if (!areUuids(selectedUsers)) {
+			return fail(400, { error: 'Lista de usuarios inválida' });
 		}
 
 		try {
@@ -118,6 +131,10 @@ export const actions: Actions = {
 		const branchCode = readFormField(formData, 'code');
 		if (!branchCode) {
 			return fail(400, { error: 'Sede inválida' });
+		}
+
+		if (!isUuid(branchCode)) {
+			return fail(400, { error: 'Identificador de sede inválido' });
 		}
 
 		try {
