@@ -148,6 +148,32 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
 		description: 'Eliminar productos'
 	},
 
+	// Drive
+	{
+		key: 'drive:read',
+		label: 'Ver Drive',
+		category: 'Drive',
+		description: 'Ver archivos y carpetas del Drive'
+	},
+	{
+		key: 'drive:create',
+		label: 'Subir y crear',
+		category: 'Drive',
+		description: 'Subir archivos y crear carpetas en Drive'
+	},
+	{
+		key: 'drive:update',
+		label: 'Editar Drive',
+		category: 'Drive',
+		description: 'Renombrar, mover y vincular archivos del Drive'
+	},
+	{
+		key: 'drive:delete',
+		label: 'Eliminar Drive',
+		category: 'Drive',
+		description: 'Mover a papelera y eliminar archivos del Drive'
+	},
+
 	// Sistema
 	{
 		key: 'dashboard:read',

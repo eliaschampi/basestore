@@ -101,7 +101,7 @@
 	</PageHeader>
 
 	<Card>
-		<Table data={data.categories} search pagination hover itemsPerPage={10}>
+		<Table data={data.categories} search pagination stripe itemsPerPage={10}>
 			{#snippet thead()}
 				<th>Nombre</th>
 				<th>Descripción</th>

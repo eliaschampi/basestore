@@ -116,3 +116,16 @@ export type { StatCardProps } from './StatCard';
 export { StatCard } from './StatCard';
 export type { QuickAccessCardProps } from './QuickAccessCard';
 export { QuickAccessCard } from './QuickAccessCard';
+
+// ============================================================================
+// DRIVE COMPONENTS
+// ============================================================================
+export type { DriveFileItem } from './Drive';
+export {
+	DriveFileCard,
+	DriveFileGrid,
+	DriveFileList,
+	DriveFilePreview,
+	DriveFileUploader,
+	DriveSidebar
+} from './Drive';

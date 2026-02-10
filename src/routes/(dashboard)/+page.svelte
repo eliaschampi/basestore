@@ -110,7 +110,7 @@
 		<Title title="Acceso Rápido" size="lg" />
 	</div>
 
-	<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-lg">
+	<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
 		{#each quickAccessCards as card (card.title)}
 			<QuickAccessCard
 				title={card.title}

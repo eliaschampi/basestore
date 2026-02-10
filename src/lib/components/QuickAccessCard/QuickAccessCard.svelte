@@ -3,7 +3,6 @@
 	import Title from '../Title/Title.svelte';
 	import IconBadge from '../IconBadge/IconBadge.svelte';
 	import { resolve } from '$app/paths';
-	import type { Pathname } from '$app/types';
 	import type { QuickAccessCardProps } from './types';
 
 	const {
@@ -21,7 +20,7 @@
 	});
 </script>
 
-<a href={resolve(href as Pathname)} class="lumi-text-decoration--none">
+<a href={resolve(href as '/')} class="lumi-text-decoration--none">
 	<Card clickable {hoverable} class={cardClasses()}>
 		<div class="lumi-quick-access-card__container">
 			<IconBadge {icon} {color} size="lg" />

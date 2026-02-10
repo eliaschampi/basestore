@@ -381,13 +381,12 @@
 			</p>
 		{/if}
 
-		{#if passwordMessage}
-			<Alert type="danger" closable onclose={() => (passwordMessage = '')}>
-				{passwordMessage}
-			</Alert>
-		{/if}
-
 		<div class="lumi-stack lumi-space--md">
+			{#if passwordMessage}
+				<Alert type="danger" closable onclose={() => (passwordMessage = '')}>
+					{passwordMessage}
+				</Alert>
+			{/if}
 			<Input
 				name="password"
 				type="password"

@@ -7,7 +7,7 @@
 	import Avatar from '$lib/components/Avatar/Avatar.svelte';
 	import Dropdown from '$lib/components/Dropdown/Dropdown.svelte';
 	import DropdownItem from '$lib/components/Dropdown/DropdownItem.svelte';
-	import { initializePermissions } from '$lib/stores/permissions';
+	import { can, initializePermissions } from '$lib/stores/permissions';
 	import { hasSuperUserAccess } from '$lib/permissions/super-user';
 	import { theme } from '$lib/stores/theme';
 	import { page } from '$app/state';
@@ -70,6 +70,7 @@
 	});
 
 	const sidebarMeta = $derived(() => page.data.user?.email || 'Panel administrativo');
+	const canReadDrive = $derived(can('drive:read'));
 </script>
 
 <svelte:head>
@@ -146,6 +147,19 @@
 			{/snippet}
 			Marcas
 		</SidebarItem>
+
+		{#if canReadDrive}
+			<SidebarItem
+				href="/drive"
+				active={page.url.pathname.startsWith('/drive')}
+				collapsed={sidebarCollapsed}
+			>
+				{#snippet icon()}
+					<Icon icon="hardDrive" size="20px" />
+				{/snippet}
+				Drive
+			</SidebarItem>
+		{/if}
 
 		<Divider />
 

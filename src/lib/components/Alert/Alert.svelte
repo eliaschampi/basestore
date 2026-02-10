@@ -100,7 +100,7 @@
 		gap: var(--lumi-space-sm);
 		padding: var(--lumi-space-md);
 		border-radius: var(--lumi-radius-2xl);
-		border: 2px solid transparent;
+		border-left: 5px solid transparent;
 		background: var(--lumi-color-surface);
 		transition: var(--lumi-transition-all);
 		box-shadow: var(--lumi-shadow-sm);

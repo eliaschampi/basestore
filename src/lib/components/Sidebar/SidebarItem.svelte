@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { resolve } from '$app/paths';
-	import type { Pathname } from '$app/types';
 	import type { SidebarItemProps } from './types';
 
 	interface Props extends SidebarItemProps {
@@ -32,7 +31,7 @@
 </script>
 
 {#if href}
-	<a href={resolve(href as Pathname)} class={itemClasses()} {onclick}>
+	<a href={resolve(href as '/')} class={itemClasses()} {onclick}>
 		{#if icon}
 			<span class="lumi-sidebar-item__icon">
 				{@render icon()}

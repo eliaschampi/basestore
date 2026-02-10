@@ -578,7 +578,7 @@
 	.lumi-table--stripe
 		.lumi-table__tbody
 		.lumi-table__row:nth-child(even):not(.lumi-table__row--selected) {
-		background: color-mix(in srgb, var(--lumi-color-background-hover) 50%, transparent);
+		background: color-mix(in srgb, var(--lumi-color-background-hover) 70%, transparent);
 	}
 
 	/* ── Table cells ──────────────────────────── */

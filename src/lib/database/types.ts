@@ -10,6 +10,8 @@ export type Generated<T> =
 		? ColumnType<S, I | undefined, U>
 		: ColumnType<T, T | undefined, T>;
 
+export type Int8 = ColumnType<string, bigint | number | string, bigint | number | string>;
+
 export type Json = JsonValue;
 
 export type JsonArray = JsonValue[];
@@ -25,6 +27,14 @@ export type JsonValue = JsonArray | JsonObject | JsonPrimitive;
 export type Numeric = ColumnType<string, number | string, number | string>;
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
+
+export interface AuthLoginRateLimits {
+	blocked_until: Timestamp;
+	failed_count: Generated<number>;
+	first_attempt_at: Timestamp;
+	rate_key: string;
+	updated_at: Generated<Timestamp>;
+}
 
 export interface Branches {
 	code: Generated<string>;
@@ -48,6 +58,33 @@ export interface Categories {
 	description: string | null;
 	name: string;
 	updated_at: Generated<Timestamp>;
+}
+
+export interface DriveFiles {
+	branch_code: string;
+	code: Generated<string>;
+	created_at: Generated<Timestamp>;
+	is_trashed: Generated<boolean>;
+	mime_type: string | null;
+	name: string;
+	parent_code: string | null;
+	size: Generated<Int8>;
+	storage_path: string | null;
+	tag: string | null;
+	type: Generated<string>;
+	updated_at: Generated<Timestamp>;
+	user_code: string;
+}
+
+export interface DriveLinks {
+	code: Generated<string>;
+	created_at: Generated<Timestamp>;
+	entity_code: string;
+	entity_type: string;
+	file_code: string;
+	is_primary: Generated<boolean>;
+	linked_by_user_code: string;
+	position: Generated<number>;
 }
 
 export interface Migrations {
@@ -113,9 +150,12 @@ export interface Users {
 }
 
 export interface DB {
+	auth_login_rate_limits: AuthLoginRateLimits;
 	branches: Branches;
 	brands: Brands;
 	categories: Categories;
+	drive_files: DriveFiles;
+	drive_links: DriveLinks;
 	migrations: Migrations;
 	permissions: Permissions;
 	products: Products;
