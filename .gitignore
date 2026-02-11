@@ -13,7 +13,7 @@ docker
 # OS
 .DS_Store
 Thumbs.db
-
+static/uploads
 # Env
 .env
 .env.*

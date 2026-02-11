@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Button, Dialog, Icon } from '$lib/components';
+	import { formatFileSize, getFileColor, getFileIcon } from '$lib/utils/drive';
 	import type { DriveFileItem } from './types';
 
 	interface Props {
@@ -17,6 +18,16 @@
 	const isPdf = $derived(
 		file?.mime_type === 'application/pdf' || file?.name.toLowerCase().endsWith('.pdf')
 	);
+
+	function formatDate(value: string): string {
+		return new Date(value).toLocaleString('es-ES', {
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
+		});
+	}
 </script>
 
 <Dialog bind:open title={file?.name || 'Vista previa'} size="lg">
@@ -56,6 +67,33 @@
 		{/if}
 	</div>
 
+	{#if file}
+		<div class="drive-preview__details">
+			<div class="drive-preview__details-main">
+				<Icon
+					icon={getFileIcon(file.type)}
+					size="20px"
+					color={`var(--lumi-color-${getFileColor(file.type)})`}
+				/>
+				<div class="drive-preview__details-text">
+					<span class="lumi-font--medium">{file.name}</span>
+					<span class="lumi-text--xs lumi-text--muted">
+						{file.type.toUpperCase()}
+						{#if file.type !== 'dir'}
+							• {formatFileSize(file.size)}
+						{/if}
+					</span>
+				</div>
+			</div>
+			<div class="drive-preview__details-meta">
+				<span class="lumi-text--xs lumi-text--muted">Actualizado: {formatDate(file.updated_at)}</span>
+				{#if file.mime_type}
+					<span class="lumi-text--xs lumi-text--muted">{file.mime_type}</span>
+				{/if}
+			</div>
+		</div>
+	{/if}
+
 	{#snippet footer()}
 		<Button type="border" onclick={() => (open = false)}>Cerrar</Button>
 		{#if file}
@@ -72,6 +110,18 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		padding: var(--lumi-space-sm);
+		border: 1px solid var(--lumi-color-border-light);
+		border-radius: var(--lumi-radius-xl);
+		background:
+			linear-gradient(
+				135deg,
+				color-mix(in srgb, var(--lumi-color-primary) 7%, transparent) 0%,
+				color-mix(in srgb, var(--lumi-color-info) 4%, transparent) 60%,
+				transparent 100%
+			),
+			var(--lumi-color-background-secondary);
+		backdrop-filter: blur(var(--lumi-blur-sm));
 	}
 
 	.drive-preview__media-wrap {
@@ -84,13 +134,15 @@
 		max-width: 100%;
 		max-height: 70vh;
 		object-fit: contain;
-		border-radius: var(--lumi-radius-md);
+		border-radius: var(--lumi-radius-lg);
+		box-shadow: var(--lumi-shadow-md);
 	}
 
 	.drive-preview__video {
 		width: 100%;
 		max-height: 70vh;
-		border-radius: var(--lumi-radius-md);
+		border-radius: var(--lumi-radius-lg);
+		box-shadow: var(--lumi-shadow-md);
 	}
 
 	.drive-preview__audio-wrap {
@@ -115,8 +167,9 @@
 	.drive-preview__pdf {
 		width: 100%;
 		height: 100%;
-		border: none;
-		border-radius: var(--lumi-radius-md);
+		border: 1px solid var(--lumi-color-border-light);
+		border-radius: var(--lumi-radius-lg);
+		background: var(--lumi-color-surface);
 	}
 
 	.drive-preview__empty {
@@ -126,5 +179,55 @@
 		gap: var(--lumi-space-sm);
 		color: var(--lumi-color-text-muted);
 		text-align: center;
+	}
+
+	.drive-preview__details {
+		margin-top: var(--lumi-space-sm);
+		padding: var(--lumi-space-sm) var(--lumi-space-md);
+		border: 1px solid var(--lumi-color-border-light);
+		border-radius: var(--lumi-radius-lg);
+		background: var(--lumi-color-surface);
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--lumi-space-md);
+		flex-wrap: wrap;
+	}
+
+	.drive-preview__details-main {
+		display: flex;
+		align-items: center;
+		gap: var(--lumi-space-sm);
+		min-width: 0;
+	}
+
+	.drive-preview__details-text {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.drive-preview__details-text span:first-child {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 320px;
+	}
+
+	.drive-preview__details-meta {
+		display: flex;
+		flex-direction: column;
+		gap: var(--lumi-space-2xs);
+		text-align: right;
+	}
+
+	@media (max-width: 768px) {
+		.drive-preview {
+			min-height: 220px;
+		}
+
+		.drive-preview__details-meta {
+			text-align: left;
+		}
 	}
 </style>

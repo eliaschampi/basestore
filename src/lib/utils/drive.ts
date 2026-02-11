@@ -5,6 +5,15 @@
 /** Supported drive file types */
 export type DriveFileType = 'dir' | 'img' | 'vid' | 'aud' | 'doc' | 'zip' | 'otr';
 
+export type DriveTagTone = 'favorite' | 'highlight' | 'work' | 'personal';
+
+export interface DriveTagOption {
+	tone: DriveTagTone;
+	color: string;
+	hash: string;
+	name: string;
+}
+
 /** Maximum upload file size: 50MB */
 export const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
@@ -159,12 +168,41 @@ export function formatFileSize(bytes: number): string {
  * Tag options for Drive
  * `hash` is what gets stored in DB, `color` comes from Lumi tokens.
  */
-export const TAG_OPTIONS = [
-	{ color: 'var(--lumi-color-secondary)', hash: 'fb7185', name: 'Favoritos' },
-	{ color: 'var(--lumi-color-success)', hash: '47b57c', name: 'Destacados' },
-	{ color: 'var(--lumi-color-warning)', hash: 'faa75f', name: 'Trabajo' },
-	{ color: 'var(--lumi-color-info)', hash: '42a5f5', name: 'Personal' }
-] as const;
+export const TAG_OPTIONS: DriveTagOption[] = [
+	{
+		tone: 'favorite',
+		color: 'var(--lumi-color-secondary)',
+		hash: 'fb7185',
+		name: 'Favoritos'
+	},
+	{
+		tone: 'highlight',
+		color: 'var(--lumi-color-success)',
+		hash: '47b57c',
+		name: 'Destacados'
+	},
+	{
+		tone: 'work',
+		color: 'var(--lumi-color-warning)',
+		hash: 'faa75f',
+		name: 'Trabajo'
+	},
+	{
+		tone: 'personal',
+		color: 'var(--lumi-color-info)',
+		hash: '42a5f5',
+		name: 'Personal'
+	}
+];
+
+export function getDriveTagByHash(hash: string | null | undefined): DriveTagOption | null {
+	if (!hash) {
+		return null;
+	}
+
+	const normalizedHash = hash.toLowerCase();
+	return TAG_OPTIONS.find((tag) => tag.hash === normalizedHash) ?? null;
+}
 
 /**
  * Sidebar menu options for Drive navigation

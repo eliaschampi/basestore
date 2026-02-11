@@ -38,6 +38,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	const branchCode = url.searchParams.get('branch');
 	const parentCode = url.searchParams.get('parent');
 	const trashed = url.searchParams.get('trashed') === 'true';
+	const foldersOnly = url.searchParams.get('folders') === 'true';
+	const excludeCode = url.searchParams.get('exclude')?.trim() || '';
 	const search = url.searchParams.get('search')?.trim();
 	const tag = url.searchParams.get('tag')?.trim();
 	const view = url.searchParams.get('view');
@@ -52,6 +54,20 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		.selectFrom('drive_files')
 		.select(DRIVE_COLUMNS)
 		.where('branch_code', '=', branchCode);
+
+	if (foldersOnly) {
+		if (excludeCode && !isUuid(excludeCode)) {
+			throw error(400, 'Código de archivo excluido inválido');
+		}
+
+		let foldersQuery = query.where('type', '=', 'dir').where('is_trashed', '=', false);
+		if (excludeCode) {
+			foldersQuery = foldersQuery.where('code', '!=', excludeCode);
+		}
+
+		const files = await foldersQuery.orderBy('name', 'asc').execute();
+		return json({ files });
+	}
 
 	if (view === 'recent') {
 		query = query

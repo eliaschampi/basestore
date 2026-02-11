@@ -45,12 +45,18 @@
 
 <style>
 	.drive-file-grid {
-		grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+	}
+
+	@media (max-width: 768px) {
+		.drive-file-grid {
+			grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
+		}
 	}
 
 	@media (max-width: 480px) {
 		.drive-file-grid {
-			grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
 	}
 </style>

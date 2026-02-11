@@ -2,7 +2,7 @@
 	import { Icon, Table } from '$lib/components';
 	import type { TableRow } from '$lib/components';
 	import type { DriveFileType } from '$lib/utils/drive';
-	import { formatFileSize, getFileColor, getFileIcon } from '$lib/utils/drive';
+	import { formatFileSize, getDriveTagByHash, getFileColor, getFileIcon } from '$lib/utils/drive';
 	import type { DriveFileItem } from './types';
 
 	interface Props {
@@ -80,6 +80,15 @@
 		}
 		onfiledrop?.(event, file);
 	}
+
+	function getTagDotClass(file: DriveFileItem): string {
+		const tag = getDriveTagByHash(file.tag);
+		if (!tag) {
+			return '';
+		}
+
+		return `drive-file-list__tag--${tag.tone}`;
+	}
 </script>
 
 <Table data={tableData} hover>
@@ -113,7 +122,7 @@
 				/>
 				<span class="drive-file-list__name-text" title={file.name}>{file.name}</span>
 				{#if file.tag}
-					<span class="drive-file-list__tag" style:background={`#${file.tag}`}></span>
+					<span class={`drive-file-list__tag ${getTagDotClass(file)}`}></span>
 				{/if}
 			</button>
 		</td>
@@ -167,5 +176,21 @@
 		height: 8px;
 		border-radius: var(--lumi-radius-full);
 		flex-shrink: 0;
+	}
+
+	.drive-file-list__tag--favorite {
+		background: var(--lumi-color-secondary);
+	}
+
+	.drive-file-list__tag--highlight {
+		background: var(--lumi-color-success);
+	}
+
+	.drive-file-list__tag--work {
+		background: var(--lumi-color-warning);
+	}
+
+	.drive-file-list__tag--personal {
+		background: var(--lumi-color-info);
 	}
 </style>

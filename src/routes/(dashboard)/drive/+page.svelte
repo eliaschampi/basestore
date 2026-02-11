@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import {
 		Alert,
 		Button,
 		Card,
+		Chip,
 		Context,
 		ContextItem,
 		Dialog,
@@ -16,12 +18,13 @@
 		Input,
 		Loading,
 		PageHeader,
+		SegmentedControl,
 		Select
 	} from '$lib/components';
-	import type { DriveFileItem } from '$lib/components';
+	import type { DriveFileItem, SelectOption } from '$lib/components';
 	import { can } from '$lib/stores/permissions';
 	import { showToast } from '$lib/stores/Toast';
-	import type { DriveBreadcrumb } from '$lib/utils/drive';
+	import { TAG_OPTIONS, type DriveBreadcrumb, type DriveTagOption } from '$lib/utils/drive';
 	import type { PageData } from './$types';
 
 	interface BranchOption {
@@ -42,10 +45,10 @@
 		icon: string;
 	}
 
-	interface TagOption {
-		color: string;
-		hash: string;
-		name: string;
+	type TagOption = DriveTagOption;
+
+	interface FolderListResponse {
+		files: DriveFileItem[];
 	}
 
 	interface DriveListResponse {
@@ -85,12 +88,17 @@
 	let showPreview = $state(false);
 	let showCreateDir = $state(false);
 	let showRename = $state(false);
+	let showTagDialog = $state(false);
+	let showMoveDialog = $state(false);
 
 	let previewFile = $state<DriveFileItem | null>(null);
 	let contextFile = $state<DriveFileItem | null>(null);
 
 	let newDirName = $state('');
 	let renameName = $state('');
+	let moveParentCode = $state<string | null>(null);
+	let selectedTagHash = $state<string | null>(null);
+	let folderOptions = $state<SelectOption[]>([]);
 
 	let fetchId = 0;
 
@@ -109,8 +117,17 @@
 		branchList.map((branch) => ({ label: branch.name, value: branch.code }))
 	);
 
+	const viewModeOptions = $derived([
+		{ label: 'Mosaico', value: 'grid', icon: 'grid' },
+		{ label: 'Lista', value: 'list', icon: 'list' }
+	]);
+
 	const isTrashView = $derived(selectedMenu?.value === 'trash');
 	const hasDriveBranch = $derived(Boolean(currentBranch));
+	const selectedFileCount = $derived(selectedFileCodes.length);
+	const selectedFiles = $derived.by(() =>
+		files.filter((file) => selectedFileCodes.includes(file.code))
+	);
 
 	const pageTitle = $derived.by(() => {
 		if (selectedMenu?.value === 'trash') {
@@ -143,6 +160,7 @@
 
 		await fetchFiles();
 		await fetchStorageUsage();
+		await fetchFolderOptions();
 	});
 
 	onDestroy(() => {
@@ -222,6 +240,40 @@
 		}
 	}
 
+	async function fetchFolderOptions(excludeCode: string | null = null) {
+		if (!currentBranch) {
+			folderOptions = [];
+			return;
+		}
+
+		try {
+			const params = new SvelteURLSearchParams({
+				branch: currentBranch,
+				folders: 'true'
+			});
+
+			if (excludeCode) {
+				params.set('exclude', excludeCode);
+			}
+
+			const response = await fetch(`/api/drive?${params.toString()}`);
+			if (!response.ok) {
+				return;
+			}
+
+			const payload = (await response.json()) as FolderListResponse;
+			folderOptions = [
+				{ label: 'Raíz (Mi unidad)', value: 'root' },
+				...(payload.files ?? []).map((folder) => ({
+					label: folder.name,
+					value: folder.code
+				}))
+			];
+		} catch {
+			folderOptions = [{ label: 'Raíz (Mi unidad)', value: 'root' }];
+		}
+	}
+
 	async function handleBranchChange(value: unknown) {
 		const branchCode = typeof value === 'string' ? value : '';
 		if (!branchCode || branchCode === currentBranch) {
@@ -238,6 +290,7 @@
 
 		await fetchFiles();
 		await fetchStorageUsage();
+		await fetchFolderOptions();
 	}
 
 	async function createDirectory() {
@@ -265,6 +318,7 @@
 			newDirName = '';
 			showToast('Carpeta creada exitosamente', 'success');
 			await fetchFiles();
+			await fetchFolderOptions();
 		} catch (caught) {
 			errorMessage = caught instanceof Error ? caught.message : 'Error al crear carpeta';
 		}
@@ -406,7 +460,7 @@
 		}
 	}
 
-	async function moveFile(fileCode: string, targetParentCode: string) {
+	async function moveFile(fileCode: string, targetParentCode: string | null) {
 		try {
 			const response = await fetch(`/api/drive/${fileCode}`, {
 				method: 'PATCH',
@@ -421,6 +475,7 @@
 
 			showToast('Archivo movido', 'success');
 			await fetchFiles();
+			await fetchFolderOptions();
 		} catch (caught) {
 			errorMessage = caught instanceof Error ? caught.message : 'Error al mover archivo';
 		}
@@ -522,6 +577,56 @@
 		fileContextMenu?.close();
 	}
 
+	async function openMoveDialog(file: DriveFileItem) {
+		contextFile = file;
+		moveParentCode = file.parent_code;
+		await fetchFolderOptions(file.type === 'dir' ? file.code : null);
+		showMoveDialog = true;
+		fileContextMenu?.close();
+	}
+
+	function openTagDialog(file: DriveFileItem) {
+		contextFile = file;
+		selectedTagHash = file.tag;
+		showTagDialog = true;
+		fileContextMenu?.close();
+	}
+
+	async function updateFileTag() {
+		if (!contextFile) {
+			return;
+		}
+
+		try {
+			const response = await fetch(`/api/drive/${contextFile.code}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ tag: selectedTagHash })
+			});
+
+			if (!response.ok) {
+				const payload = await response.json();
+				throw new Error(payload?.message || 'No se pudo actualizar la etiqueta');
+			}
+
+			showTagDialog = false;
+			showToast('Etiqueta actualizada', 'success');
+			await fetchFiles();
+		} catch (caught) {
+			errorMessage = caught instanceof Error ? caught.message : 'Error al actualizar la etiqueta';
+		}
+	}
+
+	async function applyMove() {
+		if (!contextFile) {
+			return;
+		}
+
+		const targetCode = moveParentCode === 'root' ? null : moveParentCode;
+		await moveFile(contextFile.code, targetCode);
+		showMoveDialog = false;
+	}
+
 	function handleDownload(file: DriveFileItem) {
 		window.open(`/api/drive/${file.code}/serve?download=true`, '_blank', 'noopener,noreferrer');
 	}
@@ -542,6 +647,41 @@
 			void fetchFiles();
 		}, 350);
 	}
+
+	function clearSelection() {
+		selectedFileCodes = [];
+	}
+
+	async function trashSelectedFiles() {
+		if (selectedFiles.length === 0) {
+			return;
+		}
+
+		try {
+			const responses = await Promise.all(
+				selectedFiles.map((file) =>
+					fetch(`/api/drive/${file.code}`, {
+						method: 'PATCH',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ is_trashed: true })
+					})
+				)
+			);
+
+			const failedResponse = responses.find((response) => !response.ok);
+			if (failedResponse) {
+				const payload = await failedResponse.json();
+				throw new Error(payload?.message || 'No se pudieron mover algunos archivos');
+			}
+
+			selectedFileCodes = [];
+			showToast('Archivos movidos a papelera', 'warning');
+			await fetchFiles();
+		} catch (caught) {
+			errorMessage =
+				caught instanceof Error ? caught.message : 'No se pudieron mover algunos archivos';
+		}
+	}
 </script>
 
 <div class="lumi-stack lumi-space--lg">
@@ -553,22 +693,17 @@
 		{#snippet actions()}
 			{#if hasDriveBranch}
 				{#if !isTrashView}
-					<div class="lumi-flex lumi-flex--gap-sm lumi-align-items--center">
-						<div class="drive-page__view-toggle">
-							<Button
-								type={viewMode === 'grid' ? 'filled' : 'flat'}
-								size="sm"
-								icon="grid"
-								onclick={() => (viewMode = 'grid')}
-							/>
-							<Button
-								type={viewMode === 'list' ? 'filled' : 'flat'}
-								size="sm"
-								icon="list"
-								onclick={() => (viewMode = 'list')}
-							/>
-						</div>
-
+					<div class="lumi-flex lumi-flex--gap-sm lumi-align-items--center drive-page__header-actions">
+						<SegmentedControl
+							value={viewMode}
+							options={viewModeOptions}
+							onchange={(value) => {
+								if (value === 'grid' || value === 'list') {
+									viewMode = value;
+								}
+							}}
+							aria-label="Vista de archivos"
+						/>
 						{#if canCreate}
 							<Button
 								type="border"
@@ -641,6 +776,18 @@
 							/>
 						</div>
 					</div>
+
+					{#if selectedFileCount > 0 && !isTrashView}
+						<div class="drive-page__selection">
+							<Chip size="sm" color="info">{selectedFileCount} seleccionado(s)</Chip>
+							{#if canDelete}
+								<Button type="flat" size="sm" icon="trash" color="danger" onclick={trashSelectedFiles}>
+									Mover a papelera
+								</Button>
+							{/if}
+							<Button type="flat" size="sm" icon="x" onclick={clearSelection}>Limpiar selección</Button>
+						</div>
+					{/if}
 
 					{#if showBreadcrumbs}
 						<nav class="lumi-flex lumi-flex--gap-xs lumi-align-items--center lumi-flex--wrap">
@@ -778,6 +925,70 @@
 	{/snippet}
 </Dialog>
 
+<Dialog bind:open={showMoveDialog} title="Mover archivo" size="sm">
+	<div class="lumi-stack lumi-space--md">
+		<Select
+			label="Carpeta destino"
+			value={moveParentCode ?? 'root'}
+			options={folderOptions}
+			clearable={false}
+			onchange={(value) => {
+				moveParentCode = typeof value === 'string' ? value : null;
+			}}
+		/>
+	</div>
+	{#snippet footer()}
+		<Button
+			type="border"
+			onclick={() => {
+				showMoveDialog = false;
+				moveParentCode = null;
+			}}
+		>
+			Cancelar
+		</Button>
+		<Button type="filled" color="primary" onclick={applyMove}>Mover</Button>
+	{/snippet}
+</Dialog>
+
+<Dialog bind:open={showTagDialog} title="Etiquetas" size="sm">
+	<div class="lumi-stack lumi-space--sm">
+		<button
+			type="button"
+			class="drive-page__tag-option"
+			class:drive-page__tag-option--active={selectedTagHash === null}
+			onclick={() => (selectedTagHash = null)}
+		>
+			<span class="drive-page__tag-dot"></span>
+			<span>Sin etiqueta</span>
+		</button>
+
+		{#each TAG_OPTIONS as tag (tag.hash)}
+			<button
+				type="button"
+				class="drive-page__tag-option"
+				class:drive-page__tag-option--active={selectedTagHash === tag.hash}
+				onclick={() => (selectedTagHash = tag.hash)}
+			>
+				<span class={`drive-page__tag-dot drive-page__tag-dot--${tag.tone}`}></span>
+				<span>{tag.name}</span>
+			</button>
+		{/each}
+	</div>
+	{#snippet footer()}
+		<Button
+			type="border"
+			onclick={() => {
+				showTagDialog = false;
+				selectedTagHash = null;
+			}}
+		>
+			Cancelar
+		</Button>
+		<Button type="filled" color="primary" onclick={updateFileTag}>Guardar etiqueta</Button>
+	{/snippet}
+</Dialog>
+
 <DriveFileUploader bind:open={showUploader} onupload={handleUpload} />
 <DriveFilePreview bind:open={showPreview} file={previewFile} ondownload={handleDownload} />
 
@@ -817,6 +1028,8 @@
 
 				{#if canUpdate}
 					<ContextItem title="Renombrar" icon="edit" onclick={() => openRenameDialog(menuFile)} />
+					<ContextItem title="Etiquetar" icon="tag" onclick={() => openTagDialog(menuFile)} />
+					<ContextItem title="Mover" icon="arrowRight" onclick={() => void openMoveDialog(menuFile)} />
 				{/if}
 
 				{#if canDelete}
@@ -831,15 +1044,15 @@
 					/>
 				{/if}
 			{:else}
-				<ContextItem
-					title="Restaurar"
-					icon="refresh"
-					onclick={() => {
-						void restoreFile(menuFile);
-						fileContextMenu?.close();
-					}}
-				/>
 				{#if canDelete}
+					<ContextItem
+						title="Restaurar"
+						icon="refresh"
+						onclick={() => {
+							void restoreFile(menuFile);
+							fileContextMenu?.close();
+						}}
+					/>
 					<ContextItem
 						title="Eliminar permanente"
 						icon="trash"
@@ -870,6 +1083,27 @@
 
 	.drive-page__toolbar {
 		flex-wrap: wrap;
+		padding: var(--lumi-space-xs);
+		border: 1px solid var(--lumi-color-border-light);
+		border-radius: var(--lumi-radius-xl);
+		background: color-mix(in srgb, var(--lumi-color-surface) 82%, transparent);
+		backdrop-filter: blur(var(--lumi-blur-sm));
+	}
+
+	.drive-page__header-actions {
+		flex-wrap: wrap;
+		justify-content: flex-end;
+	}
+
+	.drive-page__selection {
+		display: flex;
+		align-items: center;
+		gap: var(--lumi-space-sm);
+		flex-wrap: wrap;
+		padding: var(--lumi-space-xs);
+		border-radius: var(--lumi-radius-lg);
+		background: color-mix(in srgb, var(--lumi-color-primary) 6%, var(--lumi-color-surface));
+		border: 1px solid color-mix(in srgb, var(--lumi-color-primary) 22%, var(--lumi-color-border));
 	}
 
 	.drive-page__content {
@@ -885,14 +1119,52 @@
 		gap: var(--lumi-space-md);
 	}
 
-	.drive-page__view-toggle {
+	.drive-page__tag-option {
 		display: flex;
 		align-items: center;
-		gap: 2px;
-		padding: 2px;
-		border-radius: var(--lumi-radius-md);
-		background: var(--lumi-color-surface);
+		gap: var(--lumi-space-sm);
+		width: 100%;
+		padding: var(--lumi-space-sm) var(--lumi-space-md);
 		border: 1px solid var(--lumi-color-border-light);
+		border-radius: var(--lumi-radius-lg);
+		background: var(--lumi-color-surface);
+		color: var(--lumi-color-text);
+		cursor: pointer;
+		text-align: left;
+		transition: var(--lumi-transition-all);
+	}
+
+	.drive-page__tag-option:hover {
+		border-color: var(--lumi-color-primary);
+		background: color-mix(in srgb, var(--lumi-color-primary) 4%, var(--lumi-color-surface));
+	}
+
+	.drive-page__tag-option--active {
+		border-color: color-mix(in srgb, var(--lumi-color-primary) 28%, var(--lumi-color-border));
+		background: color-mix(in srgb, var(--lumi-color-primary) 8%, var(--lumi-color-surface));
+	}
+
+	.drive-page__tag-dot {
+		width: 12px;
+		height: 12px;
+		border-radius: var(--lumi-radius-full);
+		background: var(--lumi-color-border);
+	}
+
+	.drive-page__tag-dot--favorite {
+		background: var(--lumi-color-secondary);
+	}
+
+	.drive-page__tag-dot--highlight {
+		background: var(--lumi-color-success);
+	}
+
+	.drive-page__tag-dot--work {
+		background: var(--lumi-color-warning);
+	}
+
+	.drive-page__tag-dot--personal {
+		background: var(--lumi-color-info);
 	}
 
 	@media (max-width: 1024px) {
@@ -906,6 +1178,10 @@
 
 		.drive-page__branch-control {
 			width: 100%;
+		}
+
+		.drive-page__header-actions {
+			justify-content: flex-start;
 		}
 	}
 </style>

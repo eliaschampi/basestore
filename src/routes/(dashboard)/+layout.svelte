@@ -71,6 +71,7 @@
 
 	const sidebarMeta = $derived(() => page.data.user?.email || 'Panel administrativo');
 	const canReadDrive = $derived(can('drive:read'));
+	const canReadProducts = $derived(can('products:read'));
 </script>
 
 <svelte:head>
@@ -147,6 +148,19 @@
 			{/snippet}
 			Marcas
 		</SidebarItem>
+
+		{#if canReadProducts}
+			<SidebarItem
+				href="/products"
+				active={page.url.pathname.startsWith('/products')}
+				collapsed={sidebarCollapsed}
+			>
+				{#snippet icon()}
+					<Icon icon="package" size="20px" />
+				{/snippet}
+				Productos
+			</SidebarItem>
+		{/if}
 
 		{#if canReadDrive}
 			<SidebarItem

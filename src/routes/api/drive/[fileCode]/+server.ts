@@ -19,13 +19,31 @@ interface UpdateFileBody {
  * Supports rename, move, tag update, and trash/restore.
  */
 export const PATCH: RequestHandler = async ({ params, request, locals }) => {
-	if (!(await locals.can('drive:update'))) {
-		throw error(403, 'No tienes permisos para editar archivos');
-	}
-
 	const { fileCode } = params;
 	if (!fileCode || !isUuid(fileCode)) {
 		throw error(400, 'Código de archivo inválido');
+	}
+
+	let body: UpdateFileBody;
+	try {
+		body = (await request.json()) as UpdateFileBody;
+	} catch {
+		throw error(400, 'Cuerpo de solicitud inválido');
+	}
+
+	const needsUpdatePermission = 'name' in body || 'parent_code' in body || 'tag' in body;
+	const needsDeletePermission = 'is_trashed' in body;
+
+	if (needsUpdatePermission && !(await locals.can('drive:update'))) {
+		throw error(403, 'No tienes permisos para editar archivos');
+	}
+
+	if (needsDeletePermission && !(await locals.can('drive:delete'))) {
+		throw error(403, 'No tienes permisos para mover archivos a papelera');
+	}
+
+	if (!needsUpdatePermission && !needsDeletePermission) {
+		throw error(400, 'No hay cambios para aplicar');
 	}
 
 	const file = await locals.db
@@ -40,7 +58,6 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 
 	await DriveRepository.assertBranchAccess(locals.db, locals.user, file.branch_code);
 
-	const body = (await request.json()) as UpdateFileBody;
 	const updates: Record<string, unknown> = {};
 
 	if ('name' in body && typeof body.name === 'string') {

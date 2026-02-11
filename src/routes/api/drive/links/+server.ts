@@ -42,6 +42,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		throw error(400, 'Código de sede inválido');
 	}
 
+	await assertEntityExists(locals.db, entityType, entityCode);
 	await DriveRepository.assertBranchAccess(locals.db, locals.user, branchCode);
 
 	const links = await locals.db
@@ -107,9 +108,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		throw error(400, 'Código de entidad inválido');
 	}
 
+	await assertEntityExists(locals.db, entityType, entityCode);
+
 	const file = await locals.db
 		.selectFrom('drive_files')
-		.select(['code', 'branch_code', 'is_trashed'])
+		.select(['code', 'branch_code', 'is_trashed', 'type'])
 		.where('code', '=', fileCode)
 		.executeTakeFirst();
 
@@ -119,6 +122,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	if (file.is_trashed) {
 		throw error(400, 'No se puede vincular un archivo en papelera');
+	}
+
+	if (isPrimary && file.type !== 'img') {
+		throw error(400, 'Solo los archivos de imagen pueden ser principales');
 	}
 
 	await DriveRepository.assertBranchAccess(locals.db, locals.user, file.branch_code);
@@ -191,6 +198,8 @@ export const DELETE: RequestHandler = async ({ request, locals }) => {
 		throw error(400, 'Código de entidad inválido');
 	}
 
+	await assertEntityExists(locals.db, entityType, entityCode);
+
 	const file = await locals.db
 		.selectFrom('drive_files')
 		.select(['code', 'branch_code'])
@@ -216,3 +225,24 @@ export const DELETE: RequestHandler = async ({ request, locals }) => {
 
 	return json({ success: true });
 };
+
+async function assertEntityExists(
+	db: App.Locals['db'],
+	entityType: DriveEntityType,
+	entityCode: string
+): Promise<void> {
+	switch (entityType) {
+		case 'product': {
+			const product = await db
+				.selectFrom('products')
+				.select(['code'])
+				.where('code', '=', entityCode)
+				.executeTakeFirst();
+
+			if (!product) {
+				throw error(404, 'Entidad no encontrada');
+			}
+			return;
+		}
+	}
+}
