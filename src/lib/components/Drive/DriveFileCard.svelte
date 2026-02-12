@@ -288,7 +288,11 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: color-mix(in srgb, var(--lumi-color-surface) 90%, var(--lumi-color-background-hover) 10%);
+		background: color-mix(
+			in srgb,
+			var(--lumi-color-surface) 90%,
+			var(--lumi-color-background-hover) 10%
+		);
 		border: 1px solid var(--lumi-color-border-light);
 	}
 

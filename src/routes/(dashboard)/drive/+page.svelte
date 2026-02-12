@@ -813,7 +813,9 @@
 										icon="search"
 										value={searchQuery}
 										oninput={(event) =>
-											handleSearchChange((event.currentTarget as HTMLInputElement | null)?.value ?? '')}
+											handleSearchChange(
+												(event.currentTarget as HTMLInputElement | null)?.value ?? ''
+											)}
 									/>
 								</div>
 							</div>
@@ -859,7 +861,9 @@
 						{/if}
 
 						{#if errorMessage}
-							<Alert type="danger" closable onclose={() => (errorMessage = '')}>{errorMessage}</Alert>
+							<Alert type="danger" closable onclose={() => (errorMessage = '')}
+								>{errorMessage}</Alert
+							>
 						{/if}
 
 						<div class="drive-page__content">
@@ -1173,8 +1177,6 @@
 		flex-direction: column;
 		gap: var(--lumi-space-sm);
 		padding: var(--lumi-space-sm);
-		border-radius: var(--lumi-radius-2xl);
-		border: 1px solid color-mix(in srgb, var(--lumi-color-border) 55%, transparent);
 		background: transparent;
 	}
 
