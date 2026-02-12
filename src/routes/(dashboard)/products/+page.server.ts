@@ -14,11 +14,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 	// Load brands and categories for form selects (always needed for the form)
 	const [brands, categories, branches] = await Promise.all([
 		locals.db.selectFrom('brands').select(['code', 'name']).orderBy('name', 'asc').execute(),
-		locals.db
-			.selectFrom('categories')
-			.select(['code', 'name'])
-			.orderBy('name', 'asc')
-			.execute(),
+		locals.db.selectFrom('categories').select(['code', 'name']).orderBy('name', 'asc').execute(),
 		(async () => {
 			if (!(await locals.can('drive:read'))) {
 				return [];

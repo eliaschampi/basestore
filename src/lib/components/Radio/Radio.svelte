@@ -15,55 +15,39 @@
 		'aria-label': ariaLabel = ''
 	}: RadioProps = $props();
 
-	// Generate unique ID
-	const radioId = `lumi-radio-${Math.random().toString(36).substring(2, 11)}`;
+	const radioId = `lumi-radio-${crypto?.randomUUID?.().slice(0, 8) ?? Math.random().toString(36).slice(2, 10)}`;
 
-	// Computed checked state
-	const isChecked = $derived(() => group === value);
+	const isChecked = $derived(group === value);
 
-	// Computed classes
-	const classes = $derived(() => {
-		return [
-			'lumi-radio',
-			`lumi-radio--${size}`,
-			`lumi-radio--${color}`,
-			isChecked() && 'lumi-radio--checked',
-			disabled && 'lumi-radio--disabled',
-			className
-		]
-			.filter(Boolean)
-			.join(' ');
-	});
-
-	// Handle change event
-	const handleChange = (event: Event) => {
-		if (!disabled) {
-			group = value;
-			if (onchange) onchange(value, event);
-		}
-	};
+	function handleChange(event: Event): void {
+		if (disabled) return;
+		group = value;
+		onchange?.(value, event);
+	}
 </script>
 
-<label for={radioId} class={classes()}>
-	<!-- Hidden input -->
+<label
+	for={radioId}
+	class="lumi-radio lumi-radio--{size} lumi-radio--{color} {className}"
+	class:lumi-radio--checked={isChecked}
+	class:lumi-radio--disabled={disabled}
+>
 	<input
 		id={radioId}
 		type="radio"
 		{name}
 		{value}
-		checked={isChecked()}
+		checked={isChecked}
 		{disabled}
 		aria-label={ariaLabel || label || undefined}
 		class="lumi-radio__input"
 		onchange={handleChange}
 	/>
 
-	<!-- Visual radio -->
 	<div class="lumi-radio__visual">
 		<div class="lumi-radio__circle"></div>
 	</div>
 
-	<!-- Label -->
 	{#if label || children}
 		<span class="lumi-radio__label">
 			{#if children}
@@ -78,8 +62,10 @@
 <style>
 	.lumi-radio {
 		--radio-size: var(--lumi-icon-md);
-		--radio-dot-size: var(--lumi-icon-xs);
+		--radio-dot-size: var(--lumi-space-xs);
 		--radio-label-size: var(--lumi-font-size-base);
+		--radio-color: var(--lumi-color-primary);
+
 		position: relative;
 		display: inline-flex;
 		align-items: center;
@@ -87,7 +73,6 @@
 		cursor: pointer;
 		user-select: none;
 		font-family: var(--lumi-font-family-sans);
-		transition: var(--lumi-transition-opacity);
 	}
 
 	/* Hidden input */
@@ -99,7 +84,7 @@
 		height: 0;
 	}
 
-	/* Visual radio button */
+	/* Visual radio */
 	.lumi-radio__visual {
 		position: relative;
 		display: flex;
@@ -108,20 +93,25 @@
 		width: var(--radio-size);
 		height: var(--radio-size);
 		border: var(--lumi-border-width-thick) solid var(--lumi-color-border);
-		border-radius: 50%;
+		border-radius: var(--lumi-radius-full);
 		background: var(--lumi-color-surface);
-		transition: var(--lumi-transition-all);
 		flex-shrink: 0;
+		transition:
+			border-color var(--lumi-duration-base) var(--lumi-easing-default),
+			background-color var(--lumi-duration-base) var(--lumi-easing-default),
+			box-shadow var(--lumi-duration-base) var(--lumi-easing-default);
 	}
 
-	/* Radio circle (inner dot) */
+	/* Inner dot */
 	.lumi-radio__circle {
 		width: var(--radio-dot-size);
 		height: var(--radio-dot-size);
-		border-radius: 50%;
+		border-radius: var(--lumi-radius-full);
 		background: transparent;
 		transform: scale(0);
-		transition: var(--lumi-transition-all);
+		transition:
+			transform var(--lumi-duration-base) var(--lumi-easing-default),
+			background-color var(--lumi-duration-base) var(--lumi-easing-default);
 	}
 
 	/* Label */
@@ -133,23 +123,20 @@
 		cursor: pointer;
 	}
 
-	/* Sizes */
+	/* ── Size variants ────────────────────────── */
 	.lumi-radio--sm {
 		--radio-size: var(--lumi-icon-sm);
-		--radio-dot-size: var(--lumi-space-xs);
+		--radio-dot-size: var(--lumi-space-2xs);
 		--radio-label-size: var(--lumi-font-size-sm);
 	}
 
-	.lumi-radio--md {
-		--radio-size: var(--lumi-icon-md);
+	.lumi-radio--lg {
+		--radio-size: var(--lumi-icon-lg);
 		--radio-dot-size: var(--lumi-space-sm);
-		--radio-label-size: var(--lumi-font-size-base);
+		--radio-label-size: var(--lumi-font-size-lg);
 	}
 
-	/* Color variants */
-	.lumi-radio {
-		--radio-color: var(--lumi-color-primary);
-	}
+	/* ── Color variants ───────────────────────── */
 	.lumi-radio--secondary {
 		--radio-color: var(--lumi-color-secondary);
 	}
@@ -166,7 +153,7 @@
 		--radio-color: var(--lumi-color-info);
 	}
 
-	/* Hover effects */
+	/* ── Hover ────────────────────────────────── */
 	.lumi-radio:not(.lumi-radio--disabled):hover .lumi-radio__visual {
 		border-color: var(--radio-color);
 		background: var(--lumi-color-background-hover);
@@ -176,7 +163,7 @@
 		background: var(--lumi-color-surface);
 	}
 
-	/* Checked state */
+	/* ── Checked ──────────────────────────────── */
 	.lumi-radio--checked .lumi-radio__visual {
 		border-color: var(--radio-color);
 	}
@@ -186,17 +173,17 @@
 		transform: scale(1);
 	}
 
-	/* Focus styles */
+	/* ── Focus ────────────────────────────────── */
 	.lumi-radio__input:focus-visible + .lumi-radio__visual {
 		box-shadow:
 			0 0 0 var(--lumi-border-width-thick) var(--lumi-color-background),
 			0 0 0 calc(var(--lumi-border-width-thick) * 2) var(--radio-color);
 	}
 
-	/* Disabled state */
+	/* ── Disabled ─────────────────────────────── */
 	.lumi-radio--disabled {
 		cursor: not-allowed;
-		opacity: 0.6;
+		opacity: 0.5;
 	}
 
 	.lumi-radio--disabled .lumi-radio__visual {
@@ -210,5 +197,13 @@
 
 	.lumi-radio--disabled.lumi-radio--checked .lumi-radio__circle {
 		background: var(--lumi-color-text-muted);
+	}
+
+	/* ── Reduced motion ───────────────────────── */
+	@media (prefers-reduced-motion: reduce) {
+		.lumi-radio__visual,
+		.lumi-radio__circle {
+			transition: none;
+		}
 	}
 </style>

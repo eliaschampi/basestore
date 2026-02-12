@@ -15,11 +15,13 @@
 		DriveFileUploader,
 		DriveSidebar,
 		EmptyState,
+		Icon,
 		Input,
 		Loading,
 		PageHeader,
 		SegmentedControl,
-		Select
+		Select,
+		TagOption
 	} from '$lib/components';
 	import type { DriveFileItem, SelectOption } from '$lib/components';
 	import { can } from '$lib/stores/permissions';
@@ -44,8 +46,6 @@
 		value: string;
 		icon: string;
 	}
-
-	type TagOption = DriveTagOption;
 
 	interface FolderListResponse {
 		files: DriveFileItem[];
@@ -73,7 +73,7 @@
 	let currentParent = $state<string | null>(null);
 
 	let selectedMenu = $state<MenuOption | null>(null);
-	let selectedTag = $state<TagOption | null>(null);
+	let selectedTag = $state<DriveTagOption | null>(null);
 	let selectedFileCodes = $state<string[]>([]);
 	let storageInfo = $state<StorageInfo>({
 		used: 0,
@@ -90,6 +90,7 @@
 	let showRename = $state(false);
 	let showTagDialog = $state(false);
 	let showMoveDialog = $state(false);
+	let showMobileSidebar = $state(false);
 
 	let previewFile = $state<DriveFileItem | null>(null);
 	let contextFile = $state<DriveFileItem | null>(null);
@@ -523,7 +524,7 @@
 		void fetchFiles();
 	}
 
-	function handleTagSelect(tag: TagOption) {
+	function handleTagSelect(tag: DriveTagOption) {
 		selectedTag = selectedTag?.hash === tag.hash ? null : tag;
 		selectedMenu = null;
 		selectedFileCodes = [];
@@ -693,7 +694,9 @@
 		{#snippet actions()}
 			{#if hasDriveBranch}
 				{#if !isTrashView}
-					<div class="lumi-flex lumi-flex--gap-sm lumi-align-items--center drive-page__header-actions">
+					<div
+						class="lumi-flex lumi-flex--gap-sm lumi-align-items--center drive-page__header-actions"
+					>
 						<SegmentedControl
 							value={viewMode}
 							options={viewModeOptions}
@@ -754,120 +757,170 @@
 				/>
 			</aside>
 
+			<!-- Mobile sidebar drawer -->
+			{#if showMobileSidebar}
+				<button
+					type="button"
+					class="drive-page__drawer-backdrop"
+					onclick={() => (showMobileSidebar = false)}
+					aria-label="Cerrar navegación"
+				></button>
+				<aside class="drive-page__drawer">
+					<DriveSidebar
+						{selectedMenu}
+						{selectedTag}
+						{storageInfo}
+						closable
+						onmenuselect={(menu) => {
+							handleMenuSelect(menu);
+							showMobileSidebar = false;
+						}}
+						ontagselect={(tag) => {
+							handleTagSelect(tag);
+							showMobileSidebar = false;
+						}}
+						onclose={() => (showMobileSidebar = false)}
+					/>
+				</aside>
+			{/if}
+
 			<section class="lumi-layout--content-right">
-				<Card spaced>
-					<div class="lumi-flex lumi-flex--gap-sm lumi-align-items--center drive-page__toolbar">
-						<div class="drive-page__branch-control">
-							<Select
-								label="Sede"
-								value={currentBranch}
-								options={branchOptions}
-								clearable={false}
-								onchange={handleBranchChange}
-							/>
-						</div>
-						<div class="lumi-flex-item--grow">
-							<Input
-								placeholder="Buscar archivos..."
-								icon="search"
-								value={searchQuery}
-								oninput={(event) =>
-									handleSearchChange((event.currentTarget as HTMLInputElement | null)?.value ?? '')}
-							/>
-						</div>
+				<div class="lumi-stack lumi-space--sm">
+					<div class="drive-page__toolbar-shell">
+						<Card spaced>
+							<div class="lumi-flex lumi-flex--gap-sm lumi-align-items--center drive-page__toolbar">
+								<button
+									type="button"
+									class="drive-page__mobile-toggle"
+									onclick={() => (showMobileSidebar = true)}
+									aria-label="Abrir navegación"
+								>
+									<Icon icon="menu" size="18px" />
+								</button>
+								<div class="drive-page__branch-control">
+									<Select
+										placeholder="Sede"
+										aria-label="Seleccionar sede"
+										value={currentBranch}
+										options={branchOptions}
+										clearable={false}
+										onchange={handleBranchChange}
+									/>
+								</div>
+								<div class="lumi-flex-item--grow drive-page__search-control">
+									<Input
+										placeholder="Buscar archivos..."
+										icon="search"
+										value={searchQuery}
+										oninput={(event) =>
+											handleSearchChange((event.currentTarget as HTMLInputElement | null)?.value ?? '')}
+									/>
+								</div>
+							</div>
+						</Card>
 					</div>
 
 					{#if selectedFileCount > 0 && !isTrashView}
 						<div class="drive-page__selection">
 							<Chip size="sm" color="info">{selectedFileCount} seleccionado(s)</Chip>
 							{#if canDelete}
-								<Button type="flat" size="sm" icon="trash" color="danger" onclick={trashSelectedFiles}>
+								<Button
+									type="flat"
+									size="sm"
+									icon="trash"
+									color="danger"
+									onclick={trashSelectedFiles}
+								>
 									Mover a papelera
 								</Button>
 							{/if}
-							<Button type="flat" size="sm" icon="x" onclick={clearSelection}>Limpiar selección</Button>
+							<Button type="flat" size="sm" icon="x" onclick={clearSelection}
+								>Limpiar selección</Button
+							>
 						</div>
 					{/if}
 
-					{#if showBreadcrumbs}
-						<nav class="lumi-flex lumi-flex--gap-xs lumi-align-items--center lumi-flex--wrap">
-							{#each breadcrumbs as crumb, index (crumb.code ?? `root-${index}`)}
-								{#if index > 0}
-									<span class="lumi-text--muted">/</span>
-								{/if}
-								{#if index === breadcrumbs.length - 1}
-									<span class="lumi-font--medium">{crumb.label}</span>
-								{:else}
-									<Button type="flat" size="sm" onclick={() => navigateBreadcrumb(index)}>
-										{crumb.label}
-									</Button>
-								{/if}
-							{/each}
-						</nav>
-					{/if}
-
-					{#if errorMessage}
-						<Alert type="danger" closable onclose={() => (errorMessage = '')}>{errorMessage}</Alert>
-					{/if}
-
-					<div class="drive-page__content">
-						{#if loading}
-							<div class="drive-page__loading">
-								<Loading size="lg" color="primary" />
-								<span class="lumi-text--sm lumi-text--muted">Cargando archivos...</span>
-							</div>
-						{:else if files.length === 0}
-							<EmptyState
-								title={isTrashView
-									? 'La papelera está vacía'
-									: searchQuery
-										? 'Sin resultados'
-										: 'Carpeta vacía'}
-								description={isTrashView
-									? 'Los archivos eliminados aparecerán aquí.'
-									: searchQuery
-										? 'Intenta otro término de búsqueda.'
-										: 'Sube archivos o crea carpetas para comenzar.'}
-								icon={isTrashView ? 'trash' : 'hardDrive'}
-								iconColor="muted"
-							>
-								{#snippet actions()}
-									{#if !isTrashView && canCreate}
-										<Button
-											type="filled"
-											color="primary"
-											icon="upload"
-											size="sm"
-											onclick={() => (showUploader = true)}
-										>
-											Subir archivos
+					<div class="drive-page__content-shell">
+						{#if showBreadcrumbs}
+							<nav class="lumi-flex lumi-flex--gap-xs lumi-align-items--center lumi-flex--wrap">
+								{#each breadcrumbs as crumb, index (crumb.code ?? `root-${index}`)}
+									{#if index > 0}
+										<span class="lumi-text--muted">/</span>
+									{/if}
+									{#if index === breadcrumbs.length - 1}
+										<span class="lumi-font--medium">{crumb.label}</span>
+									{:else}
+										<Button type="flat" size="sm" onclick={() => navigateBreadcrumb(index)}>
+											{crumb.label}
 										</Button>
 									{/if}
-								{/snippet}
-							</EmptyState>
-						{:else if viewMode === 'grid'}
-							<DriveFileGrid
-								{files}
-								selectedFiles={selectedFileCodes}
-								isTrash={isTrashView}
-								onfileclick={handleFileClick}
-								onfiledblclick={handleFileDblClick}
-								onfilecontextmenu={handleContextMenu}
-								onfiledrop={handleDrop}
-							/>
-						{:else}
-							<DriveFileList
-								{files}
-								selectedFiles={selectedFileCodes}
-								isTrash={isTrashView}
-								onfileclick={handleFileClick}
-								onfiledblclick={handleFileDblClick}
-								onfilecontextmenu={handleContextMenu}
-								onfiledrop={handleDrop}
-							/>
+								{/each}
+							</nav>
 						{/if}
+
+						{#if errorMessage}
+							<Alert type="danger" closable onclose={() => (errorMessage = '')}>{errorMessage}</Alert>
+						{/if}
+
+						<div class="drive-page__content">
+							{#if loading}
+								<div class="drive-page__loading">
+									<Loading size="lg" color="primary" />
+									<span class="lumi-text--sm lumi-text--muted">Cargando archivos...</span>
+								</div>
+							{:else if files.length === 0}
+								<EmptyState
+									title={isTrashView
+										? 'La papelera está vacía'
+										: searchQuery
+											? 'Sin resultados'
+											: 'Carpeta vacía'}
+									description={isTrashView
+										? 'Los archivos eliminados aparecerán aquí.'
+										: searchQuery
+											? 'Intenta otro término de búsqueda.'
+											: 'Sube archivos o crea carpetas para comenzar.'}
+									icon={isTrashView ? 'trash' : 'hardDrive'}
+									iconColor="muted"
+								>
+									{#snippet actions()}
+										{#if !isTrashView && canCreate}
+											<Button
+												type="filled"
+												color="primary"
+												icon="upload"
+												size="sm"
+												onclick={() => (showUploader = true)}
+											>
+												Subir archivos
+											</Button>
+										{/if}
+									{/snippet}
+								</EmptyState>
+							{:else if viewMode === 'grid'}
+								<DriveFileGrid
+									{files}
+									selectedFiles={selectedFileCodes}
+									isTrash={isTrashView}
+									onfileclick={handleFileClick}
+									onfiledblclick={handleFileDblClick}
+									onfilecontextmenu={handleContextMenu}
+									onfiledrop={handleDrop}
+								/>
+							{:else}
+								<DriveFileList
+									{files}
+									selectedFiles={selectedFileCodes}
+									isTrash={isTrashView}
+									onfileclick={handleFileClick}
+									onfiledblclick={handleFileDblClick}
+									onfilecontextmenu={handleContextMenu}
+									onfiledrop={handleDrop}
+								/>
+							{/if}
+						</div>
 					</div>
-				</Card>
+				</div>
 			</section>
 		</div>
 	{/if}
@@ -955,24 +1008,20 @@
 	<div class="lumi-stack lumi-space--sm">
 		<button
 			type="button"
-			class="drive-page__tag-option"
-			class:drive-page__tag-option--active={selectedTagHash === null}
+			class="drive-page__tag-none"
+			class:drive-page__tag-none--active={selectedTagHash === null}
 			onclick={() => (selectedTagHash = null)}
 		>
-			<span class="drive-page__tag-dot"></span>
+			<span class="drive-page__tag-none-dot"></span>
 			<span>Sin etiqueta</span>
 		</button>
 
 		{#each TAG_OPTIONS as tag (tag.hash)}
-			<button
-				type="button"
-				class="drive-page__tag-option"
-				class:drive-page__tag-option--active={selectedTagHash === tag.hash}
+			<TagOption
+				{tag}
+				active={selectedTagHash === tag.hash}
 				onclick={() => (selectedTagHash = tag.hash)}
-			>
-				<span class={`drive-page__tag-dot drive-page__tag-dot--${tag.tone}`}></span>
-				<span>{tag.name}</span>
-			</button>
+			/>
 		{/each}
 	</div>
 	{#snippet footer()}
@@ -1029,7 +1078,11 @@
 				{#if canUpdate}
 					<ContextItem title="Renombrar" icon="edit" onclick={() => openRenameDialog(menuFile)} />
 					<ContextItem title="Etiquetar" icon="tag" onclick={() => openTagDialog(menuFile)} />
-					<ContextItem title="Mover" icon="arrowRight" onclick={() => void openMoveDialog(menuFile)} />
+					<ContextItem
+						title="Mover"
+						icon="arrowRight"
+						onclick={() => void openMoveDialog(menuFile)}
+					/>
 				{/if}
 
 				{#if canDelete}
@@ -1043,26 +1096,24 @@
 						}}
 					/>
 				{/if}
-			{:else}
-				{#if canDelete}
-					<ContextItem
-						title="Restaurar"
-						icon="refresh"
-						onclick={() => {
-							void restoreFile(menuFile);
-							fileContextMenu?.close();
-						}}
-					/>
-					<ContextItem
-						title="Eliminar permanente"
-						icon="trash"
-						danger
-						onclick={() => {
-							void deleteFile(menuFile);
-							fileContextMenu?.close();
-						}}
-					/>
-				{/if}
+			{:else if canDelete}
+				<ContextItem
+					title="Restaurar"
+					icon="refresh"
+					onclick={() => {
+						void restoreFile(menuFile);
+						fileContextMenu?.close();
+					}}
+				/>
+				<ContextItem
+					title="Eliminar permanente"
+					icon="trash"
+					danger
+					onclick={() => {
+						void deleteFile(menuFile);
+						fileContextMenu?.close();
+					}}
+				/>
 			{/if}
 		{/if}
 	{/snippet}
@@ -1079,15 +1130,22 @@
 
 	.drive-page__branch-control {
 		min-width: 220px;
+		flex: 0 1 240px;
+	}
+
+	.drive-page__search-control {
+		min-width: 240px;
+	}
+
+	.drive-page__toolbar-shell :global(.lumi-card) {
+		border: 1px solid var(--lumi-color-border-light);
+		background: color-mix(in srgb, var(--lumi-color-surface) 92%, transparent);
+		backdrop-filter: blur(var(--lumi-blur-sm));
 	}
 
 	.drive-page__toolbar {
+		align-items: center;
 		flex-wrap: wrap;
-		padding: var(--lumi-space-xs);
-		border: 1px solid var(--lumi-color-border-light);
-		border-radius: var(--lumi-radius-xl);
-		background: color-mix(in srgb, var(--lumi-color-surface) 82%, transparent);
-		backdrop-filter: blur(var(--lumi-blur-sm));
 	}
 
 	.drive-page__header-actions {
@@ -1110,6 +1168,16 @@
 		min-height: 420px;
 	}
 
+	.drive-page__content-shell {
+		display: flex;
+		flex-direction: column;
+		gap: var(--lumi-space-sm);
+		padding: var(--lumi-space-sm);
+		border-radius: var(--lumi-radius-2xl);
+		border: 1px solid color-mix(in srgb, var(--lumi-color-border) 55%, transparent);
+		background: transparent;
+	}
+
 	.drive-page__loading {
 		min-height: 220px;
 		display: flex;
@@ -1119,12 +1187,12 @@
 		gap: var(--lumi-space-md);
 	}
 
-	.drive-page__tag-option {
+	.drive-page__tag-none {
 		display: flex;
 		align-items: center;
 		gap: var(--lumi-space-sm);
 		width: 100%;
-		padding: var(--lumi-space-sm) var(--lumi-space-md);
+		padding: var(--lumi-space-xs) var(--lumi-space-md);
 		border: 1px solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-lg);
 		background: var(--lumi-color-surface);
@@ -1134,37 +1202,52 @@
 		transition: var(--lumi-transition-all);
 	}
 
-	.drive-page__tag-option:hover {
+	.drive-page__tag-none:hover {
 		border-color: var(--lumi-color-primary);
 		background: color-mix(in srgb, var(--lumi-color-primary) 4%, var(--lumi-color-surface));
 	}
 
-	.drive-page__tag-option--active {
+	.drive-page__tag-none--active {
 		border-color: color-mix(in srgb, var(--lumi-color-primary) 28%, var(--lumi-color-border));
 		background: color-mix(in srgb, var(--lumi-color-primary) 8%, var(--lumi-color-surface));
 	}
 
-	.drive-page__tag-dot {
+	.drive-page__tag-none-dot {
 		width: 12px;
 		height: 12px;
 		border-radius: var(--lumi-radius-full);
 		background: var(--lumi-color-border);
 	}
 
-	.drive-page__tag-dot--favorite {
-		background: var(--lumi-color-secondary);
+	.drive-page__mobile-toggle {
+		display: none;
+		align-items: center;
+		justify-content: center;
+		padding: var(--lumi-space-sm);
+		border: 1px solid var(--lumi-color-border-light);
+		border-radius: var(--lumi-radius-md);
+		background: var(--lumi-color-surface);
+		color: var(--lumi-color-text);
+		cursor: pointer;
+		transition: var(--lumi-transition-all);
+		flex-shrink: 0;
 	}
 
-	.drive-page__tag-dot--highlight {
-		background: var(--lumi-color-success);
+	.drive-page__mobile-toggle:hover {
+		background: var(--lumi-color-background-hover);
+		border-color: var(--lumi-color-primary);
 	}
 
-	.drive-page__tag-dot--work {
-		background: var(--lumi-color-warning);
+	.drive-page__drawer-backdrop {
+		display: none;
+		border: none;
+		padding: 0;
+		margin: 0;
+		cursor: pointer;
 	}
 
-	.drive-page__tag-dot--personal {
-		background: var(--lumi-color-info);
+	.drive-page__drawer {
+		display: none;
 	}
 
 	@media (max-width: 1024px) {
@@ -1178,10 +1261,59 @@
 
 		.drive-page__branch-control {
 			width: 100%;
+			flex: 1 1 100%;
+		}
+
+		.drive-page__search-control {
+			min-width: 100%;
+			flex-basis: 100%;
 		}
 
 		.drive-page__header-actions {
 			justify-content: flex-start;
+		}
+
+		.drive-page__mobile-toggle {
+			display: flex;
+			padding: var(--lumi-space-xs) var(--lumi-space-sm);
+		}
+
+		.drive-page__toolbar {
+			align-items: center;
+		}
+
+		.drive-page__drawer-backdrop {
+			display: block;
+			position: fixed;
+			inset: 0;
+			z-index: var(--lumi-z-modal);
+			background: var(--lumi-color-overlay);
+			backdrop-filter: blur(var(--lumi-blur-sm));
+			animation: lumi-fade-in 0.2s ease;
+		}
+
+		.drive-page__drawer {
+			display: block;
+			position: fixed;
+			top: 0;
+			left: 0;
+			bottom: 0;
+			width: min(320px, 85vw);
+			z-index: calc(var(--lumi-z-modal) + 1);
+			padding: var(--lumi-space-sm);
+			overflow-y: auto;
+			animation: drive-drawer-slide 0.25s cubic-bezier(0.2, 0, 0.13, 1.5);
+		}
+	}
+
+	@keyframes drive-drawer-slide {
+		from {
+			transform: translateX(-100%);
+			opacity: 0;
+		}
+		to {
+			transform: translateX(0);
+			opacity: 1;
 		}
 	}
 </style>

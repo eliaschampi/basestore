@@ -129,3 +129,8 @@ export {
 	DriveFileUploader,
 	DriveSidebar
 } from './Drive';
+
+// ============================================================================
+// TAG OPTION COMPONENT
+// ============================================================================
+export { TagOption } from './TagOption';

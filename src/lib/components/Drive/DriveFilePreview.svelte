@@ -86,7 +86,9 @@
 				</div>
 			</div>
 			<div class="drive-preview__details-meta">
-				<span class="lumi-text--xs lumi-text--muted">Actualizado: {formatDate(file.updated_at)}</span>
+				<span class="lumi-text--xs lumi-text--muted"
+					>Actualizado: {formatDate(file.updated_at)}</span
+				>
 				{#if file.mime_type}
 					<span class="lumi-text--xs lumi-text--muted">{file.mime_type}</span>
 				{/if}

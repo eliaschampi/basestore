@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { tick } from 'svelte';
 	import { portal } from '$lib/actions/portal';
 	import { createFloating } from '$lib/utils/floating.svelte';
 	import Icon from '../Icon/Icon.svelte';
 	import { getIconSize } from '../config';
 	import type { SelectProps } from './types';
 
-	type OptionValue = string | number | object;
+	type OptionValue = string | number | Record<string, unknown>;
 
 	interface NormalizedOption {
 		value: OptionValue | null;
@@ -48,7 +48,7 @@
 	let inputRef: HTMLInputElement | undefined = $state();
 	let dropdownRef: HTMLDivElement | undefined = $state();
 	let focusedIndex = $state(-1);
-	let searchQuery = $state('');
+	let filterText = $state('');
 
 	const floating = createFloating(
 		() => selectRef,
@@ -63,19 +63,20 @@
 		})
 	);
 
+	// ── Deep equality ──────────────────────────
 	function isEqual(a: unknown, b: unknown): boolean {
 		if (a === b) return true;
 		if (a == null || b == null) return false;
-		if (typeof a !== 'object' || typeof b !== 'object') return false;
+		if (typeof a !== typeof b) return false;
+		if (typeof a !== 'object') return false;
 
-		const keysA = Object.keys(a as Record<string, unknown>);
-		const keysB = Object.keys(b as Record<string, unknown>);
-		if (keysA.length !== keysB.length) return false;
+		const objA = a as Record<string, unknown>;
+		const objB = b as Record<string, unknown>;
+		const keysA = Object.keys(objA);
 
+		if (keysA.length !== Object.keys(objB).length) return false;
 		return keysA.every(
-			(key) =>
-				Object.prototype.hasOwnProperty.call(b, key) &&
-				(a as Record<string, unknown>)[key] === (b as Record<string, unknown>)[key]
+			(key) => Object.prototype.hasOwnProperty.call(objB, key) && isEqual(objA[key], objB[key])
 		);
 	}
 
@@ -91,9 +92,11 @@
 		return `${String(optionValue)}-${index}`;
 	}
 
-	const uniqueId = crypto.randomUUID().slice(0, 8);
+	// ── IDs ────────────────────────────────────
+	const uniqueId = crypto?.randomUUID?.().slice(0, 8) ?? Math.random().toString(36).slice(2, 10);
 	const inputId = `lumi-select-${uniqueId}`;
 	const dropdownId = `lumi-select-dropdown-${uniqueId}`;
+	const errorId = `${inputId}-error`;
 
 	const iconSize = $derived(`${getIconSize(size)}px`);
 
@@ -104,14 +107,13 @@
 		return options.map((option, index) => {
 			if (typeof option === 'object' && option !== null) {
 				const rec = option as Record<string, unknown>;
-				const optValue = (rec[valueKey] ?? rec.value ?? null) as OptionValue | null;
-				const optLabel = rec[labelKey] ?? rec.label ?? optValue ?? '';
-				const optDisabled = Boolean(rec[disabledKey] ?? rec.disabled);
+				const optValue = (rec[valueKey] ?? null) as OptionValue | null;
+				const optLabel = rec[labelKey] ?? optValue ?? '';
 
 				return {
 					value: optValue,
 					label: String(optLabel),
-					disabled: optDisabled,
+					disabled: Boolean(rec[disabledKey]),
 					key: toOptionKey(optValue, index)
 				} satisfies NormalizedOption;
 			}
@@ -125,31 +127,24 @@
 		});
 	});
 
+	// ── Derived state ──────────────────────────
 	const selectedOption = $derived.by(() =>
 		normalizedOptions.find((opt) => isEqual(opt.value, value))
 	);
-
-	const displayValue = $derived.by(() => {
-		if (floating.isOpen && autocomplete) return searchQuery;
-		return selectedOption?.label || '';
-	});
-
-	const hasValue = $derived(
-		value !== null && value !== undefined && !(typeof value === 'string' && value.length === 0)
-	);
-
+	const selectedKey = $derived(selectedOption?.key ?? null);
+	const selectedLabel = $derived(selectedOption?.label ?? '');
+	const displayValue = $derived(floating.isOpen && autocomplete ? filterText : selectedLabel);
+	const hasValue = $derived(value != null && value !== '');
 	const showClearButton = $derived(clearable && hasValue && !disabled && !loading);
 
+	const isFilterActive = $derived.by(() => {
+		if (!autocomplete || !filterText || !floating.isOpen) return false;
+		return filterText.toLowerCase() !== selectedLabel.toLowerCase();
+	});
+
 	const visibleOptions = $derived.by(() => {
-		if (!autocomplete || !searchQuery || !floating.isOpen) {
-			return normalizedOptions;
-		}
-
-		const query = searchQuery.toLowerCase();
-		if (selectedOption && selectedOption.label.toLowerCase() === query) {
-			return normalizedOptions;
-		}
-
+		if (!isFilterActive) return normalizedOptions;
+		const query = filterText.toLowerCase();
 		return normalizedOptions.filter((opt) => opt.label.toLowerCase().includes(query));
 	});
 
@@ -159,33 +154,6 @@
 			return acc;
 		}, [])
 	);
-
-	const selectClasses = $derived(
-		[
-			'lumi-select',
-			`lumi-select--${size}`,
-			floating.isOpen && 'lumi-select--active',
-			disabled && 'lumi-select--disabled',
-			error && 'lumi-select--error',
-			loading && 'lumi-select--loading',
-			className
-		]
-			.filter(Boolean)
-			.join(' ')
-	);
-
-	const dropdownStyle = $derived.by(() => {
-		const s = floating.floatingStyles;
-		const parts = [
-			`position: ${s.position}`,
-			`top: ${s.top}`,
-			`left: ${s.left}`,
-			`z-index: ${s.zIndex}`
-		];
-		if (s.width) parts.push(`width: ${s.width}`);
-		if (s.maxHeight) parts.push(`max-height: ${s.maxHeight}`);
-		return parts.join('; ');
-	});
 
 	// ── Methods ────────────────────────────────
 	function getOptionId(index: number): string {
@@ -200,10 +168,31 @@
 		openDropdown();
 	}
 
+	function handleInputClick(): void {
+		if (disabled || loading) return;
+
+		if (!floating.isOpen) {
+			openDropdown();
+			return;
+		}
+
+		if (!autocomplete) {
+			closeDropdown();
+		}
+	}
+
+	function handleTriggerClick(event: MouseEvent): void {
+		event.preventDefault();
+		event.stopPropagation();
+		toggleDropdown();
+		inputRef?.focus();
+	}
+
 	function openDropdown(): void {
 		if (disabled || loading || floating.isOpen) return;
 		floating.open();
-		searchQuery = selectedOption?.label || '';
+		inputRef?.focus();
+		filterText = selectedLabel;
 		focusedIndex = selectedOption
 			? visibleOptions.findIndex((opt) => isEqual(opt.value, selectedOption.value))
 			: -1;
@@ -214,7 +203,7 @@
 		if (!floating.isOpen) return;
 		floating.close();
 		focusedIndex = -1;
-		searchQuery = selectedOption?.label || '';
+		filterText = '';
 		onclose?.();
 	}
 
@@ -222,15 +211,29 @@
 		if (!autocomplete) return;
 		if (!floating.isOpen) openDropdown();
 		const val = (event.target as HTMLInputElement).value;
-		searchQuery = val;
-		focusedIndex = -1; // reset focus when typing
+		filterText = val;
+		focusedIndex = -1;
 		onsearch?.(val);
 	}
 
 	async function scrollToFocused(): Promise<void> {
 		await tick();
-		const el = dropdownRef?.querySelector(`#${getOptionId(focusedIndex)}`);
-		el?.scrollIntoView({ block: 'nearest' });
+		dropdownRef
+			?.querySelector(`[id="${getOptionId(focusedIndex)}"]`)
+			?.scrollIntoView({ block: 'nearest' });
+	}
+
+	function moveFocus(direction: 1 | -1): void {
+		if (!navigableIndices.length) return;
+		const currentIdx = navigableIndices.indexOf(focusedIndex);
+		const nextIdx =
+			currentIdx === -1 && direction === 1
+				? navigableIndices[0]
+				: navigableIndices[currentIdx + direction];
+		if (nextIdx !== undefined) {
+			focusedIndex = nextIdx;
+			scrollToFocused();
+		}
 	}
 
 	function handleKeydown(event: KeyboardEvent): void {
@@ -250,41 +253,20 @@
 				closeDropdown();
 				break;
 
-			case 'ArrowDown': {
+			case 'ArrowDown':
 				event.preventDefault();
-				if (!floating.isOpen) {
-					openDropdown();
-					break;
-				}
-				const currentDownIdx = navigableIndices.indexOf(focusedIndex);
-				const nextIdx = navigableIndices[currentDownIdx + 1];
-				if (nextIdx !== undefined) {
-					focusedIndex = nextIdx;
-					scrollToFocused();
-				} else if (focusedIndex === -1 && navigableIndices.length > 0) {
-					focusedIndex = navigableIndices[0];
-					scrollToFocused();
-				}
+				if (!floating.isOpen) openDropdown();
+				else moveFocus(1);
 				break;
-			}
 
-			case 'ArrowUp': {
+			case 'ArrowUp':
 				event.preventDefault();
-				if (!floating.isOpen) {
-					openDropdown();
-					break;
-				}
-				const currentUpIdx = navigableIndices.indexOf(focusedIndex);
-				const prevIdx = navigableIndices[currentUpIdx - 1];
-				if (prevIdx !== undefined) {
-					focusedIndex = prevIdx;
-					scrollToFocused();
-				}
+				if (!floating.isOpen) openDropdown();
+				else moveFocus(-1);
 				break;
-			}
 
 			case 'Home':
-				if (floating.isOpen && navigableIndices.length > 0) {
+				if (floating.isOpen && navigableIndices.length) {
 					event.preventDefault();
 					focusedIndex = navigableIndices[0];
 					scrollToFocused();
@@ -292,9 +274,9 @@
 				break;
 
 			case 'End':
-				if (floating.isOpen && navigableIndices.length > 0) {
+				if (floating.isOpen && navigableIndices.length) {
 					event.preventDefault();
-					focusedIndex = navigableIndices[navigableIndices.length - 1];
+					focusedIndex = navigableIndices.at(-1)!;
 					scrollToFocused();
 				}
 				break;
@@ -312,7 +294,7 @@
 		event.stopPropagation();
 		value = null;
 		onchange?.(null);
-		searchQuery = '';
+		filterText = '';
 		if (autocomplete) inputRef?.focus();
 	}
 
@@ -322,13 +304,23 @@
 		closeDropdown();
 	}
 
-	onMount(() => {
-		document.addEventListener('pointerdown', handleClickOutside, true);
-		return () => document.removeEventListener('pointerdown', handleClickOutside, true);
+	$effect(() => {
+		if (floating.isOpen) {
+			document.addEventListener('pointerdown', handleClickOutside, true);
+			return () => document.removeEventListener('pointerdown', handleClickOutside, true);
+		}
 	});
 </script>
 
-<div bind:this={selectRef} class={selectClasses} style={width ? `width: ${width}` : undefined}>
+<div
+	bind:this={selectRef}
+	class="lumi-select lumi-select--{size} {className}"
+	class:lumi-select--active={floating.isOpen}
+	class:lumi-select--disabled={disabled}
+	class:lumi-select--error={error}
+	class:lumi-select--loading={loading}
+	style={width ? `width: ${width}` : undefined}
+>
 	{#if label}
 		<label for={inputId} class="lumi-select__label">
 			{label}
@@ -336,9 +328,20 @@
 	{/if}
 
 	<div class="lumi-select__container">
+		{#if name}
+			<input
+				type="hidden"
+				{name}
+				value={value == null
+					? ''
+					: typeof value === 'object'
+						? JSON.stringify(value)
+						: String(value)}
+			/>
+		{/if}
+
 		<input
 			bind:this={inputRef}
-			{name}
 			id={inputId}
 			type="text"
 			readonly={!autocomplete}
@@ -353,8 +356,9 @@
 			aria-activedescendant={focusedIndex > -1 ? getOptionId(focusedIndex) : undefined}
 			aria-label={ariaLabel || label || placeholder}
 			aria-invalid={error || undefined}
+			aria-errormessage={error && errorMessage ? errorId : undefined}
 			value={displayValue}
-			onclick={toggleDropdown}
+			onclick={handleInputClick}
 			onkeydown={handleKeydown}
 			oninput={handleInput}
 		/>
@@ -374,9 +378,15 @@
 				<Icon icon="x" size={iconSize} />
 			</button>
 		{:else}
-			<div class="lumi-select__suffix lumi-select__arrow" aria-hidden="true">
+			<button
+				type="button"
+				class="lumi-select__trigger lumi-select__arrow"
+				aria-label={floating.isOpen ? 'Cerrar opciones' : 'Abrir opciones'}
+				tabindex="-1"
+				onclick={handleTriggerClick}
+			>
 				<Icon icon="chevronDown" size={iconSize} />
-			</div>
+			</button>
 		{/if}
 	</div>
 
@@ -386,7 +396,12 @@
 			use:portal
 			id={dropdownId}
 			class="lumi-select__dropdown"
-			style={dropdownStyle}
+			style:position={floating.floatingStyles.position}
+			style:top={floating.floatingStyles.top}
+			style:left={floating.floatingStyles.left}
+			style:z-index={floating.floatingStyles.zIndex}
+			style:width={floating.floatingStyles.width}
+			style:max-height={floating.floatingStyles.maxHeight}
 			role="listbox"
 			aria-label={label || placeholder}
 		>
@@ -402,7 +417,7 @@
 					</div>
 				{:else}
 					{#each visibleOptions as option, index (option.key)}
-						{@const isItemSelected = isEqual(option.value, value)}
+						{@const isItemSelected = option.key === selectedKey}
 						{@const isItemFocused = focusedIndex === index}
 						<div
 							id={getOptionId(index)}
@@ -413,7 +428,6 @@
 							role="option"
 							aria-selected={isItemSelected}
 							aria-disabled={option.disabled || undefined}
-							tabindex="-1"
 							onclick={() => selectOption(option)}
 							onkeydown={(event) => {
 								if (option.disabled) return;
@@ -425,6 +439,7 @@
 							onmouseenter={() => {
 								if (!option.disabled) focusedIndex = index;
 							}}
+							tabindex="-1"
 						>
 							{#if isItemSelected}
 								<span class="lumi-select__option-check" aria-hidden="true">
@@ -445,16 +460,12 @@
 		aria-live="polite"
 	>
 		{#if error && errorMessage}
-			<span class="lumi-select__error">{errorMessage}</span>
+			<span id={errorId} class="lumi-select__error">{errorMessage}</span>
 		{/if}
 	</div>
 </div>
 
 <style>
-	/* ============================================================================
-	 * SELECT COMPONENT
-	 * ============================================================================ */
-
 	.lumi-select {
 		position: relative;
 		width: 100%;
@@ -573,6 +584,19 @@
 			color 0.2s ease;
 	}
 
+	.lumi-select__trigger {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0 var(--lumi-space-sm);
+		color: var(--lumi-color-text-muted);
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		flex-shrink: 0;
+		transition: color 0.2s ease;
+	}
+
 	.lumi-select--active .lumi-select__arrow {
 		transform: rotate(180deg);
 		color: var(--select-focus);
@@ -687,7 +711,7 @@
 	}
 
 	.lumi-select__option--disabled {
-		opacity: 0.45;
+		opacity: 0.5;
 		cursor: not-allowed;
 	}
 

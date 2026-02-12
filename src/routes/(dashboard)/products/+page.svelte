@@ -215,7 +215,10 @@
 			return;
 		}
 
-		await Promise.all([fetchMediaLinks(product.code, browseBranch), browseFolder(null, browseBranch)]);
+		await Promise.all([
+			fetchMediaLinks(product.code, browseBranch),
+			browseFolder(null, browseBranch)
+		]);
 	}
 
 	async function handleBrowseBranchChange(value: string | number | object | null) {
@@ -612,13 +615,7 @@
 					icon="creditCard"
 					required
 				/>
-				<Input
-					bind:value={formSku}
-					name="sku"
-					label="SKU"
-					placeholder="Ej: PC00012"
-					icon="tag"
-				/>
+				<Input bind:value={formSku} name="sku" label="SKU" placeholder="Ej: PC00012" icon="tag" />
 			</div>
 
 			<!-- Row 4: Description -->
@@ -668,31 +665,22 @@
 		{#if selectedProduct}
 			<input type="hidden" name="code" value={selectedProduct.code} />
 			<p class="lumi-margin--none">
-				¿Estás seguro de que deseas eliminar el producto <strong>{selectedProduct.name}</strong>?
-				Se desvincularán las imágenes asociadas. Esta acción no se puede deshacer.
+				¿Estás seguro de que deseas eliminar el producto <strong>{selectedProduct.name}</strong>? Se
+				desvincularán las imágenes asociadas. Esta acción no se puede deshacer.
 			</p>
 		{/if}
 	</form>
 
 	{#snippet footer()}
 		<Button type="border" onclick={closeDeleteModal}>Cancelar</Button>
-		<Button
-			type="filled"
-			color="danger"
-			onclick={() => submitForm('delete-product-form')}
-		>
+		<Button type="filled" color="danger" onclick={() => submitForm('delete-product-form')}>
 			Eliminar
 		</Button>
 	{/snippet}
 </Dialog>
 
 <!-- ─── Media Management Dialog ─── -->
-<Dialog
-	bind:open={showMediaModal}
-	title="Media del producto"
-	size="lg"
-	scrollable
->
+<Dialog bind:open={showMediaModal} title="Media del producto" size="lg" scrollable>
 	{#if selectedProduct}
 		<div class="product-media">
 			<section class="product-media__panel">
@@ -745,7 +733,12 @@
 									</div>
 								</div>
 								<div class="product-media__linked-actions">
-									<Button type="flat" size="sm" icon="eye" onclick={() => openLinkedPreview(link)} />
+									<Button
+										type="flat"
+										size="sm"
+										icon="eye"
+										onclick={() => openLinkedPreview(link)}
+									/>
 									{#if link.file_type === 'img'}
 										{#if link.is_primary}
 											<Chip color="primary" size="sm">Principal</Chip>
@@ -788,7 +781,12 @@
 								onchange={handleBrowseBranchChange}
 							/>
 						</div>
-						<Button type="flat" size="sm" icon="refresh" onclick={() => browseFolder(browseParent)} />
+						<Button
+							type="flat"
+							size="sm"
+							icon="refresh"
+							onclick={() => browseFolder(browseParent)}
+						/>
 					</div>
 				</div>
 
@@ -832,10 +830,15 @@
 									<button
 										type="button"
 										class="product-media__browse-preview"
-										onclick={() => (file.type === 'dir' ? navigateDriveFolder(file) : openBrowsePreview(file))}
+										onclick={() =>
+											file.type === 'dir' ? navigateDriveFolder(file) : openBrowsePreview(file)}
 									>
 										{#if file.type === 'img'}
-											<img src="/api/drive/{file.code}/serve" alt={file.name} class="product-media__browse-thumb" />
+											<img
+												src="/api/drive/{file.code}/serve"
+												alt={file.name}
+												class="product-media__browse-thumb"
+											/>
 										{:else}
 											<Icon
 												icon={getFileIcon(file.type)}
@@ -863,11 +866,21 @@
 											</Button>
 										{/if}
 										{#if file.type === 'dir'}
-											<Button type="flat" size="sm" icon="folder" onclick={() => navigateDriveFolder(file)}>
+											<Button
+												type="flat"
+												size="sm"
+												icon="folder"
+												onclick={() => navigateDriveFolder(file)}
+											>
 												Abrir
 											</Button>
 										{:else}
-											<Button type="flat" size="sm" icon="eye" onclick={() => openBrowsePreview(file)} />
+											<Button
+												type="flat"
+												size="sm"
+												icon="eye"
+												onclick={() => openBrowsePreview(file)}
+											/>
 										{/if}
 									</div>
 								</article>

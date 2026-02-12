@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Card, Chip, Icon, List, ListItem, Progress } from '$lib/components';
+	import { Card, Icon, List, ListItem, Progress, TagOption } from '$lib/components';
 	import type { DriveTagOption } from '$lib/utils/drive';
 	import { DRIVE_MENU_OPTIONS, TAG_OPTIONS, formatFileSize } from '$lib/utils/drive';
 
@@ -19,17 +19,35 @@
 		selectedMenu: MenuOption | null;
 		selectedTag: DriveTagOption | null;
 		storageInfo: StorageInfo;
+		closable?: boolean;
 		onmenuselect?: (menu: MenuOption | null) => void;
 		ontagselect?: (tag: DriveTagOption) => void;
+		onclose?: () => void;
 	}
 
-	const { selectedMenu, selectedTag, storageInfo, onmenuselect, ontagselect }: Props = $props();
+	const {
+		selectedMenu,
+		selectedTag,
+		storageInfo,
+		closable = false,
+		onmenuselect,
+		ontagselect,
+		onclose
+	}: Props = $props();
 
 	const isMyDriveActive = $derived(!selectedMenu && !selectedTag);
 </script>
 
 <div class="drive-sidebar">
 	<Card spaced>
+		{#if closable}
+			<div class="drive-sidebar__header">
+				<span class="lumi-text--sm lumi-font--bold">Drive</span>
+				<button type="button" class="drive-sidebar__close" onclick={onclose} aria-label="Cerrar">
+					<Icon icon="x" size="18px" />
+				</button>
+			</div>
+		{/if}
 		<div class="drive-sidebar__section">
 			<p class="drive-sidebar__label">Navegación</p>
 			<List size="sm" color="primary" class="drive-sidebar__nav">
@@ -82,18 +100,11 @@
 			<p class="drive-sidebar__label">Etiquetas</p>
 			<div class="drive-sidebar__tags">
 				{#each TAG_OPTIONS as tag (tag.hash)}
-					<button
-						type="button"
-						class="drive-sidebar__tag"
-						class:drive-sidebar__tag--active={selectedTag?.hash === tag.hash}
+					<TagOption
+						{tag}
+						active={selectedTag?.hash === tag.hash}
 						onclick={() => ontagselect?.(tag)}
-					>
-						<span class={`drive-sidebar__tag-dot drive-sidebar__tag-dot--${tag.tone}`}></span>
-						<span class="lumi-text--sm">{tag.name}</span>
-						{#if selectedTag?.hash === tag.hash}
-							<Chip size="sm" color="primary">Activa</Chip>
-						{/if}
-					</button>
+					/>
 				{/each}
 			</div>
 		</div>
@@ -141,7 +152,7 @@
 		letter-spacing: 0.05em;
 	}
 
-	.drive-sidebar__nav {
+	.drive-sidebar :global(.drive-sidebar__nav) {
 		max-height: 320px;
 	}
 
@@ -167,53 +178,28 @@
 		gap: var(--lumi-space-xs);
 	}
 
-	.drive-sidebar__tag {
+	.drive-sidebar__header {
 		display: flex;
 		align-items: center;
-		gap: var(--lumi-space-sm);
-		width: 100%;
-		padding: var(--lumi-space-xs) var(--lumi-space-md);
-		border: 1px solid var(--lumi-color-border-light);
-		border-radius: var(--lumi-radius-lg);
-		background: var(--lumi-color-surface);
-		color: var(--lumi-color-text);
+		justify-content: space-between;
+	}
+
+	.drive-sidebar__close {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--lumi-space-2xs);
+		border: none;
+		border-radius: var(--lumi-radius-full);
+		background: transparent;
+		color: var(--lumi-color-text-muted);
 		cursor: pointer;
 		transition: var(--lumi-transition-all);
-		text-align: left;
 	}
 
-	.drive-sidebar__tag:hover {
-		border-color: var(--lumi-color-border);
+	.drive-sidebar__close:hover {
 		background: var(--lumi-color-background-hover);
-		transform: translateY(-1px);
-	}
-
-	.drive-sidebar__tag--active {
-		border-color: color-mix(in srgb, var(--lumi-color-primary) 35%, var(--lumi-color-border));
-		background: color-mix(in srgb, var(--lumi-color-primary) 8%, var(--lumi-color-surface));
-	}
-
-	.drive-sidebar__tag-dot {
-		width: 12px;
-		height: 12px;
-		border-radius: var(--lumi-radius-full);
-		flex-shrink: 0;
-	}
-
-	.drive-sidebar__tag-dot--favorite {
-		background: var(--lumi-color-secondary);
-	}
-
-	.drive-sidebar__tag-dot--highlight {
-		background: var(--lumi-color-success);
-	}
-
-	.drive-sidebar__tag-dot--work {
-		background: var(--lumi-color-warning);
-	}
-
-	.drive-sidebar__tag-dot--personal {
-		background: var(--lumi-color-info);
+		color: var(--lumi-color-text);
 	}
 
 	.drive-sidebar__storage-meta {

@@ -98,10 +98,10 @@
 		if (file.type === 'dir' && !isTrash) {
 			dragCounter -= 1;
 			if (dragCounter <= 0) {
-			dragCounter = 0;
-			isDropTarget = false;
+				dragCounter = 0;
+				isDropTarget = false;
+			}
 		}
-	}
 	}
 
 	function handleDragOver(event: DragEvent) {
@@ -195,7 +195,7 @@
 			<div class="drive-file-card__icon-wrap">
 				<Icon
 					icon={getFileIcon(file.type)}
-					size="34px"
+					size="30px"
 					color={`var(--lumi-color-${getFileColor(file.type)})`}
 				/>
 			</div>
@@ -212,7 +212,9 @@
 			{file.name}
 		</div>
 		<div class="drive-file-card__meta">
-			<span class="drive-file-card__type">{file.type === 'dir' ? 'Carpeta' : file.type.toUpperCase()}</span>
+			<span class="drive-file-card__type"
+				>{file.type === 'dir' ? 'Carpeta' : file.type.toUpperCase()}</span
+			>
 			{#if file.type !== 'dir'}
 				<span class="drive-file-card__separator">•</span>
 				<span class="drive-file-card__size">{formatFileSize(file.size)}</span>
@@ -229,9 +231,9 @@
 		gap: var(--lumi-space-sm);
 		width: 100%;
 		padding: var(--lumi-space-sm);
-		background: var(--lumi-color-surface);
+		background: color-mix(in srgb, var(--lumi-color-surface) 96%, transparent);
 		border: 1px solid var(--lumi-color-border-light);
-		border-radius: var(--lumi-radius-2xl);
+		border-radius: var(--lumi-radius-xl);
 		cursor: pointer;
 		transition: var(--lumi-transition-all);
 		text-align: left;
@@ -240,14 +242,14 @@
 	}
 
 	.drive-file-card:hover {
-		transform: translateY(-2px);
-		border-color: var(--lumi-color-border);
-		box-shadow: var(--lumi-shadow-md);
+		transform: translateY(-1px);
+		border-color: color-mix(in srgb, var(--lumi-color-primary) 32%, var(--lumi-color-border));
+		box-shadow: var(--lumi-shadow-sm);
 	}
 
 	.drive-file-card--selected {
 		border-color: var(--lumi-color-primary);
-		background: color-mix(in srgb, var(--lumi-color-primary) 6%, var(--lumi-color-surface));
+		background: color-mix(in srgb, var(--lumi-color-primary) 8%, var(--lumi-color-surface));
 	}
 
 	.drive-file-card--dragging {
@@ -267,15 +269,8 @@
 		justify-content: center;
 		width: 100%;
 		aspect-ratio: 4 / 3;
-		border-radius: var(--lumi-radius-xl);
-		background:
-			linear-gradient(
-				145deg,
-				color-mix(in srgb, var(--lumi-color-primary) 6%, transparent) 0%,
-				color-mix(in srgb, var(--lumi-color-info) 4%, transparent) 60%,
-				transparent 100%
-			),
-			var(--lumi-color-background-secondary);
+		border-radius: var(--lumi-radius-lg);
+		background: var(--lumi-color-background-secondary);
 		border: 1px solid var(--lumi-color-border-light);
 		overflow: hidden;
 	}
@@ -287,14 +282,14 @@
 	}
 
 	.drive-file-card__icon-wrap {
-		width: 56px;
-		height: 56px;
-		border-radius: var(--lumi-radius-xl);
+		width: 52px;
+		height: 52px;
+		border-radius: var(--lumi-radius-lg);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: color-mix(in srgb, var(--lumi-color-surface) 88%, transparent);
-		backdrop-filter: blur(var(--lumi-blur-sm));
+		background: color-mix(in srgb, var(--lumi-color-surface) 90%, var(--lumi-color-background-hover) 10%);
+		border: 1px solid var(--lumi-color-border-light);
 	}
 
 	.drive-file-card__tag {
@@ -348,6 +343,7 @@
 		word-break: break-word;
 		font-size: var(--lumi-font-size-sm);
 		line-height: var(--lumi-line-height-tight);
+		color: var(--lumi-color-text);
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
 		line-clamp: 2;

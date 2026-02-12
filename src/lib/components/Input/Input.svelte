@@ -40,12 +40,13 @@
 		'onaction-click': onActionClick
 	}: InputProps = $props();
 
-	let isFocused = $state(false);
 	let internalError = $state('');
-	let inputElement: HTMLInputElement;
+	let inputElement: HTMLInputElement | undefined = $state();
 
-	const inputId = `lumi-input-${crypto.randomUUID().slice(0, 8)}`;
+	const inputId = `lumi-input-${crypto?.randomUUID?.().slice(0, 8) ?? Math.random().toString(36).slice(2, 10)}`;
+	const msgId = `${inputId}-msg`;
 
+	// ── Derived state ──────────────────────────
 	const inputState = $derived.by(() => {
 		if (success) return 'success';
 		if (danger || internalError) return 'danger';
@@ -53,14 +54,8 @@
 		return 'default';
 	});
 
-	const activeColor = $derived.by(() => {
-		if (inputState === 'success') return 'success';
-		if (inputState === 'danger') return 'danger';
-		if (inputState === 'warning') return 'warning';
-		return color;
-	});
-
 	const hasState = $derived(inputState !== 'default');
+	const activeColor = $derived(hasState ? inputState : color);
 
 	const message = $derived.by(() => {
 		if (success && successText) return successText;
@@ -77,79 +72,54 @@
 		return '';
 	});
 
-	const iconSizePx = $derived(`${getIconSize(size as 'xs' | 'sm' | 'md' | 'lg' | 'xl')}px`);
-
+	const iconSizePx = $derived(`${getIconSize(size)}px`);
 	const hasPrefix = $derived(!!(icon && !iconAfter));
 	const hasSuffix = $derived(!!(validationIcon || actionIcon || (icon && iconAfter)));
+	const hasFooter = $derived(!!(message || descriptionText));
 
-	const styleVars = $derived.by(() => {
-		const colorVar = `var(--lumi-color-${activeColor})`;
-		const colorRgbVar = `var(--lumi-color-${activeColor}-rgb)`;
-		return `--input-color: ${colorVar}; --input-color-rgb: ${colorRgbVar};`;
-	});
-
-	const containerClasses = $derived.by(() => {
-		const classes = ['lumi-input-container', `lumi-input-container--${size}`];
-		if (isFocused) classes.push('lumi-input-container--focused');
-		if (hasState) classes.push(`lumi-input-container--${inputState}`);
-		if (disabled) classes.push('lumi-input-container--disabled');
-		if (className) classes.push(className);
-		return classes.join(' ');
-	});
-
-	function handleInput(event: Event) {
-		const target = event.target as HTMLInputElement;
-		value = target.value;
+	// ── Methods ────────────────────────────────
+	function handleInput(event: Event): void {
+		value = (event.target as HTMLInputElement).value;
 		oninput?.(event);
 	}
 
-	function handleFocus(event: FocusEvent) {
-		isFocused = true;
-		onfocus?.(event);
-	}
-
-	function handleBlur(event: FocusEvent) {
-		isFocused = false;
-		onblur?.(event);
-	}
-
-	export function validate() {
-		if (required && !value) {
-			internalError = 'This field is required';
-			return false;
-		}
-		if (type === 'email' && value) {
-			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-			const isValid = emailRegex.test(String(value));
-			internalError = isValid ? '' : 'Please enter a valid email address';
-			return isValid;
-		}
-		internalError = '';
-		return true;
-	}
-
-	function handleIconClick(event: MouseEvent) {
+	function handleIconClick(event: MouseEvent): void {
 		inputElement?.focus();
 		onIconClick?.(event);
 	}
 
-	function handleActionClick(event: MouseEvent) {
+	function handleActionClick(event: MouseEvent): void {
 		inputElement?.focus();
 		onActionClick?.(event);
 	}
 
-	export function focus() {
+	export function validate(): boolean {
+		if (!inputElement) return true;
+		const { valid } = inputElement.validity;
+		internalError = valid ? '' : inputElement.validationMessage;
+		return valid;
+	}
+
+	export function focus(): void {
 		inputElement?.focus();
 	}
-	export function blur() {
+	export function blur(): void {
 		inputElement?.blur();
 	}
-	export function select() {
+	export function select(): void {
 		inputElement?.select();
 	}
 </script>
 
-<div class={containerClasses} style={styleVars}>
+<div
+	class="lumi-input-container lumi-input-container--{size} {className}"
+	class:lumi-input-container--has-state={hasState}
+	class:lumi-input-container--success={inputState === 'success'}
+	class:lumi-input-container--danger={inputState === 'danger'}
+	class:lumi-input-container--warning={inputState === 'warning'}
+	class:lumi-input-container--disabled={disabled}
+	style:--input-color="var(--lumi-color-{activeColor})"
+>
 	{#if label && !labelPlaceholder}
 		<label for={inputId} class="lumi-input__label">
 			{label}
@@ -179,16 +149,16 @@
 			{disabled}
 			{readonly}
 			{required}
+			placeholder={labelPlaceholder || placeholder}
 			aria-label={ariaLabel || label || placeholder || undefined}
 			aria-invalid={inputState === 'danger' || undefined}
-			aria-describedby={message ? `${inputId}-msg` : undefined}
-			placeholder={labelPlaceholder || placeholder}
+			aria-describedby={hasFooter ? msgId : undefined}
 			class="lumi-input"
 			class:lumi-input--has-prefix={hasPrefix}
 			class:lumi-input--has-suffix={hasSuffix}
 			oninput={handleInput}
-			onfocus={handleFocus}
-			onblur={handleBlur}
+			{onfocus}
+			{onblur}
 		/>
 
 		{#if hasSuffix}
@@ -228,9 +198,9 @@
 	</div>
 
 	<div
-		id="{inputId}-msg"
+		id={msgId}
 		class="lumi-input__footer"
-		class:lumi-input__footer--visible={!!(message || (descriptionText && !message))}
+		class:lumi-input__footer--visible={hasFooter}
 		aria-live="polite"
 	>
 		{#if message}
@@ -252,17 +222,21 @@
 		gap: var(--lumi-space-xs);
 		width: 100%;
 		--input-border: var(--lumi-color-border);
-		--input-focus: var(--input-color);
 		--input-bg: color-mix(
 			in srgb,
 			var(--lumi-color-background-hover) 60%,
 			var(--lumi-color-surface) 40%
 		);
-		--input-bg-focus: color-mix(in srgb, var(--lumi-color-surface) 95%, var(--input-focus) 5%);
+		--input-bg-focus: color-mix(in srgb, var(--lumi-color-surface) 95%, var(--input-color) 5%);
+	}
+
+	/* States unify border to the active color */
+	.lumi-input-container--has-state {
+		--input-border: var(--input-color);
 	}
 
 	.lumi-input-container--disabled {
-		opacity: 0.6;
+		opacity: 0.5;
 		pointer-events: none;
 	}
 
@@ -272,11 +246,11 @@
 		font-weight: var(--lumi-font-weight-medium);
 		color: var(--lumi-color-text);
 		cursor: pointer;
-		transition: color 0.2s ease;
+		transition: color var(--lumi-duration-base) var(--lumi-easing-default);
 	}
 
-	.lumi-input-container--focused .lumi-input__label {
-		color: var(--input-focus);
+	.lumi-input-container:focus-within .lumi-input__label {
+		color: var(--input-color);
 	}
 
 	/* ── Wrapper ──────────────────────────────── */
@@ -288,37 +262,22 @@
 		border: var(--lumi-border-width-thin) solid var(--input-border);
 		border-radius: var(--lumi-radius-md);
 		transition:
-			border-color 0.2s ease,
-			background-color 0.2s ease,
-			box-shadow 0.2s ease;
+			border-color var(--lumi-duration-base) var(--lumi-easing-default),
+			background-color var(--lumi-duration-base) var(--lumi-easing-default),
+			box-shadow var(--lumi-duration-base) var(--lumi-easing-default);
 		overflow: hidden;
 	}
 
-	.lumi-input-container:not(
-			.lumi-input-container--success,
-			.lumi-input-container--danger,
-			.lumi-input-container--warning
-		)
+	.lumi-input-container:not(.lumi-input-container--has-state)
 		.lumi-input__wrapper:hover:not(:focus-within) {
 		border-color: var(--lumi-color-border-strong);
 	}
 
-	.lumi-input-container--focused .lumi-input__wrapper {
-		border-color: var(--input-focus);
+	.lumi-input__wrapper:focus-within {
+		border-color: var(--input-color);
 		background: var(--input-bg-focus);
 		box-shadow: 0 0 0 var(--lumi-border-width-thick)
-			color-mix(in srgb, var(--input-focus) 22%, transparent);
-	}
-
-	/* ── State borders ────────────────────────── */
-	.lumi-input-container--success {
-		--input-border: var(--lumi-color-success);
-	}
-	.lumi-input-container--danger {
-		--input-border: var(--lumi-color-danger);
-	}
-	.lumi-input-container--warning {
-		--input-border: var(--lumi-color-warning);
+			color-mix(in srgb, var(--input-color) 22%, transparent);
 	}
 
 	/* ── Input ────────────────────────────────── */
@@ -358,9 +317,9 @@
 		transition: background-color 99999s ease-out 0s;
 	}
 
-	.lumi-input-container--focused .lumi-input:-webkit-autofill,
-	.lumi-input-container--focused .lumi-input:-webkit-autofill:hover,
-	.lumi-input-container--focused .lumi-input:-webkit-autofill:focus {
+	.lumi-input__wrapper:focus-within .lumi-input:-webkit-autofill,
+	.lumi-input__wrapper:focus-within .lumi-input:-webkit-autofill:hover,
+	.lumi-input__wrapper:focus-within .lumi-input:-webkit-autofill:focus {
 		-webkit-box-shadow: 0 0 0 1000px var(--input-bg-focus) inset;
 		box-shadow: 0 0 0 1000px var(--input-bg-focus) inset;
 	}
@@ -391,21 +350,6 @@
 		font-size: var(--lumi-font-size-xl);
 	}
 
-	.lumi-input-container--xs .lumi-input--has-prefix,
-	.lumi-input-container--sm .lumi-input--has-prefix,
-	.lumi-input-container--md .lumi-input--has-prefix,
-	.lumi-input-container--lg .lumi-input--has-prefix,
-	.lumi-input-container--xl .lumi-input--has-prefix {
-		padding-inline-start: var(--lumi-space-2xs);
-	}
-	.lumi-input-container--xs .lumi-input--has-suffix,
-	.lumi-input-container--sm .lumi-input--has-suffix,
-	.lumi-input-container--md .lumi-input--has-suffix,
-	.lumi-input-container--lg .lumi-input--has-suffix,
-	.lumi-input-container--xl .lumi-input--has-suffix {
-		padding-inline-end: var(--lumi-space-2xs);
-	}
-
 	/* ── Suffix ───────────────────────────────── */
 	.lumi-input__suffix {
 		display: inline-flex;
@@ -432,24 +376,24 @@
 		background: transparent;
 		border: none;
 		cursor: pointer;
-		transition: color 0.2s ease;
+		transition: color var(--lumi-duration-base) var(--lumi-easing-default);
 		flex-shrink: 0;
 	}
 
-	.lumi-input-container--focused .lumi-input__icon,
-	.lumi-input-container--focused .lumi-input__action {
-		color: var(--input-focus);
+	.lumi-input-container:focus-within .lumi-input__icon,
+	.lumi-input-container:focus-within .lumi-input__action {
+		color: var(--input-color);
 	}
 
 	.lumi-input__icon:hover,
 	.lumi-input__action:hover {
-		color: var(--input-focus);
+		color: var(--input-color);
 	}
 
 	.lumi-input__icon:focus-visible,
 	.lumi-input__action:focus-visible {
 		outline: var(--lumi-border-width-thick) solid
-			color-mix(in srgb, var(--input-focus) 35%, transparent);
+			color-mix(in srgb, var(--input-color) 35%, transparent);
 		outline-offset: calc(var(--lumi-space-2xs) * -1);
 	}
 
@@ -460,7 +404,7 @@
 		border-left: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 	}
 
-	/* Icon size scaling per container size */
+	/* Icon padding per size */
 	.lumi-input-container--xs .lumi-input__icon,
 	.lumi-input-container--xs .lumi-input__action {
 		padding: 0 var(--lumi-space-2xs);
@@ -481,14 +425,14 @@
 	.lumi-input__validation-icon {
 		display: inline-flex;
 		align-items: center;
-		color: var(--input-focus);
+		color: var(--input-color);
 	}
 
 	/* ── Footer (messages) ────────────────────── */
 	.lumi-input__footer {
 		display: grid;
 		grid-template-rows: 0fr;
-		transition: grid-template-rows 0.2s ease;
+		transition: grid-template-rows var(--lumi-duration-base) var(--lumi-easing-default);
 		overflow: hidden;
 		margin-top: calc(var(--lumi-space-2xs) * -1);
 	}
@@ -509,9 +453,21 @@
 	}
 
 	.lumi-input__message {
-		color: var(--input-focus);
+		color: var(--input-color);
 	}
+
 	.lumi-input__description {
 		color: var(--lumi-color-text-muted);
+	}
+
+	/* ── Reduced motion ───────────────────────── */
+	@media (prefers-reduced-motion: reduce) {
+		.lumi-input__wrapper,
+		.lumi-input__label,
+		.lumi-input__icon,
+		.lumi-input__action,
+		.lumi-input__footer {
+			transition: none;
+		}
 	}
 </style>
