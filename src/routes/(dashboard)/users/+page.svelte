@@ -158,15 +158,10 @@
 		{/snippet}
 	</PageHeader>
 
-	<div class="lumi-grid lumi-grid--columns-3 lumi-grid--gap-md">
+	<div class="lumi-grid lumi-grid--auto-fill lumi-grid--gap-md">
 		{#each data.users as user (user.code)}
-			<Card
-				class="lumi-max-w--sm lumi-ml-auto lumi-mr-auto"
-				image="wall.png"
-				imageAlt={user.name || 'Usuario'}
-				imageHeight={150}
-			>
-				<div class="lumi-flex lumi-flex--column lumi-flex--gap-sm lumi-padding--sm">
+			<Card image="wall.png" imageAlt={user.name || 'Usuario'} imageHeight={150}>
+				<div class="lumi-flex lumi-flex--column lumi-flex--gap-sm">
 					<UserInfo
 						name={user.name || ''}
 						lastName={user.last_name || ''}

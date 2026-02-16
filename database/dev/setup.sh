@@ -66,6 +66,16 @@ init_database() {
     fi
 }
 
+run_migrations() {
+    log "Applying pending migrations..."
+    if pnpm exec -- tsx database/dev/migrate.ts migrate >/dev/null 2>&1; then
+        success "Migrations applied"
+    else
+        error "Migration execution failed"
+        return 1
+    fi
+}
+
 
 
 generate_types() {
@@ -92,15 +102,15 @@ setup_database() {
         exit 1
     fi
 
-    # Initialize or migrate
+    # Initialize if needed, then always apply pending migrations
     if is_db_initialized; then
-        log "Database already initialized, generating types only..."
-        generate_types
+        log "Database already initialized"
     else
         log "Fresh database detected, running initialization..."
         init_database
-        generate_types
     fi
+    run_migrations
+    generate_types
 
     success "Database setup completed successfully!"
 }
@@ -135,9 +145,8 @@ reset_database() {
         if pnpm exec -- tsx database/dev/migrate.ts reset >/dev/null 2>&1; then
             success "Database reset completed"
             log "Reinitializing database with init files..."
-            if init_database && generate_types; then
-                success "Database reinitialized (no migrations run)!"
-                log "Init files applied, ready for migrations"
+            if init_database && run_migrations && generate_types; then
+                success "Database reinitialized successfully"
             else
                 error "Failed to reinitialize database after reset"
                 return 1
@@ -159,8 +168,8 @@ case "${1:-setup}" in
         echo "Usage: bash database/dev/setup.sh [setup|status|reset]"
         echo ""
         echo "Commands:"
-        echo "  setup   - Initialize database (init files only, no migrations)"
+        echo "  setup   - Initialize database if needed, then run pending migrations"
         echo "  status  - Show database and migration status"
-        echo "  reset   - Reset database (destroys all data, no migrations)"
+        echo "  reset   - Reset database (destroys all data) and reinitialize"
         ;;
 esac

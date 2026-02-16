@@ -35,6 +35,9 @@ export interface SegmentedControlProps {
 	/** Whether disabled */
 	disabled?: boolean;
 
+	/** Stretch to available width */
+	fullWidth?: boolean;
+
 	/** Custom class */
 	class?: string;
 

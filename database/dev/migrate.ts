@@ -34,6 +34,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, '../..');
 const INIT_DIR = join(PROJECT_ROOT, 'database/init');
 const MIGRATIONS_DIR = join(PROJECT_ROOT, 'database/migrations');
+const BASELINE_MARKER_PATH = join(INIT_DIR, 'BASELINE_MIGRATION');
 
 class Database {
 	private pool = new Pool(devDbConfig);
@@ -143,7 +144,42 @@ async function getMigrationFiles(directory: string): Promise<MigrationFile[]> {
 				timestamp: parseInt(timestamp)
 			};
 		})
-		.sort((a, b) => a.timestamp - b.timestamp);
+			.sort((a, b) => a.timestamp - b.timestamp);
+}
+
+async function readBaselineTimestamp(): Promise<number | null> {
+	try {
+		const marker = (await fs.readFile(BASELINE_MARKER_PATH, 'utf-8')).trim();
+		if (!marker) return null;
+		if (!/^\d{14}$/.test(marker)) {
+			throw new Error(`Invalid baseline marker format in ${BASELINE_MARKER_PATH}`);
+		}
+		return parseInt(marker, 10);
+	} catch (error) {
+		const fsError = error as NodeJS.ErrnoException;
+		if (fsError.code === 'ENOENT') {
+			return null;
+		}
+		throw error;
+	}
+}
+
+async function seedBaselineMigrations(db: Database): Promise<void> {
+	const baselineTimestamp = await readBaselineTimestamp();
+	if (!baselineTimestamp) return;
+
+	const migrationFiles = await getMigrationFiles(MIGRATIONS_DIR);
+	const baselineMigrations = migrationFiles.filter((migration) => migration.timestamp <= baselineTimestamp);
+
+	if (baselineMigrations.length === 0) return;
+
+	const executed = await getExecutedMigrations(db);
+	const executedIds = new Set(executed.map((migration) => migration.id));
+
+	for (const migration of baselineMigrations) {
+		if (executedIds.has(migration.id)) continue;
+		await recordMigration(db, migration, 0);
+	}
 }
 
 async function createMigrationFile(name: string): Promise<string> {
@@ -176,6 +212,7 @@ async function initializeDatabase(db: Database) {
 		const sql = await fs.readFile(join(INIT_DIR, file), 'utf-8');
 		await db.query(sql);
 	}
+	await seedBaselineMigrations(db);
 }
 
 function parseMigrationContent(content: string): { up: string; down: string } {
@@ -208,8 +245,15 @@ async function runMigrations(db: Database) {
 		const content = await fs.readFile(migration.path, 'utf-8');
 		const { up } = parseMigrationContent(content);
 		if (!up) throw new Error(`Migration ${migration.id} has no UP section`);
-		await db.query(up);
-		await recordMigration(db, migration, batch);
+		await db.query('BEGIN');
+		try {
+			await db.query(up);
+			await recordMigration(db, migration, batch);
+			await db.query('COMMIT');
+		} catch (error) {
+			await db.query('ROLLBACK');
+			throw error;
+		}
 	}
 	console.log(`Successfully executed ${pendingMigrations.length} migration(s)`);
 }
@@ -230,6 +274,7 @@ async function rollbackMigrations(db: Database) {
 		const migrationFiles = await getMigrationFiles(MIGRATIONS_DIR);
 		const migrationFile = migrationFiles.find((f) => f.id === migration.id);
 
+		await db.query('BEGIN');
 		if (!migrationFile) {
 			console.warn(`  ⚠ Migration file not found for ${migration.id}, skipping SQL rollback`);
 		} else {
@@ -238,11 +283,22 @@ async function rollbackMigrations(db: Database) {
 			if (!down) {
 				console.warn(`  ⚠ No DOWN section found in ${migration.id}, skipping SQL rollback`);
 			} else {
-				await db.query(down);
+				try {
+					await db.query(down);
+				} catch (error) {
+					await db.query('ROLLBACK');
+					throw error;
+				}
 				console.log(`  ✓ Executed rollback SQL for ${migration.id}`);
 			}
 		}
-		await removeMigration(db, migration.id);
+		try {
+			await removeMigration(db, migration.id);
+			await db.query('COMMIT');
+		} catch (error) {
+			await db.query('ROLLBACK');
+			throw error;
+		}
 	}
 	console.log(`Successfully rolled back ${migrationsToRollback.length} migration(s)`);
 }

@@ -799,6 +799,7 @@
 								<SegmentedControl
 									value={viewMode}
 									options={viewModeOptions}
+									fullWidth
 									onchange={(value) => {
 										if (value === 'grid' || value === 'list') {
 											viewMode = value;

@@ -108,7 +108,6 @@ export interface Products {
 	code: Generated<string>;
 	created_at: Generated<Timestamp>;
 	description: string | null;
-	images: Generated<Json>;
 	is_active: Generated<boolean>;
 	name: string;
 	price: Numeric;

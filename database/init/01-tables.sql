@@ -64,7 +64,7 @@ CREATE TABLE public.brands (
   CONSTRAINT brands_name_uq UNIQUE (name)
 );
 
--- Products table with multiple images support
+-- Products table (media managed through drive_links)
 CREATE TABLE public.products (
   code UUID NOT NULL DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
@@ -74,7 +74,6 @@ CREATE TABLE public.products (
   user_code UUID NOT NULL,
   price DECIMAL(10,2) NOT NULL,
   sku VARCHAR(100) NULL,
-  images JSONB NOT NULL DEFAULT '[]'::jsonb,
   is_active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,

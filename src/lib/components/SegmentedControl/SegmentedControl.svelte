@@ -9,6 +9,7 @@
 		options,
 		color = 'primary',
 		disabled = false,
+		fullWidth = false,
 		class: className = '',
 		onchange,
 		'aria-label': ariaLabel = ''
@@ -27,6 +28,7 @@
 			'lumi-segmented-control',
 			`lumi-segmented-control--${color}`,
 			disabled && 'lumi-segmented-control--disabled',
+			fullWidth && 'lumi-segmented-control--full',
 			className
 		]
 			.filter(Boolean)
@@ -175,6 +177,11 @@
 			box-shadow 0.15s ease;
 	}
 
+	.lumi-segmented-control--full {
+		display: flex;
+		width: 100%;
+	}
+
 	.lumi-segmented-control__glider {
 		position: absolute;
 		top: var(--lumi-space-2xs);
@@ -225,6 +232,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: var(--lumi-space-xs);
+		min-width: 0;
 		padding: var(--lumi-space-xs) var(--lumi-space-md);
 		color: var(--lumi-color-text-muted);
 		font-weight: var(--lumi-font-weight-medium);
@@ -238,6 +246,9 @@
 	}
 
 	.lumi-segmented-control__label {
+		display: block;
+		min-width: 0;
+		max-width: 100%;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
@@ -269,6 +280,17 @@
 		opacity: 0.6;
 		cursor: not-allowed;
 		pointer-events: none;
+	}
+
+	@media (max-width: 768px) {
+		.lumi-segmented-control--full .lumi-segmented-control__content {
+			white-space: normal;
+		}
+
+		.lumi-segmented-control--full .lumi-segmented-control__label {
+			overflow: visible;
+			text-overflow: clip;
+		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
