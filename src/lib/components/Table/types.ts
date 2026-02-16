@@ -67,6 +67,12 @@ export interface TableProps {
 	/** Row click handler */
 	'onrow-click'?: (row: TableRow, index: number) => void;
 
+	/** Row double click handler */
+	'onrow-dblclick'?: (row: TableRow, index: number) => void;
+
+	/** Row context menu handler */
+	'onrow-contextmenu'?: (event: MouseEvent, row: TableRow, index: number) => void;
+
 	/** Row select handler */
 	'onrow-select'?: (row: TableRow, selected: boolean) => void;
 

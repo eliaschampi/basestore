@@ -34,7 +34,7 @@
 	<div class="drive-preview">
 		{#if !file}
 			<div class="drive-preview__empty">
-				<Icon icon="file" size="48px" color="var(--lumi-color-text-muted)" />
+				<Icon icon="file" size="2xl" color="muted" />
 				<p>No hay archivo seleccionado</p>
 			</div>
 		{:else if isImage}
@@ -50,7 +50,7 @@
 			</div>
 		{:else if isAudio}
 			<div class="drive-preview__audio-wrap">
-				<Icon icon="music" size="64px" color="warning" />
+				<Icon icon="music" size="var(--lumi-space-4xl)" color="warning" />
 				<audio src={previewUrl} controls class="drive-preview__audio">
 					Tu navegador no soporta la reproducción de audio.
 				</audio>
@@ -61,7 +61,7 @@
 			</div>
 		{:else}
 			<div class="drive-preview__empty">
-				<Icon icon="file" size="48px" color="var(--lumi-color-text-muted)" />
+				<Icon icon="file" size="2xl" color="muted" />
 				<p>Vista previa no disponible para este tipo de archivo</p>
 			</div>
 		{/if}
@@ -70,11 +70,7 @@
 	{#if file}
 		<div class="drive-preview__details">
 			<div class="drive-preview__details-main">
-				<Icon
-					icon={getFileIcon(file.type)}
-					size="20px"
-					color={`var(--lumi-color-${getFileColor(file.type)})`}
-				/>
+				<Icon icon={getFileIcon(file.type)} size="md" color={getFileColor(file.type)} />
 				<div class="drive-preview__details-text">
 					<span class="lumi-font--medium">{file.name}</span>
 					<span class="lumi-text--xs lumi-text--muted">
@@ -108,12 +104,12 @@
 
 <style>
 	.drive-preview {
-		min-height: 280px;
+		min-height: var(--lumi-drive-preview-min-height);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		padding: var(--lumi-space-sm);
-		border: 1px solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-xl);
 		background:
 			linear-gradient(
@@ -158,7 +154,7 @@
 
 	.drive-preview__audio {
 		width: 100%;
-		max-width: 440px;
+		max-width: var(--lumi-drive-preview-audio-max-width);
 	}
 
 	.drive-preview__pdf-wrap {
@@ -169,7 +165,7 @@
 	.drive-preview__pdf {
 		width: 100%;
 		height: 100%;
-		border: 1px solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-lg);
 		background: var(--lumi-color-surface);
 	}
@@ -186,7 +182,7 @@
 	.drive-preview__details {
 		margin-top: var(--lumi-space-sm);
 		padding: var(--lumi-space-sm) var(--lumi-space-md);
-		border: 1px solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-lg);
 		background: var(--lumi-color-surface);
 		display: flex;
@@ -213,7 +209,7 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-		max-width: 320px;
+		max-width: var(--lumi-drive-preview-title-max-width);
 	}
 
 	.drive-preview__details-meta {
@@ -225,7 +221,7 @@
 
 	@media (max-width: 768px) {
 		.drive-preview {
-			min-height: 220px;
+			min-height: var(--lumi-drive-preview-min-height-mobile);
 		}
 
 		.drive-preview__details-meta {

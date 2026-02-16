@@ -5,6 +5,16 @@
 /** Supported drive file types */
 export type DriveFileType = 'dir' | 'img' | 'vid' | 'aud' | 'doc' | 'zip' | 'otr';
 
+/** Supported drive visibility scopes */
+export type DriveScope = 'product_shared' | 'user_private';
+
+export interface DriveScopeOption {
+	value: DriveScope;
+	name: string;
+	description: string;
+	icon: string;
+}
+
 export type DriveTagTone = 'favorite' | 'highlight' | 'work' | 'personal';
 
 export interface DriveTagOption {
@@ -52,6 +62,7 @@ export const ALLOWED_MIME_TYPES: Record<string, DriveFileType> = {
 const FORBIDDEN_NAME_CHARS = new Set(['<', '>', ':', '"', '/', '\\', '|', '?', '*']);
 
 const TAG_HASH_REGEX = /^[a-f0-9]{6}$/i;
+const DRIVE_SCOPE_SET: ReadonlySet<DriveScope> = new Set(['product_shared', 'user_private']);
 
 /**
  * Detect DriveFileType from MIME type
@@ -104,6 +115,13 @@ export function validateDriveName(value: string): string | null {
  */
 export function isValidTagHash(value: string): boolean {
 	return TAG_HASH_REGEX.test(value);
+}
+
+/**
+ * Validate drive scope value
+ */
+export function isValidDriveScope(value: string): value is DriveScope {
+	return DRIVE_SCOPE_SET.has(value as DriveScope);
 }
 
 function hasInvalidDriveNameChars(value: string): boolean {
@@ -214,6 +232,24 @@ export const DRIVE_MENU_OPTIONS = {
 	],
 	trash: [{ name: 'Papelera', value: 'trash', icon: 'trash' }]
 } as const;
+
+/**
+ * Drive scope options for UI selectors
+ */
+export const DRIVE_SCOPE_OPTIONS: DriveScopeOption[] = [
+	{
+		value: 'product_shared',
+		name: 'Compartido',
+		description: 'Visible para todo el sistema',
+		icon: 'globe'
+	},
+	{
+		value: 'user_private',
+		name: 'Personal',
+		description: 'Visible solo para ti',
+		icon: 'user'
+	}
+];
 
 /** Interface for breadcrumb items in Drive navigation */
 export interface DriveBreadcrumb {

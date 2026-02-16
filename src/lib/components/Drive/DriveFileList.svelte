@@ -30,6 +30,7 @@
 	}: Props = $props();
 
 	const tableData = $derived(files as unknown as TableRow[]);
+	const selectedFileSet = $derived(new Set(selectedFiles));
 
 	function formatDate(value: string): string {
 		return new Date(value).toLocaleDateString('es-ES', {
@@ -52,9 +53,20 @@
 		return labels[type];
 	}
 
-	function handleContextMenu(event: MouseEvent, file: DriveFileItem) {
-		event.preventDefault();
-		onfilecontextmenu?.(event, file);
+	function toDriveFile(row: TableRow): DriveFileItem {
+		return row as unknown as DriveFileItem;
+	}
+
+	function handleRowClick(row: TableRow) {
+		onfileclick?.(toDriveFile(row));
+	}
+
+	function handleRowDblClick(row: TableRow) {
+		onfiledblclick?.(toDriveFile(row));
+	}
+
+	function handleRowContextMenu(event: MouseEvent, row: TableRow) {
+		onfilecontextmenu?.(event, toDriveFile(row));
 	}
 
 	function handleDragStart(event: DragEvent, file: DriveFileItem) {
@@ -80,18 +92,15 @@
 		}
 		onfiledrop?.(event, file);
 	}
-
-	function getTagDotClass(file: DriveFileItem): string {
-		const tag = getDriveTagByHash(file.tag);
-		if (!tag) {
-			return '';
-		}
-
-		return `drive-file-list__tag--${tag.tone}`;
-	}
 </script>
 
-<Table data={tableData} hover>
+<Table
+	data={tableData}
+	hover
+	onrow-click={(row) => handleRowClick(row)}
+	onrow-dblclick={(row) => handleRowDblClick(row)}
+	onrow-contextmenu={(event, row) => handleRowContextMenu(event, row)}
+>
 	{#snippet thead()}
 		<th>Nombre</th>
 		<th>Tipo</th>
@@ -101,96 +110,64 @@
 
 	{#snippet row({ row })}
 		{@const file = row as unknown as DriveFileItem}
-		<td>
+		{@const tagOption = getDriveTagByHash(file.tag)}
+		<td class:drive-file-list__cell--selected={selectedFileSet.has(file.code)}>
 			<button
 				type="button"
-				class="drive-file-list__name-btn"
-				class:drive-file-list__name-btn--selected={selectedFiles.includes(file.code)}
+				class="drive-file-list__name-content"
+				tabindex="-1"
 				draggable={!isTrash}
-				onclick={() => onfileclick?.(file)}
-				ondblclick={() => onfiledblclick?.(file)}
-				oncontextmenu={(event) => handleContextMenu(event, file)}
 				ondragstart={(event) => handleDragStart(event, file)}
 				ondragend={() => onfiledragend?.()}
 				ondragover={(event) => handleDragOver(event, file)}
 				ondrop={(event) => handleDrop(event, file)}
 			>
-				<Icon
-					icon={getFileIcon(file.type)}
-					size="18px"
-					color={`var(--lumi-color-${getFileColor(file.type)})`}
-				/>
-				<span class="drive-file-list__name-text" title={file.name}>{file.name}</span>
-				{#if file.tag}
-					<span class={`drive-file-list__tag ${getTagDotClass(file)}`}></span>
+				<Icon icon={getFileIcon(file.type)} size="sm" color={getFileColor(file.type)} />
+				<span class="drive-file-list__name-text lumi-text-ellipsis" title={file.name}
+					>{file.name}</span
+				>
+				{#if tagOption}
+					<span class="drive-file-list__tag" style:--drive-tag-color={tagOption.color}></span>
 				{/if}
 			</button>
 		</td>
-		<td>
+		<td class:drive-file-list__cell--selected={selectedFileSet.has(file.code)}>
 			<span class="lumi-text--sm lumi-text--muted">{getTypeLabel(file.type)}</span>
 		</td>
-		<td>
+		<td class:drive-file-list__cell--selected={selectedFileSet.has(file.code)}>
 			<span class="lumi-text--sm lumi-text--muted">
 				{file.type === 'dir' ? '—' : formatFileSize(file.size)}
 			</span>
 		</td>
-		<td>
+		<td class:drive-file-list__cell--selected={selectedFileSet.has(file.code)}>
 			<span class="lumi-text--sm lumi-text--muted">{formatDate(file.updated_at)}</span>
 		</td>
 	{/snippet}
 </Table>
 
 <style>
-	.drive-file-list__name-btn {
+	.drive-file-list__cell--selected {
+		background: color-mix(in srgb, var(--lumi-color-primary) 8%, var(--lumi-color-surface));
+	}
+
+	.drive-file-list__name-content {
 		display: flex;
 		align-items: center;
 		gap: var(--lumi-space-xs);
 		width: 100%;
 		padding: var(--lumi-space-2xs);
-		border: 1px solid transparent;
-		border-radius: var(--lumi-radius-md);
+		border: none;
 		background: transparent;
 		color: var(--lumi-color-text);
-		cursor: pointer;
 		text-align: left;
-		transition: var(--lumi-transition-all);
-	}
-
-	.drive-file-list__name-btn:hover {
-		background: color-mix(in srgb, var(--lumi-color-primary) 5%, transparent);
-	}
-
-	.drive-file-list__name-btn--selected {
-		border-color: color-mix(in srgb, var(--lumi-color-primary) 30%, var(--lumi-color-border));
-		background: color-mix(in srgb, var(--lumi-color-primary) 8%, var(--lumi-color-surface));
-	}
-
-	.drive-file-list__name-text {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		font: inherit;
 	}
 
 	.drive-file-list__tag {
-		width: 8px;
-		height: 8px;
+		width: var(--lumi-drive-tag-dot-size);
+		height: var(--lumi-drive-tag-dot-size);
 		border-radius: var(--lumi-radius-full);
 		flex-shrink: 0;
-	}
-
-	.drive-file-list__tag--favorite {
-		background: var(--lumi-color-secondary);
-	}
-
-	.drive-file-list__tag--highlight {
-		background: var(--lumi-color-success);
-	}
-
-	.drive-file-list__tag--work {
-		background: var(--lumi-color-warning);
-	}
-
-	.drive-file-list__tag--personal {
-		background: var(--lumi-color-info);
+		background: var(--drive-tag-color, var(--lumi-color-border));
 	}
 </style>

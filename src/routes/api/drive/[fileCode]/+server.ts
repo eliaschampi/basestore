@@ -5,7 +5,7 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { isUuid } from '$lib/utils/validation';
 import { isValidTagHash, normalizeDriveName, validateDriveName } from '$lib/utils/drive';
-import { DriveRepository } from '$lib/server/repositories/drive.repository';
+import { DriveRepository, type DriveScopeContext } from '$lib/server/repositories/drive.repository';
 
 interface UpdateFileBody {
 	name?: string;
@@ -48,7 +48,7 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 
 	const file = await locals.db
 		.selectFrom('drive_files')
-		.select(['code', 'branch_code', 'parent_code', 'name', 'type', 'is_trashed'])
+		.select(['code', 'scope', 'user_code', 'parent_code', 'name', 'type', 'is_trashed'])
 		.where('code', '=', fileCode)
 		.executeTakeFirst();
 
@@ -56,7 +56,13 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 		throw error(404, 'Archivo no encontrado');
 	}
 
-	await DriveRepository.assertBranchAccess(locals.db, locals.user, file.branch_code);
+	await DriveRepository.assertFileRecordAccess(locals.user, file);
+	const fileScope = DriveRepository.normalizeScope(file.scope);
+
+	const fileScopeContext: DriveScopeContext = {
+		scope: fileScope,
+		ownerUserCode: fileScope === 'user_private' ? file.user_code : null
+	};
 
 	const updates: Record<string, unknown> = {};
 
@@ -85,11 +91,11 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 
 			const targetParent = await locals.db
 				.selectFrom('drive_files')
-				.select(['code', 'branch_code', 'type', 'is_trashed'])
+				.select(['code', 'scope', 'user_code', 'type', 'is_trashed'])
 				.where('code', '=', parentCode)
 				.executeTakeFirst();
 
-			if (!targetParent || targetParent.branch_code !== file.branch_code) {
+			if (!targetParent || !DriveRepository.isFileInContext(targetParent, fileScopeContext)) {
 				throw error(404, 'Carpeta destino no encontrada');
 			}
 
@@ -170,7 +176,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 
 	const file = await locals.db
 		.selectFrom('drive_files')
-		.select(['code', 'branch_code', 'is_trashed'])
+		.select(['code', 'scope', 'user_code', 'is_trashed'])
 		.where('code', '=', fileCode)
 		.executeTakeFirst();
 
@@ -178,7 +184,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 		throw error(404, 'Archivo no encontrado');
 	}
 
-	await DriveRepository.assertBranchAccess(locals.db, locals.user, file.branch_code);
+	await DriveRepository.assertFileRecordAccess(locals.user, file);
 
 	if (!file.is_trashed) {
 		throw error(400, 'Solo se pueden eliminar permanentemente archivos en papelera');

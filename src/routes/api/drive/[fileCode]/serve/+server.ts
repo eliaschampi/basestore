@@ -21,7 +21,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 
 	const file = await locals.db
 		.selectFrom('drive_files')
-		.select(['code', 'branch_code', 'storage_path', 'mime_type', 'name', 'type'])
+		.select(['code', 'scope', 'user_code', 'storage_path', 'mime_type', 'name', 'type'])
 		.where('code', '=', fileCode)
 		.executeTakeFirst();
 
@@ -29,7 +29,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 		throw error(404, 'Archivo no encontrado');
 	}
 
-	await DriveRepository.assertBranchAccess(locals.db, locals.user, file.branch_code);
+	await DriveRepository.assertFileRecordAccess(locals.user, file);
 
 	if (file.type === 'dir') {
 		throw error(400, 'No se puede servir un directorio');

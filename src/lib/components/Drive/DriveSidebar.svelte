@@ -44,7 +44,7 @@
 			<div class="drive-sidebar__header">
 				<span class="lumi-text--sm lumi-font--bold">Drive</span>
 				<button type="button" class="drive-sidebar__close" onclick={onclose} aria-label="Cerrar">
-					<Icon icon="x" size="18px" />
+					<Icon icon="x" size="sm" />
 				</button>
 			</div>
 		{/if}
@@ -86,11 +86,11 @@
 			<p class="drive-sidebar__label">Acceso rápido</p>
 			<div class="drive-sidebar__meta">
 				<div class="drive-sidebar__meta-item">
-					<Icon icon="shieldCheck" size="16px" color="var(--lumi-color-success)" />
-					<span class="lumi-text--xs">Permisos y seguridad por sede</span>
+					<Icon icon="shieldCheck" size="sm" color="success" />
+					<span class="lumi-text--xs">Permisos y seguridad por alcance</span>
 				</div>
 				<div class="drive-sidebar__meta-item">
-					<Icon icon="star" size="16px" color="var(--lumi-color-info)" />
+					<Icon icon="star" size="sm" color="info" />
 					<span class="lumi-text--xs">Vista optimizada para media</span>
 				</div>
 			</div>
@@ -153,7 +153,7 @@
 	}
 
 	.drive-sidebar :global(.drive-sidebar__nav) {
-		max-height: 320px;
+		max-height: var(--lumi-drive-sidebar-nav-max-height);
 	}
 
 	.drive-sidebar__meta {
@@ -161,7 +161,7 @@
 		flex-direction: column;
 		gap: var(--lumi-space-xs);
 		padding: var(--lumi-space-xs);
-		border: 1px solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-lg);
 		background: color-mix(in srgb, var(--lumi-color-surface) 75%, transparent);
 	}

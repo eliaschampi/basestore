@@ -1,7 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { isUuid } from '$lib/utils/validation';
-import { DriveRepository } from '$lib/server/repositories/drive.repository';
 
 function readFormField(formData: FormData, key: string): string {
 	const value = formData.get(key);
@@ -12,24 +11,13 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 	depends('products:load');
 
 	// Load brands and categories for form selects (always needed for the form)
-	const [brands, categories, branches] = await Promise.all([
+	const [brands, categories] = await Promise.all([
 		locals.db.selectFrom('brands').select(['code', 'name']).orderBy('name', 'asc').execute(),
-		locals.db.selectFrom('categories').select(['code', 'name']).orderBy('name', 'asc').execute(),
-		(async () => {
-			if (!(await locals.can('drive:read'))) {
-				return [];
-			}
-
-			try {
-				return await DriveRepository.listAccessibleActiveBranches(locals.db, locals.user);
-			} catch {
-				return [];
-			}
-		})()
+		locals.db.selectFrom('categories').select(['code', 'name']).orderBy('name', 'asc').execute()
 	]);
 
 	if (!(await locals.can('products:read'))) {
-		return { products: [], brands, categories, branches, title: 'Productos' };
+		return { products: [], brands, categories, title: 'Productos' };
 	}
 
 	try {
@@ -38,9 +26,9 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 			.selectAll()
 			.orderBy('name', 'asc')
 			.execute();
-		return { products, brands, categories, branches, title: 'Productos' };
+		return { products, brands, categories, title: 'Productos' };
 	} catch {
-		return { products: [], brands, categories, branches, title: 'Productos' };
+		return { products: [], brands, categories, title: 'Productos' };
 	}
 };
 

@@ -1,14 +1,14 @@
-import type { DriveFileType } from '$lib/utils/drive';
+import type { DriveFileType, DriveScope } from '$lib/utils/drive';
 
 export interface DriveFileItem {
 	code: string;
+	scope: DriveScope;
 	name: string;
 	type: DriveFileType;
 	size: number;
 	tag: string | null;
 	mime_type: string | null;
 	storage_path: string | null;
-	branch_code: string;
 	parent_code: string | null;
 	user_code: string;
 	is_trashed: boolean;

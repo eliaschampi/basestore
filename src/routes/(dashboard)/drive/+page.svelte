@@ -5,7 +5,6 @@
 		Alert,
 		Button,
 		Card,
-		Chip,
 		Context,
 		ContextItem,
 		Dialog,
@@ -26,14 +25,14 @@
 	import type { DriveFileItem, SelectOption } from '$lib/components';
 	import { can } from '$lib/stores/permissions';
 	import { showToast } from '$lib/stores/Toast';
-	import { TAG_OPTIONS, type DriveBreadcrumb, type DriveTagOption } from '$lib/utils/drive';
-	import type { PageData } from './$types';
-
-	interface BranchOption {
-		code: string;
-		name: string;
-		state: boolean;
-	}
+	import {
+		DRIVE_SCOPE_OPTIONS,
+		TAG_OPTIONS,
+		isValidDriveScope,
+		type DriveBreadcrumb,
+		type DriveScope,
+		type DriveTagOption
+	} from '$lib/utils/drive';
 
 	interface StorageInfo {
 		used: number;
@@ -59,17 +58,13 @@
 		used: number;
 	}
 
-	const { data }: { data: PageData } = $props();
-
-	const branchList = $derived((data.branches as BranchOption[] | undefined) ?? []);
-
 	let files = $state<DriveFileItem[]>([]);
 	let loading = $state(false);
 	let errorMessage = $state('');
 	let viewMode = $state<'grid' | 'list'>('grid');
 
-	let currentBranch = $state('');
-	let breadcrumbs = $state<DriveBreadcrumb[]>([{ label: 'Mi unidad', code: null }]);
+	let currentScope = $state<DriveScope>('product_shared');
+	let breadcrumbs = $state<DriveBreadcrumb[]>([{ label: 'Drive compartido', code: null }]);
 	let currentParent = $state<string | null>(null);
 
 	let selectedMenu = $state<MenuOption | null>(null);
@@ -113,22 +108,56 @@
 	const canCreate = $derived(can('drive:create'));
 	const canUpdate = $derived(can('drive:update'));
 	const canDelete = $derived(can('drive:delete'));
-
-	const branchOptions = $derived.by(() =>
-		branchList.map((branch) => ({ label: branch.name, value: branch.code }))
+	const scopeOptions = $derived.by(() =>
+		DRIVE_SCOPE_OPTIONS.map((scopeOption) => ({
+			label: scopeOption.name,
+			value: scopeOption.value
+		}))
 	);
 
 	const viewModeOptions = $derived([
-		{ label: 'Mosaico', value: 'grid', icon: 'grid' },
+		{ label: 'Grid', value: 'grid', icon: 'grid' },
 		{ label: 'Lista', value: 'list', icon: 'list' }
 	]);
 
 	const isTrashView = $derived(selectedMenu?.value === 'trash');
-	const hasDriveBranch = $derived(Boolean(currentBranch));
+	const currentScopeLabel = $derived.by(() => {
+		return DRIVE_SCOPE_OPTIONS.find((scopeOption) => scopeOption.value === currentScope)?.name;
+	});
 	const selectedFileCount = $derived(selectedFileCodes.length);
 	const selectedFiles = $derived.by(() =>
 		files.filter((file) => selectedFileCodes.includes(file.code))
 	);
+	const selectedSummaryTitle = $derived(
+		selectedFileCount === 1
+			? '1 elemento seleccionado'
+			: `${selectedFileCount} elementos seleccionados`
+	);
+	const selectedSummarySubtitle = $derived.by(() => {
+		if (selectedFileCount === 1) {
+			return selectedFiles[0]?.name ?? '';
+		}
+
+		const selectedFolders = selectedFiles.filter((file) => file.type === 'dir').length;
+		const selectedRegularFiles = selectedFileCount - selectedFolders;
+		const folderLabel =
+			selectedFolders === 1 ? '1 carpeta' : `${Math.max(selectedFolders, 0)} carpetas`;
+		const fileLabel =
+			selectedRegularFiles === 1 ? '1 archivo' : `${Math.max(selectedRegularFiles, 0)} archivos`;
+		return `${folderLabel} • ${fileLabel}`;
+	});
+
+	$effect(() => {
+		if (selectedFileCodes.length === 0) {
+			return;
+		}
+
+		const visibleCodes = new Set(files.map((file) => file.code));
+		const nextSelection = selectedFileCodes.filter((code) => visibleCodes.has(code));
+		if (nextSelection.length !== selectedFileCodes.length) {
+			selectedFileCodes = nextSelection;
+		}
+	});
 
 	const pageTitle = $derived.by(() => {
 		if (selectedMenu?.value === 'trash') {
@@ -150,15 +179,33 @@
 		breadcrumbs.length > 1 && !selectedMenu && !selectedTag && !searchQuery.trim()
 	);
 
+	function getRootLabel(scope: DriveScope): string {
+		if (scope === 'product_shared') {
+			return 'Drive compartido';
+		}
+
+		if (scope === 'user_private') {
+			return 'Mi espacio';
+		}
+
+		return 'Drive';
+	}
+
+	function getRootOptionLabel(scope: DriveScope): string {
+		const rootLabel = getRootLabel(scope);
+		return `Raíz (${rootLabel})`;
+	}
+
+	function resetNavigationState(scope = currentScope): void {
+		selectedMenu = null;
+		selectedTag = null;
+		searchQuery = '';
+		selectedFileCodes = [];
+		currentParent = null;
+		breadcrumbs = [{ label: getRootLabel(scope), code: null }];
+	}
+
 	onMount(async () => {
-		if (!currentBranch && branchList.length > 0) {
-			currentBranch = branchList[0]?.code ?? '';
-		}
-
-		if (!currentBranch) {
-			return;
-		}
-
 		await fetchFiles();
 		await fetchStorageUsage();
 		await fetchFolderOptions();
@@ -171,17 +218,12 @@
 	});
 
 	async function fetchFiles() {
-		if (!currentBranch) {
-			files = [];
-			return;
-		}
-
 		const requestId = ++fetchId;
 		loading = true;
 		errorMessage = '';
 
 		try {
-			const queryParts = [`branch=${encodeURIComponent(currentBranch)}`];
+			const queryParts = [`scope=${encodeURIComponent(currentScope)}`];
 
 			if (selectedMenu?.value === 'trash') {
 				queryParts.push('trashed=true');
@@ -219,12 +261,10 @@
 	}
 
 	async function fetchStorageUsage() {
-		if (!currentBranch) {
-			return;
-		}
-
 		try {
-			const response = await fetch(`/api/drive/trash?branch=${encodeURIComponent(currentBranch)}`);
+			const params = new SvelteURLSearchParams({ scope: currentScope });
+
+			const response = await fetch(`/api/drive/trash?${params.toString()}`);
 			if (!response.ok) {
 				return;
 			}
@@ -242,14 +282,9 @@
 	}
 
 	async function fetchFolderOptions(excludeCode: string | null = null) {
-		if (!currentBranch) {
-			folderOptions = [];
-			return;
-		}
-
 		try {
 			const params = new SvelteURLSearchParams({
-				branch: currentBranch,
+				scope: currentScope,
 				folders: 'true'
 			});
 
@@ -264,38 +299,33 @@
 
 			const payload = (await response.json()) as FolderListResponse;
 			folderOptions = [
-				{ label: 'Raíz (Mi unidad)', value: 'root' },
+				{ label: getRootOptionLabel(currentScope), value: 'root' },
 				...(payload.files ?? []).map((folder) => ({
 					label: folder.name,
 					value: folder.code
 				}))
 			];
 		} catch {
-			folderOptions = [{ label: 'Raíz (Mi unidad)', value: 'root' }];
+			folderOptions = [{ label: getRootOptionLabel(currentScope), value: 'root' }];
 		}
 	}
 
-	async function handleBranchChange(value: unknown) {
-		const branchCode = typeof value === 'string' ? value : '';
-		if (!branchCode || branchCode === currentBranch) {
+	async function handleScopeChange(value: unknown) {
+		const scopeValue = typeof value === 'string' && isValidDriveScope(value) ? value : null;
+		if (!scopeValue || scopeValue === currentScope) {
 			return;
 		}
 
-		currentBranch = branchCode;
-		selectedMenu = null;
-		selectedTag = null;
-		searchQuery = '';
-		selectedFileCodes = [];
-		currentParent = null;
-		breadcrumbs = [{ label: 'Mi unidad', code: null }];
+		currentScope = scopeValue;
 
+		resetNavigationState(scopeValue);
 		await fetchFiles();
 		await fetchStorageUsage();
 		await fetchFolderOptions();
 	}
 
 	async function createDirectory() {
-		if (!currentBranch || !newDirName.trim()) {
+		if (!newDirName.trim()) {
 			return;
 		}
 
@@ -305,7 +335,7 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					name: newDirName.trim(),
-					branch_code: currentBranch,
+					scope: currentScope,
 					parent_code: currentParent
 				})
 			});
@@ -326,13 +356,9 @@
 	}
 
 	async function handleUpload(file: File) {
-		if (!currentBranch) {
-			return;
-		}
-
 		const formData = new FormData();
 		formData.append('file', file);
-		formData.append('branch_code', currentBranch);
+		formData.append('scope', currentScope);
 		if (currentParent) {
 			formData.append('parent_code', currentParent);
 		}
@@ -439,14 +465,10 @@
 	}
 
 	async function emptyTrash() {
-		if (!currentBranch) {
-			return;
-		}
-
 		try {
-			const response = await fetch(`/api/drive/trash?branch=${encodeURIComponent(currentBranch)}`, {
-				method: 'DELETE'
-			});
+			const params = new SvelteURLSearchParams({ scope: currentScope });
+
+			const response = await fetch(`/api/drive/trash?${params.toString()}`, { method: 'DELETE' });
 
 			if (!response.ok) {
 				const payload = await response.json();
@@ -518,7 +540,7 @@
 
 		if (!menu) {
 			currentParent = null;
-			breadcrumbs = [{ label: 'Mi unidad', code: null }];
+			breadcrumbs = [{ label: getRootLabel(currentScope), code: null }];
 		}
 
 		void fetchFiles();
@@ -535,7 +557,7 @@
 	function handleFileClick(file: DriveFileItem) {
 		selectedFileCodes = selectedFileCodes.includes(file.code)
 			? selectedFileCodes.filter((code) => code !== file.code)
-			: [file.code];
+			: [...selectedFileCodes, file.code];
 	}
 
 	function handleFileDblClick(file: DriveFileItem) {
@@ -688,146 +710,153 @@
 <div class="lumi-stack lumi-space--lg">
 	<PageHeader
 		title={pageTitle}
-		subtitle="Drive compartido por sede para gestión de media"
+		subtitle={`Alcance actual: ${currentScopeLabel ?? 'Drive'}`}
 		icon="hardDrive"
 	>
 		{#snippet actions()}
-			{#if hasDriveBranch}
+			<div class="lumi-flex lumi-flex--gap-sm lumi-align-items--center drive-page__header-actions">
+				<button
+					type="button"
+					class="drive-page__mobile-toggle"
+					onclick={() => (showMobileSidebar = true)}
+					aria-label="Abrir navegación"
+				>
+					<Icon icon="menu" size="sm" />
+				</button>
 				{#if !isTrashView}
-					<div
-						class="lumi-flex lumi-flex--gap-sm lumi-align-items--center drive-page__header-actions"
-					>
-						<SegmentedControl
-							value={viewMode}
-							options={viewModeOptions}
-							onchange={(value) => {
-								if (value === 'grid' || value === 'list') {
-									viewMode = value;
-								}
-							}}
-							aria-label="Vista de archivos"
-						/>
-						{#if canCreate}
-							<Button
-								type="border"
-								size="sm"
-								icon="folderPlus"
-								onclick={() => (showCreateDir = true)}
-							>
-								Carpeta
-							</Button>
-							<Button
-								type="filled"
-								color="primary"
-								size="sm"
-								icon="upload"
-								onclick={() => (showUploader = true)}
-							>
-								Subir
-							</Button>
-						{/if}
-					</div>
+					{#if canCreate}
+						<Button
+							type="border"
+							size="sm"
+							icon="folderPlus"
+							onclick={() => (showCreateDir = true)}
+						>
+							Carpeta
+						</Button>
+						<Button
+							type="filled"
+							color="primary"
+							size="sm"
+							icon="upload"
+							onclick={() => (showUploader = true)}
+						>
+							Subir
+						</Button>
+					{/if}
 				{:else if canDelete && files.length > 0}
 					<Button type="filled" color="danger" size="sm" icon="trash" onclick={emptyTrash}>
 						Vaciar papelera
 					</Button>
 				{/if}
-			{/if}
+			</div>
 		{/snippet}
 	</PageHeader>
 
-	{#if !hasDriveBranch}
-		<Card>
-			<EmptyState
-				title="Sin sede disponible"
-				description="No tienes sedes activas asignadas para administrar el Drive."
-				icon="hardDrive"
-				iconColor="muted"
+	<div class="lumi-layout--two-columns drive-page__layout">
+		<aside class="lumi-layout--sidebar-left drive-page__sidebar">
+			<DriveSidebar
+				{selectedMenu}
+				{selectedTag}
+				{storageInfo}
+				onmenuselect={handleMenuSelect}
+				ontagselect={handleTagSelect}
 			/>
-		</Card>
-	{:else}
-		<div class="lumi-layout--two-columns drive-page__layout">
-			<aside class="lumi-layout--sidebar-left drive-page__sidebar">
+		</aside>
+
+		<!-- Mobile sidebar drawer -->
+		{#if showMobileSidebar}
+			<button
+				type="button"
+				class="drive-page__drawer-backdrop"
+				onclick={() => (showMobileSidebar = false)}
+				aria-label="Cerrar navegación"
+			></button>
+			<aside class="drive-page__drawer">
 				<DriveSidebar
 					{selectedMenu}
 					{selectedTag}
 					{storageInfo}
-					onmenuselect={handleMenuSelect}
-					ontagselect={handleTagSelect}
+					closable
+					onmenuselect={(menu) => {
+						handleMenuSelect(menu);
+						showMobileSidebar = false;
+					}}
+					ontagselect={(tag) => {
+						handleTagSelect(tag);
+						showMobileSidebar = false;
+					}}
+					onclose={() => (showMobileSidebar = false)}
 				/>
 			</aside>
+		{/if}
 
-			<!-- Mobile sidebar drawer -->
-			{#if showMobileSidebar}
-				<button
-					type="button"
-					class="drive-page__drawer-backdrop"
-					onclick={() => (showMobileSidebar = false)}
-					aria-label="Cerrar navegación"
-				></button>
-				<aside class="drive-page__drawer">
-					<DriveSidebar
-						{selectedMenu}
-						{selectedTag}
-						{storageInfo}
-						closable
-						onmenuselect={(menu) => {
-							handleMenuSelect(menu);
-							showMobileSidebar = false;
-						}}
-						ontagselect={(tag) => {
-							handleTagSelect(tag);
-							showMobileSidebar = false;
-						}}
-						onclose={() => (showMobileSidebar = false)}
-					/>
-				</aside>
-			{/if}
-
-			<section class="lumi-layout--content-right">
-				<div class="lumi-stack lumi-space--sm">
-					<div class="drive-page__toolbar-shell">
-						<Card spaced>
-							<div class="lumi-flex lumi-flex--gap-sm lumi-align-items--center drive-page__toolbar">
-								<button
-									type="button"
-									class="drive-page__mobile-toggle"
-									onclick={() => (showMobileSidebar = true)}
-									aria-label="Abrir navegación"
-								>
-									<Icon icon="menu" size="18px" />
-								</button>
-								<div class="drive-page__branch-control">
-									<Select
-										placeholder="Sede"
-										aria-label="Seleccionar sede"
-										value={currentBranch}
-										options={branchOptions}
-										clearable={false}
-										onchange={handleBranchChange}
-									/>
-								</div>
-								<div class="lumi-flex-item--grow drive-page__search-control">
-									<Input
-										placeholder="Buscar archivos..."
-										icon="search"
-										value={searchQuery}
-										oninput={(event) =>
-											handleSearchChange(
-												(event.currentTarget as HTMLInputElement | null)?.value ?? ''
-											)}
-									/>
-								</div>
+		<section class="lumi-layout--content-right">
+			<div class="lumi-stack lumi-space--sm">
+				<div class="drive-page__toolbar-shell">
+					<Card spaced>
+						<div class="lumi-flex lumi-flex--gap-sm lumi-align-items--center drive-page__toolbar">
+							<div class="drive-page__view-toggle">
+								<SegmentedControl
+									value={viewMode}
+									options={viewModeOptions}
+									onchange={(value) => {
+										if (value === 'grid' || value === 'list') {
+											viewMode = value;
+										}
+									}}
+									aria-label="Vista de archivos"
+								/>
 							</div>
-						</Card>
-					</div>
+							<div class="drive-page__scope-control">
+								<Select
+									placeholder="Alcance"
+									aria-label="Seleccionar alcance"
+									value={currentScope}
+									options={scopeOptions}
+									clearable={false}
+									onchange={handleScopeChange}
+								/>
+							</div>
+							<div class="lumi-flex-item--grow drive-page__search-control">
+								<Input
+									placeholder="Buscar archivos..."
+									icon="search"
+									value={searchQuery}
+									oninput={(event) =>
+										handleSearchChange(
+											(event.currentTarget as HTMLInputElement | null)?.value ?? ''
+										)}
+								/>
+							</div>
+						</div>
+					</Card>
+				</div>
 
-					{#if selectedFileCount > 0 && !isTrashView}
-						<div class="drive-page__selection">
-							<Chip size="sm" color="info">{selectedFileCount} seleccionado(s)</Chip>
+				{#if selectedFileCount > 0 && !isTrashView}
+					<div
+						class="drive-page__selection lumi-flex lumi-align-items--center lumi-justify--between lumi-flex--wrap lumi-flex--gap-md"
+						role="status"
+						aria-live="polite"
+					>
+						<div
+							class="drive-page__selection-meta lumi-flex lumi-align-items--center lumi-flex--gap-sm"
+						>
+							<span class="drive-page__selection-icon">
+								<Icon icon="checkCheck" size="sm" color="primary" />
+							</span>
+							<div class="drive-page__selection-copy">
+								<p class="drive-page__selection-title">{selectedSummaryTitle}</p>
+								<p class="drive-page__selection-subtitle" title={selectedSummarySubtitle}>
+									{selectedSummarySubtitle}
+								</p>
+							</div>
+						</div>
+						<div
+							class="drive-page__selection-actions lumi-flex lumi-align-items--center lumi-flex--gap-xs"
+						>
 							{#if canDelete}
 								<Button
-									type="flat"
+									type="filled"
 									size="sm"
 									icon="trash"
 									color="danger"
@@ -836,98 +865,96 @@
 									Mover a papelera
 								</Button>
 							{/if}
-							<Button type="flat" size="sm" icon="x" onclick={clearSelection}
-								>Limpiar selección</Button
-							>
-						</div>
-					{/if}
-
-					<div class="drive-page__content-shell">
-						{#if showBreadcrumbs}
-							<nav class="lumi-flex lumi-flex--gap-xs lumi-align-items--center lumi-flex--wrap">
-								{#each breadcrumbs as crumb, index (crumb.code ?? `root-${index}`)}
-									{#if index > 0}
-										<span class="lumi-text--muted">/</span>
-									{/if}
-									{#if index === breadcrumbs.length - 1}
-										<span class="lumi-font--medium">{crumb.label}</span>
-									{:else}
-										<Button type="flat" size="sm" onclick={() => navigateBreadcrumb(index)}>
-											{crumb.label}
-										</Button>
-									{/if}
-								{/each}
-							</nav>
-						{/if}
-
-						{#if errorMessage}
-							<Alert type="danger" closable onclose={() => (errorMessage = '')}
-								>{errorMessage}</Alert
-							>
-						{/if}
-
-						<div class="drive-page__content">
-							{#if loading}
-								<div class="drive-page__loading">
-									<Loading size="lg" color="primary" />
-									<span class="lumi-text--sm lumi-text--muted">Cargando archivos...</span>
-								</div>
-							{:else if files.length === 0}
-								<EmptyState
-									title={isTrashView
-										? 'La papelera está vacía'
-										: searchQuery
-											? 'Sin resultados'
-											: 'Carpeta vacía'}
-									description={isTrashView
-										? 'Los archivos eliminados aparecerán aquí.'
-										: searchQuery
-											? 'Intenta otro término de búsqueda.'
-											: 'Sube archivos o crea carpetas para comenzar.'}
-									icon={isTrashView ? 'trash' : 'hardDrive'}
-									iconColor="muted"
-								>
-									{#snippet actions()}
-										{#if !isTrashView && canCreate}
-											<Button
-												type="filled"
-												color="primary"
-												icon="upload"
-												size="sm"
-												onclick={() => (showUploader = true)}
-											>
-												Subir archivos
-											</Button>
-										{/if}
-									{/snippet}
-								</EmptyState>
-							{:else if viewMode === 'grid'}
-								<DriveFileGrid
-									{files}
-									selectedFiles={selectedFileCodes}
-									isTrash={isTrashView}
-									onfileclick={handleFileClick}
-									onfiledblclick={handleFileDblClick}
-									onfilecontextmenu={handleContextMenu}
-									onfiledrop={handleDrop}
-								/>
-							{:else}
-								<DriveFileList
-									{files}
-									selectedFiles={selectedFileCodes}
-									isTrash={isTrashView}
-									onfileclick={handleFileClick}
-									onfiledblclick={handleFileDblClick}
-									onfilecontextmenu={handleContextMenu}
-									onfiledrop={handleDrop}
-								/>
-							{/if}
+							<Button type="border" size="sm" icon="x" onclick={clearSelection}>
+								Limpiar selección
+							</Button>
 						</div>
 					</div>
+				{/if}
+
+				<div class="drive-page__content-shell">
+					{#if showBreadcrumbs}
+						<nav class="lumi-flex lumi-flex--gap-xs lumi-align-items--center lumi-flex--wrap">
+							{#each breadcrumbs as crumb, index (crumb.code ?? `root-${index}`)}
+								{#if index > 0}
+									<span class="lumi-text--muted">/</span>
+								{/if}
+								{#if index === breadcrumbs.length - 1}
+									<span class="lumi-font--medium">{crumb.label}</span>
+								{:else}
+									<Button type="flat" size="sm" onclick={() => navigateBreadcrumb(index)}>
+										{crumb.label}
+									</Button>
+								{/if}
+							{/each}
+						</nav>
+					{/if}
+
+					{#if errorMessage}
+						<Alert type="danger" closable onclose={() => (errorMessage = '')}>{errorMessage}</Alert>
+					{/if}
+
+					<div class="drive-page__content">
+						{#if loading}
+							<div class="drive-page__loading">
+								<Loading size="lg" color="primary" />
+								<span class="lumi-text--sm lumi-text--muted">Cargando archivos...</span>
+							</div>
+						{:else if files.length === 0}
+							<EmptyState
+								title={isTrashView
+									? 'La papelera está vacía'
+									: searchQuery
+										? 'Sin resultados'
+										: 'Carpeta vacía'}
+								description={isTrashView
+									? 'Los archivos eliminados aparecerán aquí.'
+									: searchQuery
+										? 'Intenta otro término de búsqueda.'
+										: 'Sube archivos o crea carpetas para comenzar.'}
+								icon={isTrashView ? 'trash' : 'hardDrive'}
+								iconColor="muted"
+							>
+								{#snippet actions()}
+									{#if !isTrashView && canCreate}
+										<Button
+											type="filled"
+											color="primary"
+											icon="upload"
+											size="sm"
+											onclick={() => (showUploader = true)}
+										>
+											Subir archivos
+										</Button>
+									{/if}
+								{/snippet}
+							</EmptyState>
+						{:else if viewMode === 'grid'}
+							<DriveFileGrid
+								{files}
+								selectedFiles={selectedFileCodes}
+								isTrash={isTrashView}
+								onfileclick={handleFileClick}
+								onfiledblclick={handleFileDblClick}
+								onfilecontextmenu={handleContextMenu}
+								onfiledrop={handleDrop}
+							/>
+						{:else}
+							<DriveFileList
+								{files}
+								selectedFiles={selectedFileCodes}
+								isTrash={isTrashView}
+								onfileclick={handleFileClick}
+								onfiledblclick={handleFileDblClick}
+								onfilecontextmenu={handleContextMenu}
+								onfiledrop={handleDrop}
+							/>
+						{/if}
+					</div>
 				</div>
-			</section>
-		</div>
-	{/if}
+			</div>
+		</section>
+	</div>
 </div>
 
 <Dialog bind:open={showCreateDir} title="Nueva carpeta" size="sm">
@@ -1132,17 +1159,21 @@
 		min-width: 0;
 	}
 
-	.drive-page__branch-control {
-		min-width: 220px;
-		flex: 0 1 240px;
+	.drive-page__scope-control {
+		min-width: var(--lumi-drive-scope-control-min-width);
+		flex: 0 1 var(--lumi-drive-scope-control-basis);
+	}
+
+	.drive-page__view-toggle {
+		flex-shrink: 0;
 	}
 
 	.drive-page__search-control {
-		min-width: 240px;
+		min-width: var(--lumi-drive-search-control-min-width);
 	}
 
 	.drive-page__toolbar-shell :global(.lumi-card) {
-		border: 1px solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		background: color-mix(in srgb, var(--lumi-color-surface) 92%, transparent);
 		backdrop-filter: blur(var(--lumi-blur-sm));
 	}
@@ -1158,18 +1189,65 @@
 	}
 
 	.drive-page__selection {
+		padding: var(--lumi-space-sm) var(--lumi-space-md);
+		border-radius: var(--lumi-radius-xl);
+		border: var(--lumi-border-width-thin) solid
+			color-mix(in srgb, var(--lumi-color-primary) 24%, var(--lumi-color-border));
+		background:
+			linear-gradient(
+				120deg,
+				color-mix(in srgb, var(--lumi-color-primary) 12%, transparent) 0%,
+				color-mix(in srgb, var(--lumi-color-info) 6%, transparent) 48%,
+				transparent 100%
+			),
+			var(--lumi-color-surface);
+		box-shadow: var(--lumi-shadow-sm);
+	}
+
+	.drive-page__selection-meta {
+		min-width: 0;
+	}
+
+	.drive-page__selection-icon {
+		width: var(--lumi-space-xl);
+		height: var(--lumi-space-xl);
+		border-radius: var(--lumi-radius-full);
 		display: flex;
 		align-items: center;
-		gap: var(--lumi-space-sm);
+		justify-content: center;
+		flex-shrink: 0;
+		background: color-mix(in srgb, var(--lumi-color-primary) 14%, transparent);
+		border: var(--lumi-border-width-thin) solid
+			color-mix(in srgb, var(--lumi-color-primary) 22%, var(--lumi-color-border));
+	}
+
+	.drive-page__selection-copy {
+		min-width: 0;
+	}
+
+	.drive-page__selection-title {
+		margin: 0;
+		font-size: var(--lumi-font-size-sm);
+		font-weight: var(--lumi-font-weight-semibold);
+		color: var(--lumi-color-text);
+	}
+
+	.drive-page__selection-subtitle {
+		margin: 0;
+		font-size: var(--lumi-font-size-xs);
+		color: var(--lumi-color-text-muted);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 100%;
+	}
+
+	.drive-page__selection-actions {
 		flex-wrap: wrap;
-		padding: var(--lumi-space-xs);
-		border-radius: var(--lumi-radius-lg);
-		background: color-mix(in srgb, var(--lumi-color-primary) 6%, var(--lumi-color-surface));
-		border: 1px solid color-mix(in srgb, var(--lumi-color-primary) 22%, var(--lumi-color-border));
 	}
 
 	.drive-page__content {
-		min-height: 420px;
+		min-height: var(--lumi-drive-content-min-height);
 	}
 
 	.drive-page__content-shell {
@@ -1181,7 +1259,7 @@
 	}
 
 	.drive-page__loading {
-		min-height: 220px;
+		min-height: var(--lumi-drive-loading-min-height);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -1195,7 +1273,7 @@
 		gap: var(--lumi-space-sm);
 		width: 100%;
 		padding: var(--lumi-space-xs) var(--lumi-space-md);
-		border: 1px solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-lg);
 		background: var(--lumi-color-surface);
 		color: var(--lumi-color-text);
@@ -1215,8 +1293,8 @@
 	}
 
 	.drive-page__tag-none-dot {
-		width: 12px;
-		height: 12px;
+		width: var(--lumi-drive-selection-dot-size);
+		height: var(--lumi-drive-selection-dot-size);
 		border-radius: var(--lumi-radius-full);
 		background: var(--lumi-color-border);
 	}
@@ -1226,7 +1304,7 @@
 		align-items: center;
 		justify-content: center;
 		padding: var(--lumi-space-sm);
-		border: 1px solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-md);
 		background: var(--lumi-color-surface);
 		color: var(--lumi-color-text);
@@ -1261,9 +1339,13 @@
 			display: none;
 		}
 
-		.drive-page__branch-control {
+		.drive-page__scope-control {
 			width: 100%;
 			flex: 1 1 100%;
+		}
+
+		.drive-page__view-toggle {
+			width: 100%;
 		}
 
 		.drive-page__search-control {
@@ -1284,6 +1366,11 @@
 			align-items: center;
 		}
 
+		.drive-page__selection-actions {
+			width: 100%;
+			justify-content: flex-end;
+		}
+
 		.drive-page__drawer-backdrop {
 			display: block;
 			position: fixed;
@@ -1300,11 +1387,25 @@
 			top: 0;
 			left: 0;
 			bottom: 0;
-			width: min(320px, 85vw);
+			width: min(var(--lumi-drive-drawer-width), 85vw);
 			z-index: calc(var(--lumi-z-modal) + 1);
 			padding: var(--lumi-space-sm);
 			overflow-y: auto;
 			animation: drive-drawer-slide 0.25s cubic-bezier(0.2, 0, 0.13, 1.5);
+		}
+	}
+
+	@media (max-width: 640px) {
+		.drive-page__selection {
+			padding: var(--lumi-space-sm);
+		}
+
+		.drive-page__selection-actions {
+			justify-content: flex-start;
+		}
+
+		.drive-page__selection-actions :global(.lumi-btn) {
+			flex: 1 1 auto;
 		}
 	}
 

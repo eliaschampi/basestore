@@ -365,6 +365,27 @@
 	--lumi-notification-zone-offset: var(--lumi-space-lg);
 	--lumi-notification-zone-offset-mobile: var(--lumi-space-sm);
 
+	/* Drive module geometry */
+	--lumi-drive-file-grid-min-desktop: 12.25rem;
+	--lumi-drive-file-grid-min-tablet: 11rem;
+	--lumi-drive-file-grid-min-mobile: 9.5rem;
+	--lumi-drive-file-preview-ratio: 5 / 4;
+	--lumi-drive-file-icon-size: 2.625rem;
+	--lumi-drive-tag-dot-size: var(--lumi-space-xs);
+	--lumi-drive-selection-dot-size: var(--lumi-icon-xs);
+	--lumi-drive-scope-control-min-width: 13.75rem;
+	--lumi-drive-scope-control-basis: 15rem;
+	--lumi-drive-search-control-min-width: 15rem;
+	--lumi-drive-content-min-height: 26.25rem;
+	--lumi-drive-loading-min-height: 13.75rem;
+	--lumi-drive-drawer-width: 20rem;
+	--lumi-drive-sidebar-nav-max-height: 20rem;
+	--lumi-drive-uploader-queue-max-height: 15rem;
+	--lumi-drive-preview-min-height: 17.5rem;
+	--lumi-drive-preview-min-height-mobile: 13.75rem;
+	--lumi-drive-preview-audio-max-width: 27.5rem;
+	--lumi-drive-preview-title-max-width: 20rem;
+
 	/* Breakpoints */
 	--lumi-breakpoint-mobile: 480px;
 	--lumi-breakpoint-tablet: 768px;

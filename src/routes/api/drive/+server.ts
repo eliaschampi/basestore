@@ -1,18 +1,20 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import type { SelectQueryBuilder } from 'kysely';
+import type { DB } from '$lib/database/types';
 import { isUuid } from '$lib/utils/validation';
-import { DriveRepository } from '$lib/server/repositories/drive.repository';
+import { DriveRepository, type DriveScopeContext } from '$lib/server/repositories/drive.repository';
 import { isValidTagHash, normalizeDriveName, validateDriveName } from '$lib/utils/drive';
 
 const DRIVE_COLUMNS = [
 	'code',
+	'scope',
 	'name',
 	'type',
 	'size',
 	'tag',
 	'mime_type',
 	'storage_path',
-	'branch_code',
 	'parent_code',
 	'user_code',
 	'is_trashed',
@@ -22,20 +24,33 @@ const DRIVE_COLUMNS = [
 
 interface CreateDirectoryBody {
 	name?: string;
-	branch_code?: string;
+	scope?: string;
 	parent_code?: string | null;
+}
+
+function applyScopeFilter<O>(
+	query: SelectQueryBuilder<DB, 'drive_files', O>,
+	context: DriveScopeContext
+): SelectQueryBuilder<DB, 'drive_files', O> {
+	let scopedQuery = query.where('scope', '=', context.scope);
+
+	if (context.scope === 'user_private' && context.ownerUserCode) {
+		scopedQuery = scopedQuery.where('user_code', '=', context.ownerUserCode);
+	}
+
+	return scopedQuery;
 }
 
 /**
  * GET /api/drive — List files
- * Query params: branch, parent (UUID|null), trashed (bool), search (string), tag (string), view (recent/heavy)
+ * Query params: scope, parent (UUID|null), trashed, search, tag, view
  */
 export const GET: RequestHandler = async ({ url, locals }) => {
 	if (!(await locals.can('drive:read'))) {
 		throw error(403, 'No tienes permisos para ver el Drive');
 	}
 
-	const branchCode = url.searchParams.get('branch');
+	const scope = url.searchParams.get('scope');
 	const parentCode = url.searchParams.get('parent');
 	const trashed = url.searchParams.get('trashed') === 'true';
 	const foldersOnly = url.searchParams.get('folders') === 'true';
@@ -44,16 +59,12 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	const tag = url.searchParams.get('tag')?.trim();
 	const view = url.searchParams.get('view');
 
-	if (!branchCode || !isUuid(branchCode)) {
-		throw error(400, 'Código de sede inválido');
-	}
+	const scopeContext = await DriveRepository.resolveScopeContext(locals.user, { scope });
 
-	await DriveRepository.assertBranchAccess(locals.db, locals.user, branchCode);
-
-	let query = locals.db
-		.selectFrom('drive_files')
-		.select(DRIVE_COLUMNS)
-		.where('branch_code', '=', branchCode);
+	let query = applyScopeFilter(
+		locals.db.selectFrom('drive_files').select(DRIVE_COLUMNS),
+		scopeContext
+	);
 
 	if (foldersOnly) {
 		if (excludeCode && !isUuid(excludeCode)) {
@@ -106,11 +117,11 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 				throw error(400, 'Código de carpeta inválido');
 			}
 
-			const parent = await locals.db
-				.selectFrom('drive_files')
-				.select(['code'])
+			const parent = await applyScopeFilter(
+				locals.db.selectFrom('drive_files').select(['code']),
+				scopeContext
+			)
 				.where('code', '=', parentCode)
-				.where('branch_code', '=', branchCode)
 				.where('type', '=', 'dir')
 				.where('is_trashed', '=', false)
 				.executeTakeFirst();
@@ -133,7 +144,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 /**
  * POST /api/drive — Create directory
- * Body: { name, branch_code, parent_code? }
+ * Body: { name, scope, parent_code? }
  */
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!(await locals.can('drive:create'))) {
@@ -152,12 +163,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		throw error(400, nameError);
 	}
 
-	const branchCode = body.branch_code?.trim() || '';
-	if (!branchCode || !isUuid(branchCode)) {
-		throw error(400, 'Código de sede inválido');
-	}
-
-	await DriveRepository.assertBranchAccess(locals.db, locals.user, branchCode);
+	const scopeContext = await DriveRepository.resolveScopeContext(locals.user, {
+		scope: body.scope
+	});
 
 	const parentCode = body.parent_code && body.parent_code !== 'null' ? body.parent_code : null;
 
@@ -166,11 +174,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 
 	if (parentCode) {
-		const parent = await locals.db
-			.selectFrom('drive_files')
-			.select(['code'])
+		const parent = await applyScopeFilter(
+			locals.db.selectFrom('drive_files').select(['code']),
+			scopeContext
+		)
 			.where('code', '=', parentCode)
-			.where('branch_code', '=', branchCode)
 			.where('type', '=', 'dir')
 			.where('is_trashed', '=', false)
 			.executeTakeFirst();
@@ -186,7 +194,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			.values({
 				name: normalizedName,
 				type: 'dir',
-				branch_code: branchCode,
+				scope: scopeContext.scope,
 				user_code: locals.user.code,
 				parent_code: parentCode,
 				size: 0

@@ -33,6 +33,8 @@
 		selected = $bindable([]),
 		class: className = '',
 		'onrow-click': onRowClick,
+		'onrow-dblclick': onRowDblClick,
+		'onrow-contextmenu': onRowContextMenu,
 		'onrow-select': onRowSelect,
 		onsearch,
 		'onpage-change': onPageChange,
@@ -212,6 +214,19 @@
 		onRowClick?.(row, index);
 	}
 
+	function handleRowDblClick(row: TableRow, index: number): void {
+		onRowDblClick?.(row, index);
+	}
+
+	function handleRowContextMenu(event: MouseEvent, row: TableRow, index: number): void {
+		if (!onRowContextMenu) {
+			return;
+		}
+
+		event.preventDefault();
+		onRowContextMenu(event, row, index);
+	}
+
 	function handleRowKeydown(event: KeyboardEvent, row: TableRow, index: number): void {
 		if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault();
@@ -335,10 +350,14 @@
 							<tr
 								class="lumi-table__row"
 								class:lumi-table__row--selected={isSelected}
-								class:lumi-table__row--clickable={!!onRowClick}
+								class:lumi-table__row--clickable={!!onRowClick ||
+									!!onRowDblClick ||
+									!!onRowContextMenu}
 								tabindex={onRowClick ? 0 : undefined}
 								aria-selected={selectable ? isSelected : undefined}
 								onclick={() => handleRowClick(rowData, index)}
+								ondblclick={() => handleRowDblClick(rowData, index)}
+								oncontextmenu={(event) => handleRowContextMenu(event, rowData, index)}
 								onkeydown={(e) => handleRowKeydown(e, rowData, index)}
 							>
 								{#if selectable}

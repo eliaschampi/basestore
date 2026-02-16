@@ -2,41 +2,47 @@ import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { isUuid } from '$lib/utils/validation';
 import { DriveRepository } from '$lib/server/repositories/drive.repository';
 
 /**
- * DELETE /api/drive/trash?branch=<uuid>
- * Permanently delete all trashed files from a branch.
+ * DELETE /api/drive/trash?scope=<scope>
+ * Permanently delete all trashed files from a scope context.
  */
 export const DELETE: RequestHandler = async ({ url, locals }) => {
 	if (!(await locals.can('drive:delete'))) {
 		throw error(403, 'No tienes permisos para vaciar la papelera');
 	}
 
-	const branchCode = url.searchParams.get('branch');
-	if (!branchCode || !isUuid(branchCode)) {
-		throw error(400, 'Código de sede inválido');
-	}
+	const scopeContext = await DriveRepository.resolveScopeContext(locals.user, {
+		scope: url.searchParams.get('scope')
+	});
 
-	await DriveRepository.assertBranchAccess(locals.db, locals.user, branchCode);
-
-	const trashedFiles = await locals.db
+	let trashedQuery = locals.db
 		.selectFrom('drive_files')
 		.select(['code', 'storage_path'])
-		.where('branch_code', '=', branchCode)
-		.where('is_trashed', '=', true)
-		.execute();
+		.where('scope', '=', scopeContext.scope)
+		.where('is_trashed', '=', true);
+
+	if (scopeContext.scope === 'user_private' && scopeContext.ownerUserCode) {
+		trashedQuery = trashedQuery.where('user_code', '=', scopeContext.ownerUserCode);
+	}
+
+	const trashedFiles = await trashedQuery.execute();
 
 	if (trashedFiles.length === 0) {
 		return json({ success: true, deleted: 0 });
 	}
 
-	await locals.db
+	let deleteQuery = locals.db
 		.deleteFrom('drive_files')
-		.where('branch_code', '=', branchCode)
-		.where('is_trashed', '=', true)
-		.execute();
+		.where('scope', '=', scopeContext.scope)
+		.where('is_trashed', '=', true);
+
+	if (scopeContext.scope === 'user_private' && scopeContext.ownerUserCode) {
+		deleteQuery = deleteQuery.where('user_code', '=', scopeContext.ownerUserCode);
+	}
+
+	await deleteQuery.execute();
 
 	for (const file of trashedFiles) {
 		if (!file.storage_path) {
@@ -54,28 +60,29 @@ export const DELETE: RequestHandler = async ({ url, locals }) => {
 };
 
 /**
- * GET /api/drive/trash?branch=<uuid>
- * Returns storage usage (non-trashed files only).
+ * GET /api/drive/trash?scope=<scope>
+ * Returns storage usage (non-trashed files only) for the scope context.
  */
 export const GET: RequestHandler = async ({ url, locals }) => {
 	if (!(await locals.can('drive:read'))) {
 		throw error(403, 'No tienes permisos para ver el Drive');
 	}
 
-	const branchCode = url.searchParams.get('branch');
-	if (!branchCode || !isUuid(branchCode)) {
-		throw error(400, 'Código de sede inválido');
-	}
+	const scopeContext = await DriveRepository.resolveScopeContext(locals.user, {
+		scope: url.searchParams.get('scope')
+	});
 
-	await DriveRepository.assertBranchAccess(locals.db, locals.user, branchCode);
-
-	const result = await locals.db
+	let usageQuery = locals.db
 		.selectFrom('drive_files')
 		.select((eb) => eb.fn.coalesce(eb.fn.sum('size'), eb.val(0)).as('total_size'))
-		.where('branch_code', '=', branchCode)
-		.where('is_trashed', '=', false)
-		.executeTakeFirst();
+		.where('scope', '=', scopeContext.scope)
+		.where('is_trashed', '=', false);
 
+	if (scopeContext.scope === 'user_private' && scopeContext.ownerUserCode) {
+		usageQuery = usageQuery.where('user_code', '=', scopeContext.ownerUserCode);
+	}
+
+	const result = await usageQuery.executeTakeFirst();
 	const totalSize = Number(result?.total_size ?? 0);
 	return json({ used: totalSize });
 };

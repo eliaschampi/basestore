@@ -61,13 +61,13 @@ export interface Categories {
 }
 
 export interface DriveFiles {
-	branch_code: string;
 	code: Generated<string>;
 	created_at: Generated<Timestamp>;
 	is_trashed: Generated<boolean>;
 	mime_type: string | null;
 	name: string;
 	parent_code: string | null;
+	scope: Generated<string>;
 	size: Generated<Int8>;
 	storage_path: string | null;
 	tag: string | null;

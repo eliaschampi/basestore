@@ -17,8 +17,20 @@ function isValidEntityType(value: string): value is DriveEntityType {
 	return value === 'product';
 }
 
+async function resolveEntityScope(locals: App.Locals, scope: string | null | undefined) {
+	const scopeContext = await DriveRepository.resolveScopeContext(locals.user, {
+		scope: (scope || 'product_shared').trim()
+	});
+
+	if (scopeContext.scope !== 'product_shared') {
+		throw error(400, 'Los productos solo pueden vincular archivos del Drive compartido');
+	}
+
+	return scopeContext;
+}
+
 /**
- * GET /api/drive/links?entity_type=product&entity_code=<uuid>&branch=<uuid>
+ * GET /api/drive/links?entity_type=product&entity_code=<uuid>&scope=product_shared
  * List linked drive files for an entity.
  */
 export const GET: RequestHandler = async ({ url, locals }) => {
@@ -28,7 +40,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 	const entityType = (url.searchParams.get('entity_type') || '').trim();
 	const entityCode = (url.searchParams.get('entity_code') || '').trim();
-	const branchCode = (url.searchParams.get('branch') || '').trim();
+	const scope = url.searchParams.get('scope');
 
 	if (!isValidEntityType(entityType)) {
 		throw error(400, 'Tipo de entidad inválido');
@@ -38,12 +50,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		throw error(400, 'Código de entidad inválido');
 	}
 
-	if (!isUuid(branchCode)) {
-		throw error(400, 'Código de sede inválido');
-	}
-
+	const scopeContext = await resolveEntityScope(locals, scope);
 	await assertEntityExists(locals.db, entityType, entityCode);
-	await DriveRepository.assertBranchAccess(locals.db, locals.user, branchCode);
 
 	const links = await locals.db
 		.selectFrom('drive_links as dl')
@@ -65,7 +73,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		])
 		.where('dl.entity_type', '=', entityType)
 		.where('dl.entity_code', '=', entityCode)
-		.where('df.branch_code', '=', branchCode)
+		.where('df.scope', '=', scopeContext.scope)
 		.where('df.is_trashed', '=', false)
 		.orderBy('dl.is_primary', 'desc')
 		.orderBy('dl.position', 'asc')
@@ -112,7 +120,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	const file = await locals.db
 		.selectFrom('drive_files')
-		.select(['code', 'branch_code', 'is_trashed', 'type'])
+		.select(['code', 'scope', 'user_code', 'is_trashed', 'type'])
 		.where('code', '=', fileCode)
 		.executeTakeFirst();
 
@@ -124,11 +132,15 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		throw error(400, 'No se puede vincular un archivo en papelera');
 	}
 
+	if (file.scope !== 'product_shared') {
+		throw error(400, 'Solo puedes vincular archivos del alcance Compartido');
+	}
+
 	if (isPrimary && file.type !== 'img') {
 		throw error(400, 'Solo los archivos de imagen pueden ser principales');
 	}
 
-	await DriveRepository.assertBranchAccess(locals.db, locals.user, file.branch_code);
+	await DriveRepository.assertFileRecordAccess(locals.user, file);
 
 	const link = await locals.db.transaction().execute(async (trx) => {
 		if (isPrimary) {
@@ -202,7 +214,7 @@ export const DELETE: RequestHandler = async ({ request, locals }) => {
 
 	const file = await locals.db
 		.selectFrom('drive_files')
-		.select(['code', 'branch_code'])
+		.select(['code', 'scope', 'user_code'])
 		.where('code', '=', fileCode)
 		.executeTakeFirst();
 
@@ -210,7 +222,11 @@ export const DELETE: RequestHandler = async ({ request, locals }) => {
 		throw error(404, 'Archivo no encontrado');
 	}
 
-	await DriveRepository.assertBranchAccess(locals.db, locals.user, file.branch_code);
+	if (file.scope !== 'product_shared') {
+		throw error(400, 'Solo puedes desvincular archivos del alcance Compartido');
+	}
+
+	await DriveRepository.assertFileRecordAccess(locals.user, file);
 
 	const result = await locals.db
 		.deleteFrom('drive_links')

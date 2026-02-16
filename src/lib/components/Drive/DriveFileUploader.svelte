@@ -129,7 +129,7 @@
 			role="button"
 			tabindex="0"
 		>
-			<Icon icon="upload" size="40px" color="muted" />
+			<Icon icon="upload" size="var(--lumi-icon-2xl)" color="muted" />
 			<p class="lumi-text--sm">
 				Arrastra archivos aquí o <strong>haz clic para seleccionar</strong>
 			</p>
@@ -151,8 +151,10 @@
 				{#each queue as item (item.id)}
 					<div class="drive-uploader__queue-item">
 						<div class="lumi-flex lumi-align-items--center lumi-flex--gap-xs lumi-flex-item--grow">
-							<Icon icon="file" size="16px" />
-							<span class="drive-uploader__filename" title={item.file.name}>{item.file.name}</span>
+							<Icon icon="file" size="sm" />
+							<span class="drive-uploader__filename lumi-text-ellipsis" title={item.file.name}
+								>{item.file.name}</span
+							>
 							<span class="lumi-text--xs lumi-text--muted">{formatFileSize(item.file.size)}</span>
 						</div>
 						<Button
@@ -192,7 +194,7 @@
 		justify-content: center;
 		gap: var(--lumi-space-sm);
 		padding: var(--lumi-space-2xl);
-		border: 2px dashed var(--lumi-color-border);
+		border: var(--lumi-border-width-thick) dashed var(--lumi-color-border);
 		border-radius: var(--lumi-radius-xl);
 		background: var(--lumi-color-surface);
 		cursor: pointer;
@@ -211,7 +213,7 @@
 	}
 
 	.drive-uploader__queue {
-		max-height: 240px;
+		max-height: var(--lumi-drive-uploader-queue-max-height);
 		overflow-y: auto;
 	}
 
@@ -221,14 +223,12 @@
 		justify-content: space-between;
 		gap: var(--lumi-space-sm);
 		padding: var(--lumi-space-xs) var(--lumi-space-sm);
-		border: 1px solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-md);
 		background: var(--lumi-color-surface);
 	}
 
 	.drive-uploader__filename {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		min-width: 0;
 	}
 </style>

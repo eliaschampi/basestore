@@ -25,13 +25,15 @@
 		onfiledragend,
 		onfiledrop
 	}: Props = $props();
+
+	const selectedFileSet = $derived(new Set(selectedFiles));
 </script>
 
 <div class="lumi-grid lumi-grid--gap-md drive-file-grid">
 	{#each files as file (file.code)}
 		<DriveFileCard
 			{file}
-			selected={selectedFiles.includes(file.code)}
+			selected={selectedFileSet.has(file.code)}
 			{isTrash}
 			onclick={onfileclick}
 			ondblclick={onfiledblclick}
@@ -45,12 +47,18 @@
 
 <style>
 	.drive-file-grid {
-		grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(var(--lumi-drive-file-grid-min-desktop), 1fr));
+	}
+
+	@media (max-width: 1024px) {
+		.drive-file-grid {
+			grid-template-columns: repeat(auto-fill, minmax(var(--lumi-drive-file-grid-min-tablet), 1fr));
+		}
 	}
 
 	@media (max-width: 768px) {
 		.drive-file-grid {
-			grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
+			grid-template-columns: repeat(auto-fill, minmax(var(--lumi-drive-file-grid-min-mobile), 1fr));
 		}
 	}
 

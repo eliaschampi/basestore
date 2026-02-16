@@ -1,5 +1,8 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import type { SelectQueryBuilder } from 'kysely';
+import type { DB } from '$lib/database/types';
+import type { DriveScopeContext } from '$lib/server/repositories/drive.repository';
 import {
 	detectFileType,
 	isAllowedMimeType,
@@ -15,13 +18,13 @@ import { extname, join } from 'path';
 
 const DRIVE_COLUMNS = [
 	'code',
+	'scope',
 	'name',
 	'type',
 	'size',
 	'tag',
 	'mime_type',
 	'storage_path',
-	'branch_code',
 	'parent_code',
 	'user_code',
 	'is_trashed',
@@ -39,11 +42,32 @@ function getSafeExtension(originalName: string): string {
 	return cleaned.slice(0, 10);
 }
 
+function applyScopeFilter<O>(
+	query: SelectQueryBuilder<DB, 'drive_files', O>,
+	context: DriveScopeContext
+): SelectQueryBuilder<DB, 'drive_files', O> {
+	let scopedQuery = query.where('scope', '=', context.scope);
+
+	if (context.scope === 'user_private' && context.ownerUserCode) {
+		scopedQuery = scopedQuery.where('user_code', '=', context.ownerUserCode);
+	}
+
+	return scopedQuery;
+}
+
+function getScopeStoragePrefix(context: DriveScopeContext, userCode: string): string {
+	if (context.scope === 'user_private') {
+		return `user_private/${userCode}`;
+	}
+
+	return 'product_shared';
+}
+
 /**
  * POST /api/drive/upload — File upload
  * multipart/form-data:
  *  - file: File
- *  - branch_code: UUID
+ *  - scope: product_shared | user_private
  *  - parent_code?: UUID
  *  - name?: string
  */
@@ -58,7 +82,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	const formData = await request.formData();
 	const file = formData.get('file') as File | null;
-	const branchCode = (formData.get('branch_code') as string | null)?.trim() ?? '';
+	const scope = (formData.get('scope') as string | null)?.trim() ?? '';
 	const parentCodeRaw = (formData.get('parent_code') as string | null)?.trim() ?? '';
 	const customNameRaw = (formData.get('name') as string | null)?.trim() ?? '';
 
@@ -74,11 +98,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		throw error(400, 'El archivo está vacío');
 	}
 
-	if (!branchCode || !isUuid(branchCode)) {
-		throw error(400, 'Código de sede inválido');
-	}
-
-	await DriveRepository.assertBranchAccess(locals.db, locals.user, branchCode);
+	const scopeContext = await DriveRepository.resolveScopeContext(locals.user, { scope });
 
 	const mimeType = file.type || 'application/octet-stream';
 	if (!isAllowedMimeType(mimeType)) {
@@ -91,11 +111,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 
 	if (parentCode) {
-		const parent = await locals.db
-			.selectFrom('drive_files')
-			.select(['code'])
+		const parent = await applyScopeFilter(
+			locals.db.selectFrom('drive_files').select(['code']),
+			scopeContext
+		)
 			.where('code', '=', parentCode)
-			.where('branch_code', '=', branchCode)
 			.where('type', '=', 'dir')
 			.where('is_trashed', '=', false)
 			.executeTakeFirst();
@@ -114,12 +134,12 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const fileType = detectFileType(mimeType);
 	const ext = getSafeExtension(file.name);
 	const fileId = randomUUID();
-
-	const storagePath = `uploads/drive/${branchCode}/${fileId}${ext}`;
+	const storagePrefix = getScopeStoragePrefix(scopeContext, locals.user.code);
+	const storagePath = `uploads/drive/${storagePrefix}/${fileId}${ext}`;
 	const fullPath = join(process.cwd(), 'static', storagePath);
-	const branchDir = join(process.cwd(), 'static', 'uploads', 'drive', branchCode);
+	const storageDir = join(process.cwd(), 'static', 'uploads', 'drive', storagePrefix);
 
-	await fs.mkdir(branchDir, { recursive: true });
+	await fs.mkdir(storageDir, { recursive: true });
 	await fs.writeFile(fullPath, Buffer.from(await file.arrayBuffer()));
 
 	try {
@@ -131,7 +151,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				size: file.size,
 				storage_path: storagePath,
 				mime_type: mimeType,
-				branch_code: branchCode,
+				scope: scopeContext.scope,
 				user_code: locals.user.code,
 				parent_code: parentCode
 			})

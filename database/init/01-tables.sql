@@ -86,11 +86,11 @@ CREATE TABLE public.products (
   CONSTRAINT products_price_check CHECK (price >= 0)
 );
 
--- Drive files table (shared per branch)
+-- Drive files table (scope-aware: shared, personal)
 CREATE TABLE public.drive_files (
   code UUID NOT NULL DEFAULT gen_random_uuid(),
-  branch_code UUID NOT NULL,
-  -- Audit field: creator/uploader. Drive remains shared at branch scope.
+  scope VARCHAR(30) NOT NULL DEFAULT 'product_shared',
+  -- Audit field: creator/uploader. Also used as owner for user_private scope.
   user_code UUID NOT NULL,
   parent_code UUID NULL,
   name VARCHAR(500) NOT NULL,
@@ -103,10 +103,10 @@ CREATE TABLE public.drive_files (
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT drive_files_pk PRIMARY KEY (code),
-  CONSTRAINT drive_files_branch_fk FOREIGN KEY (branch_code) REFERENCES public.branches (code) ON DELETE RESTRICT,
   CONSTRAINT drive_files_user_fk FOREIGN KEY (user_code) REFERENCES public.users (code) ON DELETE RESTRICT,
   CONSTRAINT drive_files_parent_fk FOREIGN KEY (parent_code) REFERENCES public.drive_files (code) ON DELETE CASCADE,
-  CONSTRAINT drive_files_type_check CHECK (type IN ('dir', 'img', 'vid', 'aud', 'doc', 'zip', 'otr'))
+  CONSTRAINT drive_files_type_check CHECK (type IN ('dir', 'img', 'vid', 'aud', 'doc', 'zip', 'otr')),
+  CONSTRAINT drive_files_scope_check CHECK (scope IN ('product_shared', 'user_private'))
 );
 
 -- Generic entity links for drive files (product-ready without hard FK dependency)

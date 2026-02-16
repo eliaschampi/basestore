@@ -3,7 +3,7 @@
 -- =====================================================
 
 -- Products Overview View
--- Combines products with brand and category information for efficient querying
+-- Product media now comes from drive_links + drive_files (scope: product_shared).
 CREATE OR REPLACE VIEW products_overview AS
 SELECT
     p.code,
@@ -13,32 +13,46 @@ SELECT
     p.category_code,
     p.price,
     p.sku,
-    p.images,
+    COALESCE(media.images, '[]'::jsonb) AS images,
     p.is_active,
     p.created_at,
     p.updated_at,
     b.name AS brand_name,
     c.name AS category_name,
-    -- Additional computed fields for better UX
-    CASE
-        WHEN p.images::text = '[]' THEN false
-        ELSE true
-    END AS has_images,
-    jsonb_array_length(p.images) AS images_count,
-    -- Extract primary image URL for quick access
-    CASE
-        WHEN jsonb_array_length(p.images) > 0 THEN
-            COALESCE(
-                (SELECT img->>'url' FROM jsonb_array_elements(p.images) AS img WHERE (img->>'isPrimary')::boolean = true LIMIT 1),
-                p.images->0->>'url'
-            )
-        ELSE NULL
-    END AS primary_image_url
+    (COALESCE(media.images_count, 0) > 0) AS has_images,
+    COALESCE(media.images_count, 0) AS images_count,
+    media.primary_file_code::text AS primary_image_url
 FROM products p
 LEFT JOIN brands b ON p.brand_code = b.code
-LEFT JOIN categories c ON p.category_code = c.code;
+LEFT JOIN categories c ON p.category_code = c.code
+LEFT JOIN LATERAL (
+    SELECT
+        jsonb_agg(
+            jsonb_build_object(
+                'fileCode', df.code,
+                'name', df.name,
+                'type', df.type,
+                'mimeType', df.mime_type,
+                'isPrimary', dl.is_primary,
+                'position', dl.position
+            )
+            ORDER BY dl.is_primary DESC, dl.position ASC, dl.created_at ASC
+        ) FILTER (WHERE df.code IS NOT NULL) AS images,
+        COUNT(df.code)::int AS images_count,
+        COALESCE(
+            (ARRAY_AGG(df.code ORDER BY dl.position ASC, dl.created_at ASC) FILTER (WHERE dl.is_primary = TRUE AND df.type = 'img'))[1],
+            (ARRAY_AGG(df.code ORDER BY dl.position ASC, dl.created_at ASC) FILTER (WHERE df.type = 'img'))[1]
+        ) AS primary_file_code
+    FROM drive_links dl
+    LEFT JOIN drive_files df
+      ON df.code = dl.file_code
+     AND df.scope = 'product_shared'
+     AND df.is_trashed = FALSE
+    WHERE dl.entity_type = 'product'
+      AND dl.entity_code = p.code
+) AS media ON TRUE;
 
--- Create index on the view for better performance
+-- Create index on products columns used by products_overview for better performance
 CREATE INDEX IF NOT EXISTS idx_products_overview_name ON products (name);
 CREATE INDEX IF NOT EXISTS idx_products_overview_active ON products (is_active);
 CREATE INDEX IF NOT EXISTS idx_products_overview_brand ON products (brand_code);

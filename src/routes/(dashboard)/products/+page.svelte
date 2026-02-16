@@ -57,11 +57,11 @@
 
 	interface DriveFolderFile {
 		code: string;
+		scope: 'product_shared' | 'user_private';
 		name: string;
 		type: DriveFileType;
 		size: number;
 		tag: string | null;
-		branch_code: string;
 		mime_type: string | null;
 		storage_path: string | null;
 		parent_code: string | null;
@@ -69,11 +69,6 @@
 		created_at: string;
 		updated_at: string;
 		user_code: string;
-	}
-
-	interface BranchOption {
-		code: string;
-		name: string;
 	}
 
 	// Using SelectOption from $lib/components
@@ -97,11 +92,6 @@
 			value: c.code,
 			label: c.name
 		}))
-	);
-
-	const branchList = $derived((data.branches as BranchOption[] | undefined) ?? []);
-	const branchOptions: SelectOption[] = $derived(
-		branchList.map((branch) => ({ value: branch.code, label: branch.name }))
 	);
 
 	/* ─── UI state ─── */
@@ -128,7 +118,6 @@
 	let mediaLoading = $state(false);
 	let browseFiles = $state<DriveFolderFile[]>([]);
 	let browseLoading = $state(false);
-	let browseBranch = $state('');
 	let browseParent = $state<string | null>(null);
 	let browseBreadcrumbs = $state<{ label: string; code: string | null }[]>([
 		{ label: 'Drive', code: null }
@@ -204,49 +193,17 @@
 		showMediaModal = true;
 
 		browseFiles = [];
-		browseBranch = branchList[0]?.code ?? '';
 		browseParent = null;
 		browseBreadcrumbs = [{ label: 'Drive', code: null }];
 
-		if (!browseBranch) {
-			mediaLinks = [];
-			mediaLoading = false;
-			browseLoading = false;
-			return;
-		}
-
-		await Promise.all([
-			fetchMediaLinks(product.code, browseBranch),
-			browseFolder(null, browseBranch)
-		]);
+		await Promise.all([fetchMediaLinks(product.code), browseFolder(null)]);
 	}
 
-	async function handleBrowseBranchChange(value: string | number | object | null) {
-		const branchCode = typeof value === 'string' ? value : '';
-		if (!branchCode || branchCode === browseBranch || !selectedProduct) {
-			return;
-		}
-
-		browseBranch = branchCode;
-		browseParent = null;
-		browseBreadcrumbs = [{ label: 'Drive', code: null }];
-		await Promise.all([
-			fetchMediaLinks(selectedProduct.code, branchCode),
-			browseFolder(null, branchCode)
-		]);
-	}
-
-	async function fetchMediaLinks(productCode: string, branchCode = browseBranch) {
+	async function fetchMediaLinks(productCode: string) {
 		mediaLoading = true;
 		try {
-			if (!branchCode) {
-				mediaLinks = [];
-				mediaLoading = false;
-				return;
-			}
-
 			const res = await fetch(
-				`/api/drive/links?entity_type=product&entity_code=${productCode}&branch=${branchCode}`
+				`/api/drive/links?entity_type=product&entity_code=${productCode}&scope=product_shared`
 			);
 			if (res.ok) {
 				const payload = await res.json();
@@ -259,12 +216,11 @@
 		}
 	}
 
-	async function browseFolder(parentCode: string | null, branchCode = browseBranch) {
-		if (!branchCode) return;
+	async function browseFolder(parentCode: string | null) {
 		browseLoading = true;
 
 		try {
-			const params = new SvelteURLSearchParams({ branch: branchCode });
+			const params = new SvelteURLSearchParams({ scope: 'product_shared' });
 			if (parentCode) params.set('parent', parentCode);
 			const res = await fetch(`/api/drive?${params.toString()}`);
 			if (res.ok) {
@@ -401,13 +357,13 @@
 	function toDriveFileFromLink(link: DriveLink): DriveFileItem {
 		return {
 			code: link.file_code,
+			scope: 'product_shared',
 			name: link.file_name,
 			type: link.file_type,
 			size: normalizeSize(link.file_size),
 			tag: null,
 			mime_type: link.mime_type,
 			storage_path: link.storage_path,
-			branch_code: browseBranch,
 			parent_code: null,
 			user_code: '',
 			is_trashed: false,
@@ -769,124 +725,101 @@
 				<div class="product-media__panel-header">
 					<div class="lumi-flex lumi-align-items--center lumi-flex--gap-sm">
 						<Icon icon="hardDrive" size="18px" />
-						<span class="lumi-font--medium">Explorar Drive</span>
+						<span class="lumi-font--medium">Explorar Drive compartido</span>
 					</div>
-					<div class="lumi-flex lumi-align-items--center lumi-flex--gap-sm">
-						<div class="product-media__branch-select">
-							<Select
-								value={browseBranch}
-								options={branchOptions}
-								placeholder="Selecciona sede"
-								clearable={false}
-								onchange={handleBrowseBranchChange}
-							/>
-						</div>
-						<Button
-							type="flat"
-							size="sm"
-							icon="refresh"
-							onclick={() => browseFolder(browseParent)}
-						/>
-					</div>
+					<Button type="flat" size="sm" icon="refresh" onclick={() => browseFolder(browseParent)} />
 				</div>
 
-				{#if !browseBranch}
+				<nav class="lumi-flex lumi-flex--gap-xs lumi-align-items--center lumi-flex--wrap">
+					{#each browseBreadcrumbs as crumb, index (crumb.code ?? `root-${index}`)}
+						{#if index > 0}
+							<span class="lumi-text--muted">/</span>
+						{/if}
+						{#if index === browseBreadcrumbs.length - 1}
+							<span class="lumi-text--sm lumi-font--medium">{crumb.label}</span>
+						{:else}
+							<Button type="flat" size="sm" onclick={() => navigateDriveBreadcrumb(index)}>
+								{crumb.label}
+							</Button>
+						{/if}
+					{/each}
+				</nav>
+
+				{#if browseLoading}
+					<div class="product-media__loading">
+						<span class="lumi-text--sm lumi-text--muted">Cargando archivos...</span>
+					</div>
+				{:else if browseFiles.length === 0}
 					<div class="product-media__empty">
-						<Icon icon="hardDrive" size="28px" color="var(--lumi-color-text-muted)" />
-						<span class="lumi-text--sm lumi-text--muted">No hay sedes disponibles en Drive.</span>
+						<Icon icon="folder" size="28px" color="var(--lumi-color-text-muted)" />
+						<span class="lumi-text--sm lumi-text--muted">Carpeta vacía</span>
 					</div>
 				{:else}
-					<nav class="lumi-flex lumi-flex--gap-xs lumi-align-items--center lumi-flex--wrap">
-						{#each browseBreadcrumbs as crumb, index (crumb.code ?? `root-${index}`)}
-							{#if index > 0}
-								<span class="lumi-text--muted">/</span>
-							{/if}
-							{#if index === browseBreadcrumbs.length - 1}
-								<span class="lumi-text--sm lumi-font--medium">{crumb.label}</span>
-							{:else}
-								<Button type="flat" size="sm" onclick={() => navigateDriveBreadcrumb(index)}>
-									{crumb.label}
-								</Button>
-							{/if}
-						{/each}
-					</nav>
-
-					{#if browseLoading}
-						<div class="product-media__loading">
-							<span class="lumi-text--sm lumi-text--muted">Cargando archivos...</span>
-						</div>
-					{:else if browseFiles.length === 0}
-						<div class="product-media__empty">
-							<Icon icon="folder" size="28px" color="var(--lumi-color-text-muted)" />
-							<span class="lumi-text--sm lumi-text--muted">Carpeta vacía</span>
-						</div>
-					{:else}
-						<div class="product-media__browse-grid">
-							{#each browseFiles as file (file.code)}
-								<article
-									class="product-media__browse-item"
-									class:product-media__browse-item--linked={isImageLinked(file.code)}
+					<div class="product-media__browse-grid">
+						{#each browseFiles as file (file.code)}
+							<article
+								class="product-media__browse-item"
+								class:product-media__browse-item--linked={isImageLinked(file.code)}
+							>
+								<button
+									type="button"
+									class="product-media__browse-preview"
+									onclick={() =>
+										file.type === 'dir' ? navigateDriveFolder(file) : openBrowsePreview(file)}
 								>
-									<button
-										type="button"
-										class="product-media__browse-preview"
-										onclick={() =>
-											file.type === 'dir' ? navigateDriveFolder(file) : openBrowsePreview(file)}
-									>
-										{#if file.type === 'img'}
-											<img
-												src="/api/drive/{file.code}/serve"
-												alt={file.name}
-												class="product-media__browse-thumb"
-											/>
-										{:else}
-											<Icon
-												icon={getFileIcon(file.type)}
-												size="24px"
-												color={`var(--lumi-color-${getFileColor(file.type)})`}
-											/>
-										{/if}
-									</button>
-									<div class="product-media__browse-name" title={file.name}>{file.name}</div>
-									<div class="product-media__browse-meta">
-										<span>{getDriveTypeLabel(file.type)}</span>
-									</div>
-									<div class="product-media__browse-actions">
-										{#if isImageLinked(file.code)}
-											<Chip color="success" size="sm">Vinculado</Chip>
-										{:else}
-											<Button
-												type="filled"
-												size="sm"
-												icon="link"
-												color="primary"
-												onclick={() => linkFile(file)}
-											>
-												Vincular
-											</Button>
-										{/if}
-										{#if file.type === 'dir'}
-											<Button
-												type="flat"
-												size="sm"
-												icon="folder"
-												onclick={() => navigateDriveFolder(file)}
-											>
-												Abrir
-											</Button>
-										{:else}
-											<Button
-												type="flat"
-												size="sm"
-												icon="eye"
-												onclick={() => openBrowsePreview(file)}
-											/>
-										{/if}
-									</div>
-								</article>
-							{/each}
-						</div>
-					{/if}
+									{#if file.type === 'img'}
+										<img
+											src="/api/drive/{file.code}/serve"
+											alt={file.name}
+											class="product-media__browse-thumb"
+										/>
+									{:else}
+										<Icon
+											icon={getFileIcon(file.type)}
+											size="24px"
+											color={`var(--lumi-color-${getFileColor(file.type)})`}
+										/>
+									{/if}
+								</button>
+								<div class="product-media__browse-name" title={file.name}>{file.name}</div>
+								<div class="product-media__browse-meta">
+									<span>{getDriveTypeLabel(file.type)}</span>
+								</div>
+								<div class="product-media__browse-actions">
+									{#if isImageLinked(file.code)}
+										<Chip color="success" size="sm">Vinculado</Chip>
+									{:else}
+										<Button
+											type="filled"
+											size="sm"
+											icon="link"
+											color="primary"
+											onclick={() => linkFile(file)}
+										>
+											Vincular
+										</Button>
+									{/if}
+									{#if file.type === 'dir'}
+										<Button
+											type="flat"
+											size="sm"
+											icon="folder"
+											onclick={() => navigateDriveFolder(file)}
+										>
+											Abrir
+										</Button>
+									{:else}
+										<Button
+											type="flat"
+											size="sm"
+											icon="eye"
+											onclick={() => openBrowsePreview(file)}
+										/>
+									{/if}
+								</div>
+							</article>
+						{/each}
+					</div>
 				{/if}
 			</section>
 		</div>
@@ -978,10 +911,6 @@
 		justify-content: space-between;
 		gap: var(--lumi-space-sm);
 		flex-wrap: wrap;
-	}
-
-	.product-media__branch-select {
-		min-width: 180px;
 	}
 
 	.product-media__loading {
