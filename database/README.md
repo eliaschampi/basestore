@@ -27,4 +27,3 @@ During `init`, baseline migrations are auto-recorded with batch `0`, so `migrate
    - `pnpm db:status`
    - `pnpm check`
    - `pnpm lint`
-

@@ -16,6 +16,26 @@
 
 	let imageError = $state(false);
 
+	const imageSrc = $derived(() => {
+		const rawSrc = typeof src === 'string' ? src.trim() : '';
+		if (!rawSrc) {
+			return '';
+		}
+
+		if (
+			rawSrc.startsWith('/') ||
+			rawSrc.startsWith('http://') ||
+			rawSrc.startsWith('https://') ||
+			rawSrc.startsWith('//') ||
+			rawSrc.startsWith('data:') ||
+			rawSrc.startsWith('blob:')
+		) {
+			return rawSrc;
+		}
+
+		return `/${rawSrc}`;
+	});
+
 	$effect(() => {
 		if (src !== undefined) {
 			imageError = false;
@@ -55,13 +75,13 @@
 </script>
 
 <div class={classes()} aria-label={alt || text || 'Avatar'}>
-	{#if src && !imageError}
-		<img {src} {alt} class="lumi-avatar__image" onerror={handleImageError} />
+	{#if imageSrc() && !imageError}
+		<img src={imageSrc()} {alt} class="lumi-avatar__image" onerror={handleImageError} />
 	{:else if icon}
 		<span class="lumi-avatar__icon">
 			<Icon {icon} size={iconSizePx()} />
 		</span>
-	{:else if text || (src && imageError)}
+	{:else if text || (imageSrc() && imageError)}
 		<span class="lumi-avatar__text">
 			{displayText()}
 		</span>

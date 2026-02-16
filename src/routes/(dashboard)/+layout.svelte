@@ -94,6 +94,8 @@
 			<div class="lumi-sidebar-profile">
 				<Avatar
 					text={getInitials(page.data.user?.name, page.data.user?.last_name)}
+					src={page.data.user?.photo_url || undefined}
+					alt={sidebarName()}
 					size={sidebarCollapsed ? 'md' : 'xl'}
 					color="primary"
 				/>
@@ -209,7 +211,13 @@
 				<Dropdown position="bottom-end">
 					{#snippet triggerContent()}
 						<Button type="flat" size="sm">
-							<Avatar text={getInitials(user.name, user.last_name)} size="sm" color="primary" />
+							<Avatar
+								text={getInitials(user.name, user.last_name)}
+								src={user.photo_url || undefined}
+								alt={`${user.name ?? ''} ${user.last_name ?? ''}`.trim() || 'Usuario'}
+								size="sm"
+								color="primary"
+							/>
 						</Button>
 					{/snippet}
 

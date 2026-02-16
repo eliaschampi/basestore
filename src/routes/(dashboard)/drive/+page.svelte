@@ -8,6 +8,8 @@
 		Context,
 		ContextItem,
 		Dialog,
+		Dropdown,
+		DropdownItem,
 		DriveFileGrid,
 		DriveFileList,
 		DriveFilePreview,
@@ -405,19 +407,45 @@
 		}
 	}
 
+	async function setFilesTrashedState(fileCodes: string[], isTrashed: boolean): Promise<void> {
+		if (fileCodes.length === 0) {
+			return;
+		}
+
+		const responses = await Promise.all(
+			fileCodes.map((fileCode) =>
+				fetch(`/api/drive/${fileCode}`, {
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ is_trashed: isTrashed })
+				})
+			)
+		);
+
+		const failedResponse = responses.find((response) => !response.ok);
+		if (!failedResponse) {
+			return;
+		}
+
+		let defaultMessage = isTrashed
+			? 'No se pudieron mover algunos archivos a papelera'
+			: 'No se pudieron restaurar algunos archivos';
+
+		try {
+			const payload = await failedResponse.json();
+			if (typeof payload?.message === 'string' && payload.message.trim()) {
+				defaultMessage = payload.message;
+			}
+		} catch {
+			// Keep fallback message.
+		}
+
+		throw new Error(defaultMessage);
+	}
+
 	async function trashFile(file: DriveFileItem) {
 		try {
-			const response = await fetch(`/api/drive/${file.code}`, {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ is_trashed: true })
-			});
-
-			if (!response.ok) {
-				const payload = await response.json();
-				throw new Error(payload?.message || 'Error al mover archivo a papelera');
-			}
-
+			await setFilesTrashedState([file.code], true);
 			selectedFileCodes = selectedFileCodes.filter((code) => code !== file.code);
 			showToast('Archivo movido a papelera', 'warning');
 			await fetchFiles();
@@ -428,17 +456,7 @@
 
 	async function restoreFile(file: DriveFileItem) {
 		try {
-			const response = await fetch(`/api/drive/${file.code}`, {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ is_trashed: false })
-			});
-
-			if (!response.ok) {
-				const payload = await response.json();
-				throw new Error(payload?.message || 'Error al restaurar archivo');
-			}
-
+			await setFilesTrashedState([file.code], false);
 			showToast('Archivo restaurado', 'success');
 			await fetchFiles();
 		} catch (caught) {
@@ -681,22 +699,10 @@
 		}
 
 		try {
-			const responses = await Promise.all(
-				selectedFiles.map((file) =>
-					fetch(`/api/drive/${file.code}`, {
-						method: 'PATCH',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({ is_trashed: true })
-					})
-				)
+			await setFilesTrashedState(
+				selectedFiles.map((file) => file.code),
+				true
 			);
-
-			const failedResponse = responses.find((response) => !response.ok);
-			if (failedResponse) {
-				const payload = await failedResponse.json();
-				throw new Error(payload?.message || 'No se pudieron mover algunos archivos');
-			}
-
 			selectedFileCodes = [];
 			showToast('Archivos movidos a papelera', 'warning');
 			await fetchFiles();
@@ -843,7 +849,7 @@
 							class="drive-page__selection-meta lumi-flex lumi-align-items--center lumi-flex--gap-sm"
 						>
 							<span class="drive-page__selection-icon">
-								<Icon icon="checkCheck" size="sm" color="primary" />
+								<Icon icon="feed" size="sm" color="primary" />
 							</span>
 							<div class="drive-page__selection-copy">
 								<p class="drive-page__selection-title">{selectedSummaryTitle}</p>
@@ -855,20 +861,20 @@
 						<div
 							class="drive-page__selection-actions lumi-flex lumi-align-items--center lumi-flex--gap-xs"
 						>
-							{#if canDelete}
-								<Button
-									type="filled"
-									size="sm"
-									icon="trash"
-									color="danger"
-									onclick={trashSelectedFiles}
-								>
-									Mover a papelera
-								</Button>
-							{/if}
-							<Button type="border" size="sm" icon="x" onclick={clearSelection}>
-								Limpiar selección
-							</Button>
+							<Dropdown position="bottom-end" aria-label="Acciones de selección">
+								{#snippet triggerContent()}
+									<Button type="border" size="sm" icon="moreVertical">Acciones</Button>
+								{/snippet}
+
+								{#snippet content()}
+									{#if canDelete}
+										<DropdownItem icon="trash" danger onclick={trashSelectedFiles}>
+											Mover a papelera
+										</DropdownItem>
+									{/if}
+									<DropdownItem icon="x" onclick={clearSelection}>Limpiar selección</DropdownItem>
+								{/snippet}
+							</Dropdown>
 						</div>
 					</div>
 				{/if}

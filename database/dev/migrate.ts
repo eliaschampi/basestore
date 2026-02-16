@@ -144,7 +144,7 @@ async function getMigrationFiles(directory: string): Promise<MigrationFile[]> {
 				timestamp: parseInt(timestamp)
 			};
 		})
-			.sort((a, b) => a.timestamp - b.timestamp);
+		.sort((a, b) => a.timestamp - b.timestamp);
 }
 
 async function readBaselineTimestamp(): Promise<number | null> {
@@ -169,7 +169,9 @@ async function seedBaselineMigrations(db: Database): Promise<void> {
 	if (!baselineTimestamp) return;
 
 	const migrationFiles = await getMigrationFiles(MIGRATIONS_DIR);
-	const baselineMigrations = migrationFiles.filter((migration) => migration.timestamp <= baselineTimestamp);
+	const baselineMigrations = migrationFiles.filter(
+		(migration) => migration.timestamp <= baselineTimestamp
+	);
 
 	if (baselineMigrations.length === 0) return;
 
