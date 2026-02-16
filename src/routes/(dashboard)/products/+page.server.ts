@@ -173,19 +173,22 @@ export const actions: Actions = {
 		}
 
 		try {
-			// Clean up drive links first
-			await locals.db
-				.deleteFrom('drive_links')
-				.where('entity_type', '=', 'product')
-				.where('entity_code', '=', productCode)
-				.execute();
+			const deletedRows = await locals.db.transaction().execute(async (trx) => {
+				await trx
+					.deleteFrom('drive_links')
+					.where('entity_type', '=', 'product')
+					.where('entity_code', '=', productCode)
+					.execute();
 
-			const result = await locals.db
-				.deleteFrom('products')
-				.where('code', '=', productCode)
-				.executeTakeFirst();
+				const result = await trx
+					.deleteFrom('products')
+					.where('code', '=', productCode)
+					.executeTakeFirst();
 
-			if (Number(result.numDeletedRows ?? 0) === 0) {
+				return Number(result.numDeletedRows ?? 0);
+			});
+
+			if (deletedRows === 0) {
 				return fail(404, { error: 'Producto no encontrado' });
 			}
 

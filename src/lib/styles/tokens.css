@@ -365,12 +365,18 @@
 	--lumi-notification-zone-offset: var(--lumi-space-lg);
 	--lumi-notification-zone-offset-mobile: var(--lumi-space-sm);
 
+	/* Shared control heights (Input, Button, Select, etc.) */
+	--lumi-control-height-sm: var(--lumi-space-xl);
+	--lumi-control-height-md: var(--lumi-space-xxl);
+	--lumi-control-height-lg: var(--lumi-space-3xl);
+	--lumi-control-height-xl: var(--lumi-space-4xl);
+
 	/* Drive module geometry */
-	--lumi-drive-file-grid-min-desktop: 12.25rem;
-	--lumi-drive-file-grid-min-tablet: 11rem;
-	--lumi-drive-file-grid-min-mobile: 9.5rem;
-	--lumi-drive-file-preview-ratio: 5 / 4;
-	--lumi-drive-file-icon-size: 2.625rem;
+	--lumi-drive-file-grid-min-desktop: 10.5rem;
+	--lumi-drive-file-grid-min-tablet: 9.75rem;
+	--lumi-drive-file-grid-min-mobile: 8.5rem;
+	--lumi-drive-file-preview-ratio: 4 / 3;
+	--lumi-drive-file-icon-size: 2.25rem;
 	--lumi-drive-tag-dot-size: var(--lumi-space-xs);
 	--lumi-drive-selection-dot-size: var(--lumi-icon-xs);
 	--lumi-drive-scope-control-min-width: 13.75rem;

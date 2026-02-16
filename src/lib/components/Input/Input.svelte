@@ -335,19 +335,37 @@
 		padding-inline: var(--lumi-space-sm);
 		font-size: var(--lumi-font-size-sm);
 	}
+
+	.lumi-input-container--sm .lumi-input__wrapper {
+		min-height: var(--lumi-control-height-sm);
+	}
+
 	.lumi-input-container--md .lumi-input {
-		padding-block: var(--lumi-space-sm);
+		padding-block: var(--lumi-space-xs);
 		padding-inline: var(--lumi-space-sm);
+	}
+
+	.lumi-input-container--md .lumi-input__wrapper {
+		min-height: var(--lumi-control-height-md);
 	}
 	.lumi-input-container--lg .lumi-input {
 		padding-block: var(--lumi-space-md);
 		padding-inline: var(--lumi-space-md);
 		font-size: var(--lumi-font-size-lg);
 	}
+
+	.lumi-input-container--lg .lumi-input__wrapper {
+		min-height: var(--lumi-control-height-lg);
+	}
+
 	.lumi-input-container--xl .lumi-input {
 		padding-block: var(--lumi-space-md);
 		padding-inline: var(--lumi-space-lg);
 		font-size: var(--lumi-font-size-xl);
+	}
+
+	.lumi-input-container--xl .lumi-input__wrapper {
+		min-height: var(--lumi-control-height-xl);
 	}
 
 	/* ── Suffix ───────────────────────────────── */

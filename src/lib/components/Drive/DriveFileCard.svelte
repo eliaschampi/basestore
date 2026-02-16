@@ -218,9 +218,9 @@
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
-		gap: var(--lumi-space-sm);
+		gap: var(--lumi-space-xs);
 		width: 100%;
-		padding: var(--lumi-space-xs);
+		padding: var(--lumi-space-2xs);
 		background:
 			linear-gradient(
 				165deg,
@@ -363,7 +363,7 @@
 	}
 
 	.drive-file-card__content {
-		padding: 0 var(--lumi-space-xs) var(--lumi-space-xs);
+		padding: 0 var(--lumi-space-2xs) var(--lumi-space-2xs);
 		display: flex;
 		flex-direction: column;
 		gap: var(--lumi-space-2xs);
@@ -374,7 +374,7 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		word-break: break-word;
-		font-size: var(--lumi-font-size-md);
+		font-size: var(--lumi-font-size-sm);
 		font-weight: var(--lumi-font-weight-medium);
 		line-height: var(--lumi-line-height-tight);
 		color: var(--lumi-color-text);
@@ -382,7 +382,7 @@
 		-webkit-line-clamp: 2;
 		line-clamp: 2;
 		-webkit-box-orient: vertical;
-		min-height: calc(var(--lumi-font-size-md) * 2.1);
+		min-height: calc(var(--lumi-font-size-sm) * 2.4);
 	}
 
 	.drive-file-card__meta {

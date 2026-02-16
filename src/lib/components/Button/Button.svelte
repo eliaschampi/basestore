@@ -26,7 +26,16 @@
 		children
 	}: Props = $props();
 
-	const iconPixelSize = $derived(getIconSize(size));
+	const iconPixelSize = $derived.by(() => {
+		const iconSizeMap: Record<NonNullable<Props['size']>, number> = {
+			sm: 14,
+			md: 16,
+			lg: 18,
+			xl: 20
+		};
+
+		return iconSizeMap[size] ?? getIconSize('md');
+	});
 
 	const buttonClasses = $derived(() => {
 		const classes = ['lumi-button', `lumi-button--${type}`, `lumi-button--${size}`];
@@ -148,26 +157,26 @@
 	/* ========================================================================== */
 
 	.lumi-button--sm {
-		height: var(--lumi-space-xl);
+		height: var(--lumi-control-height-sm);
 		padding: 0 var(--lumi-space-md);
 		font-size: var(--lumi-font-size-xs);
 		border-radius: var(--lumi-radius-md);
 	}
 
 	.lumi-button--md {
-		height: var(--lumi-space-xxl);
+		height: var(--lumi-control-height-md);
 		padding: 0 var(--lumi-space-lg);
 		font-size: var(--lumi-font-size-sm);
 	}
 
 	.lumi-button--lg {
-		height: var(--lumi-space-3xl);
+		height: var(--lumi-control-height-lg);
 		padding: 0 var(--lumi-space-xl);
 		font-size: var(--lumi-font-size-base);
 	}
 
 	.lumi-button--xl {
-		height: var(--lumi-space-4xl);
+		height: var(--lumi-control-height-xl);
 		padding: 0 var(--lumi-space-xxl);
 		font-size: var(--lumi-font-size-lg);
 	}
@@ -186,16 +195,16 @@
 		aspect-ratio: 1;
 	}
 	.lumi-button--icon-only.lumi-button--sm {
-		width: var(--lumi-space-xl);
+		width: var(--lumi-control-height-sm);
 	}
 	.lumi-button--icon-only.lumi-button--md {
-		width: var(--lumi-space-xxl);
+		width: var(--lumi-control-height-md);
 	}
 	.lumi-button--icon-only.lumi-button--lg {
-		width: var(--lumi-space-3xl);
+		width: var(--lumi-control-height-lg);
 	}
 	.lumi-button--icon-only.lumi-button--xl {
-		width: var(--lumi-space-4xl);
+		width: var(--lumi-control-height-xl);
 	}
 
 	/* ========================================================================== */
@@ -239,18 +248,19 @@
 
 	/* FLAT - Subtle ghost with glass effect */
 	.lumi-button--flat {
-		background: transparent;
+		background: color-mix(in srgb, var(--btn-color) 7%, transparent);
 		color: var(--btn-color);
-		border-color: transparent;
+		border-color: color-mix(in srgb, var(--btn-color) 16%, transparent);
 	}
 
 	.lumi-button--flat:hover:not(:disabled) {
-		background: rgba(var(--btn-color-rgb), 0.08);
+		background: rgba(var(--btn-color-rgb), 0.12);
+		border-color: rgba(var(--btn-color-rgb), 0.26);
 		box-shadow: var(--lumi-shadow-sm);
 	}
 
 	.lumi-button--flat:active:not(:disabled) {
-		background: rgba(var(--btn-color-rgb), 0.12);
+		background: rgba(var(--btn-color-rgb), 0.18);
 	}
 
 	/* GRADIENT - Premium shimmer effect */
