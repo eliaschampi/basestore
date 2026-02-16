@@ -78,7 +78,9 @@
 
 <style>
 	.lumi-tooltip {
-		display: inline-block;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		position: relative;
 	}
 

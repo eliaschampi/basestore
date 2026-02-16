@@ -169,7 +169,6 @@
 		gap: var(--lumi-space-2xs);
 		user-select: none;
 		isolation: isolate;
-		width: fit-content;
 		max-width: 100%;
 		box-shadow: var(--lumi-shadow-sm);
 		transition:
@@ -212,7 +211,6 @@
 		cursor: pointer;
 		flex: 1;
 		text-align: center;
-		min-width: 0; /* Allow shrinking */
 	}
 
 	.lumi-segmented-control__option--disabled {
@@ -232,7 +230,6 @@
 		align-items: center;
 		justify-content: center;
 		gap: var(--lumi-space-xs);
-		min-width: 0;
 		padding: var(--lumi-space-xs) var(--lumi-space-md);
 		color: var(--lumi-color-text-muted);
 		font-weight: var(--lumi-font-weight-medium);
@@ -247,7 +244,6 @@
 
 	.lumi-segmented-control__label {
 		display: block;
-		min-width: 0;
 		max-width: 100%;
 		overflow: hidden;
 		text-overflow: ellipsis;

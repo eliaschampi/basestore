@@ -21,7 +21,8 @@
 		Input,
 		PageHeader,
 		SegmentedControl,
-		Table
+		Table,
+		Tooltip
 	} from '$lib/components';
 	import type { DriveFileItem, TableRow } from '$lib/components';
 	import type { ProductDriveLink } from '$lib/types/products';
@@ -76,14 +77,16 @@
 
 	const productCode = $derived(data.product.code);
 	const linkedCount = $derived(linkedFiles.length);
-	const linkedImageCode = $derived.by(() => {
+
+	const primaryImage = $derived.by(() => {
 		const images = linkedFiles.filter((file) => file.file_type === 'img');
 		if (images.length === 0) {
-			return data.product.primary_image_url;
+			return null;
 		}
-
-		return images.find((file) => file.is_primary)?.file_code ?? images[0].file_code;
+		return images.find((file) => file.is_primary) ?? images[0];
 	});
+
+	const linkedImageName = $derived(primaryImage?.file_name ?? 'Imagen sin nombre');
 	const linkedDriveItems = $derived.by(() => linkedFiles.map((file) => toPreviewFile(file)));
 	const selectedGridCodes = $derived(selectedGridFileCode ? [selectedGridFileCode] : []);
 
@@ -409,42 +412,36 @@
 	<Card title="Información del producto" subtitle="Resumen principal del registro">
 		<div class="lumi-grid lumi-grid--columns-4 lumi-grid--gap-md">
 			<InfoItem
-				layout="vertical"
 				label="Nombre"
 				value={data.product.name}
 				icon="package"
 				iconColor="primary"
 			/>
 			<InfoItem
-				layout="vertical"
 				label="SKU"
 				value={data.product.sku?.trim() || '—'}
 				icon="tag"
 				iconColor="secondary"
 			/>
 			<InfoItem
-				layout="vertical"
 				label="Marca"
 				value={data.product.brand_name?.trim() || '—'}
 				icon="building"
 				iconColor="info"
 			/>
 			<InfoItem
-				layout="vertical"
 				label="Categoría"
 				value={data.product.category_name?.trim() || '—'}
 				icon="listChecks"
 				iconColor="info"
 			/>
 			<InfoItem
-				layout="vertical"
 				label="Precio"
 				value={formatProductPrice(data.product.price)}
 				icon="creditCard"
 				iconColor="success"
 			/>
 			<InfoItem
-				layout="vertical"
 				label="Estado"
 				icon="activity"
 				iconColor={data.product.is_active ? 'success' : 'danger'}
@@ -453,11 +450,7 @@
 					{data.product.is_active ? 'Activo' : 'Inactivo'}
 				</Chip>
 			</InfoItem>
-			<InfoItem layout="vertical" label="Archivos vinculados" icon="link" iconColor="primary">
-				<Chip color="info" size="sm">{linkedCount}</Chip>
-			</InfoItem>
 			<InfoItem
-				layout="vertical"
 				label="Actualizado"
 				value={formatProductDateTime(data.product.updated_at)}
 				icon="calendar"
@@ -465,11 +458,11 @@
 			/>
 		</div>
 
-		{#if linkedImageCode}
+		{#if linkedImageName}
 			<Divider text="Imagen principal" />
 			<div class="lumi-flex lumi-align-items--center lumi-flex--gap-sm">
 				<Icon icon="image" color="success" />
-				<span class="lumi-text--sm lumi-text--muted">Archivo: {linkedImageCode}</span>
+				<span class="lumi-text--sm lumi-text--muted">{linkedImageName}</span>
 			</div>
 		{/if}
 	</Card>
@@ -478,7 +471,10 @@
 		{#snippet header()}
 			<div class="lumi-flex lumi-justify--between lumi-align-items--center lumi-flex--wrap">
 				<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
-					<span class="lumi-font--medium">Archivos del producto</span>
+					<div class="lumi-flex lumi-align-items--center lumi-flex--gap-sm">
+						<span class="lumi-font--medium">Archivos del producto</span>
+						<Chip color="info" size="sm">{linkedCount}</Chip>
+					</div>
 					<span class="lumi-text--xs lumi-text--muted">
 						Vista y gestión de archivos y carpetas vinculadas
 					</span>
@@ -548,12 +544,14 @@
 								color={getFileColor(file.file_type)}
 								size="sm"
 							/>
-							<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs lumi-flex-item--grow">
+						<div class="lumi-flex lumi-align-items--center lumi-flex--gap-2xs lumi-flex-item--grow">
 								<span class="lumi-font--medium lumi-text-ellipsis" title={file.file_name}>
 									{file.file_name}
 								</span>
 								{#if file.is_primary}
-									<Chip color="primary" size="sm">Principal</Chip>
+									<Tooltip text="Imagen principal del producto">
+										<Icon icon="star" size="sm" color="warning" />
+									</Tooltip>
 								{/if}
 							</div>
 						</div>
