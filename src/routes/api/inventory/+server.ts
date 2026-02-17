@@ -45,7 +45,11 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			stock: stockParam,
 			includeInactive
 		}),
-		locals.db.selectFrom('branches').select(['code', 'name', 'state']).orderBy('name', 'asc').execute(),
+		locals.db
+			.selectFrom('branches')
+			.select(['code', 'name', 'state'])
+			.orderBy('name', 'asc')
+			.execute(),
 		locals.db.selectFrom('categories').select(['code', 'name']).orderBy('name', 'asc').execute(),
 		locals.db
 			.selectFrom('products')

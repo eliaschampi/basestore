@@ -163,10 +163,12 @@
 	);
 
 	const activeProductOptions = $derived(
-		products.filter((product) => product.is_active).map((product) => ({
-			value: product.code,
-			label: product.name
-		}))
+		products
+			.filter((product) => product.is_active)
+			.map((product) => ({
+				value: product.code,
+				label: product.name
+			}))
 	);
 
 	const stockFilterCountMap = $derived({
@@ -294,10 +296,7 @@
 	function toQueryString(entries: Array<[string, string | undefined]>): string {
 		const serialized = entries
 			.filter(([, value]) => value !== undefined && value !== '')
-			.map(
-				([key, value]) =>
-					`${encodeURIComponent(key)}=${encodeURIComponent(value as string)}`
-			);
+			.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value as string)}`);
 		return serialized.length > 0 ? `?${serialized.join('&')}` : '';
 	}
 
@@ -354,9 +353,24 @@
 		try {
 			const branchCode = filterBranchCode !== 'all' ? filterBranchCode : undefined;
 			const [purchasesRes, salesRes, movementsRes] = await Promise.all([
-				fetch(`/api/inventory/purchases${toQueryString([['branch_code', branchCode], ['limit', '8']])}`),
-				fetch(`/api/inventory/sales${toQueryString([['branch_code', branchCode], ['limit', '8']])}`),
-				fetch(`/api/inventory/movements${toQueryString([['branch_code', branchCode], ['limit', '12']])}`)
+				fetch(
+					`/api/inventory/purchases${toQueryString([
+						['branch_code', branchCode],
+						['limit', '8']
+					])}`
+				),
+				fetch(
+					`/api/inventory/sales${toQueryString([
+						['branch_code', branchCode],
+						['limit', '8']
+					])}`
+				),
+				fetch(
+					`/api/inventory/movements${toQueryString([
+						['branch_code', branchCode],
+						['limit', '12']
+					])}`
+				)
 			]);
 
 			const [purchasesPayload, salesPayload, movementsPayload] = await Promise.all([
@@ -598,7 +612,13 @@
 					<Icon icon="menu" size="sm" />
 				</button>
 
-				<Button type="border" color="info" icon="shoppingBag" onclick={openBuyDialog} disabled={!canCreate}>
+				<Button
+					type="border"
+					color="info"
+					icon="shoppingBag"
+					onclick={openBuyDialog}
+					disabled={!canCreate}
+				>
 					Registrar compra
 				</Button>
 				<Button
@@ -786,7 +806,13 @@
 					{/if}
 
 					<Card>
-						<Table data={inventoryTableRows} pagination hover loading={loadingInventory} itemsPerPage={12}>
+						<Table
+							data={inventoryTableRows}
+							pagination
+							hover
+							loading={loadingInventory}
+							itemsPerPage={12}
+						>
 							{#snippet thead()}
 								<th>Producto</th>
 								<th>Sede</th>
@@ -930,7 +956,9 @@
 													{movementReasonLabel(movement.reason)} · {movement.branch_name}
 												</p>
 											</div>
-											<span class="lumi-text--xs lumi-text--muted">{formatDate(movement.occurred_at)}</span>
+											<span class="lumi-text--xs lumi-text--muted"
+												>{formatDate(movement.occurred_at)}</span
+											>
 										</div>
 									{/each}
 								</div>
@@ -1068,7 +1096,12 @@
 
 	{#snippet footer()}
 		<Button type="border" onclick={() => (showSaleDialog = false)}>Cancelar</Button>
-		<Button type="filled" color="primary" loading={submittingSale} onclick={() => void submitSale()}>
+		<Button
+			type="filled"
+			color="primary"
+			loading={submittingSale}
+			onclick={() => void submitSale()}
+		>
 			Registrar venta
 		</Button>
 	{/snippet}
@@ -1087,7 +1120,8 @@
 			label="Punto de emergencia"
 			type="number"
 			value={thresholdEmergencyPoint}
-			oninput={(event) => (thresholdEmergencyPoint = (event.currentTarget as HTMLInputElement).value)}
+			oninput={(event) =>
+				(thresholdEmergencyPoint = (event.currentTarget as HTMLInputElement).value)}
 		/>
 	</div>
 	{#snippet footer()}

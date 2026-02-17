@@ -547,7 +547,10 @@ export class InventoryRepository {
 		});
 	}
 
-	static async createSale(db: Database, input: CreateInventorySaleInput): Promise<InventorySaleRecord> {
+	static async createSale(
+		db: Database,
+		input: CreateInventorySaleInput
+	): Promise<InventorySaleRecord> {
 		return db.transaction().execute(async (trx) => {
 			const saleInsert = await sql<InventorySaleRecord>`
 				INSERT INTO public.inventory_sales (

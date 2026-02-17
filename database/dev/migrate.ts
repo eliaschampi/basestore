@@ -313,7 +313,9 @@ async function rollbackMigrations(db: Database) {
 		.filter((migration) => migration.batch === lastBatch)
 		.reverse();
 	const migrationFiles = await getMigrationFiles(MIGRATIONS_DIR);
-	const migrationFileById = new Map(migrationFiles.map((migrationFile) => [migrationFile.id, migrationFile]));
+	const migrationFileById = new Map(
+		migrationFiles.map((migrationFile) => [migrationFile.id, migrationFile])
+	);
 
 	const rollbackPlan: Array<{ record: MigrationRecord; downSql: string }> = [];
 	for (const migration of migrationsToRollback) {

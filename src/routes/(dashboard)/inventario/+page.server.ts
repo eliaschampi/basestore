@@ -15,7 +15,11 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 				stock: 'all',
 				includeInactive: false
 			}),
-			locals.db.selectFrom('branches').select(['code', 'name', 'state']).orderBy('name', 'asc').execute(),
+			locals.db
+				.selectFrom('branches')
+				.select(['code', 'name', 'state'])
+				.orderBy('name', 'asc')
+				.execute(),
 			locals.db.selectFrom('categories').select(['code', 'name']).orderBy('name', 'asc').execute(),
 			locals.db
 				.selectFrom('products')
