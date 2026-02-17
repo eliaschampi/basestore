@@ -36,7 +36,8 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 		throw error(400, 'Cuerpo de solicitud inválido');
 	}
 
-	const needsUpdatePermission = 'name' in body || 'parent_code' in body || 'tag' in body || 'scope' in body;
+	const needsUpdatePermission =
+		'name' in body || 'parent_code' in body || 'tag' in body || 'scope' in body;
 	const needsDeletePermission = 'is_trashed' in body;
 
 	if (needsUpdatePermission && !(await locals.can('drive:update'))) {
@@ -166,16 +167,12 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 				: null
 			: file.parent_code;
 
-			if (
-				body.is_trashed === false &&
-				(await hasTrashedAncestor(
-					locals.db,
-					parentForRestoreCheck,
-					targetScopeContext
-				))
-			) {
-				throw error(400, 'No se puede restaurar mientras la carpeta padre esté en papelera');
-			}
+		if (
+			body.is_trashed === false &&
+			(await hasTrashedAncestor(locals.db, parentForRestoreCheck, targetScopeContext))
+		) {
+			throw error(400, 'No se puede restaurar mientras la carpeta padre esté en papelera');
+		}
 
 		nextTrashState = body.is_trashed;
 	}

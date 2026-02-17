@@ -17,8 +17,7 @@ export const DELETE: RequestHandler = async ({ url, locals }) => {
 		scope: url.searchParams.get('scope')
 	});
 
-	const ownerUserCode =
-		scopeContext.scope === 'user_private' ? scopeContext.ownerUserCode : null;
+	const ownerUserCode = scopeContext.scope === 'user_private' ? scopeContext.ownerUserCode : null;
 
 	const scopedOwnerFilter =
 		scopeContext.scope === 'user_private' && ownerUserCode

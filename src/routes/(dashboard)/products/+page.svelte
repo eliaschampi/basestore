@@ -164,8 +164,8 @@
 							<Image
 								src={getDriveServeUrl(product.primary_image_url, { variant: 'thumb' })}
 								alt={product.name}
-								width={44}
-								height={44}
+								width={38}
+								height={38}
 								radius="md"
 							/>
 						{:else}
@@ -207,6 +207,7 @@
 								type="flat"
 								size="sm"
 								icon="edit"
+								color="success"
 								onclick={() => openEditModal(product)}
 								disabled={!canUpdate}
 							/>
@@ -255,17 +256,32 @@
 			<Alert type="danger" closable onclose={() => (errorMessage = '')}>{errorMessage}</Alert>
 		{/if}
 
-		<div class="lumi-stack lumi-space--md">
-			<Input
-				bind:value={formName}
-				name="name"
-				label="Nombre del producto"
-				placeholder="Ej: Laptop Dell XPS 15"
-				icon="package"
-				required
-			/>
+		<div class="lumi-grid lumi-grid--columns-2 lumi-grid--gap-lg">
+			<div class="lumi-stack lumi-space--md">
+				<Input
+					bind:value={formName}
+					name="name"
+					label="Nombre del producto"
+					placeholder="Ej: Laptop Dell XPS 15"
+					icon="package"
+					required
+				/>
 
-			<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+				<Textarea
+					bind:value={formDescription}
+					name="description"
+					label="Descripción"
+					placeholder="Describe las características del producto..."
+					rows={3}
+				/>
+
+				<div class="lumi-flex lumi-align-items--center lumi-flex--gap-sm">
+					<Switch bind:checked={formIsActive} label="Producto activo" color="success" />
+					<input type="hidden" name="is_active" value={formIsActive ? 'on' : ''} />
+				</div>
+			</div>
+
+			<div class="lumi-stack lumi-space--md">
 				<Select
 					bind:value={formBrandCode}
 					options={brandOptions}
@@ -282,32 +298,19 @@
 					placeholder="Seleccionar categoría"
 					autocomplete
 				/>
-			</div>
 
-			<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
-				<Input
-					bind:value={formPrice}
-					name="price"
-					type="number"
-					label="Precio"
-					placeholder="0.00"
-					icon="creditCard"
-					required
-				/>
-				<Input bind:value={formSku} name="sku" label="SKU" placeholder="Ej: PC00012" icon="tag" />
-			</div>
-
-			<Textarea
-				bind:value={formDescription}
-				name="description"
-				label="Descripción"
-				placeholder="Describe las características del producto..."
-				rows={3}
-			/>
-
-			<div class="lumi-flex lumi-align-items--center lumi-flex--gap-sm">
-				<Switch bind:checked={formIsActive} label="Producto activo" color="success" />
-				<input type="hidden" name="is_active" value={formIsActive ? 'on' : ''} />
+				<div class="lumi-grid lumi-grid--columns-2 lumi-grid--gap-md">
+					<Input
+						bind:value={formPrice}
+						name="price"
+						type="number"
+						label="Precio"
+						placeholder="0.00"
+						icon="creditCard"
+						required
+					/>
+					<Input bind:value={formSku} name="sku" label="SKU" placeholder="Ej: PC00012" icon="tag" />
+				</div>
 			</div>
 		</div>
 	</form>

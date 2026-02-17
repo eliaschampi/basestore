@@ -416,12 +416,7 @@
 
 	<Card title="Información del producto" subtitle="Resumen principal del registro">
 		<div class="lumi-grid lumi-grid--columns-4 lumi-grid--gap-md">
-			<InfoItem
-				label="Nombre"
-				value={data.product.name}
-				icon="package"
-				iconColor="primary"
-			/>
+			<InfoItem label="Nombre" value={data.product.name} icon="package" iconColor="primary" />
 			<InfoItem
 				label="SKU"
 				value={data.product.sku?.trim() || '—'}
@@ -549,7 +544,9 @@
 								color={getFileColor(file.file_type)}
 								size="sm"
 							/>
-						<div class="lumi-flex lumi-align-items--center lumi-flex--gap-2xs lumi-flex-item--grow">
+							<div
+								class="lumi-flex lumi-align-items--center lumi-flex--gap-2xs lumi-flex-item--grow"
+							>
 								<span class="lumi-font--medium lumi-text-ellipsis" title={file.file_name}>
 									{file.file_name}
 								</span>

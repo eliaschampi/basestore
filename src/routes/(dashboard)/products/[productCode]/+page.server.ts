@@ -84,19 +84,19 @@ export const load: PageServerLoad = async ({ locals, params, depends }) => {
 		const linkRows = await locals.db
 			.selectFrom('drive_links as dl')
 			.innerJoin('drive_files as df', 'df.code', 'dl.file_code')
-				.select([
-					'dl.code as link_code',
-					'dl.file_code',
-					'dl.position',
-					'dl.is_primary',
-					'dl.created_at as linked_at',
-					'df.name as file_name',
-					'df.type as file_type',
-					'df.size as file_size',
-					'df.mime_type',
-					'df.created_at as file_created_at',
-					'df.updated_at as file_updated_at'
-				])
+			.select([
+				'dl.code as link_code',
+				'dl.file_code',
+				'dl.position',
+				'dl.is_primary',
+				'dl.created_at as linked_at',
+				'df.name as file_name',
+				'df.type as file_type',
+				'df.size as file_size',
+				'df.mime_type',
+				'df.created_at as file_created_at',
+				'df.updated_at as file_updated_at'
+			])
 			.where('dl.entity_type', '=', 'product')
 			.where('dl.entity_code', '=', productCode)
 			.where('df.scope', '=', 'product_shared')
@@ -107,17 +107,17 @@ export const load: PageServerLoad = async ({ locals, params, depends }) => {
 			.execute();
 
 		linkedFiles = linkRows.map((row) => ({
-				link_code: row.link_code,
-				file_code: row.file_code,
-				file_name: row.file_name,
-				file_type: normalizeDriveFileType(row.file_type),
-				file_size: row.file_size,
-				mime_type: row.mime_type,
-				position: row.position,
-				is_primary: row.is_primary,
-				linked_at: toIsoString(row.linked_at),
-				file_created_at: toIsoString(row.file_created_at),
-				file_updated_at: toIsoString(row.file_updated_at)
+			link_code: row.link_code,
+			file_code: row.file_code,
+			file_name: row.file_name,
+			file_type: normalizeDriveFileType(row.file_type),
+			file_size: row.file_size,
+			mime_type: row.mime_type,
+			position: row.position,
+			is_primary: row.is_primary,
+			linked_at: toIsoString(row.linked_at),
+			file_created_at: toIsoString(row.file_created_at),
+			file_updated_at: toIsoString(row.file_updated_at)
 		}));
 	}
 

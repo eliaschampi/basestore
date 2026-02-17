@@ -230,12 +230,13 @@
 
 <style>
 	.drive-file-card {
+		--drive-file-card-padding: var(--lumi-drive-file-card-padding);
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
 		gap: var(--lumi-space-xs);
 		width: 100%;
-		padding: var(--lumi-space-2xs);
+		padding: var(--drive-file-card-padding);
 		background:
 			linear-gradient(
 				165deg,
@@ -378,10 +379,7 @@
 	}
 
 	.drive-file-card__content {
-		padding: 0 var(--lumi-space-2xs) var(--lumi-space-2xs);
-		display: flex;
-		flex-direction: column;
-		gap: var(--lumi-space-2xs);
+		padding: 0;
 	}
 
 	.drive-file-card__name {
@@ -420,11 +418,7 @@
 
 	@media (max-width: 640px) {
 		.drive-file-card {
-			padding: var(--lumi-space-2xs);
-		}
-
-		.drive-file-card__content {
-			padding: 0 var(--lumi-space-2xs) var(--lumi-space-2xs);
+			--drive-file-card-padding: var(--lumi-drive-file-card-padding-mobile);
 		}
 	}
 </style>

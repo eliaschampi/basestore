@@ -9,7 +9,7 @@ import { DriveRepository } from '$lib/server/repositories/drive.repository';
 import {
 	ensureVariantBuffer,
 	getDriveAbsolutePath,
-	getVariantMimeType,
+	getVariantMimeType
 } from '$lib/server/services/drive-image.service';
 
 /**
@@ -57,7 +57,11 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 		let cacheControl = 'private, max-age=3600';
 
 		if (file.type === 'img' && effectiveVariant !== 'original' && file.mime_type) {
-			const variantBuffer = await ensureVariantBuffer(file.storage_path, file.mime_type, effectiveVariant);
+			const variantBuffer = await ensureVariantBuffer(
+				file.storage_path,
+				file.mime_type,
+				effectiveVariant
+			);
 
 			if (variantBuffer) {
 				const variantBody = Uint8Array.from(variantBuffer);

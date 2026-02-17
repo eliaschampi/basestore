@@ -247,7 +247,10 @@
 		}
 	}
 
-	async function fetchFolderOptions(excludeCode: string | null = null, scope: DriveScope = currentScope) {
+	async function fetchFolderOptions(
+		excludeCode: string | null = null,
+		scope: DriveScope = currentScope
+	) {
 		try {
 			const params = new SvelteURLSearchParams({
 				scope,

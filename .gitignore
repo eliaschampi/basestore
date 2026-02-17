@@ -9,11 +9,10 @@ docker
 .wrangler
 /.svelte-kit
 /build
-
+.data
 # OS
 .DS_Store
 Thumbs.db
-static/uploads
 # Env
 .env
 .env.*

@@ -377,6 +377,8 @@
 	--lumi-drive-file-grid-min-mobile: 8.5rem;
 	--lumi-drive-file-preview-ratio: 4 / 3;
 	--lumi-drive-file-icon-size: 2.25rem;
+	--lumi-drive-file-card-padding: var(--lumi-space-sm);
+	--lumi-drive-file-card-padding-mobile: var(--lumi-space-xs);
 	--lumi-drive-tag-dot-size: var(--lumi-space-xs);
 	--lumi-drive-selection-dot-size: var(--lumi-icon-xs);
 	--lumi-drive-scope-control-min-width: 13.75rem;

@@ -141,8 +141,8 @@
 				Máximo {formatFileSize(MAX_FILE_SIZE)} por archivo
 			</p>
 			<p class="lumi-text--xs lumi-text--muted">
-				Las imágenes mayores a {formatFileSize(DRIVE_IMAGE_COMPRESSION_THRESHOLD_BYTES)} se
-				optimizan automáticamente
+				Las imágenes mayores a {formatFileSize(DRIVE_IMAGE_COMPRESSION_THRESHOLD_BYTES)} se optimizan
+				automáticamente
 			</p>
 		</div>
 

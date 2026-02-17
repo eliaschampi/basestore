@@ -44,7 +44,9 @@ function createPipeline(buffer: Buffer): sharp.Sharp {
 }
 
 function canOptimizeUploadImage(mimeType: string, size: number): boolean {
-	return OPTIMIZABLE_UPLOAD_MIME_TYPES.has(mimeType) && size > DRIVE_IMAGE_COMPRESSION_THRESHOLD_BYTES;
+	return (
+		OPTIMIZABLE_UPLOAD_MIME_TYPES.has(mimeType) && size > DRIVE_IMAGE_COMPRESSION_THRESHOLD_BYTES
+	);
 }
 
 function supportsVariants(mimeType: string): boolean {
@@ -86,7 +88,10 @@ function shouldResize(metadata: sharp.Metadata, maxDimension: number): boolean {
 	);
 }
 
-async function encodeUploadImage(buffer: Buffer, mimeType: string): Promise<{ buffer: Buffer; resized: boolean }> {
+async function encodeUploadImage(
+	buffer: Buffer,
+	mimeType: string
+): Promise<{ buffer: Buffer; resized: boolean }> {
 	const probe = createPipeline(buffer);
 	const metadata = await probe.metadata();
 	const resized = shouldResize(metadata, MAX_UPLOAD_DIMENSION);
@@ -189,7 +194,10 @@ export function getDriveAbsolutePath(storagePath: string): string {
 	return getPrivateAbsolutePath(normalizeStoragePath(storagePath));
 }
 
-export function getDriveImageVariantStoragePath(storagePath: string, variant: ServeVariant): string {
+export function getDriveImageVariantStoragePath(
+	storagePath: string,
+	variant: ServeVariant
+): string {
 	const normalizedStoragePath = normalizeStoragePath(storagePath);
 	const extension = extname(normalizedStoragePath);
 	const basePath = extension
@@ -198,7 +206,10 @@ export function getDriveImageVariantStoragePath(storagePath: string, variant: Se
 	return `${basePath}.${variant}.webp`;
 }
 
-export function getDriveImageVariantAbsolutePath(storagePath: string, variant: ServeVariant): string {
+export function getDriveImageVariantAbsolutePath(
+	storagePath: string,
+	variant: ServeVariant
+): string {
 	return getDriveAbsolutePath(getDriveImageVariantStoragePath(storagePath, variant));
 }
 
@@ -211,7 +222,9 @@ export async function readDriveFileBuffer(storagePath: string): Promise<Buffer> 
 	}
 }
 
-export async function optimizeUploadImage(input: OptimizeUploadInput): Promise<OptimizeUploadResult> {
+export async function optimizeUploadImage(
+	input: OptimizeUploadInput
+): Promise<OptimizeUploadResult> {
 	if (!canOptimizeUploadImage(input.mimeType, input.buffer.length)) {
 		return {
 			buffer: input.buffer,
@@ -310,7 +323,10 @@ export function getVariantMimeType(): string {
 export async function removeDriveFileWithVariants(storagePath: string): Promise<void> {
 	const normalizedStoragePath = normalizeStoragePath(storagePath);
 	const variantThumbStoragePath = getDriveImageVariantStoragePath(normalizedStoragePath, 'thumb');
-	const variantPreviewStoragePath = getDriveImageVariantStoragePath(normalizedStoragePath, 'preview');
+	const variantPreviewStoragePath = getDriveImageVariantStoragePath(
+		normalizedStoragePath,
+		'preview'
+	);
 	const targets = [
 		getDriveAbsolutePath(normalizedStoragePath),
 		getDriveAbsolutePath(variantThumbStoragePath),

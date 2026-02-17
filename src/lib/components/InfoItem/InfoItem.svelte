@@ -26,9 +26,7 @@
 	const hasIcon = $derived(!!(icon || iconSlot));
 
 	const classes = $derived(
-		['lumi-info-item', `lumi-info-item--${layout}`, className]
-			.filter(Boolean)
-			.join(' ')
+		['lumi-info-item', `lumi-info-item--${layout}`, className].filter(Boolean).join(' ')
 	);
 </script>
 
