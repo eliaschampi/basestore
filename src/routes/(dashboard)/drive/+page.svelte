@@ -8,8 +8,6 @@
 		Context,
 		ContextItem,
 		Dialog,
-		Dropdown,
-		DropdownItem,
 		DriveFileGrid,
 		DriveFileList,
 		DriveFilePreview,
@@ -30,6 +28,7 @@
 	import {
 		DRIVE_SCOPE_OPTIONS,
 		TAG_OPTIONS,
+		getDriveServeUrl,
 		isValidDriveScope,
 		type DriveBreadcrumb,
 		type DriveScope,
@@ -71,7 +70,6 @@
 
 	let selectedMenu = $state<MenuOption | null>(null);
 	let selectedTag = $state<DriveTagOption | null>(null);
-	let selectedFileCodes = $state<string[]>([]);
 	let storageInfo = $state<StorageInfo>({
 		used: 0,
 		total: 1_073_741_824,
@@ -94,6 +92,7 @@
 
 	let newDirName = $state('');
 	let renameName = $state('');
+	let moveScope = $state<DriveScope>('product_shared');
 	let moveParentCode = $state<string | null>(null);
 	let selectedTagHash = $state<string | null>(null);
 	let folderOptions = $state<SelectOption[]>([]);
@@ -125,40 +124,6 @@
 	const isTrashView = $derived(selectedMenu?.value === 'trash');
 	const currentScopeLabel = $derived.by(() => {
 		return DRIVE_SCOPE_OPTIONS.find((scopeOption) => scopeOption.value === currentScope)?.name;
-	});
-	const selectedFileCount = $derived(selectedFileCodes.length);
-	const selectedFiles = $derived.by(() =>
-		files.filter((file) => selectedFileCodes.includes(file.code))
-	);
-	const selectedSummaryTitle = $derived(
-		selectedFileCount === 1
-			? '1 elemento seleccionado'
-			: `${selectedFileCount} elementos seleccionados`
-	);
-	const selectedSummarySubtitle = $derived.by(() => {
-		if (selectedFileCount === 1) {
-			return selectedFiles[0]?.name ?? '';
-		}
-
-		const selectedFolders = selectedFiles.filter((file) => file.type === 'dir').length;
-		const selectedRegularFiles = selectedFileCount - selectedFolders;
-		const folderLabel =
-			selectedFolders === 1 ? '1 carpeta' : `${Math.max(selectedFolders, 0)} carpetas`;
-		const fileLabel =
-			selectedRegularFiles === 1 ? '1 archivo' : `${Math.max(selectedRegularFiles, 0)} archivos`;
-		return `${folderLabel} • ${fileLabel}`;
-	});
-
-	$effect(() => {
-		if (selectedFileCodes.length === 0) {
-			return;
-		}
-
-		const visibleCodes = new Set(files.map((file) => file.code));
-		const nextSelection = selectedFileCodes.filter((code) => visibleCodes.has(code));
-		if (nextSelection.length !== selectedFileCodes.length) {
-			selectedFileCodes = nextSelection;
-		}
 	});
 
 	const pageTitle = $derived.by(() => {
@@ -202,7 +167,6 @@
 		selectedMenu = null;
 		selectedTag = null;
 		searchQuery = '';
-		selectedFileCodes = [];
 		currentParent = null;
 		breadcrumbs = [{ label: getRootLabel(scope), code: null }];
 	}
@@ -283,10 +247,10 @@
 		}
 	}
 
-	async function fetchFolderOptions(excludeCode: string | null = null) {
+	async function fetchFolderOptions(excludeCode: string | null = null, scope: DriveScope = currentScope) {
 		try {
 			const params = new SvelteURLSearchParams({
-				scope: currentScope,
+				scope,
 				folders: 'true'
 			});
 
@@ -301,14 +265,14 @@
 
 			const payload = (await response.json()) as FolderListResponse;
 			folderOptions = [
-				{ label: getRootOptionLabel(currentScope), value: 'root' },
+				{ label: getRootOptionLabel(scope), value: 'root' },
 				...(payload.files ?? []).map((folder) => ({
 					label: folder.name,
 					value: folder.code
 				}))
 			];
 		} catch {
-			folderOptions = [{ label: getRootOptionLabel(currentScope), value: 'root' }];
+			folderOptions = [{ label: getRootOptionLabel(scope), value: 'root' }];
 		}
 	}
 
@@ -446,7 +410,6 @@
 	async function trashFile(file: DriveFileItem) {
 		try {
 			await setFilesTrashedState([file.code], true);
-			selectedFileCodes = selectedFileCodes.filter((code) => code !== file.code);
 			showToast('Archivo movido a papelera', 'warning');
 			await fetchFiles();
 		} catch (caught) {
@@ -473,7 +436,6 @@
 				throw new Error(payload?.message || 'Error al eliminar archivo');
 			}
 
-			selectedFileCodes = selectedFileCodes.filter((code) => code !== file.code);
 			showToast('Archivo eliminado permanentemente', 'success');
 			await fetchFiles();
 			await fetchStorageUsage();
@@ -501,12 +463,16 @@
 		}
 	}
 
-	async function moveFile(fileCode: string, targetParentCode: string | null) {
+	async function moveFile(
+		fileCode: string,
+		targetParentCode: string | null,
+		targetScope: DriveScope = currentScope
+	): Promise<boolean> {
 		try {
 			const response = await fetch(`/api/drive/${fileCode}`, {
 				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ parent_code: targetParentCode })
+				body: JSON.stringify({ parent_code: targetParentCode, scope: targetScope })
 			});
 
 			if (!response.ok) {
@@ -517,8 +483,10 @@
 			showToast('Archivo movido', 'success');
 			await fetchFiles();
 			await fetchFolderOptions();
+			return true;
 		} catch (caught) {
 			errorMessage = caught instanceof Error ? caught.message : 'Error al mover archivo';
+			return false;
 		}
 	}
 
@@ -532,7 +500,6 @@
 		selectedMenu = null;
 		selectedTag = null;
 		searchQuery = '';
-		selectedFileCodes = [];
 		void fetchFiles();
 	}
 
@@ -546,14 +513,12 @@
 		breadcrumbs = breadcrumbs.slice(0, index + 1);
 		selectedMenu = null;
 		selectedTag = null;
-		selectedFileCodes = [];
 		void fetchFiles();
 	}
 
 	function handleMenuSelect(menu: MenuOption | null) {
 		selectedMenu = menu;
 		selectedTag = null;
-		selectedFileCodes = [];
 		searchQuery = '';
 
 		if (!menu) {
@@ -567,15 +532,8 @@
 	function handleTagSelect(tag: DriveTagOption) {
 		selectedTag = selectedTag?.hash === tag.hash ? null : tag;
 		selectedMenu = null;
-		selectedFileCodes = [];
 		searchQuery = '';
 		void fetchFiles();
-	}
-
-	function handleFileClick(file: DriveFileItem) {
-		selectedFileCodes = selectedFileCodes.includes(file.code)
-			? selectedFileCodes.filter((code) => code !== file.code)
-			: [...selectedFileCodes, file.code];
 	}
 
 	function handleFileDblClick(file: DriveFileItem) {
@@ -620,8 +578,14 @@
 
 	async function openMoveDialog(file: DriveFileItem) {
 		contextFile = file;
+		moveScope = file.scope;
 		moveParentCode = file.parent_code;
-		await fetchFolderOptions(file.type === 'dir' ? file.code : null);
+		await fetchFolderOptions(file.type === 'dir' ? file.code : null, moveScope);
+
+		if (moveParentCode && !folderOptions.some((folder) => folder.value === moveParentCode)) {
+			moveParentCode = 'root';
+		}
+
 		showMoveDialog = true;
 		fileContextMenu?.close();
 	}
@@ -664,12 +628,29 @@
 		}
 
 		const targetCode = moveParentCode === 'root' ? null : moveParentCode;
-		await moveFile(contextFile.code, targetCode);
-		showMoveDialog = false;
+		const moved = await moveFile(contextFile.code, targetCode, moveScope);
+		if (moved) {
+			showMoveDialog = false;
+			contextFile = null;
+		}
+	}
+
+	async function handleMoveScopeChange(value: unknown) {
+		if (typeof value !== 'string' || !isValidDriveScope(value)) {
+			return;
+		}
+
+		if (value === moveScope) {
+			return;
+		}
+
+		moveScope = value;
+		moveParentCode = 'root';
+		await fetchFolderOptions(contextFile?.type === 'dir' ? contextFile.code : null, value);
 	}
 
 	function handleDownload(file: DriveFileItem) {
-		window.open(`/api/drive/${file.code}/serve?download=true`, '_blank', 'noopener,noreferrer');
+		window.open(getDriveServeUrl(file.code, { download: true }), '_blank', 'noopener,noreferrer');
 	}
 
 	function handleSearchChange(value: string) {
@@ -683,33 +664,9 @@
 			if (searchQuery.trim()) {
 				selectedMenu = null;
 				selectedTag = null;
-				selectedFileCodes = [];
 			}
 			void fetchFiles();
 		}, 350);
-	}
-
-	function clearSelection() {
-		selectedFileCodes = [];
-	}
-
-	async function trashSelectedFiles() {
-		if (selectedFiles.length === 0) {
-			return;
-		}
-
-		try {
-			await setFilesTrashedState(
-				selectedFiles.map((file) => file.code),
-				true
-			);
-			selectedFileCodes = [];
-			showToast('Archivos movidos a papelera', 'warning');
-			await fetchFiles();
-		} catch (caught) {
-			errorMessage =
-				caught instanceof Error ? caught.message : 'No se pudieron mover algunos archivos';
-		}
 	}
 </script>
 
@@ -839,46 +796,6 @@
 					</Card>
 				</div>
 
-				{#if selectedFileCount > 0 && !isTrashView}
-					<div
-						class="drive-page__selection lumi-flex lumi-align-items--center lumi-justify--between lumi-flex--wrap lumi-flex--gap-md"
-						role="status"
-						aria-live="polite"
-					>
-						<div
-							class="drive-page__selection-meta lumi-flex lumi-align-items--center lumi-flex--gap-sm"
-						>
-							<span class="drive-page__selection-icon">
-								<Icon icon="feed" size="sm" color="primary" />
-							</span>
-							<div class="drive-page__selection-copy">
-								<p class="drive-page__selection-title">{selectedSummaryTitle}</p>
-								<p class="drive-page__selection-subtitle" title={selectedSummarySubtitle}>
-									{selectedSummarySubtitle}
-								</p>
-							</div>
-						</div>
-						<div
-							class="drive-page__selection-actions lumi-flex lumi-align-items--center lumi-flex--gap-xs"
-						>
-							<Dropdown position="bottom-end" aria-label="Acciones de selección">
-								{#snippet triggerContent()}
-									<Button type="border" size="sm" icon="moreVertical">Acciones</Button>
-								{/snippet}
-
-								{#snippet content()}
-									{#if canDelete}
-										<DropdownItem icon="trash" danger onclick={trashSelectedFiles}>
-											Mover a papelera
-										</DropdownItem>
-									{/if}
-									<DropdownItem icon="x" onclick={clearSelection}>Limpiar selección</DropdownItem>
-								{/snippet}
-							</Dropdown>
-						</div>
-					</div>
-				{/if}
-
 				<div class="drive-page__content-shell">
 					{#if showBreadcrumbs}
 						<nav class="lumi-flex lumi-flex--gap-xs lumi-align-items--center lumi-flex--wrap">
@@ -939,9 +856,8 @@
 						{:else if viewMode === 'grid'}
 							<DriveFileGrid
 								{files}
-								selectedFiles={selectedFileCodes}
+								selectedFiles={[]}
 								isTrash={isTrashView}
-								onfileclick={handleFileClick}
 								onfiledblclick={handleFileDblClick}
 								onfilecontextmenu={handleContextMenu}
 								onfiledrop={handleDrop}
@@ -949,9 +865,8 @@
 						{:else}
 							<DriveFileList
 								{files}
-								selectedFiles={selectedFileCodes}
+								selectedFiles={[]}
 								isTrash={isTrashView}
-								onfileclick={handleFileClick}
 								onfiledblclick={handleFileDblClick}
 								onfilecontextmenu={handleContextMenu}
 								onfiledrop={handleDrop}
@@ -1019,6 +934,13 @@
 <Dialog bind:open={showMoveDialog} title="Mover archivo" size="sm">
 	<div class="lumi-stack lumi-space--md">
 		<Select
+			label="Espacio destino"
+			value={moveScope}
+			options={scopeOptions}
+			clearable={false}
+			onchange={(value) => void handleMoveScopeChange(value)}
+		/>
+		<Select
 			label="Carpeta destino"
 			value={moveParentCode ?? 'root'}
 			options={folderOptions}
@@ -1033,7 +955,9 @@
 			type="border"
 			onclick={() => {
 				showMoveDialog = false;
+				moveScope = currentScope;
 				moveParentCode = null;
+				contextFile = null;
 			}}
 		>
 			Cancelar
@@ -1195,64 +1119,6 @@
 		justify-content: flex-end;
 	}
 
-	.drive-page__selection {
-		padding: var(--lumi-space-sm) var(--lumi-space-md);
-		border-radius: var(--lumi-radius-xl);
-		border: var(--lumi-border-width-thin) solid
-			color-mix(in srgb, var(--lumi-color-primary) 24%, var(--lumi-color-border));
-		background:
-			linear-gradient(
-				120deg,
-				color-mix(in srgb, var(--lumi-color-primary) 12%, transparent) 0%,
-				color-mix(in srgb, var(--lumi-color-info) 6%, transparent) 48%,
-				transparent 100%
-			),
-			var(--lumi-color-surface);
-		box-shadow: var(--lumi-shadow-sm);
-	}
-
-	.drive-page__selection-meta {
-		min-width: 0;
-	}
-
-	.drive-page__selection-icon {
-		width: var(--lumi-space-xl);
-		height: var(--lumi-space-xl);
-		border-radius: var(--lumi-radius-full);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		flex-shrink: 0;
-		background: color-mix(in srgb, var(--lumi-color-primary) 14%, transparent);
-		border: var(--lumi-border-width-thin) solid
-			color-mix(in srgb, var(--lumi-color-primary) 22%, var(--lumi-color-border));
-	}
-
-	.drive-page__selection-copy {
-		min-width: 0;
-	}
-
-	.drive-page__selection-title {
-		margin: 0;
-		font-size: var(--lumi-font-size-sm);
-		font-weight: var(--lumi-font-weight-semibold);
-		color: var(--lumi-color-text);
-	}
-
-	.drive-page__selection-subtitle {
-		margin: 0;
-		font-size: var(--lumi-font-size-xs);
-		color: var(--lumi-color-text-muted);
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		max-width: 100%;
-	}
-
-	.drive-page__selection-actions {
-		flex-wrap: wrap;
-	}
-
 	.drive-page__content {
 		min-height: var(--lumi-drive-content-min-height);
 	}
@@ -1373,11 +1239,6 @@
 			align-items: center;
 		}
 
-		.drive-page__selection-actions {
-			width: 100%;
-			justify-content: flex-end;
-		}
-
 		.drive-page__drawer-backdrop {
 			display: block;
 			position: fixed;
@@ -1399,20 +1260,6 @@
 			padding: var(--lumi-space-sm);
 			overflow-y: auto;
 			animation: drive-drawer-slide 0.25s cubic-bezier(0.2, 0, 0.13, 1.5);
-		}
-	}
-
-	@media (max-width: 640px) {
-		.drive-page__selection {
-			padding: var(--lumi-space-sm);
-		}
-
-		.drive-page__selection-actions {
-			justify-content: flex-start;
-		}
-
-		.drive-page__selection-actions :global(.lumi-btn) {
-			flex: 1 1 auto;
 		}
 	}
 

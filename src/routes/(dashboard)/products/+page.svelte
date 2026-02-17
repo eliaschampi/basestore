@@ -21,6 +21,7 @@
 	import type { ProductOverview } from '$lib/types/products';
 	import { showToast } from '$lib/stores/Toast';
 	import { can } from '$lib/stores/permissions';
+	import { getDriveServeUrl } from '$lib/utils/drive';
 	import { formatProductPrice } from '$lib/utils/products';
 	import type { PageData } from './$types';
 
@@ -161,7 +162,7 @@
 					<td>
 						{#if product.primary_image_url}
 							<Image
-								src={`/api/drive/${product.primary_image_url}/serve`}
+								src={getDriveServeUrl(product.primary_image_url, { variant: 'thumb' })}
 								alt={product.name}
 								width={44}
 								height={44}

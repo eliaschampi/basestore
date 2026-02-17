@@ -14,7 +14,6 @@ const DRIVE_COLUMNS = [
 	'size',
 	'tag',
 	'mime_type',
-	'storage_path',
 	'parent_code',
 	'user_code',
 	'is_trashed',

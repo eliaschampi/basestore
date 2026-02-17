@@ -1,16 +1,21 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { sql } from 'kysely';
-import { promises as fs } from 'fs';
-import { join } from 'path';
 import { isUuid } from '$lib/utils/validation';
-import { isValidTagHash, normalizeDriveName, validateDriveName } from '$lib/utils/drive';
+import {
+	isValidDriveScope,
+	isValidTagHash,
+	normalizeDriveName,
+	validateDriveName
+} from '$lib/utils/drive';
 import { DriveRepository, type DriveScopeContext } from '$lib/server/repositories/drive.repository';
+import { removeDriveFileWithVariants } from '$lib/server/services/drive-image.service';
 
 interface UpdateFileBody {
 	name?: string;
 	parent_code?: string | null;
 	tag?: string | null;
+	scope?: string;
 	is_trashed?: boolean;
 }
 
@@ -31,7 +36,7 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 		throw error(400, 'Cuerpo de solicitud inválido');
 	}
 
-	const needsUpdatePermission = 'name' in body || 'parent_code' in body || 'tag' in body;
+	const needsUpdatePermission = 'name' in body || 'parent_code' in body || 'tag' in body || 'scope' in body;
 	const needsDeletePermission = 'is_trashed' in body;
 
 	if (needsUpdatePermission && !(await locals.can('drive:update'))) {
@@ -63,8 +68,26 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 		scope: fileScope,
 		ownerUserCode: fileScope === 'user_private' ? file.user_code : null
 	};
-
+	let targetScope = fileScope;
+	let targetScopeContext = fileScopeContext;
 	const updates: Record<string, unknown> = {};
+	let nextTrashState: boolean | undefined;
+
+	if ('scope' in body) {
+		if (typeof body.scope !== 'string') {
+			throw error(400, 'Alcance de Drive inválido');
+		}
+
+		const requestedScope = body.scope.trim().toLowerCase();
+		if (!isValidDriveScope(requestedScope)) {
+			throw error(400, 'Alcance de Drive inválido');
+		}
+
+		targetScope = requestedScope;
+		targetScopeContext = await DriveRepository.resolveScopeContext(locals.user, {
+			scope: targetScope
+		});
+	}
 
 	if ('name' in body && typeof body.name === 'string') {
 		const normalizedName = normalizeDriveName(body.name);
@@ -95,7 +118,7 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 				.where('code', '=', parentCode)
 				.executeTakeFirst();
 
-			if (!targetParent || !DriveRepository.isFileInContext(targetParent, fileScopeContext)) {
+			if (!targetParent || !DriveRepository.isFileInContext(targetParent, targetScopeContext)) {
 				throw error(404, 'Carpeta destino no encontrada');
 			}
 
@@ -116,6 +139,9 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 
 			updates.parent_code = parentCode;
 		}
+	} else if (targetScope !== fileScope) {
+		// When moving across scopes, default to root unless an explicit parent is provided.
+		updates.parent_code = null;
 	}
 
 	if ('tag' in body) {
@@ -132,23 +158,108 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 		if (typeof body.is_trashed !== 'boolean') {
 			throw error(400, 'Estado de papelera inválido');
 		}
-		updates.is_trashed = body.is_trashed;
+
+		const hasParentOverride = Object.prototype.hasOwnProperty.call(updates, 'parent_code');
+		const parentForRestoreCheck = hasParentOverride
+			? typeof updates.parent_code === 'string'
+				? updates.parent_code
+				: null
+			: file.parent_code;
+
+			if (
+				body.is_trashed === false &&
+				(await hasTrashedAncestor(
+					locals.db,
+					parentForRestoreCheck,
+					targetScopeContext
+				))
+			) {
+				throw error(400, 'No se puede restaurar mientras la carpeta padre esté en papelera');
+			}
+
+		nextTrashState = body.is_trashed;
 	}
 
-	if (Object.keys(updates).length === 0) {
+	if (Object.keys(updates).length === 0 && nextTrashState === undefined) {
 		throw error(400, 'No hay cambios para aplicar');
 	}
 
 	try {
-		const result = await locals.db
-			.updateTable('drive_files')
-			.set(updates)
-			.where('code', '=', fileCode)
-			.executeTakeFirst();
+		await locals.db.transaction().execute(async (trx) => {
+			if (targetScope !== fileScope) {
+				if (targetScope === 'user_private') {
+					await removeProductLinksForScopeMove(trx, {
+						rootCode: fileCode,
+						fileType: file.type,
+						sourceScope: fileScope,
+						sourceUserCode: file.user_code
+					});
+				}
 
-		if (Number(result.numUpdatedRows ?? 0) === 0) {
-			throw error(404, 'Archivo no encontrado');
-		}
+				if (file.type === 'dir') {
+					const changedRows = await setDirectoryTreeScope(trx, {
+						rootCode: fileCode,
+						sourceScope: fileScope,
+						sourceUserCode: file.user_code,
+						targetScope,
+						targetOwnerUserCode: targetScopeContext.ownerUserCode
+					});
+
+					if (changedRows === 0) {
+						throw error(404, 'Archivo no encontrado');
+					}
+				} else {
+					const nonDirScopeUpdates: Record<string, unknown> = { scope: targetScope };
+					if (targetScope === 'user_private' && targetScopeContext.ownerUserCode) {
+						nonDirScopeUpdates.user_code = targetScopeContext.ownerUserCode;
+					}
+
+					const result = await trx
+						.updateTable('drive_files')
+						.set(nonDirScopeUpdates)
+						.where('code', '=', fileCode)
+						.executeTakeFirst();
+
+					if (Number(result.numUpdatedRows ?? 0) === 0) {
+						throw error(404, 'Archivo no encontrado');
+					}
+				}
+			}
+
+			if (Object.keys(updates).length > 0) {
+				const result = await trx
+					.updateTable('drive_files')
+					.set(updates)
+					.where('code', '=', fileCode)
+					.executeTakeFirst();
+
+				if (Number(result.numUpdatedRows ?? 0) === 0) {
+					throw error(404, 'Archivo no encontrado');
+				}
+			}
+
+			if (nextTrashState === undefined) {
+				return;
+			}
+
+			if (file.type === 'dir') {
+				const updatedRows = await setDirectoryTreeTrashState(trx, fileCode, nextTrashState);
+				if (updatedRows === 0) {
+					throw error(404, 'Archivo no encontrado');
+				}
+				return;
+			}
+
+			const result = await trx
+				.updateTable('drive_files')
+				.set({ is_trashed: nextTrashState })
+				.where('code', '=', fileCode)
+				.executeTakeFirst();
+
+			if (Number(result.numUpdatedRows ?? 0) === 0) {
+				throw error(404, 'Archivo no encontrado');
+			}
+		});
 
 		return json({ success: true });
 	} catch (caught) {
@@ -210,11 +321,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 			continue;
 		}
 
-		try {
-			await fs.unlink(join(process.cwd(), 'static', row.storage_path));
-		} catch {
-			// File may already be removed from disk.
-		}
+		await removeDriveFileWithVariants(row.storage_path);
 	}
 
 	return json({ success: true, deletedFiles: descendants.rows.length });
@@ -253,4 +360,157 @@ async function isDescendant(
 	}
 
 	return false;
+}
+
+async function hasTrashedAncestor(
+	db: App.Locals['db'],
+	startCode: string | null,
+	context: DriveScopeContext
+): Promise<boolean> {
+	let currentCode: string | null = startCode;
+	const visited = new Set<string>();
+
+	while (currentCode) {
+		if (visited.has(currentCode)) {
+			break;
+		}
+
+		visited.add(currentCode);
+
+		const ancestor = await db
+			.selectFrom('drive_files')
+			.select(['code', 'scope', 'user_code', 'parent_code', 'is_trashed'])
+			.where('code', '=', currentCode)
+			.executeTakeFirst();
+
+		if (!ancestor || !DriveRepository.isFileInContext(ancestor, context)) {
+			return false;
+		}
+
+		if (ancestor.is_trashed) {
+			return true;
+		}
+
+		currentCode = ancestor.parent_code;
+	}
+
+	return false;
+}
+
+async function setDirectoryTreeTrashState(
+	db: App.Locals['db'],
+	rootCode: string,
+	isTrashed: boolean
+): Promise<number> {
+	const updated = await sql<{ code: string }>`
+		WITH RECURSIVE drive_tree AS (
+			SELECT code, parent_code, scope, user_code
+			FROM drive_files
+			WHERE code = ${rootCode}
+			UNION ALL
+			SELECT f.code, f.parent_code, f.scope, f.user_code
+			FROM drive_files f
+			INNER JOIN drive_tree dt ON f.parent_code = dt.code
+			WHERE
+				f.scope = dt.scope
+				AND (dt.scope <> 'user_private' OR f.user_code = dt.user_code)
+		)
+		UPDATE drive_files
+		SET is_trashed = ${isTrashed}
+		WHERE code IN (SELECT code FROM drive_tree)
+		RETURNING code
+	`.execute(db);
+
+	return updated.rows.length;
+}
+
+interface SetDirectoryTreeScopeInput {
+	rootCode: string;
+	sourceScope: DriveScopeContext['scope'];
+	sourceUserCode: string;
+	targetScope: DriveScopeContext['scope'];
+	targetOwnerUserCode: string | null;
+}
+
+async function setDirectoryTreeScope(
+	db: App.Locals['db'],
+	input: SetDirectoryTreeScopeInput
+): Promise<number> {
+	const targetScopeValue = input.targetScope;
+	const targetOwnerUserCode = input.targetOwnerUserCode;
+
+	const updated = await sql<{ code: string }>`
+		WITH RECURSIVE drive_tree AS (
+			SELECT code, parent_code, scope, user_code
+			FROM drive_files
+			WHERE code = ${input.rootCode}
+			UNION ALL
+			SELECT f.code, f.parent_code, f.scope, f.user_code
+			FROM drive_files f
+			INNER JOIN drive_tree dt ON f.parent_code = dt.code
+			WHERE
+				f.scope = dt.scope
+				AND (dt.scope <> 'user_private' OR f.user_code = dt.user_code)
+		)
+		UPDATE drive_files
+		SET
+			scope = ${targetScopeValue},
+			user_code = CASE
+				WHEN ${targetScopeValue} = 'user_private' THEN ${targetOwnerUserCode}
+				ELSE user_code
+			END
+		WHERE code IN (SELECT code FROM drive_tree)
+			AND scope = ${input.sourceScope}
+			AND (${input.sourceScope} <> 'user_private' OR user_code = ${input.sourceUserCode})
+		RETURNING code
+	`.execute(db);
+
+	return updated.rows.length;
+}
+
+interface RemoveProductLinksForScopeMoveInput {
+	rootCode: string;
+	fileType: string;
+	sourceScope: DriveScopeContext['scope'];
+	sourceUserCode: string;
+}
+
+async function removeProductLinksForScopeMove(
+	db: App.Locals['db'],
+	input: RemoveProductLinksForScopeMoveInput
+): Promise<number> {
+	if (input.fileType !== 'dir') {
+		const result = await db
+			.deleteFrom('drive_links')
+			.where('file_code', '=', input.rootCode)
+			.executeTakeFirst();
+
+		return Number(result.numDeletedRows ?? 0);
+	}
+
+	const deleted = await sql<{ code: string }>`
+		WITH RECURSIVE drive_tree AS (
+			SELECT code, parent_code, scope, user_code
+			FROM drive_files
+			WHERE code = ${input.rootCode}
+			UNION ALL
+			SELECT f.code, f.parent_code, f.scope, f.user_code
+			FROM drive_files f
+			INNER JOIN drive_tree dt ON f.parent_code = dt.code
+			WHERE
+				f.scope = dt.scope
+				AND (dt.scope <> 'user_private' OR f.user_code = dt.user_code)
+		)
+		DELETE FROM drive_links dl
+		WHERE dl.file_code IN (
+			SELECT code
+			FROM drive_tree
+			WHERE
+				scope = ${input.sourceScope}
+				AND (${input.sourceScope} <> 'user_private' OR user_code = ${input.sourceUserCode})
+		)
+		RETURNING dl.code
+	`.execute(db);
+
+	return deleted.rows.length;
 }

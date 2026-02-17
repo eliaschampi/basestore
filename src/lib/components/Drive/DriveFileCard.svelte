@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { Icon } from '$lib/components';
-	import { formatFileSize, getDriveTagByHash, getFileColor, getFileIcon } from '$lib/utils/drive';
+	import {
+		formatFileSize,
+		getDriveServeUrl,
+		getDriveTagByHash,
+		getFileColor,
+		getFileIcon
+	} from '$lib/utils/drive';
 	import type { DriveFileItem } from './types';
 
 	interface Props {
@@ -33,7 +39,9 @@
 	let longPressTimer: ReturnType<typeof setTimeout> | undefined;
 	let longPressTriggered = false;
 	const tagOption = $derived(getDriveTagByHash(file.tag));
-	const previewUrl = $derived(file.type === 'img' ? `/api/drive/${file.code}/serve` : '');
+	const previewUrl = $derived(
+		file.type === 'img' ? getDriveServeUrl(file.code, { variant: 'thumb' }) : ''
+	);
 	const typeLabel = $derived(file.type === 'dir' ? 'Carpeta' : file.type.toUpperCase());
 
 	const cardClasses = $derived(
@@ -181,7 +189,14 @@
 >
 	<div class="drive-file-card__preview">
 		{#if file.type === 'img'}
-			<img class="drive-file-card__image" src={previewUrl} alt={file.name} loading="lazy" />
+			<img
+				class="drive-file-card__image"
+				src={previewUrl}
+				alt={file.name}
+				loading="lazy"
+				decoding="async"
+				fetchpriority="low"
+			/>
 		{:else}
 			<div class="drive-file-card__icon-scene">
 				<Icon

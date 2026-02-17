@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Button, Dialog, Icon } from '$lib/components';
-	import { formatFileSize, getFileColor, getFileIcon } from '$lib/utils/drive';
+	import { formatFileSize, getDriveServeUrl, getFileColor, getFileIcon } from '$lib/utils/drive';
 	import type { DriveFileItem } from './types';
 
 	interface Props {
@@ -11,7 +11,17 @@
 
 	let { open = $bindable(false), file, ondownload }: Props = $props();
 
-	const previewUrl = $derived(file ? `/api/drive/${file.code}/serve` : '');
+	const previewUrl = $derived.by(() => {
+		if (!file) {
+			return '';
+		}
+
+		if (file.type === 'img') {
+			return getDriveServeUrl(file.code, { variant: 'preview' });
+		}
+
+		return getDriveServeUrl(file.code);
+	});
 	const isImage = $derived(file?.type === 'img');
 	const isVideo = $derived(file?.type === 'vid');
 	const isAudio = $derived(file?.type === 'aud');

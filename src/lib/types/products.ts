@@ -25,7 +25,6 @@ export interface ProductDriveLink {
 	file_type: DriveFileType;
 	file_size: string | number;
 	mime_type: string | null;
-	storage_path: string | null;
 	position: number;
 	is_primary: boolean;
 	linked_at: string;

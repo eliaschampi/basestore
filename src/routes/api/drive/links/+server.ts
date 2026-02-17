@@ -68,8 +68,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			'df.type as file_type',
 			'df.size as file_size',
 			'df.mime_type',
-			'df.storage_path',
-			'df.created_at as file_created_at'
+			'df.created_at as file_created_at',
+			'df.updated_at as file_updated_at'
 		])
 		.where('dl.entity_type', '=', entityType)
 		.where('dl.entity_code', '=', entityCode)

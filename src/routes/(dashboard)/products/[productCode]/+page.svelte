@@ -28,7 +28,13 @@
 	import type { ProductDriveLink } from '$lib/types/products';
 	import { showToast } from '$lib/stores/Toast';
 	import { can } from '$lib/stores/permissions';
-	import { formatFileSize, getFileColor, getFileIcon, type DriveFileType } from '$lib/utils/drive';
+	import {
+		formatFileSize,
+		getDriveServeUrl,
+		getFileColor,
+		getFileIcon,
+		type DriveFileType
+	} from '$lib/utils/drive';
 	import { formatProductDateTime, formatProductPrice } from '$lib/utils/products';
 	import type { PageData } from './$types';
 
@@ -146,7 +152,6 @@
 			size: normalizeSize(file.file_size),
 			tag: null,
 			mime_type: file.mime_type,
-			storage_path: file.storage_path,
 			parent_code: null,
 			user_code: '',
 			is_trashed: false,
@@ -156,7 +161,7 @@
 	}
 
 	function handleDownload(file: DriveFileItem): void {
-		window.open(`/api/drive/${file.code}/serve?download=true`, '_blank', 'noopener,noreferrer');
+		window.open(getDriveServeUrl(file.code, { download: true }), '_blank', 'noopener,noreferrer');
 	}
 
 	function getLinkedFileByCode(fileCode: string): ProductDriveLink | null {

@@ -1,8 +1,8 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { promises as fs } from 'fs';
-import { join } from 'path';
+import { sql } from 'kysely';
 import { DriveRepository } from '$lib/server/repositories/drive.repository';
+import { removeDriveFileWithVariants } from '$lib/server/services/drive-image.service';
 
 /**
  * DELETE /api/drive/trash?scope=<scope>
@@ -17,19 +17,38 @@ export const DELETE: RequestHandler = async ({ url, locals }) => {
 		scope: url.searchParams.get('scope')
 	});
 
-	let trashedQuery = locals.db
-		.selectFrom('drive_files')
-		.select(['code', 'storage_path'])
-		.where('scope', '=', scopeContext.scope)
-		.where('is_trashed', '=', true);
+	const ownerUserCode =
+		scopeContext.scope === 'user_private' ? scopeContext.ownerUserCode : null;
 
-	if (scopeContext.scope === 'user_private' && scopeContext.ownerUserCode) {
-		trashedQuery = trashedQuery.where('user_code', '=', scopeContext.ownerUserCode);
-	}
+	const scopedOwnerFilter =
+		scopeContext.scope === 'user_private' && ownerUserCode
+			? sql`AND user_code = ${ownerUserCode}`
+			: sql``;
 
-	const trashedFiles = await trashedQuery.execute();
+	const treeRows = await sql<{ code: string; storage_path: string | null }>`
+		WITH RECURSIVE trash_roots AS (
+			SELECT code, parent_code, storage_path, scope, user_code
+			FROM drive_files
+			WHERE scope = ${scopeContext.scope}
+				AND is_trashed = TRUE
+				${scopedOwnerFilter}
+		),
+		trash_tree AS (
+			SELECT code, parent_code, storage_path, scope, user_code
+			FROM trash_roots
+			UNION ALL
+			SELECT f.code, f.parent_code, f.storage_path, f.scope, f.user_code
+			FROM drive_files f
+			INNER JOIN trash_tree tt ON f.parent_code = tt.code
+			WHERE
+				f.scope = tt.scope
+				AND (tt.scope <> 'user_private' OR f.user_code = tt.user_code)
+		)
+		SELECT DISTINCT code, storage_path
+		FROM trash_tree
+	`.execute(locals.db);
 
-	if (trashedFiles.length === 0) {
+	if (treeRows.rows.length === 0) {
 		return json({ success: true, deleted: 0 });
 	}
 
@@ -44,19 +63,15 @@ export const DELETE: RequestHandler = async ({ url, locals }) => {
 
 	await deleteQuery.execute();
 
-	for (const file of trashedFiles) {
-		if (!file.storage_path) {
+	for (const row of treeRows.rows) {
+		if (!row.storage_path) {
 			continue;
 		}
 
-		try {
-			await fs.unlink(join(process.cwd(), 'static', file.storage_path));
-		} catch {
-			// Ignore missing files on disk.
-		}
+		await removeDriveFileWithVariants(row.storage_path);
 	}
 
-	return json({ success: true, deleted: trashedFiles.length });
+	return json({ success: true, deleted: treeRows.rows.length });
 };
 
 /**

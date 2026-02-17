@@ -8,7 +8,6 @@ export interface DriveFileItem {
 	size: number;
 	tag: string | null;
 	mime_type: string | null;
-	storage_path: string | null;
 	parent_code: string | null;
 	user_code: string;
 	is_trashed: boolean;

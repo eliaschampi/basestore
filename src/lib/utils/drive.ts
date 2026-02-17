@@ -8,6 +8,9 @@ export type DriveFileType = 'dir' | 'img' | 'vid' | 'aud' | 'doc' | 'zip' | 'otr
 /** Supported drive visibility scopes */
 export type DriveScope = 'product_shared' | 'user_private';
 
+/** Supported image serve variants */
+export type DriveImageVariant = 'thumb' | 'preview' | 'original';
+
 export interface DriveScopeOption {
 	value: DriveScope;
 	name: string;
@@ -63,6 +66,16 @@ const FORBIDDEN_NAME_CHARS = new Set(['<', '>', ':', '"', '/', '\\', '|', '?', '
 
 const TAG_HASH_REGEX = /^[a-f0-9]{6}$/i;
 const DRIVE_SCOPE_SET: ReadonlySet<DriveScope> = new Set(['product_shared', 'user_private']);
+const DRIVE_IMAGE_VARIANT_SET: ReadonlySet<DriveImageVariant> = new Set([
+	'thumb',
+	'preview',
+	'original'
+]);
+
+/**
+ * Images above this threshold are optimized during upload.
+ */
+export const DRIVE_IMAGE_COMPRESSION_THRESHOLD_BYTES = 1 * 1024 * 1024;
 
 /**
  * Detect DriveFileType from MIME type
@@ -124,6 +137,13 @@ export function isValidDriveScope(value: string): value is DriveScope {
 	return DRIVE_SCOPE_SET.has(value as DriveScope);
 }
 
+/**
+ * Validate drive image variant value
+ */
+export function isValidDriveImageVariant(value: string): value is DriveImageVariant {
+	return DRIVE_IMAGE_VARIANT_SET.has(value as DriveImageVariant);
+}
+
 function hasInvalidDriveNameChars(value: string): boolean {
 	for (const char of value) {
 		if (FORBIDDEN_NAME_CHARS.has(char)) {
@@ -180,6 +200,29 @@ export function formatFileSize(bytes: number): string {
 	const i = Math.floor(Math.log(bytes) / Math.log(k));
 	const size = parseFloat((bytes / Math.pow(k, i)).toFixed(1));
 	return `${size} ${units[i]}`;
+}
+
+interface DriveServeUrlOptions {
+	download?: boolean;
+	variant?: DriveImageVariant;
+}
+
+/**
+ * Build a Drive serve URL with consistent query params.
+ */
+export function getDriveServeUrl(fileCode: string, options: DriveServeUrlOptions = {}): string {
+	const params = new URLSearchParams();
+
+	if (options.download === true) {
+		params.set('download', 'true');
+	}
+
+	if (options.variant && options.variant !== 'original') {
+		params.set('variant', options.variant);
+	}
+
+	const query = params.toString();
+	return query ? `/api/drive/${fileCode}/serve?${query}` : `/api/drive/${fileCode}/serve`;
 }
 
 /**

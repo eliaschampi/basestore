@@ -12,9 +12,15 @@ import {
 } from '$lib/utils/drive';
 import { isUuid } from '$lib/utils/validation';
 import { DriveRepository } from '$lib/server/repositories/drive.repository';
+import {
+	getDriveAbsolutePath,
+	optimizeUploadImage,
+	removeDriveFileWithVariants,
+	writeImageVariants
+} from '$lib/server/services/drive-image.service';
 import { promises as fs } from 'fs';
 import { randomUUID } from 'crypto';
-import { extname, join } from 'path';
+import { dirname, extname } from 'path';
 
 const DRIVE_COLUMNS = [
 	'code',
@@ -24,7 +30,6 @@ const DRIVE_COLUMNS = [
 	'size',
 	'tag',
 	'mime_type',
-	'storage_path',
 	'parent_code',
 	'user_code',
 	'is_trashed',
@@ -53,14 +58,6 @@ function applyScopeFilter<O>(
 	}
 
 	return scopedQuery;
-}
-
-function getScopeStoragePrefix(context: DriveScopeContext, userCode: string): string {
-	if (context.scope === 'user_private') {
-		return `user_private/${userCode}`;
-	}
-
-	return 'product_shared';
 }
 
 /**
@@ -134,13 +131,32 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const fileType = detectFileType(mimeType);
 	const ext = getSafeExtension(file.name);
 	const fileId = randomUUID();
-	const storagePrefix = getScopeStoragePrefix(scopeContext, locals.user.code);
-	const storagePath = `uploads/drive/${storagePrefix}/${fileId}${ext}`;
-	const fullPath = join(process.cwd(), 'static', storagePath);
-	const storageDir = join(process.cwd(), 'static', 'uploads', 'drive', storagePrefix);
+	const storagePath = `blob/${fileId}${ext}`;
+	const fullPath = getDriveAbsolutePath(storagePath);
 
-	await fs.mkdir(storageDir, { recursive: true });
-	await fs.writeFile(fullPath, Buffer.from(await file.arrayBuffer()));
+	const originalBuffer = Buffer.from(await file.arrayBuffer());
+	const optimizedUpload =
+		fileType === 'img'
+			? await optimizeUploadImage({
+					buffer: originalBuffer,
+					mimeType
+				})
+			: {
+					buffer: originalBuffer,
+					mimeType,
+					optimized: false
+				};
+
+	await fs.mkdir(dirname(fullPath), { recursive: true });
+	await fs.writeFile(fullPath, optimizedUpload.buffer);
+
+	if (fileType === 'img') {
+		try {
+			await writeImageVariants(optimizedUpload.buffer, storagePath, optimizedUpload.mimeType);
+		} catch {
+			// Upload stays valid even if a derived variant cannot be generated.
+		}
+	}
 
 	try {
 		const driveFile = await locals.db
@@ -148,9 +164,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			.values({
 				name: finalName,
 				type: fileType,
-				size: file.size,
+				size: optimizedUpload.buffer.length,
 				storage_path: storagePath,
-				mime_type: mimeType,
+				mime_type: optimizedUpload.mimeType,
 				scope: scopeContext.scope,
 				user_code: locals.user.code,
 				parent_code: parentCode
@@ -161,7 +177,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		return json({ file: driveFile }, { status: 201 });
 	} catch (caught) {
 		try {
-			await fs.unlink(fullPath);
+			await removeDriveFileWithVariants(storagePath);
 		} catch {
 			// If cleanup fails, request still fails with DB message.
 		}
