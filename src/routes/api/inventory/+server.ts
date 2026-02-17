@@ -24,6 +24,10 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	const search = (url.searchParams.get('search') || '').trim();
 	const includeInactive = url.searchParams.get('include_inactive') === 'true';
 	const stockParam = normalizeInventoryListFilterState(url.searchParams.get('stock') || 'all');
+	const pageRaw = Number(url.searchParams.get('page') || 1);
+	const pageSizeRaw = Number(url.searchParams.get('page_size') || 30);
+	const page = Number.isInteger(pageRaw) ? Math.max(pageRaw, 1) : 1;
+	const pageSize = Number.isInteger(pageSizeRaw) ? Math.min(Math.max(pageSizeRaw, 1), 120) : 30;
 
 	if (branchCode && !isUuid(branchCode)) {
 		throw error(400, 'Sede inválida');
@@ -37,34 +41,31 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		throw error(400, 'Filtro de stock inválido');
 	}
 
-	const [overview, branches, categories, products] = await Promise.all([
+	const [overview, branches, categories] = await Promise.all([
 		InventoryRepository.listOverview(locals.db, {
 			branchCode: branchCode || undefined,
 			categoryCode: categoryCode || undefined,
 			search: search || undefined,
 			stock: stockParam,
-			includeInactive
+			includeInactive,
+			page,
+			pageSize
 		}),
 		locals.db
 			.selectFrom('branches')
 			.select(['code', 'name', 'state'])
 			.orderBy('name', 'asc')
 			.execute(),
-		locals.db.selectFrom('categories').select(['code', 'name']).orderBy('name', 'asc').execute(),
-		locals.db
-			.selectFrom('products')
-			.select(['code', 'name', 'category_code', 'is_active'])
-			.orderBy('name', 'asc')
-			.execute()
+		locals.db.selectFrom('categories').select(['code', 'name']).orderBy('name', 'asc').execute()
 	]);
 
 	return json({
 		items: overview.items,
 		summary: overview.summary,
+		pagination: overview.pagination,
 		filters: {
 			branches,
-			categories,
-			products
+			categories
 		}
 	});
 };

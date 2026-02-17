@@ -101,6 +101,16 @@ export interface InventoryBalances {
 	updated_at: Generated<Timestamp>;
 }
 
+export interface InventoryCustomers {
+	code: Generated<string>;
+	created_at: Generated<Timestamp>;
+	full_name: string;
+	is_favorite: Generated<boolean>;
+	note: string | null;
+	phone: string | null;
+	updated_at: Generated<Timestamp>;
+}
+
 export interface InventoryMovements {
 	branch_code: string;
 	code: Generated<string>;
@@ -119,6 +129,7 @@ export interface InventoryMovements {
 
 export interface InventoryOverview {
 	available: number | null;
+	awaiting_first_stock: boolean | null;
 	branch_code: string | null;
 	branch_name: string | null;
 	category_code: string | null;
@@ -134,6 +145,7 @@ export interface InventoryOverview {
 	reorder_point: number | null;
 	reserved: number | null;
 	sku: string | null;
+	stock_health_pct: number | null;
 	stock_state: string | null;
 	updated_at: Timestamp | null;
 }
@@ -142,6 +154,7 @@ export interface InventoryPurchases {
 	branch_code: string;
 	code: Generated<string>;
 	created_at: Generated<Timestamp>;
+	entry_type: Generated<string>;
 	note: string | null;
 	ordered_at: Generated<Timestamp>;
 	origin: string;
@@ -150,6 +163,7 @@ export interface InventoryPurchases {
 	received_at: Timestamp | null;
 	refunded_at: Timestamp | null;
 	state: Generated<string>;
+	tracking_number: string | null;
 	unit_cost: Numeric | null;
 	updated_at: Generated<Timestamp>;
 	user_code: string;
@@ -159,12 +173,20 @@ export interface InventorySales {
 	branch_code: string;
 	code: Generated<string>;
 	created_at: Generated<Timestamp>;
+	customer_code: string | null;
 	customer_name: string;
 	customer_phone: string | null;
+	delivery_address: string | null;
+	fulfillment_type: Generated<string>;
 	note: string | null;
+	order_reference: string | null;
 	product_code: string;
 	quantity: number;
+	sale_channel: Generated<string>;
+	shipping_state: Generated<string>;
 	sold_at: Generated<Timestamp>;
+	total_amount: Generated<Numeric | null>;
+	unit_price: Generated<Numeric>;
 	updated_at: Generated<Timestamp>;
 	user_code: string;
 }
@@ -238,6 +260,7 @@ export interface DB {
 	drive_files: DriveFiles;
 	drive_links: DriveLinks;
 	inventory_balances: InventoryBalances;
+	inventory_customers: InventoryCustomers;
 	inventory_movements: InventoryMovements;
 	inventory_overview: InventoryOverview;
 	inventory_purchases: InventoryPurchases;

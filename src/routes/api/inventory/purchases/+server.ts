@@ -2,10 +2,14 @@ import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { InventoryRepository } from '$lib/server/repositories/inventory.repository';
 import {
+	isValidInventoryPurchaseEntryType,
 	isValidInventoryPurchaseOrigin,
 	isValidInventoryPurchaseState,
+	normalizeInventoryPurchaseEntryType,
 	normalizeInventoryPurchaseOrigin,
 	normalizeInventoryPurchaseState,
+	type InventoryPurchaseEntryType,
+	type InventoryPurchaseOrigin,
 	type InventoryPurchaseState
 } from '$lib/utils/inventory';
 import { isUuid } from '$lib/utils/validation';
@@ -14,6 +18,8 @@ interface CreatePurchaseBody {
 	product_code?: string;
 	branch_code?: string;
 	origin?: string;
+	entry_type?: string;
+	tracking_number?: string;
 	quantity?: number;
 	state?: string;
 	ordered_at?: string;
@@ -29,8 +35,13 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	const branchCode = (url.searchParams.get('branch_code') || '').trim();
 	const productCode = (url.searchParams.get('product_code') || '').trim();
 	const stateRaw = normalizeInventoryPurchaseState(url.searchParams.get('state'));
-	const limitRaw = Number(url.searchParams.get('limit') || 50);
-	const limit = Number.isInteger(limitRaw) ? Math.min(Math.max(limitRaw, 1), 200) : 50;
+	const originRaw = normalizeInventoryPurchaseOrigin(url.searchParams.get('origin'));
+	const entryTypeRaw = normalizeInventoryPurchaseEntryType(url.searchParams.get('entry_type'));
+	const search = (url.searchParams.get('search') || '').trim();
+	const pageRaw = Number(url.searchParams.get('page') || 1);
+	const pageSizeRaw = Number(url.searchParams.get('page_size') || 20);
+	const page = Number.isInteger(pageRaw) ? Math.max(pageRaw, 1) : 1;
+	const pageSize = Number.isInteger(pageSizeRaw) ? Math.min(Math.max(pageSizeRaw, 1), 120) : 20;
 
 	if (branchCode && !isUuid(branchCode)) {
 		throw error(400, 'Sede inválida');
@@ -48,13 +59,33 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		state = stateRaw;
 	}
 
-	const purchases = await InventoryRepository.listPurchases(locals.db, {
+	let origin: InventoryPurchaseOrigin | undefined;
+	if (originRaw) {
+		if (!isValidInventoryPurchaseOrigin(originRaw)) {
+			throw error(400, 'Origen inválido');
+		}
+		origin = originRaw;
+	}
+
+	let entryType: InventoryPurchaseEntryType | undefined;
+	if (entryTypeRaw) {
+		if (!isValidInventoryPurchaseEntryType(entryTypeRaw)) {
+			throw error(400, 'Tipo de compra inválido');
+		}
+		entryType = entryTypeRaw;
+	}
+
+	const result = await InventoryRepository.listPurchases(locals.db, {
 		branchCode: branchCode || undefined,
 		productCode: productCode || undefined,
+		origin,
+		entryType,
 		state,
-		limit
+		search: search || undefined,
+		page,
+		pageSize
 	});
-	return json({ purchases });
+	return json({ purchases: result.items, pagination: result.pagination });
 };
 
 export const POST: RequestHandler = async ({ request, locals }) => {
@@ -69,8 +100,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const body = (await request.json()) as CreatePurchaseBody;
 	const productCode = (body.product_code || '').trim();
 	const branchCode = (body.branch_code || '').trim();
-	const origin = normalizeInventoryPurchaseOrigin(body.origin || '');
-	const state = normalizeInventoryPurchaseState(body.state || 'in_transit');
+	const originRaw = normalizeInventoryPurchaseOrigin(body.origin || '');
+	const stateRaw = normalizeInventoryPurchaseState(body.state || 'in_transit');
+	const entryTypeRaw = normalizeInventoryPurchaseEntryType(body.entry_type || 'restock');
+	const trackingNumber = (body.tracking_number || '').trim();
 	const quantity = Number(body.quantity);
 	const orderedAtRaw = (body.ordered_at || '').trim();
 	const unitCostRaw = body.unit_cost;
@@ -84,16 +117,27 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		throw error(400, 'Sede inválida');
 	}
 
-	if (!isValidInventoryPurchaseOrigin(origin)) {
+	if (!isValidInventoryPurchaseOrigin(originRaw)) {
 		throw error(400, 'Origen inválido. Usa: temu, aliexpress o lima');
 	}
+	const origin: InventoryPurchaseOrigin = originRaw;
 
-	if (!isValidInventoryPurchaseState(state)) {
+	if (!isValidInventoryPurchaseState(stateRaw)) {
 		throw error(400, 'Estado inválido. Usa: in_transit, received o refunded');
 	}
+	const state: InventoryPurchaseState = stateRaw;
+
+	if (!isValidInventoryPurchaseEntryType(entryTypeRaw)) {
+		throw error(400, 'Tipo de compra inválido. Usa: initial o restock');
+	}
+	const entryType: InventoryPurchaseEntryType = entryTypeRaw;
 
 	if (!Number.isInteger(quantity) || quantity <= 0) {
 		throw error(400, 'La cantidad debe ser un entero mayor a 0');
+	}
+
+	if (origin !== 'lima' && trackingNumber.length < 5) {
+		throw error(400, 'El NRO de tracking es obligatorio para Temu y AliExpress');
 	}
 
 	let orderedAt: Date | string = new Date();
@@ -120,6 +164,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			branchCode,
 			userCode: locals.user.code,
 			origin,
+			entryType,
+			trackingNumber: trackingNumber || null,
 			quantity,
 			state,
 			orderedAt,

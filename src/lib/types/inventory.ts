@@ -1,10 +1,21 @@
 import type {
 	InventoryMovementDirection,
 	InventoryMovementReason,
+	InventoryPurchaseEntryType,
 	InventoryPurchaseOrigin,
 	InventoryPurchaseState,
+	InventorySaleChannel,
+	InventorySaleFulfillmentType,
+	InventorySaleShippingState,
 	InventoryStockState
 } from '$lib/utils/inventory';
+
+export interface InventoryPagination {
+	page: number;
+	page_size: number;
+	total: number;
+	total_pages: number;
+}
 
 export interface InventoryOverviewItem {
 	product_code: string;
@@ -25,6 +36,8 @@ export interface InventoryOverviewItem {
 	created_at: string | Date;
 	updated_at: string | Date;
 	stock_state: InventoryStockState;
+	stock_health_pct: number;
+	awaiting_first_stock: boolean;
 }
 
 export interface InventoryOverviewSummary {
@@ -44,6 +57,8 @@ export interface InventoryPurchaseRecord {
 	branch_code: string;
 	user_code: string;
 	origin: InventoryPurchaseOrigin;
+	entry_type: InventoryPurchaseEntryType;
+	tracking_number: string | null;
 	quantity: number;
 	state: InventoryPurchaseState;
 	ordered_at: string | Date;
@@ -61,12 +76,30 @@ export interface InventoryPurchaseListItem extends InventoryPurchaseRecord {
 	branch_name: string;
 }
 
+export interface InventoryCustomerRecord {
+	code: string;
+	full_name: string;
+	phone: string | null;
+	is_favorite: boolean;
+	note: string | null;
+	created_at: string | Date;
+	updated_at: string | Date;
+}
+
 export interface InventorySaleRecord {
 	code: string;
 	product_code: string;
 	branch_code: string;
 	user_code: string;
+	customer_code: string | null;
 	quantity: number;
+	unit_price: string;
+	total_amount: string;
+	sale_channel: InventorySaleChannel;
+	fulfillment_type: InventorySaleFulfillmentType;
+	shipping_state: InventorySaleShippingState;
+	delivery_address: string | null;
+	order_reference: string | null;
 	customer_name: string;
 	customer_phone: string | null;
 	sold_at: string | Date;
@@ -79,6 +112,8 @@ export interface InventorySaleListItem extends InventorySaleRecord {
 	product_name: string;
 	product_sku: string | null;
 	branch_name: string;
+	customer_full_name: string | null;
+	customer_is_favorite: boolean | null;
 }
 
 export interface InventoryMovementListItem {
