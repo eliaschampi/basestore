@@ -5,16 +5,10 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Pool } from 'pg';
 import { config } from 'dotenv';
+import { resolveDbConfig } from '../../src/lib/database/config';
 
-config();
-
-const devDbConfig = {
-	host: process.env.DB_HOST || 'localhost',
-	user: process.env.DB_USER || process.env.PGUSER || process.env.USER || 'postgres',
-	password: process.env.DB_PASSWORD || '',
-	database: process.env.DB_NAME || 'faztore',
-	port: parseInt(process.env.DB_PORT || '5432')
-};
+config({ quiet: true });
+const devDbConfig = resolveDbConfig();
 
 interface MigrationFile {
 	id: string;
@@ -35,6 +29,11 @@ const PROJECT_ROOT = join(__dirname, '../..');
 const INIT_DIR = join(PROJECT_ROOT, 'database/init');
 const MIGRATIONS_DIR = join(PROJECT_ROOT, 'database/migrations');
 const BASELINE_MARKER_PATH = join(INIT_DIR, 'BASELINE_MIGRATION');
+const REQUIRED_SCHEMA_TABLES = ['users', 'permissions', 'products'] as const;
+
+function quoteIdentifier(identifier: string): string {
+	return `"${identifier.replace(/"/g, '""')}"`;
+}
 
 class Database {
 	private pool = new Pool(devDbConfig);
@@ -65,19 +64,33 @@ class Database {
 	async checkTables(): Promise<boolean> {
 		try {
 			const result = await this.query(
-				`SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`
+				`SELECT COUNT(*)::int AS count
+				FROM information_schema.tables
+				WHERE table_schema = 'public'
+				  AND table_name = ANY($1::text[])`,
+				[REQUIRED_SCHEMA_TABLES]
 			);
-			return parseInt((result.rows[0] as { count: string }).count) > 0;
+			return Number((result.rows[0] as { count: number }).count) === REQUIRED_SCHEMA_TABLES.length;
 		} catch {
 			return false;
 		}
 	}
 
 	async resetDatabase() {
-		const owner = process.env.DB_USER || process.env.PGUSER || process.env.USER || 'postgres';
-		await this.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
-		await this.query(`GRANT ALL ON SCHEMA public TO ${owner};`);
-		await this.query('GRANT ALL ON SCHEMA public TO public;');
+		const ownerResult = await this.query('SELECT CURRENT_USER AS current_user');
+		const owner = (ownerResult.rows[0] as { current_user: string }).current_user;
+		const safeOwner = quoteIdentifier(owner);
+		await this.query('BEGIN');
+		try {
+			await this.query('DROP SCHEMA IF EXISTS public CASCADE');
+			await this.query('CREATE SCHEMA public');
+			await this.query(`GRANT ALL ON SCHEMA public TO ${safeOwner}`);
+			await this.query('GRANT ALL ON SCHEMA public TO public');
+			await this.query('COMMIT');
+		} catch (error) {
+			await this.query('ROLLBACK');
+			throw error;
+		}
 	}
 }
 
@@ -185,14 +198,23 @@ async function seedBaselineMigrations(db: Database): Promise<void> {
 }
 
 async function createMigrationFile(name: string): Promise<string> {
+	const migrationName = name.trim();
+	if (!migrationName) throw new Error('Migration name required');
+
+	const slug = migrationName
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, '_')
+		.replace(/^_+|_+$/g, '');
+	if (!slug) throw new Error('Migration name must include letters or numbers');
+
 	await fs.mkdir(MIGRATIONS_DIR, { recursive: true });
 	const timestamp = new Date()
 		.toISOString()
 		.replace(/[-:T]/g, '')
 		.replace(/\.\d{3}Z$/, '');
-	const filename = `${timestamp}_${name.replace(/\s+/g, '_').toLowerCase()}.sql`;
+	const filename = `${timestamp}_${slug}.sql`;
 	const filepath = join(MIGRATIONS_DIR, filename);
-	const template = `-- Migration: ${name}
+	const template = `-- Migration: ${migrationName}
 -- Created: ${new Date().toISOString()}
 
 -- ==================== UP ====================
@@ -208,13 +230,26 @@ async function createMigrationFile(name: string): Promise<string> {
 
 async function initializeDatabase(db: Database) {
 	if (!(await directoryExists(INIT_DIR))) throw new Error(`Init directory not found: ${INIT_DIR}`);
+	if (await db.checkTables()) {
+		console.log('Database already initialized, skipping init');
+		return;
+	}
+
 	const files = await readSqlFiles(INIT_DIR);
 	if (files.length === 0) throw new Error('No initialization files found');
-	for (const file of files) {
-		const sql = await fs.readFile(join(INIT_DIR, file), 'utf-8');
-		await db.query(sql);
+
+	await db.query('BEGIN');
+	try {
+		for (const file of files) {
+			const sql = await fs.readFile(join(INIT_DIR, file), 'utf-8');
+			await db.query(sql);
+		}
+		await seedBaselineMigrations(db);
+		await db.query('COMMIT');
+	} catch (error) {
+		await db.query('ROLLBACK');
+		throw error;
 	}
-	await seedBaselineMigrations(db);
 }
 
 function parseMigrationContent(content: string): { up: string; down: string } {
@@ -267,40 +302,51 @@ async function rollbackMigrations(db: Database) {
 		return;
 	}
 
-	const lastBatch = Math.max(...executedMigrations.map((m) => m.batch));
-	const migrationsToRollback = executedMigrations.filter((m) => m.batch === lastBatch).reverse();
+	const rollbackCandidates = executedMigrations.filter((migration) => migration.batch > 0);
+	if (rollbackCandidates.length === 0) {
+		console.log('No rollbackable migration batches found (batch 0 is baseline-only)');
+		return;
+	}
+
+	const lastBatch = Math.max(...rollbackCandidates.map((migration) => migration.batch));
+	const migrationsToRollback = rollbackCandidates
+		.filter((migration) => migration.batch === lastBatch)
+		.reverse();
+	const migrationFiles = await getMigrationFiles(MIGRATIONS_DIR);
+	const migrationFileById = new Map(migrationFiles.map((migrationFile) => [migrationFile.id, migrationFile]));
+
+	const rollbackPlan: Array<{ record: MigrationRecord; downSql: string }> = [];
+	for (const migration of migrationsToRollback) {
+		const migrationFile = migrationFileById.get(migration.id);
+		if (!migrationFile) {
+			throw new Error(
+				`Cannot rollback migration ${migration.id}: migration file is missing from database/migrations`
+			);
+		}
+
+		const content = await fs.readFile(migrationFile.path, 'utf-8');
+		const { down } = parseMigrationContent(content);
+		if (!down) {
+			throw new Error(`Cannot rollback migration ${migration.id}: DOWN section is required`);
+		}
+
+		rollbackPlan.push({ record: migration, downSql: down });
+	}
+
 	console.log(`Rolling back ${migrationsToRollback.length} migration(s) from batch ${lastBatch}:`);
 
-	for (const migration of migrationsToRollback) {
-		console.log(`  • ${migration.id} - ${migration.name}`);
-		const migrationFiles = await getMigrationFiles(MIGRATIONS_DIR);
-		const migrationFile = migrationFiles.find((f) => f.id === migration.id);
-
-		await db.query('BEGIN');
-		if (!migrationFile) {
-			console.warn(`  ⚠ Migration file not found for ${migration.id}, skipping SQL rollback`);
-		} else {
-			const content = await fs.readFile(migrationFile.path, 'utf-8');
-			const { down } = parseMigrationContent(content);
-			if (!down) {
-				console.warn(`  ⚠ No DOWN section found in ${migration.id}, skipping SQL rollback`);
-			} else {
-				try {
-					await db.query(down);
-				} catch (error) {
-					await db.query('ROLLBACK');
-					throw error;
-				}
-				console.log(`  ✓ Executed rollback SQL for ${migration.id}`);
-			}
+	await db.query('BEGIN');
+	try {
+		for (const { record, downSql } of rollbackPlan) {
+			console.log(`  • ${record.id} - ${record.name}`);
+			await db.query(downSql);
+			await removeMigration(db, record.id);
+			console.log(`  ✓ Rolled back ${record.id}`);
 		}
-		try {
-			await removeMigration(db, migration.id);
-			await db.query('COMMIT');
-		} catch (error) {
-			await db.query('ROLLBACK');
-			throw error;
-		}
+		await db.query('COMMIT');
+	} catch (error) {
+		await db.query('ROLLBACK');
+		throw error;
 	}
 	console.log(`Successfully rolled back ${migrationsToRollback.length} migration(s)`);
 }
@@ -385,7 +431,7 @@ async function run(args: string[]) {
 				console.log('⚠️  This will destroy ALL data and schema!');
 				await db.resetDatabase();
 				console.log('✓ Database reset completed');
-				console.log('💡 Run "pnpm db:init" to reinitialize');
+				console.log('💡 Run "pnpm db:up" to reinitialize and regenerate types');
 				break;
 
 			case 'help':
@@ -395,11 +441,11 @@ Usage: npx tsx database/dev/migrate.ts <command>
 Commands:
   init              Initialize database with init/ SQL files
   migrate           Run pending migrations (UP sections)
-  rollback          Rollback last batch (DOWN sections)
+  rollback          Rollback last non-baseline batch (DOWN sections)
   status            Show migration status
   create <name>     Create new migration file with UP/DOWN sections
   check             Check database connection
-  check:tables      Check if tables exist
+  check:tables      Check if core schema tables exist
   reset             Reset database (destroys all data)`);
 				break;
 		}

@@ -148,6 +148,32 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
 		description: 'Eliminar productos'
 	},
 
+	// Inventario
+	{
+		key: 'inventory:read',
+		label: 'Ver inventario',
+		category: 'Inventario',
+		description: 'Ver estado, stock y movimientos de inventario'
+	},
+	{
+		key: 'inventory:create',
+		label: 'Registrar movimientos',
+		category: 'Inventario',
+		description: 'Registrar compras y ventas en inventario'
+	},
+	{
+		key: 'inventory:update',
+		label: 'Actualizar inventario',
+		category: 'Inventario',
+		description: 'Cambiar estados de compra y umbrales de stock'
+	},
+	{
+		key: 'inventory:delete',
+		label: 'Eliminar movimientos',
+		category: 'Inventario',
+		description: 'Eliminar o revertir registros de inventario'
+	},
+
 	// Drive
 	{
 		key: 'drive:read',

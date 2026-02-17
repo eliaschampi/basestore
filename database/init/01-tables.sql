@@ -32,6 +32,16 @@ CREATE TABLE public.permissions (
   CONSTRAINT permissions_entity_user_action_uq UNIQUE (entity, user_code, action)
 );
 
+-- Auth login rate limits table
+CREATE TABLE public.auth_login_rate_limits (
+  rate_key TEXT NOT NULL,
+  first_attempt_at TIMESTAMPTZ NOT NULL,
+  failed_count INTEGER NOT NULL DEFAULT 0,
+  blocked_until TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT auth_login_rate_limits_pk PRIMARY KEY (rate_key)
+);
+
 -- Branches table
 CREATE TABLE public.branches (
   code UUID NOT NULL DEFAULT gen_random_uuid (),

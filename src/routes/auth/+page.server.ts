@@ -27,8 +27,8 @@ interface DbRateLimitRow {
 
 // Memory fallback keeps compatibility if DB rate-limit store is temporarily unavailable.
 const memoryLoginAttempts = new Map<string, LoginAttemptState>();
-let isRateLimitTableReady = false;
-let rateLimitTableUnavailable = false;
+let hasCheckedDbRateLimitStore = false;
+let dbRateLimitStoreAvailable = true;
 let lastDbRateLimitCleanupAt = 0;
 
 function getClientIp(request: Request): string {
@@ -99,38 +99,21 @@ function clearMemoryAttemptState(key: string): void {
 	memoryLoginAttempts.delete(key);
 }
 
-async function ensureRateLimitTable(db: Database): Promise<boolean> {
-	if (isRateLimitTableReady) {
-		return true;
-	}
-
-	if (rateLimitTableUnavailable) {
-		return false;
+async function canUseDbRateLimitStore(db: Database): Promise<boolean> {
+	if (hasCheckedDbRateLimitStore) {
+		return dbRateLimitStoreAvailable;
 	}
 
 	try {
-		await sql`
-			create table if not exists auth_login_rate_limits (
-				rate_key text primary key,
-				first_attempt_at timestamptz not null,
-				failed_count integer not null default 0,
-				blocked_until timestamptz not null,
-				updated_at timestamptz not null default now()
-			)
-		`.execute(db);
-
-		await sql`
-			create index if not exists auth_login_rate_limits_updated_at_idx
-			on auth_login_rate_limits (updated_at)
-		`.execute(db);
-
-		isRateLimitTableReady = true;
-		return true;
+		await sql`select 1 from auth_login_rate_limits limit 1`.execute(db);
+		dbRateLimitStoreAvailable = true;
 	} catch (error) {
-		rateLimitTableUnavailable = true;
+		dbRateLimitStoreAvailable = false;
 		console.error('Rate-limit DB store unavailable. Falling back to memory store.', error);
-		return false;
 	}
+
+	hasCheckedDbRateLimitStore = true;
+	return dbRateLimitStoreAvailable;
 }
 
 async function cleanupDbRateLimitAttempts(db: Database, now: number): Promise<void> {
@@ -284,7 +267,7 @@ export const actions: Actions = {
 		const email = formData.get('email')?.toString().trim().toLowerCase();
 		const password = formData.get('password')?.toString();
 		const now = Date.now();
-		const useDbRateLimitStore = await ensureRateLimitTable(locals.db);
+		const useDbRateLimitStore = await canUseDbRateLimitStore(locals.db);
 
 		cleanupMemoryLoginAttempts(now);
 

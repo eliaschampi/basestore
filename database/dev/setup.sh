@@ -24,6 +24,10 @@ warn() {
     echo -e "${YELLOW}[WARN]${NC} $1"
 }
 
+run_migrate() {
+    pnpm exec -- tsx database/dev/migrate.ts "$@"
+}
+
 is_container() {
     [ -f /.dockerenv ] || grep -q docker /proc/1/cgroup 2>/dev/null
 }
@@ -32,7 +36,7 @@ wait_for_db() {
     log "Waiting for database connection..."
     local attempt=1
     while [ $attempt -le 30 ]; do
-        if pnpm exec -- tsx database/dev/migrate.ts check >/dev/null 2>&1; then
+        if run_migrate check >/dev/null 2>&1; then
             success "Database connection established"
             return 0
         fi
@@ -46,8 +50,8 @@ wait_for_db() {
 
 is_db_initialized() {
     log "Checking if database is initialized..."
-    # Check if any tables exist (if tables exist, database is initialized)
-    if pnpm exec -- tsx database/dev/migrate.ts check:tables 2>/dev/null | grep -q "true"; then
+    # Checks whether core schema tables exist.
+    if run_migrate check:tables 2>/dev/null | grep -q "true"; then
         success "Database is already initialized"
         return 0
     else
@@ -58,7 +62,7 @@ is_db_initialized() {
 
 init_database() {
     log "Initializing database with SQL files..."
-    if pnpm exec -- tsx database/dev/migrate.ts init >/dev/null 2>&1; then
+    if run_migrate init >/dev/null 2>&1; then
         success "Database initialization completed"
     else
         error "Database initialization failed"
@@ -68,7 +72,7 @@ init_database() {
 
 run_migrations() {
     log "Applying pending migrations..."
-    if pnpm exec -- tsx database/dev/migrate.ts migrate >/dev/null 2>&1; then
+    if run_migrate migrate >/dev/null 2>&1; then
         success "Migrations applied"
     else
         error "Migration execution failed"
@@ -126,23 +130,34 @@ show_status() {
     if is_db_initialized >/dev/null 2>&1; then
         success "Database is initialized"
         log "Running migration status check..."
-        if pnpm exec -- tsx database/dev/migrate.ts status 2>/dev/null; then
+        if run_migrate status 2>/dev/null; then
             success "Migration status retrieved"
         else
             warn "Migration system not fully initialized"
         fi
     else
-        warn "Database not initialized. Run: pnpm db:init"
+        warn "Database not initialized. Run: pnpm db:up"
     fi
 }
 
 reset_database() {
     log "Resetting database..."
     warn "This will destroy ALL data and reset to initial state!"
-    read -p "Are you sure? Type 'yes' to confirm: " -r
-    if [[ $REPLY == "yes" ]]; then
+    local force="${2:-}"
+    local confirmed="no"
+
+    if [[ "$force" == "--yes" || "$force" == "-y" || "${DB_RESET_FORCE:-}" == "1" || "${DB_RESET_FORCE:-}" == "true" ]]; then
+        confirmed="yes"
+    else
+        read -p "Are you sure? Type 'yes' to confirm: " -r
+        if [[ $REPLY == "yes" ]]; then
+            confirmed="yes"
+        fi
+    fi
+
+    if [[ "$confirmed" == "yes" ]]; then
         log "Dropping all tables and schema..."
-        if pnpm exec -- tsx database/dev/migrate.ts reset >/dev/null 2>&1; then
+        if run_migrate reset >/dev/null 2>&1; then
             success "Database reset completed"
             log "Reinitializing database with init files..."
             if init_database && run_migrations && generate_types; then
@@ -163,13 +178,14 @@ reset_database() {
 case "${1:-setup}" in
     "setup"|"init") setup_database ;;
     "status") show_status ;;
-    "reset") reset_database ;;
+    "reset"|"rebuild") reset_database "$@" ;;
     *)
-        echo "Usage: bash database/dev/setup.sh [setup|status|reset]"
+        echo "Usage: bash database/dev/setup.sh [setup|status|reset|rebuild] [--yes]"
         echo ""
         echo "Commands:"
         echo "  setup   - Initialize database if needed, then run pending migrations"
         echo "  status  - Show database and migration status"
         echo "  reset   - Reset database (destroys all data) and reinitialize"
+        echo "  rebuild - Alias of reset"
         ;;
 esac

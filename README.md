@@ -113,11 +113,14 @@ docker-compose -f docker/docker-compose.yml up -d postgres
 Once the database is running, use the included scripts to set up the schema.
 
 ```bash
-# Run migrations to create tables
-pnpm db:migrate
+# Full bootstrap (init if empty, run pending migrations, generate types)
+pnpm db:up
 
-# (Optional) Reset database if needed
-pnpm db:reset
+# Drop schema only (dangerous)
+pnpm db:down
+
+# Full rebuild from scratch (reset + init + migrate + generate)
+pnpm db:rebuild
 ```
 
 > **Note:** The `database/init/` folder contains SQL scripts that are automatically executed when the Postgres container is created for the first time.
@@ -182,7 +185,13 @@ faztore/
 | `pnpm check`       | Run Svelte-Check for type validation.           |
 | `pnpm lint`        | Run ESLint.                                     |
 | `pnpm db:setup`    | Run the database setup shell script.            |
+| `pnpm db:up`       | Bootstrap DB (init if empty + migrate + types). |
+| `pnpm db:down`     | Drop and recreate `public` schema (empty DB).   |
+| `pnpm db:reset`    | Interactive reset + rebuild flow.               |
+| `pnpm db:rebuild`  | Reset and fully rebuild schema + types.         |
 | `pnpm db:migrate`  | Apply pending database migrations.              |
+| `pnpm db:rollback` | Rollback last non-baseline migration batch.     |
+| `pnpm db:status`   | Show initialization and migration status.       |
 | `pnpm db:create`   | Create a new migration file.                    |
 | `pnpm db:generate` | Generate TypeScript types from database schema. |
 

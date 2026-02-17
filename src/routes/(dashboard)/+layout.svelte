@@ -71,6 +71,7 @@
 
 	const sidebarMeta = $derived(() => page.data.user?.email || 'Panel administrativo');
 	const canReadDrive = $derived(can('drive:read'));
+	const canReadInventory = $derived(can('inventory:read'));
 	const canReadProducts = $derived(can('products:read'));
 </script>
 
@@ -164,6 +165,19 @@
 			</SidebarItem>
 		{/if}
 
+		{#if canReadInventory}
+			<SidebarItem
+				href="/inventario"
+				active={page.url.pathname.startsWith('/inventario')}
+				collapsed={sidebarCollapsed}
+			>
+				{#snippet icon()}
+					<Icon icon="listChecks" size="20px" />
+				{/snippet}
+				Inventario
+			</SidebarItem>
+		{/if}
+
 		{#if canReadDrive}
 			<SidebarItem
 				href="/drive"
@@ -194,7 +208,7 @@
 	<!-- Navbar -->
 	<Navbar ontoggle-sidebar={toggleSidebar} ontoggle-theme={toggleTheme}>
 		{#snippet title()}
-			{page.data.title || 'Dashboard'}
+			{page.data.title || 'Faztore'}
 		{/snippet}
 
 		{#snippet actions()}
@@ -220,7 +234,7 @@
 					{/snippet}
 
 					{#snippet content()}
-						<div class="lumi-padding--sm" style="max-width: 220px;">
+						<div class="lumi-padding--sm lumi-navbar-user-dropdown">
 							<div class="lumi-padding--sm lumi-border lumi-border--light">
 								<p class="lumi-font--medium lumi-margin--none lumi-text-ellipsis">
 									{user.name}
@@ -291,5 +305,9 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	.lumi-navbar-user-dropdown {
+		max-width: 220px;
 	}
 </style>

@@ -3,10 +3,20 @@ set -e
 
 readonly PROJECT_NAME="faztore"
 readonly COMPOSE_FILE="docker/docker-compose.yml"
+COMPOSE_CMD=""
 
 check_docker() {
     command -v docker &> /dev/null || { echo "Docker not installed"; exit 1; }
-    command -v docker-compose &> /dev/null || { echo "Docker Compose not installed"; exit 1; }
+
+    if command -v docker-compose &> /dev/null; then
+        COMPOSE_CMD="docker-compose"
+    elif docker compose version &> /dev/null; then
+        COMPOSE_CMD="docker compose"
+    else
+        echo "Docker Compose not installed"
+        exit 1
+    fi
+
     docker info &> /dev/null || { echo "Docker daemon not running"; exit 1; }
 }
 
@@ -14,16 +24,21 @@ check_compose_file() {
     [[ -f "$COMPOSE_FILE" ]] || { echo "Docker Compose file not found"; exit 1; }
 }
 
+compose() {
+    # shellcheck disable=SC2086
+    $COMPOSE_CMD -f "$COMPOSE_FILE" "$@"
+}
+
 cmd_build() {
-    docker-compose -f "$COMPOSE_FILE" build
+    compose build
 }
 
 cmd_up() {
-    docker-compose -f "$COMPOSE_FILE" up -d
+    compose up -d
 }
 
 cmd_down() {
-    docker-compose -f "$COMPOSE_FILE" down
+    compose down
 }
 
 cmd_restart() {
@@ -31,7 +46,7 @@ cmd_restart() {
 }
 
 cmd_logs() {
-    docker-compose -f "$COMPOSE_FILE" logs -f
+    compose logs -f
 }
 
 cmd_shell() {
@@ -49,15 +64,19 @@ cmd_db_shell() {
     docker exec -it "${PROJECT_NAME}_postgres" psql -U postgres -d "$PROJECT_NAME"
 }
 
+containers_running() {
+    compose ps --status running --services | grep -q .
+}
+
 cmd_setup() {
-    docker-compose ps | grep -q "Up" || { echo "Containers not running. Run: ./docker.sh up"; exit 1; }
+    containers_running || { echo "Containers not running. Run: ./docker.sh up"; exit 1; }
     docker exec -it "${PROJECT_NAME}_app" bash database/dev/setup.sh
 }
 
 
 
 check_containers() {
-    docker-compose ps | grep -q "Up" || { echo "Containers not running. Run: ./docker.sh up"; exit 1; }
+    containers_running || { echo "Containers not running. Run: ./docker.sh up"; exit 1; }
 }
 
 cmd_db_migrate() {
@@ -88,7 +107,7 @@ cmd_db_create() {
 }
 
 cmd_status() {
-    docker-compose -f "$COMPOSE_FILE" ps
+    compose ps
 }
 
 cmd_test() {
@@ -116,7 +135,7 @@ Commands:
   test            Run tests
 
 Database:
-  setup           Initialize database (runs init SQL files only, no migrations)
+  setup           Bootstrap database (init if empty + migrate + typegen)
   db:shell        PostgreSQL shell
   db:migrate      Run migrations only
   db:rollback     Rollback migrations

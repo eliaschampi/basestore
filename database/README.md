@@ -8,13 +8,17 @@ This project uses a **snapshot + incremental migrations** model:
 
 ## Bootstrap Flow
 
-`pnpm db:setup` executes:
+`pnpm db:up` (alias of `pnpm db:setup`) executes:
 
 1. `init` only if the DB has no tables.
 2. `migrate` always (applies pending migrations only).
 3. `db:generate` for Kysely types.
 
 During `init`, baseline migrations are auto-recorded with batch `0`, so `migrate` does not replay historical migrations already represented in `init`.
+
+`pnpm db:down` resets schema to empty.
+
+`pnpm db:rebuild` performs a full reset + init + migrate + type generation (non-interactive).
 
 ## Team Rules
 
@@ -23,7 +27,7 @@ During `init`, baseline migrations are auto-recorded with batch `0`, so `migrate
 3. Periodically refresh `database/init/*.sql` to match current schema.
 4. After refreshing `init`, update `database/init/BASELINE_MIGRATION` to the latest migration id included in the snapshot.
 5. Validate with:
-   - `pnpm db:setup`
+   - `pnpm db:up`
    - `pnpm db:status`
    - `pnpm check`
    - `pnpm lint`

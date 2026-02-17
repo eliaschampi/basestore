@@ -9,6 +9,9 @@ CREATE INDEX users_email_idx ON public.users (email);
 CREATE INDEX permissions_user_code_idx ON public.permissions (user_code);
 CREATE INDEX permissions_entity_idx ON public.permissions (entity);
 
+-- Auth login rate limits indexes
+CREATE INDEX auth_login_rate_limits_updated_at_idx ON public.auth_login_rate_limits (updated_at);
+
 -- Branches table indexes
 CREATE INDEX branches_name_idx ON public.branches (name);
 
