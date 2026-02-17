@@ -18,6 +18,7 @@
 		Input,
 		Loading,
 		PageHeader,
+		Radio,
 		SegmentedControl,
 		Select,
 		TagOption
@@ -936,13 +937,25 @@
 
 <Dialog bind:open={showMoveDialog} title="Mover archivo" size="sm">
 	<div class="lumi-stack lumi-space--md">
-		<Select
-			label="Espacio destino"
-			value={moveScope}
-			options={scopeOptions}
-			clearable={false}
-			onchange={(value) => void handleMoveScopeChange(value)}
-		/>
+		<div class="lumi-stack lumi-space--xs">
+			<span class="lumi-text--sm lumi-font--medium">Espacio destino</span>
+			<div class="drive-page__move-scope-options">
+				{#each DRIVE_SCOPE_OPTIONS as scopeOption (scopeOption.value)}
+					<div class="drive-page__move-scope-option">
+						<Radio
+							name="move-scope"
+							group={moveScope}
+							value={scopeOption.value}
+							label={scopeOption.name}
+							onchange={(value) => void handleMoveScopeChange(value)}
+						/>
+						<span class="drive-page__move-scope-option-description">
+							{scopeOption.description}
+						</span>
+					</div>
+				{/each}
+			</div>
+		</div>
 		<Select
 			label="Carpeta destino"
 			value={moveParentCode ?? 'root'}
@@ -1141,6 +1154,42 @@
 		align-items: center;
 		justify-content: center;
 		gap: var(--lumi-space-md);
+	}
+
+	.drive-page__move-scope-options {
+		display: grid;
+		gap: var(--lumi-space-sm);
+	}
+
+	.drive-page__move-scope-options :global(.lumi-radio) {
+		width: 100%;
+		padding: var(--lumi-space-sm) var(--lumi-space-md);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
+		border-radius: var(--lumi-radius-lg);
+		background: var(--lumi-color-surface);
+		transition: var(--lumi-transition-all);
+	}
+
+	.drive-page__move-scope-options :global(.lumi-radio:not(.lumi-radio--disabled):hover) {
+		border-color: var(--lumi-color-primary);
+		background: color-mix(in srgb, var(--lumi-color-primary) 4%, var(--lumi-color-surface));
+	}
+
+	.drive-page__move-scope-options :global(.lumi-radio--checked) {
+		border-color: color-mix(in srgb, var(--lumi-color-primary) 32%, var(--lumi-color-border));
+		background: color-mix(in srgb, var(--lumi-color-primary) 8%, var(--lumi-color-surface));
+	}
+
+	.drive-page__move-scope-option {
+		display: flex;
+		flex-direction: column;
+		gap: var(--lumi-space-2xs);
+	}
+
+	.drive-page__move-scope-option-description {
+		font-size: var(--lumi-font-size-xs);
+		color: var(--lumi-color-text-muted);
+		padding-left: calc(var(--lumi-icon-md) + var(--lumi-space-sm));
 	}
 
 	.drive-page__tag-none {

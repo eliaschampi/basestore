@@ -122,7 +122,7 @@ export const load: PageServerLoad = async ({ locals, params, depends }) => {
 	}
 
 	return {
-		title: `Producto · ${product.name}`,
+		title: 'Detalle del producto',
 		product,
 		linkedFiles,
 		canReadDrive

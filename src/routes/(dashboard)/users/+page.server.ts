@@ -2,6 +2,7 @@ import { sql } from 'kysely';
 import { fail } from '@sveltejs/kit';
 import { hashPassword } from '$lib/auth/password';
 import type { Database } from '$lib/database';
+import { readFormField } from '$lib/utils/formData';
 import { isUuid } from '$lib/utils/validation';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -43,11 +44,6 @@ function buildSuperUserSelect(superUserColumn: 'is_super_user' | 'is_super_admin
 	return superUserColumn
 		? sql<boolean>`coalesce(${sql.ref(`users.${superUserColumn}`)}, false)`
 		: sql<boolean>`false`;
-}
-
-function readFormField(formData: FormData, key: string): string {
-	const value = formData.get(key);
-	return typeof value === 'string' ? value.trim() : '';
 }
 
 export const load: PageServerLoad = async ({ locals, depends }) => {

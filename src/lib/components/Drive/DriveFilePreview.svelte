@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { Button, Dialog, Icon } from '$lib/components';
-	import { formatFileSize, getDriveServeUrl, getFileColor, getFileIcon } from '$lib/utils/drive';
+	import {
+		formatFileSize,
+		getDriveServeUrl,
+		getDriveTypeLabel,
+		getFileColor,
+		getFileIcon
+	} from '$lib/utils/drive';
 	import type { DriveFileItem } from './types';
 
 	interface Props {
@@ -84,7 +90,7 @@
 				<div class="drive-preview__details-text">
 					<span class="lumi-font--medium">{file.name}</span>
 					<span class="lumi-text--xs lumi-text--muted">
-						{file.type.toUpperCase()}
+						{getDriveTypeLabel(file.type)}
 						{#if file.type !== 'dir'}
 							• {formatFileSize(file.size)}
 						{/if}

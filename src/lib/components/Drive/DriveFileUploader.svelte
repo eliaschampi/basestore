@@ -1,15 +1,11 @@
 <script lang="ts">
-	import { Alert, Button, Dialog, Icon } from '$lib/components';
+	import { Alert, Button, Dialog, FileUpload } from '$lib/components';
+	import type { FileUploadFile } from '$lib/components';
 	import {
 		DRIVE_IMAGE_COMPRESSION_THRESHOLD_BYTES,
 		formatFileSize,
 		MAX_FILE_SIZE
 	} from '$lib/utils/drive';
-
-	interface QueuedFile {
-		id: string;
-		file: File;
-	}
 
 	interface Props {
 		open: boolean;
@@ -19,92 +15,115 @@
 
 	let { open = $bindable(false), onupload, onclose }: Props = $props();
 
-	let queue = $state<QueuedFile[]>([]);
+	let queue = $state<FileUploadFile[]>([]);
 	let uploading = $state(false);
-	let dragOver = $state(false);
 	let errorMessage = $state('');
 
-	let fileInput: HTMLInputElement | undefined = $state();
+	const pendingUploadsCount = $derived(
+		queue.filter((item) => item.status === 'selected' || item.status === 'error').length
+	);
 
-	function addFiles(fileList: FileList) {
-		errorMessage = '';
-		const additions: QueuedFile[] = [];
+	const uploaderHintText = $derived(
+		`Máximo ${formatFileSize(MAX_FILE_SIZE)} por archivo - Las imágenes mayores a ${formatFileSize(
+			DRIVE_IMAGE_COMPRESSION_THRESHOLD_BYTES
+		)} se optimizan automáticamente`
+	);
 
-		for (const file of Array.from(fileList)) {
-			if (file.size > MAX_FILE_SIZE) {
-				errorMessage = `"${file.name}" excede el tamaño máximo de ${formatFileSize(MAX_FILE_SIZE)}`;
-				continue;
-			}
-
-			if (file.size === 0) {
-				errorMessage = `"${file.name}" está vacío`;
-				continue;
-			}
-
-			additions.push({
-				id: `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2, 8)}`,
-				file
-			});
+	function validateDriveFile(file: File): string | null {
+		if (file.size === 0) {
+			return `"${file.name}" está vacío`;
 		}
 
-		queue = [...queue, ...additions];
+		return null;
 	}
 
-	function handleDrop(event: DragEvent) {
-		event.preventDefault();
-		dragOver = false;
-		const files = event.dataTransfer?.files;
-		if (files) {
-			addFiles(files);
-		}
-	}
-
-	function handleSelect(event: Event) {
-		const input = event.currentTarget as HTMLInputElement | null;
-		if (!input?.files) {
+	function updateQueueItem(id: string, updater: (item: FileUploadFile) => void): void {
+		const item = queue.find((current) => current.id === id);
+		if (!item) {
 			return;
 		}
 
-		addFiles(input.files);
-		input.value = '';
+		updater(item);
+		queue = [...queue];
 	}
 
-	function removeFromQueue(id: string) {
-		queue = queue.filter((item) => item.id !== id);
+	function resetDialogState(): void {
+		queue = [];
+		errorMessage = '';
 	}
 
-	async function uploadQueuedFiles() {
-		if (queue.length === 0 || uploading) {
+	$effect(() => {
+		if (!open && !uploading && (queue.length > 0 || errorMessage)) {
+			resetDialogState();
+		}
+	});
+
+	function closeDialog(): void {
+		if (uploading) {
+			return;
+		}
+
+		resetDialogState();
+		open = false;
+		onclose?.();
+	}
+
+	async function uploadQueuedFiles(): Promise<void> {
+		if (pendingUploadsCount === 0 || uploading) {
+			return;
+		}
+
+		if (!onupload) {
+			errorMessage = 'No se configuró el servicio de subida de archivos';
 			return;
 		}
 
 		uploading = true;
 		errorMessage = '';
+		let hasFailures = false;
 
-		try {
-			for (const item of queue) {
-				await onupload?.(item.file);
+		for (const item of queue) {
+			if (item.status !== 'selected' && item.status !== 'error') {
+				continue;
 			}
 
-			queue = [];
+			updateQueueItem(item.id, (queueItem) => {
+				queueItem.status = 'uploading';
+				queueItem.progress = 30;
+				queueItem.error = undefined;
+			});
+
+			try {
+				await onupload(item.file);
+
+				updateQueueItem(item.id, (queueItem) => {
+					queueItem.status = 'success';
+					queueItem.progress = 100;
+					queueItem.error = undefined;
+				});
+			} catch (caught) {
+				hasFailures = true;
+				const message = caught instanceof Error ? caught.message : 'Error al subir archivos';
+
+				if (!errorMessage) {
+					errorMessage = message;
+				}
+
+				updateQueueItem(item.id, (queueItem) => {
+					queueItem.status = 'error';
+					queueItem.progress = 0;
+					queueItem.error = message;
+				});
+			}
+		}
+
+		uploading = false;
+
+		if (!hasFailures) {
+			resetDialogState();
 			open = false;
 			onclose?.();
-		} catch (caught) {
-			errorMessage = caught instanceof Error ? caught.message : 'Error al subir archivos';
-		} finally {
-			uploading = false;
 		}
-	}
-
-	function closeDialog() {
-		if (uploading) {
-			return;
-		}
-
-		queue = [];
-		errorMessage = '';
-		open = false;
-		onclose?.();
 	}
 </script>
 
@@ -114,69 +133,23 @@
 			<Alert type="warning" closable onclose={() => (errorMessage = '')}>{errorMessage}</Alert>
 		{/if}
 
-		<div
-			class="drive-uploader__dropzone"
-			class:drive-uploader__dropzone--active={dragOver}
-			onclick={() => fileInput?.click()}
-			onkeydown={(event) => {
-				if (event.key === 'Enter' || event.key === ' ') {
-					event.preventDefault();
-					fileInput?.click();
-				}
-			}}
-			ondragover={(event) => {
-				event.preventDefault();
-				dragOver = true;
-			}}
-			ondragleave={() => (dragOver = false)}
-			ondrop={handleDrop}
-			role="button"
-			tabindex="0"
-		>
-			<Icon icon="upload" size="var(--lumi-icon-2xl)" color="muted" />
-			<p class="lumi-text--sm">
-				Arrastra archivos aquí o <strong>haz clic para seleccionar</strong>
-			</p>
-			<p class="lumi-text--xs lumi-text--muted">
-				Máximo {formatFileSize(MAX_FILE_SIZE)} por archivo
-			</p>
-			<p class="lumi-text--xs lumi-text--muted">
-				Las imágenes mayores a {formatFileSize(DRIVE_IMAGE_COMPRESSION_THRESHOLD_BYTES)} se optimizan
-				automáticamente
-			</p>
+		<div class="drive-uploader__file-upload">
+			<FileUpload
+				bind:files={queue}
+				multiple
+				maxSize={MAX_FILE_SIZE}
+				disabled={uploading}
+				placeholderText="Arrastra archivos aquí o haz clic para seleccionar"
+				hintText={uploaderHintText}
+				addMoreText="Agregar más archivos"
+				validateFile={validateDriveFile}
+				maxSizeErrorMessage={(file) =>
+					`"${file.name}" excede el tamaño máximo de ${formatFileSize(MAX_FILE_SIZE)}`}
+				oninvalid={(message) => {
+					errorMessage = message;
+				}}
+			/>
 		</div>
-
-		<input
-			bind:this={fileInput}
-			type="file"
-			multiple
-			class="drive-uploader__hidden-input"
-			onchange={handleSelect}
-		/>
-
-		{#if queue.length > 0}
-			<div class="lumi-stack lumi-space--xs drive-uploader__queue">
-				{#each queue as item (item.id)}
-					<div class="drive-uploader__queue-item">
-						<div class="lumi-flex lumi-align-items--center lumi-flex--gap-xs lumi-flex-item--grow">
-							<Icon icon="file" size="sm" />
-							<span class="drive-uploader__filename lumi-text-ellipsis" title={item.file.name}
-								>{item.file.name}</span
-							>
-							<span class="lumi-text--xs lumi-text--muted">{formatFileSize(item.file.size)}</span>
-						</div>
-						<Button
-							type="flat"
-							size="sm"
-							icon="x"
-							color="danger"
-							onclick={() => removeFromQueue(item.id)}
-							disabled={uploading}
-						/>
-					</div>
-				{/each}
-			</div>
-		{/if}
 	</div>
 
 	{#snippet footer()}
@@ -186,57 +159,17 @@
 			color="primary"
 			icon="upload"
 			loading={uploading}
-			disabled={queue.length === 0}
-			onclick={uploadQueuedFiles}
+			disabled={pendingUploadsCount === 0}
+			onclick={() => void uploadQueuedFiles()}
 		>
-			Subir {queue.length > 0 ? `(${queue.length})` : ''}
+			Subir {pendingUploadsCount > 0 ? `(${pendingUploadsCount})` : ''}
 		</Button>
 	{/snippet}
 </Dialog>
 
 <style>
-	.drive-uploader__dropzone {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: var(--lumi-space-sm);
-		padding: var(--lumi-space-2xl);
-		border: var(--lumi-border-width-thick) dashed var(--lumi-color-border);
-		border-radius: var(--lumi-radius-xl);
-		background: var(--lumi-color-surface);
-		cursor: pointer;
-		text-align: center;
-		transition: var(--lumi-transition-all);
-	}
-
-	.drive-uploader__dropzone:hover,
-	.drive-uploader__dropzone--active {
-		border-color: var(--lumi-color-primary);
-		background: color-mix(in srgb, var(--lumi-color-primary) 4%, var(--lumi-color-surface));
-	}
-
-	.drive-uploader__hidden-input {
-		display: none;
-	}
-
-	.drive-uploader__queue {
+	.drive-uploader__file-upload :global(.lumi-file-upload__file-list) {
 		max-height: var(--lumi-drive-uploader-queue-max-height);
 		overflow-y: auto;
-	}
-
-	.drive-uploader__queue-item {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--lumi-space-sm);
-		padding: var(--lumi-space-xs) var(--lumi-space-sm);
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
-		border-radius: var(--lumi-radius-md);
-		background: var(--lumi-color-surface);
-	}
-
-	.drive-uploader__filename {
-		min-width: 0;
 	}
 </style>

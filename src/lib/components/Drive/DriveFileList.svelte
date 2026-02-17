@@ -1,8 +1,13 @@
 <script lang="ts">
 	import { Icon, Table } from '$lib/components';
 	import type { TableRow } from '$lib/components';
-	import type { DriveFileType } from '$lib/utils/drive';
-	import { formatFileSize, getDriveTagByHash, getFileColor, getFileIcon } from '$lib/utils/drive';
+	import {
+		formatFileSize,
+		getDriveTagByHash,
+		getDriveTypeLabel,
+		getFileColor,
+		getFileIcon
+	} from '$lib/utils/drive';
 	import type { DriveFileItem } from './types';
 
 	interface Props {
@@ -38,19 +43,6 @@
 			month: 'short',
 			day: 'numeric'
 		});
-	}
-
-	function getTypeLabel(type: DriveFileType): string {
-		const labels: Record<DriveFileType, string> = {
-			dir: 'Carpeta',
-			img: 'Imagen',
-			vid: 'Video',
-			aud: 'Audio',
-			doc: 'Documento',
-			zip: 'Archivo',
-			otr: 'Otro'
-		};
-		return labels[type];
 	}
 
 	function toDriveFile(row: TableRow): DriveFileItem {
@@ -132,7 +124,7 @@
 			</button>
 		</td>
 		<td class:drive-file-list__cell--selected={selectedFileSet.has(file.code)}>
-			<span class="lumi-text--sm lumi-text--muted">{getTypeLabel(file.type)}</span>
+			<span class="lumi-text--sm lumi-text--muted">{getDriveTypeLabel(file.type)}</span>
 		</td>
 		<td class:drive-file-list__cell--selected={selectedFileSet.has(file.code)}>
 			<span class="lumi-text--sm lumi-text--muted">

@@ -1,11 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
+import { readFormCheckbox, readFormField, readFormFieldList } from '$lib/utils/formData';
 import { areUuids, isUuid } from '$lib/utils/validation';
-
-function readFormField(formData: FormData, key: string): string {
-	const value = formData.get(key);
-	return typeof value === 'string' ? value.trim() : '';
-}
 
 export const load: PageServerLoad = async ({ locals, depends }) => {
 	depends('branches:load');
@@ -40,11 +36,8 @@ export const actions: Actions = {
 
 		const formData = await request.formData();
 		const name = readFormField(formData, 'name');
-		const state = formData.get('state') === 'on';
-		const selectedUsers = formData
-			.getAll('selectedUsers')
-			.map((user) => (typeof user === 'string' ? user.trim() : ''))
-			.filter(Boolean);
+		const state = readFormCheckbox(formData, 'state');
+		const selectedUsers = readFormFieldList(formData, 'selectedUsers');
 
 		if (!name) {
 			return fail(400, { error: 'El nombre es obligatorio' });
@@ -78,11 +71,8 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const branchCode = readFormField(formData, 'code');
 		const name = readFormField(formData, 'name');
-		const state = formData.get('state') === 'on';
-		const selectedUsers = formData
-			.getAll('selectedUsers')
-			.map((user) => (typeof user === 'string' ? user.trim() : ''))
-			.filter(Boolean);
+		const state = readFormCheckbox(formData, 'state');
+		const selectedUsers = readFormFieldList(formData, 'selectedUsers');
 
 		if (!branchCode) {
 			return fail(400, { error: 'Sede inválida' });

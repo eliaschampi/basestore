@@ -307,7 +307,7 @@
 				<div class="lumi-table__search">
 					<Input
 						bind:value={searchQuery}
-						placeholder="Search..."
+						placeholder="Buscar..."
 						size="sm"
 						icon="search"
 						oninput={handleSearch}
@@ -321,7 +321,7 @@
 		{#if loading}
 			<div class="lumi-table__loading" role="status">
 				<div class="lumi-table__spinner"></div>
-				<span>Loading...</span>
+				<span>Cargando...</span>
 			</div>
 		{:else}
 			<table class="lumi-table__content">
@@ -408,12 +408,12 @@
 				<div class="lumi-table__pagination-info">
 					<span class="lumi-table__pagination-text">
 						{#if totalItems === 0}
-							No results
+							Sin Resultados
 						{:else}
-							Showing {(currentPage - 1) * itemsPerPage + 1}–{Math.min(
+							Mostrando {(currentPage - 1) * itemsPerPage + 1}–{Math.min(
 								currentPage * itemsPerPage,
 								totalItems
-							)} of {totalItems}
+							)} de {totalItems}
 						{/if}
 					</span>
 				</div>

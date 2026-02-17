@@ -1,11 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
+import { readFormField } from '$lib/utils/formData';
 import { isUuid } from '$lib/utils/validation';
-
-function readFormField(formData: FormData, key: string): string {
-	const value = formData.get(key);
-	return typeof value === 'string' ? value.trim() : '';
-}
 
 export const load: PageServerLoad = async ({ locals, depends }) => {
 	depends('brands:load');

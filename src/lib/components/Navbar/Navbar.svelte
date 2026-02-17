@@ -24,7 +24,7 @@
 	<div class="lumi-navbar__left">
 		<div class="lumi-navbar__menu-btn">
 			<Button
-				type="flat"
+				type="ghost"
 				size="md"
 				icon="menu"
 				aria-label="Toggle sidebar"
@@ -48,7 +48,7 @@
 		{:else}
 			<div class="lumi-navbar__actions">
 				<Button
-					type="flat"
+					type="ghost"
 					size="sm"
 					icon="moon"
 					aria-label="Toggle theme"

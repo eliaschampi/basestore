@@ -171,7 +171,7 @@
 						{#snippet actions()}
 							<Dropdown position="bottom-end">
 								{#snippet triggerContent()}
-									<Button type="flat" size="sm" icon="moreVertical" />
+									<Button type="ghost" size="sm" icon="moreVertical" />
 								{/snippet}
 
 								{#snippet content()}

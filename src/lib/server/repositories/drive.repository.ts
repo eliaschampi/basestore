@@ -1,6 +1,8 @@
 import { error } from '@sveltejs/kit';
+import type { SelectQueryBuilder } from 'kysely';
 import type { SessionUser } from '$lib/auth/session';
 import type { Database } from '$lib/database';
+import type { DB } from '$lib/database/types';
 import { isValidDriveScope, type DriveScope } from '$lib/utils/drive';
 
 export interface DriveScopeContext {
@@ -99,5 +101,18 @@ export class DriveRepository {
 		}
 
 		return scope;
+	}
+
+	static applyScopeFilter<O>(
+		query: SelectQueryBuilder<DB, 'drive_files', O>,
+		context: DriveScopeContext
+	): SelectQueryBuilder<DB, 'drive_files', O> {
+		let scopedQuery = query.where('scope', '=', context.scope);
+
+		if (context.scope === 'user_private' && context.ownerUserCode) {
+			scopedQuery = scopedQuery.where('user_code', '=', context.ownerUserCode);
+		}
+
+		return scopedQuery;
 	}
 }

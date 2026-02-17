@@ -199,7 +199,7 @@
 
 		{#snippet actions()}
 			<Button
-				type="flat"
+				type="ghost"
 				size="sm"
 				icon={isDarkTheme ? 'sun' : 'moon'}
 				aria-label="Toggle theme"
@@ -210,15 +210,13 @@
 				{@const user = page.data.user}
 				<Dropdown position="bottom-end">
 					{#snippet triggerContent()}
-						<Button type="flat" size="sm">
-							<Avatar
-								text={getInitials(user.name, user.last_name)}
-								src={user.photo_url || undefined}
-								alt={`${user.name ?? ''} ${user.last_name ?? ''}`.trim() || 'Usuario'}
-								size="sm"
-								color="primary"
-							/>
-						</Button>
+						<Avatar
+							text={getInitials(user.name, user.last_name)}
+							src={user.photo_url || undefined}
+							alt={`${user.name ?? ''} ${user.last_name ?? ''}`.trim() || 'Usuario'}
+							size="sm"
+							color="primary"
+						/>
 					{/snippet}
 
 					{#snippet content()}

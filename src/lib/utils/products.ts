@@ -2,9 +2,9 @@ export function formatProductPrice(price: string | number | null): string {
 	const parsed = typeof price === 'number' ? price : Number.parseFloat(price ?? '0');
 	const safePrice = Number.isFinite(parsed) ? parsed : 0;
 
-	return new Intl.NumberFormat('es-ES', {
+	return new Intl.NumberFormat('es-PE', {
 		style: 'currency',
-		currency: 'USD',
+		currency: 'PEN',
 		minimumFractionDigits: 2
 	}).format(safePrice);
 }

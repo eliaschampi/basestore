@@ -11,8 +11,6 @@
 		ContextItem,
 		Dialog,
 		Divider,
-		Dropdown,
-		DropdownItem,
 		DriveFileGrid,
 		DriveFilePreview,
 		EmptyState,
@@ -33,10 +31,12 @@
 		getDriveServeUrl,
 		getFileColor,
 		getFileIcon,
-		type DriveFileType
+		getDriveTypeLabel,
+		normalizeDriveFileSize
 	} from '$lib/utils/drive';
 	import { formatProductDateTime, formatProductPrice } from '$lib/utils/products';
 	import type { PageData } from './$types';
+	import Fieldset from '$lib/components/Fieldset/Fieldset.svelte';
 
 	interface DriveLinksResponse {
 		links: ProductDriveLink[];
@@ -74,7 +74,7 @@
 	let previewFile = $state<DriveFileItem | null>(null);
 	let selectedGridFileCode = $state<string | null>(null);
 	let contextLinkedFile = $state<ProductDriveLink | null>(null);
-	let gridContextMenu:
+	let fileContextMenu:
 		| {
 				open: (event: MouseEvent, data?: unknown) => void;
 				close: () => void;
@@ -119,37 +119,13 @@
 		}
 	});
 
-	function getDriveTypeLabel(type: DriveFileType): string {
-		switch (type) {
-			case 'dir':
-				return 'Carpeta';
-			case 'img':
-				return 'Imagen';
-			case 'vid':
-				return 'Video';
-			case 'aud':
-				return 'Audio';
-			case 'doc':
-				return 'Documento';
-			case 'zip':
-				return 'Comprimido';
-			default:
-				return 'Archivo';
-		}
-	}
-
-	function normalizeSize(value: string | number): number {
-		const parsed = Number(value);
-		return Number.isFinite(parsed) ? parsed : 0;
-	}
-
 	function toPreviewFile(file: ProductDriveLink): DriveFileItem {
 		return {
 			code: file.file_code,
 			scope: 'product_shared',
 			name: file.file_name,
 			type: file.file_type,
-			size: normalizeSize(file.file_size),
+			size: normalizeDriveFileSize(file.file_size),
 			tag: null,
 			mime_type: file.mime_type,
 			parent_code: null,
@@ -190,15 +166,20 @@
 		openPreview(linkedFile);
 	}
 
-	function openGridContextMenu(event: MouseEvent, file: DriveFileItem): void {
-		const linkedFile = getLinkedFileByCode(file.code);
+	function openFileContextMenu(event: MouseEvent, file: ProductDriveLink | DriveFileItem): void {
+		event.preventDefault();
+		event.stopPropagation();
+
+		const linkedFile = 'file_code' in file ? file : getLinkedFileByCode(file.code);
 		if (!linkedFile) {
 			return;
 		}
 
 		contextLinkedFile = linkedFile;
-		selectedGridFileCode = linkedFile.file_code;
-		gridContextMenu?.open(event, linkedFile.file_code);
+		if (viewMode === 'grid') {
+			selectedGridFileCode = linkedFile.file_code;
+		}
+		fileContextMenu?.open(event, linkedFile.file_code);
 	}
 
 	function clearSearchState(): void {
@@ -457,13 +438,14 @@
 				iconColor="warning"
 			/>
 		</div>
-
 		{#if linkedImageName}
-			<Divider text="Imagen principal" />
-			<div class="lumi-flex lumi-align-items--center lumi-flex--gap-sm">
-				<Icon icon="image" color="success" />
-				<span class="lumi-text--sm lumi-text--muted">{linkedImageName}</span>
-			</div>
+			<Divider />
+			<Fieldset legend="Imagen princial">
+				<div class="lumi-flex lumi-align-items--center lumi-flex--gap-sm">
+					<Icon icon="image" color="success" />
+					<span class="lumi-text--sm lumi-text--muted">{linkedImageName}</span>
+				</div>
+			</Fieldset>
 		{/if}
 	</Card>
 
@@ -487,13 +469,13 @@
 						aria-label="Modo de vista de archivos vinculados"
 					/>
 					<Button
-						type="filled"
+						type="gradient"
 						color="primary"
 						icon="plus"
 						onclick={openAttachDialog}
 						disabled={!hasDriveReadPermission || !canDriveUpdate}
 					>
-						Agregar archivos
+						Agregar
 					</Button>
 				</div>
 			</div>
@@ -563,7 +545,9 @@
 					</td>
 					<td>
 						<span class="lumi-text--sm lumi-text--muted">
-							{file.file_type === 'dir' ? '—' : formatFileSize(normalizeSize(file.file_size))}
+							{file.file_type === 'dir'
+								? '—'
+								: formatFileSize(normalizeDriveFileSize(file.file_size))}
 						</span>
 					</td>
 					<td>
@@ -572,29 +556,13 @@
 						>
 					</td>
 					<td>
-						<Dropdown position="bottom-end" aria-label="Opciones de archivo">
-							{#snippet triggerContent()}
-								<Button type="flat" size="sm" icon="moreVertical" />
-							{/snippet}
-
-							{#snippet content()}
-								<DropdownItem
-									icon="eye"
-									onclick={() => openPreview(file)}
-									disabled={file.file_type === 'dir'}
-								>
-									Vista previa
-								</DropdownItem>
-								<DropdownItem
-									icon="trash"
-									danger
-									disabled={!canDriveUpdate}
-									onclick={() => void unlinkFile(file)}
-								>
-									Quitar vínculo
-								</DropdownItem>
-							{/snippet}
-						</Dropdown>
+						<Button
+							type="ghost"
+							size="sm"
+							icon="moreVertical"
+							onclick={(e) => openFileContextMenu(e, file)}
+							aria-label="Opciones de archivo"
+						/>
 					</td>
 				{/snippet}
 			</Table>
@@ -605,14 +573,14 @@
 					selectedFiles={selectedGridCodes}
 					onfileclick={selectGridFile}
 					onfiledblclick={previewGridFile}
-					onfilecontextmenu={openGridContextMenu}
+					onfilecontextmenu={(e, file) => openFileContextMenu(e, file)}
 				/>
 			</div>
 		{/if}
 	</Card>
 </div>
 
-<Context bind:this={gridContextMenu} aria-label="Opciones de archivo vinculado">
+<Context bind:this={fileContextMenu} aria-label="Opciones de archivo vinculado">
 	{#if contextLinkedFile}
 		{@const contextFile = contextLinkedFile}
 		<ContextItem
@@ -692,7 +660,7 @@
 					</td>
 					<td>
 						<span class="lumi-text--sm lumi-text--muted">
-							{file.type === 'dir' ? '—' : formatFileSize(normalizeSize(file.size))}
+							{file.type === 'dir' ? '—' : formatFileSize(normalizeDriveFileSize(file.size))}
 						</span>
 					</td>
 				{/snippet}

@@ -190,6 +190,31 @@ export function getFileColor(type: DriveFileType): string {
 	return colors[type];
 }
 
+const DRIVE_TYPE_LABELS: Record<DriveFileType, string> = {
+	dir: 'Carpeta',
+	img: 'Imagen',
+	vid: 'Video',
+	aud: 'Audio',
+	doc: 'Documento',
+	zip: 'Comprimido',
+	otr: 'Archivo'
+};
+
+/**
+ * Get display label for a drive file type.
+ */
+export function getDriveTypeLabel(type: DriveFileType): string {
+	return DRIVE_TYPE_LABELS[type] ?? 'Archivo';
+}
+
+/**
+ * Normalize potentially mixed numeric size values coming from API payloads.
+ */
+export function normalizeDriveFileSize(value: number | string | null | undefined): number {
+	const parsed = Number(value);
+	return Number.isFinite(parsed) ? parsed : 0;
+}
+
 /**
  * Format bytes into human-readable size
  */

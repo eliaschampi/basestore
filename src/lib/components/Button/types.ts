@@ -5,7 +5,7 @@
 
 export interface ButtonProps {
 	/** Button type variant */
-	type?: 'filled' | 'border' | 'flat' | 'gradient';
+	type?: 'filled' | 'border' | 'flat' | 'ghost' | 'gradient';
 
 	/** Color variant */
 	color?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';

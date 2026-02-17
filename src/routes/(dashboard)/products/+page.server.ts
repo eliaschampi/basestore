@@ -1,11 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
+import { readFormCheckbox, readFormField } from '$lib/utils/formData';
 import { isUuid } from '$lib/utils/validation';
-
-function readFormField(formData: FormData, key: string): string {
-	const value = formData.get(key);
-	return typeof value === 'string' ? value.trim() : '';
-}
 
 export const load: PageServerLoad = async ({ locals, depends }) => {
 	depends('products:load');
@@ -49,7 +45,7 @@ export const actions: Actions = {
 		const categoryCode = readFormField(formData, 'category_code');
 		const priceStr = readFormField(formData, 'price');
 		const sku = readFormField(formData, 'sku');
-		const isActive = readFormField(formData, 'is_active') === 'on';
+		const isActive = readFormCheckbox(formData, 'is_active');
 
 		if (!name) {
 			return fail(400, { error: 'El nombre del producto es obligatorio' });
@@ -106,7 +102,7 @@ export const actions: Actions = {
 		const categoryCode = readFormField(formData, 'category_code');
 		const priceStr = readFormField(formData, 'price');
 		const sku = readFormField(formData, 'sku');
-		const isActive = readFormField(formData, 'is_active') === 'on';
+		const isActive = readFormCheckbox(formData, 'is_active');
 
 		if (!productCode || !isUuid(productCode)) {
 			return fail(400, { error: 'Producto inválido' });

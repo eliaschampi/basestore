@@ -1,8 +1,5 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import type { SelectQueryBuilder } from 'kysely';
-import type { DB } from '$lib/database/types';
-import type { DriveScopeContext } from '$lib/server/repositories/drive.repository';
 import {
 	detectFileType,
 	isAllowedMimeType,
@@ -45,19 +42,6 @@ function getSafeExtension(originalName: string): string {
 		return '.bin';
 	}
 	return cleaned.slice(0, 10);
-}
-
-function applyScopeFilter<O>(
-	query: SelectQueryBuilder<DB, 'drive_files', O>,
-	context: DriveScopeContext
-): SelectQueryBuilder<DB, 'drive_files', O> {
-	let scopedQuery = query.where('scope', '=', context.scope);
-
-	if (context.scope === 'user_private' && context.ownerUserCode) {
-		scopedQuery = scopedQuery.where('user_code', '=', context.ownerUserCode);
-	}
-
-	return scopedQuery;
 }
 
 /**
@@ -108,7 +92,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 
 	if (parentCode) {
-		const parent = await applyScopeFilter(
+		const parent = await DriveRepository.applyScopeFilter(
 			locals.db.selectFrom('drive_files').select(['code']),
 			scopeContext
 		)

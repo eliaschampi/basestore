@@ -26,6 +26,12 @@ export interface FileUploadProps {
 	placeholderText?: string;
 
 	/**
+	 * Helper text shown below the placeholder title
+	 * @default "Drag your files here or click to select"
+	 */
+	hintText?: string;
+
+	/**
 	 * Accepted file types (e.g., 'image/*', '.pdf')
 	 * @default "*"
 	 */
@@ -50,9 +56,30 @@ export interface FileUploadProps {
 	disabled?: boolean;
 
 	/**
+	 * Label for the "add more files" action
+	 * @default "Add more files"
+	 */
+	addMoreText?: string;
+
+	/**
 	 * Custom CSS class
 	 */
 	class?: string;
+
+	/**
+	 * Custom validation hook. Return a message to reject the file.
+	 */
+	validateFile?: (file: File) => string | null;
+
+	/**
+	 * Called when a file is rejected by validation.
+	 */
+	oninvalid?: (message: string, file: File) => void;
+
+	/**
+	 * Custom max-size validation message builder.
+	 */
+	maxSizeErrorMessage?: (file: File, maxSize: number) => string;
 
 	/**
 	 * File change event handler

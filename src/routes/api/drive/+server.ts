@@ -1,9 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import type { SelectQueryBuilder } from 'kysely';
-import type { DB } from '$lib/database/types';
 import { isUuid } from '$lib/utils/validation';
-import { DriveRepository, type DriveScopeContext } from '$lib/server/repositories/drive.repository';
+import { DriveRepository } from '$lib/server/repositories/drive.repository';
 import { isValidTagHash, normalizeDriveName, validateDriveName } from '$lib/utils/drive';
 
 const DRIVE_COLUMNS = [
@@ -27,19 +25,6 @@ interface CreateDirectoryBody {
 	parent_code?: string | null;
 }
 
-function applyScopeFilter<O>(
-	query: SelectQueryBuilder<DB, 'drive_files', O>,
-	context: DriveScopeContext
-): SelectQueryBuilder<DB, 'drive_files', O> {
-	let scopedQuery = query.where('scope', '=', context.scope);
-
-	if (context.scope === 'user_private' && context.ownerUserCode) {
-		scopedQuery = scopedQuery.where('user_code', '=', context.ownerUserCode);
-	}
-
-	return scopedQuery;
-}
-
 /**
  * GET /api/drive — List files
  * Query params: scope, parent (UUID|null), trashed, search, tag, view
@@ -60,7 +45,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 	const scopeContext = await DriveRepository.resolveScopeContext(locals.user, { scope });
 
-	let query = applyScopeFilter(
+	let query = DriveRepository.applyScopeFilter(
 		locals.db.selectFrom('drive_files').select(DRIVE_COLUMNS),
 		scopeContext
 	);
@@ -116,7 +101,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 				throw error(400, 'Código de carpeta inválido');
 			}
 
-			const parent = await applyScopeFilter(
+			const parent = await DriveRepository.applyScopeFilter(
 				locals.db.selectFrom('drive_files').select(['code']),
 				scopeContext
 			)
@@ -173,7 +158,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 
 	if (parentCode) {
-		const parent = await applyScopeFilter(
+		const parent = await DriveRepository.applyScopeFilter(
 			locals.db.selectFrom('drive_files').select(['code']),
 			scopeContext
 		)

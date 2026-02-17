@@ -4,6 +4,7 @@
 		formatFileSize,
 		getDriveServeUrl,
 		getDriveTagByHash,
+		getDriveTypeLabel,
 		getFileColor,
 		getFileIcon
 	} from '$lib/utils/drive';
@@ -42,7 +43,7 @@
 	const previewUrl = $derived(
 		file.type === 'img' ? getDriveServeUrl(file.code, { variant: 'thumb' }) : ''
 	);
-	const typeLabel = $derived(file.type === 'dir' ? 'Carpeta' : file.type.toUpperCase());
+	const typeLabel = $derived(getDriveTypeLabel(file.type));
 
 	const cardClasses = $derived(
 		[

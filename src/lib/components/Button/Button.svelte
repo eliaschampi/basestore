@@ -263,34 +263,66 @@
 		background: rgba(var(--btn-color-rgb), 0.18);
 	}
 
-	/* GRADIENT - Premium shimmer effect */
+	/* GHOST - Transparent base with elegant hover feedback */
+	.lumi-button--ghost {
+		background: transparent;
+		color: var(--btn-color);
+		border-color: transparent;
+		box-shadow: none;
+	}
+
+	.lumi-button--ghost:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--btn-color) 10%, transparent);
+		border-color: color-mix(in srgb, var(--btn-color) 18%, transparent);
+		box-shadow: var(--lumi-shadow-sm);
+	}
+
+	.lumi-button--ghost:active:not(:disabled) {
+		background: color-mix(in srgb, var(--btn-color) 16%, transparent);
+		border-color: color-mix(in srgb, var(--btn-color) 22%, transparent);
+	}
+
+	/* GRADIENT - Modern premium depth */
 	.lumi-button--gradient {
 		background: linear-gradient(
-			135deg,
-			var(--btn-color) 0%,
-			color-mix(in srgb, var(--btn-color) 70%, var(--lumi-color-secondary)) 100%
+			155deg,
+			color-mix(in srgb, var(--btn-color) 76%, var(--lumi-color-white)) 0%,
+			var(--btn-color) 52%,
+			color-mix(in srgb, var(--btn-color) 74%, black) 100%
 		);
 		color: var(--lumi-color-white);
-		border-color: transparent;
-		box-shadow: var(--lumi-shadow-md);
-		background-size: 200% 200%;
-		animation: lumi-gradient-shift var(--lumi-duration-slower) var(--lumi-easing-in-out) infinite;
+		border-color: color-mix(in srgb, var(--btn-color) 45%, transparent);
+		box-shadow:
+			inset 0 var(--lumi-border-width-thin) 0
+				color-mix(in srgb, var(--lumi-color-white) 28%, transparent),
+			var(--lumi-shadow-md);
 	}
 
 	.lumi-button--gradient:hover:not(:disabled) {
-		box-shadow: var(--lumi-shadow-lg);
-		animation-play-state: paused;
-		background-position: 100% 100%;
+		background: linear-gradient(
+			155deg,
+			color-mix(in srgb, var(--btn-color) 82%, var(--lumi-color-white)) 0%,
+			color-mix(in srgb, var(--btn-color) 92%, black) 55%,
+			color-mix(in srgb, var(--btn-color) 68%, black) 100%
+		);
+		border-color: color-mix(in srgb, var(--btn-color) 60%, transparent);
+		box-shadow:
+			inset 0 var(--lumi-border-width-thin) 0
+				color-mix(in srgb, var(--lumi-color-white) 34%, transparent),
+			var(--lumi-shadow-lg);
 	}
 
-	@keyframes lumi-gradient-shift {
-		0%,
-		100% {
-			background-position: 0% 50%;
-		}
-		50% {
-			background-position: 100% 50%;
-		}
+	.lumi-button--gradient:active:not(:disabled) {
+		background: linear-gradient(
+			155deg,
+			color-mix(in srgb, var(--btn-color) 72%, var(--lumi-color-white)) 0%,
+			color-mix(in srgb, var(--btn-color) 88%, black) 54%,
+			color-mix(in srgb, var(--btn-color) 64%, black) 100%
+		);
+		box-shadow:
+			inset 0 var(--lumi-border-width-thin) 0
+				color-mix(in srgb, var(--lumi-color-white) 24%, transparent),
+			var(--lumi-shadow-md);
 	}
 
 	/* ========================================================================== */
@@ -322,7 +354,8 @@
 	}
 
 	.lumi-button--border.lumi-button--loading .lumi-button__spinner,
-	.lumi-button--flat.lumi-button--loading .lumi-button__spinner {
+	.lumi-button--flat.lumi-button--loading .lumi-button__spinner,
+	.lumi-button--ghost.lumi-button--loading .lumi-button__spinner {
 		color: var(--btn-color);
 	}
 
@@ -350,8 +383,7 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.lumi-button,
-		.lumi-button__spinner,
-		.lumi-button--gradient {
+		.lumi-button__spinner {
 			transition: none;
 			animation: none;
 		}
