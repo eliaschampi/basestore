@@ -21,10 +21,11 @@
 	import { formatDate } from '$lib/utils/formatDate';
 	import { formatProductPrice } from '$lib/utils/products';
 	import type { InventoryPagination, InventoryPurchaseListItem } from '$lib/types/inventory';
-	import type {
-		InventoryPurchaseEntryType,
-		InventoryPurchaseOrigin,
-		InventoryPurchaseState
+	import {
+		resolveInventoryBranchCode,
+		type InventoryPurchaseEntryType,
+		type InventoryPurchaseOrigin,
+		type InventoryPurchaseState
 	} from '$lib/utils/inventory';
 	import type { PageData } from './$types';
 
@@ -93,6 +94,8 @@
 
 	let showCreateDialog = $state(false);
 	let submittingCreate = $state(false);
+	let showDetailDialog = $state(false);
+	let detailPurchase = $state<InventoryPurchaseListItem | null>(null);
 	let createProductCode = $state('');
 	let createBranchCode = $state('');
 	let createOrigin = $state<InventoryPurchaseOrigin>('aliexpress');
@@ -134,7 +137,7 @@
 
 		const preferredBranch = (data.selectedBranchCode as string | undefined) ?? '';
 		if (!filterBranchCode) {
-			filterBranchCode = preferredBranch || branches.find((branch) => branch.state)?.code || '';
+			filterBranchCode = resolveInventoryBranchCode(branches, preferredBranch);
 		}
 	});
 
@@ -148,6 +151,12 @@
 		if (state === 'in_transit') return 'warning';
 		if (state === 'received') return 'success';
 		return 'danger';
+	}
+
+	function purchaseOriginLabel(origin: InventoryPurchaseOrigin): string {
+		if (origin === 'aliexpress') return 'AliExpress';
+		if (origin === 'temu') return 'Temu';
+		return 'Lima';
 	}
 
 	function handleSearchInput(value: string): void {
@@ -222,6 +231,11 @@
 		createUnitCost = '';
 		createNote = '';
 		showCreateDialog = true;
+	}
+
+	function openPurchaseDetail(purchase: InventoryPurchaseListItem): void {
+		detailPurchase = purchase;
+		showDetailDialog = true;
 	}
 
 	async function submitCreatePurchase(): Promise<void> {
@@ -431,10 +445,10 @@
 							<span class="lumi-text--xs lumi-text--muted">{purchase.product_sku || 'Sin SKU'}</span
 							>
 						</div>
-					</td>
-					<td>{purchase.quantity}</td>
-					<td>{purchase.origin}</td>
-					<td>{purchase.tracking_number || '—'}</td>
+						</td>
+						<td>{purchase.quantity}</td>
+						<td>{purchaseOriginLabel(purchase.origin)}</td>
+						<td>{purchase.tracking_number || '—'}</td>
 					<td>
 						<Chip size="sm" color={purchase.entry_type === 'initial' ? 'info' : 'primary'}>
 							{purchase.entry_type === 'initial' ? 'Inicial' : 'Reposición'}
@@ -445,43 +459,60 @@
 							{purchaseStateLabel(purchase.state)}
 						</Chip>
 					</td>
-					<td>{purchase.unit_cost ? formatProductPrice(purchase.unit_cost) : '—'}</td>
-					<td>{formatDate(purchase.ordered_at)}</td>
-					<td>
-						{#if purchase.state === 'in_transit'}
-							<div class="lumi-flex lumi-flex--gap-2xs">
+						<td>{purchase.unit_cost ? formatProductPrice(purchase.unit_cost) : '—'}</td>
+						<td>{formatDate(purchase.ordered_at)}</td>
+						<td>
+							<div class="lumi-flex lumi-flex--gap-2xs inventory-purchases__actions">
 								<Button
-									type="flat"
+									type="border"
 									size="sm"
-									icon="checkCircle"
-									color="success"
-									disabled={!canUpdate}
-									onclick={() => void updatePurchaseState(purchase.code, 'received')}
-								/>
-								<Button
-									type="flat"
-									size="sm"
-									icon="xCircle"
-									color="danger"
-									disabled={!canUpdate}
-									onclick={() => void updatePurchaseState(purchase.code, 'refunded')}
-								/>
+									icon="eye"
+									color="info"
+									aria-label="Ver detalle de compra"
+									onclick={() => openPurchaseDetail(purchase)}
+								>
+									Detalle
+								</Button>
+								{#if purchase.state === 'in_transit'}
+									<Button
+										type="flat"
+										size="sm"
+										icon="checkCircle"
+										color="success"
+										aria-label="Marcar compra como recibida"
+										disabled={!canUpdate}
+										onclick={() => void updatePurchaseState(purchase.code, 'received')}
+									>
+										Recibir
+									</Button>
+									<Button
+										type="flat"
+										size="sm"
+										icon="xCircle"
+										color="danger"
+										aria-label="Marcar compra como reembolsada"
+										disabled={!canUpdate}
+										onclick={() => void updatePurchaseState(purchase.code, 'refunded')}
+									>
+										Reembolsar
+									</Button>
+								{:else if purchase.state === 'received'}
+									<Button
+										type="flat"
+										size="sm"
+										icon="undo2"
+										color="danger"
+										aria-label="Marcar compra como reembolsada"
+										disabled={!canUpdate}
+										onclick={() => void updatePurchaseState(purchase.code, 'refunded')}
+									>
+										Reembolsar
+									</Button>
+								{/if}
 							</div>
-						{:else if purchase.state === 'received'}
-							<Button
-								type="flat"
-								size="sm"
-								icon="undo2"
-								color="danger"
-								disabled={!canUpdate}
-								onclick={() => void updatePurchaseState(purchase.code, 'refunded')}
-							/>
-						{:else}
-							<span class="lumi-text--xs lumi-text--muted">Sin acción</span>
-						{/if}
-					</td>
-				{/snippet}
-			</Table>
+						</td>
+					{/snippet}
+				</Table>
 		</Card>
 
 		<Card spaced>
@@ -614,6 +645,74 @@
 	{/snippet}
 </Dialog>
 
+<Dialog bind:open={showDetailDialog} title="Detalle de compra" size="md">
+	{#if detailPurchase}
+		<div class="inventory-purchases__detail-grid">
+			<div class="inventory-purchases__detail-item">
+				<p class="inventory-purchases__detail-label">Producto</p>
+				<p class="inventory-purchases__detail-value">{detailPurchase.product_name}</p>
+				<p class="inventory-purchases__detail-meta">{detailPurchase.product_sku || 'Sin SKU'}</p>
+			</div>
+			<div class="inventory-purchases__detail-item">
+				<p class="inventory-purchases__detail-label">Sede</p>
+				<p class="inventory-purchases__detail-value">{detailPurchase.branch_name}</p>
+				<p class="inventory-purchases__detail-meta">{detailPurchase.branch_code}</p>
+			</div>
+			<div class="inventory-purchases__detail-item">
+				<p class="inventory-purchases__detail-label">Estado</p>
+				<p class="inventory-purchases__detail-value">{purchaseStateLabel(detailPurchase.state)}</p>
+				<p class="inventory-purchases__detail-meta">{purchaseOriginLabel(detailPurchase.origin)}</p>
+			</div>
+			<div class="inventory-purchases__detail-item">
+				<p class="inventory-purchases__detail-label">Cantidad / Tipo</p>
+				<p class="inventory-purchases__detail-value">{detailPurchase.quantity} unidades</p>
+				<p class="inventory-purchases__detail-meta">
+					{detailPurchase.entry_type === 'initial' ? 'Inicial' : 'Reposición'}
+				</p>
+			</div>
+			<div class="inventory-purchases__detail-item">
+				<p class="inventory-purchases__detail-label">Tracking</p>
+				<p class="inventory-purchases__detail-value">{detailPurchase.tracking_number || 'Sin tracking'}</p>
+				<p class="inventory-purchases__detail-meta">Código: {detailPurchase.code}</p>
+			</div>
+			<div class="inventory-purchases__detail-item">
+				<p class="inventory-purchases__detail-label">Fechas</p>
+				<p class="inventory-purchases__detail-value">
+					Pedido: {formatDate(detailPurchase.ordered_at)}
+				</p>
+				<p class="inventory-purchases__detail-meta">
+					{#if detailPurchase.received_at}
+						Recibido: {formatDate(detailPurchase.received_at)}
+					{:else if detailPurchase.refunded_at}
+						Reembolsado: {formatDate(detailPurchase.refunded_at)}
+					{:else}
+						Sin cierre
+					{/if}
+				</p>
+			</div>
+		</div>
+
+		{#if detailPurchase.unit_cost || detailPurchase.note}
+			<div class="inventory-purchases__detail-extra">
+				{#if detailPurchase.unit_cost}
+					<p class="lumi-margin--none">
+						<strong>Costo unitario:</strong> {formatProductPrice(detailPurchase.unit_cost)}
+					</p>
+				{/if}
+				{#if detailPurchase.note}
+					<p class="lumi-margin--none">
+						<strong>Nota:</strong> {detailPurchase.note}
+					</p>
+				{/if}
+			</div>
+		{/if}
+	{/if}
+
+	{#snippet footer()}
+		<Button type="border" onclick={() => (showDetailDialog = false)}>Cerrar</Button>
+	{/snippet}
+</Dialog>
+
 <style>
 	.inventory-purchases__toolbar {
 		align-items: flex-end;
@@ -647,6 +746,60 @@
 		text-decoration: underline;
 	}
 
+	.inventory-purchases__actions {
+		flex-wrap: wrap;
+	}
+
+	.inventory-purchases__detail-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--lumi-space-sm);
+	}
+
+	.inventory-purchases__detail-item {
+		padding: var(--lumi-space-sm);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
+		border-radius: var(--lumi-radius-md);
+		background: var(--lumi-color-surface);
+	}
+
+	.inventory-purchases__detail-label,
+	.inventory-purchases__detail-value,
+	.inventory-purchases__detail-meta {
+		margin: 0;
+	}
+
+	.inventory-purchases__detail-label {
+		font-size: var(--lumi-font-size-2xs);
+		font-weight: var(--lumi-font-weight-semibold);
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--lumi-color-text-muted);
+	}
+
+	.inventory-purchases__detail-value {
+		margin-top: var(--lumi-space-2xs);
+		font-size: var(--lumi-font-size-sm);
+		font-weight: var(--lumi-font-weight-semibold);
+		color: var(--lumi-color-text);
+	}
+
+	.inventory-purchases__detail-meta {
+		margin-top: var(--lumi-space-2xs);
+		font-size: var(--lumi-font-size-xs);
+		color: var(--lumi-color-text-muted);
+	}
+
+	.inventory-purchases__detail-extra {
+		margin-top: var(--lumi-space-sm);
+		padding: var(--lumi-space-sm);
+		border-radius: var(--lumi-radius-md);
+		background: var(--lumi-color-surface);
+		display: flex;
+		flex-direction: column;
+		gap: var(--lumi-space-2xs);
+	}
+
 	:global(.inventory-table--purchases .lumi-table__content) {
 		min-width: 74rem;
 	}
@@ -660,6 +813,10 @@
 		.inventory-purchases__toolbar-search {
 			flex-basis: 100%;
 			min-width: 100%;
+		}
+
+		.inventory-purchases__detail-grid {
+			grid-template-columns: 1fr;
 		}
 	}
 </style>

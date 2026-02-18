@@ -5,6 +5,11 @@ import {
 	isValidInventoryListFilterState,
 	normalizeInventoryListFilterState
 } from '$lib/utils/inventory';
+import {
+	readInventoryPagination,
+	readOptionalUuidSearchParam,
+	readRequiredUuidSearchParam
+} from '$lib/server/inventory/api-query';
 import { isUuid } from '$lib/utils/validation';
 
 interface UpdateThresholdsBody {
@@ -19,27 +24,19 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		throw error(403, 'No tienes permisos para ver inventario');
 	}
 
-	const branchCode = (url.searchParams.get('branch_code') || '').trim();
-	const categoryCode = (url.searchParams.get('category_code') || '').trim();
+	const branchCode = readRequiredUuidSearchParam(url, 'branch_code', {
+		missingMessage: 'Debe seleccionar una sede',
+		invalidMessage: 'Sede inválida'
+	});
+	const categoryCode = readOptionalUuidSearchParam(url, 'category_code', 'Categoría inválida');
 	const search = (url.searchParams.get('search') || '').trim();
 	const includeInactive = url.searchParams.get('include_inactive') === 'true';
 	const stockParam = normalizeInventoryListFilterState(url.searchParams.get('stock') || 'all');
-	const pageRaw = Number(url.searchParams.get('page') || 1);
-	const pageSizeRaw = Number(url.searchParams.get('page_size') || 30);
-	const page = Number.isInteger(pageRaw) ? Math.max(pageRaw, 1) : 1;
-	const pageSize = Number.isInteger(pageSizeRaw) ? Math.min(Math.max(pageSizeRaw, 1), 120) : 30;
-
-	if (!branchCode) {
-		throw error(400, 'Debe seleccionar una sede');
-	}
-
-	if (!isUuid(branchCode)) {
-		throw error(400, 'Sede inválida');
-	}
-
-	if (categoryCode && !isUuid(categoryCode)) {
-		throw error(400, 'Categoría inválida');
-	}
+	const { page, pageSize } = readInventoryPagination(url, {
+		defaultPage: 1,
+		defaultPageSize: 30,
+		maxPageSize: 120
+	});
 
 	if (!isValidInventoryListFilterState(stockParam)) {
 		throw error(400, 'Filtro de stock inválido');
@@ -48,7 +45,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	const [overview, branches, categories] = await Promise.all([
 		InventoryRepository.listOverview(locals.db, {
 			branchCode,
-			categoryCode: categoryCode || undefined,
+			categoryCode,
 			search: search || undefined,
 			stock: stockParam,
 			includeInactive,

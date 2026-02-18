@@ -13,6 +13,11 @@ import {
 	type InventorySaleFulfillmentType,
 	type InventorySaleShippingState
 } from '$lib/utils/inventory';
+import {
+	readInventoryPagination,
+	readOptionalUuidSearchParam,
+	readRequiredUuidSearchParam
+} from '$lib/server/inventory/api-query';
 import { isUuid } from '$lib/utils/validation';
 
 interface CreateSaleBody {
@@ -38,34 +43,22 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		throw error(403, 'No tienes permisos para ver ventas');
 	}
 
-	const branchCode = (url.searchParams.get('branch_code') || '').trim();
-	const productCode = (url.searchParams.get('product_code') || '').trim();
-	const customerCode = (url.searchParams.get('customer_code') || '').trim();
+	const branchCode = readRequiredUuidSearchParam(url, 'branch_code', {
+		missingMessage: 'Debe seleccionar una sede',
+		invalidMessage: 'Sede inválida'
+	});
+	const productCode = readOptionalUuidSearchParam(url, 'product_code', 'Producto inválido');
+	const customerCode = readOptionalUuidSearchParam(url, 'customer_code', 'Cliente inválido');
 	const search = (url.searchParams.get('search') || '').trim();
 	const channelRaw = normalizeInventorySaleChannel(url.searchParams.get('sale_channel'));
 	const shippingStateRaw = normalizeInventorySaleShippingState(
 		url.searchParams.get('shipping_state')
 	);
-	const pageRaw = Number(url.searchParams.get('page') || 1);
-	const pageSizeRaw = Number(url.searchParams.get('page_size') || 20);
-	const page = Number.isInteger(pageRaw) ? Math.max(pageRaw, 1) : 1;
-	const pageSize = Number.isInteger(pageSizeRaw) ? Math.min(Math.max(pageSizeRaw, 1), 120) : 20;
-
-	if (!branchCode) {
-		throw error(400, 'Debe seleccionar una sede');
-	}
-
-	if (!isUuid(branchCode)) {
-		throw error(400, 'Sede inválida');
-	}
-
-	if (productCode && !isUuid(productCode)) {
-		throw error(400, 'Producto inválido');
-	}
-
-	if (customerCode && !isUuid(customerCode)) {
-		throw error(400, 'Cliente inválido');
-	}
+	const { page, pageSize } = readInventoryPagination(url, {
+		defaultPage: 1,
+		defaultPageSize: 20,
+		maxPageSize: 120
+	});
 
 	let saleChannel: InventorySaleChannel | undefined;
 	if (channelRaw) {
@@ -85,8 +78,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 	const result = await InventoryRepository.listSales(locals.db, {
 		branchCode,
-		productCode: productCode || undefined,
-		customerCode: customerCode || undefined,
+		productCode,
+		customerCode,
 		search: search || undefined,
 		shippingState,
 		saleChannel,

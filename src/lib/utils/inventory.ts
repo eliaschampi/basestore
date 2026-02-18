@@ -47,6 +47,11 @@ export const INVENTORY_LIST_FILTER_STATES = [
 ] as const;
 export type InventoryListFilterState = (typeof INVENTORY_LIST_FILTER_STATES)[number];
 
+export interface InventoryBranchStateLike {
+	code: string;
+	state: boolean;
+}
+
 export function isValidInventoryPurchaseOrigin(value: string): value is InventoryPurchaseOrigin {
 	return INVENTORY_PURCHASE_ORIGINS.includes(value as InventoryPurchaseOrigin);
 }
@@ -87,12 +92,20 @@ export function isValidInventorySaleShippingState(
 	return INVENTORY_SALE_SHIPPING_STATES.includes(value as InventorySaleShippingState);
 }
 
-export function isValidInventoryStockState(value: string): value is InventoryStockState {
-	return INVENTORY_STOCK_STATES.includes(value as InventoryStockState);
-}
-
 export function isValidInventoryListFilterState(value: string): value is InventoryListFilterState {
 	return INVENTORY_LIST_FILTER_STATES.includes(value as InventoryListFilterState);
+}
+
+export function resolveInventoryBranchCode(
+	branches: ReadonlyArray<InventoryBranchStateLike>,
+	preferredCode?: string | null
+): string {
+	const preferred = (preferredCode ?? '').trim();
+	if (preferred && branches.some((branch) => branch.code === preferred && branch.state)) {
+		return preferred;
+	}
+
+	return branches.find((branch) => branch.state)?.code ?? branches[0]?.code ?? '';
 }
 
 function normalizeInventoryValue(value: string | null | undefined): string {

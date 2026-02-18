@@ -12,6 +12,11 @@ import {
 	type InventoryPurchaseOrigin,
 	type InventoryPurchaseState
 } from '$lib/utils/inventory';
+import {
+	readInventoryPagination,
+	readOptionalUuidSearchParam,
+	readRequiredUuidSearchParam
+} from '$lib/server/inventory/api-query';
 import { isUuid } from '$lib/utils/validation';
 
 interface CreatePurchaseBody {
@@ -32,28 +37,20 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		throw error(403, 'No tienes permisos para ver compras');
 	}
 
-	const branchCode = (url.searchParams.get('branch_code') || '').trim();
-	const productCode = (url.searchParams.get('product_code') || '').trim();
+	const branchCode = readRequiredUuidSearchParam(url, 'branch_code', {
+		missingMessage: 'Debe seleccionar una sede',
+		invalidMessage: 'Sede inválida'
+	});
+	const productCode = readOptionalUuidSearchParam(url, 'product_code', 'Producto inválido');
 	const stateRaw = normalizeInventoryPurchaseState(url.searchParams.get('state'));
 	const originRaw = normalizeInventoryPurchaseOrigin(url.searchParams.get('origin'));
 	const entryTypeRaw = normalizeInventoryPurchaseEntryType(url.searchParams.get('entry_type'));
 	const search = (url.searchParams.get('search') || '').trim();
-	const pageRaw = Number(url.searchParams.get('page') || 1);
-	const pageSizeRaw = Number(url.searchParams.get('page_size') || 20);
-	const page = Number.isInteger(pageRaw) ? Math.max(pageRaw, 1) : 1;
-	const pageSize = Number.isInteger(pageSizeRaw) ? Math.min(Math.max(pageSizeRaw, 1), 120) : 20;
-
-	if (!branchCode) {
-		throw error(400, 'Debe seleccionar una sede');
-	}
-
-	if (!isUuid(branchCode)) {
-		throw error(400, 'Sede inválida');
-	}
-
-	if (productCode && !isUuid(productCode)) {
-		throw error(400, 'Producto inválido');
-	}
+	const { page, pageSize } = readInventoryPagination(url, {
+		defaultPage: 1,
+		defaultPageSize: 20,
+		maxPageSize: 120
+	});
 
 	let state: InventoryPurchaseState | undefined;
 	if (stateRaw) {
@@ -81,7 +78,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 	const result = await InventoryRepository.listPurchases(locals.db, {
 		branchCode,
-		productCode: productCode || undefined,
+		productCode,
 		origin,
 		entryType,
 		state,

@@ -26,7 +26,7 @@
 		InventoryOverviewSummary,
 		InventoryPagination
 	} from '$lib/types/inventory';
-	import type { InventoryListFilterState } from '$lib/utils/inventory';
+	import { resolveInventoryBranchCode, type InventoryListFilterState } from '$lib/utils/inventory';
 	import type { PageData } from './$types';
 
 	interface BranchCatalogItem {
@@ -126,7 +126,7 @@
 
 		const preferredBranch = (data.selectedBranchCode as string | undefined) ?? '';
 		if (!filterBranchCode) {
-			filterBranchCode = preferredBranch || branches.find((branch) => branch.state)?.code || '';
+			filterBranchCode = resolveInventoryBranchCode(branches, preferredBranch);
 		}
 	});
 

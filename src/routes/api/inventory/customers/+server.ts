@@ -1,6 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { InventoryRepository } from '$lib/server/repositories/inventory.repository';
+import { readInventoryPagination } from '$lib/server/inventory/api-query';
 
 interface CreateCustomerBody {
 	full_name?: string;
@@ -16,10 +17,11 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 	const search = (url.searchParams.get('search') || '').trim();
 	const favoritesOnly = url.searchParams.get('favorites_only') === 'true';
-	const pageRaw = Number(url.searchParams.get('page') || 1);
-	const pageSizeRaw = Number(url.searchParams.get('page_size') || 20);
-	const page = Number.isInteger(pageRaw) ? Math.max(pageRaw, 1) : 1;
-	const pageSize = Number.isInteger(pageSizeRaw) ? Math.min(Math.max(pageSizeRaw, 1), 100) : 20;
+	const { page, pageSize } = readInventoryPagination(url, {
+		defaultPage: 1,
+		defaultPageSize: 20,
+		maxPageSize: 100
+	});
 
 	const result = await InventoryRepository.listCustomers(locals.db, {
 		search: search || undefined,

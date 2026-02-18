@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { InventoryRepository } from '$lib/server/repositories/inventory.repository';
+import { resolveInventoryBranchCode } from '$lib/utils/inventory';
 
 export const load: PageServerLoad = async ({ locals, depends }) => {
 	depends('inventory:sales:load');
@@ -24,10 +25,9 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 			favoritesOnly: true,
 			page: 1,
 			pageSize: 30
-		})
+			})
 	]);
-	const selectedBranchCode =
-		branches.find((branch) => branch.state)?.code ?? branches[0]?.code ?? null;
+	const selectedBranchCode = resolveInventoryBranchCode(branches) || null;
 	const sales = selectedBranchCode
 		? await InventoryRepository.listSales(locals.db, {
 				branchCode: selectedBranchCode,

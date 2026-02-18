@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { InventoryRepository } from '$lib/server/repositories/inventory.repository';
+import { resolveInventoryBranchCode } from '$lib/utils/inventory';
 
 export const load: PageServerLoad = async ({ locals, depends }) => {
 	depends('inventory:purchases:load');
@@ -21,8 +22,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 			.orderBy('name', 'asc')
 			.execute()
 	]);
-	const selectedBranchCode =
-		branches.find((branch) => branch.state)?.code ?? branches[0]?.code ?? null;
+	const selectedBranchCode = resolveInventoryBranchCode(branches) || null;
 	const purchases = selectedBranchCode
 		? await InventoryRepository.listPurchases(locals.db, {
 				branchCode: selectedBranchCode,

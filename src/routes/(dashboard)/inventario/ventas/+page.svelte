@@ -27,10 +27,11 @@
 		InventoryPagination,
 		InventorySaleListItem
 	} from '$lib/types/inventory';
-	import type {
-		InventorySaleChannel,
-		InventorySaleFulfillmentType,
-		InventorySaleShippingState
+	import {
+		resolveInventoryBranchCode,
+		type InventorySaleChannel,
+		type InventorySaleFulfillmentType,
+		type InventorySaleShippingState
 	} from '$lib/utils/inventory';
 	import type { PageData } from './$types';
 
@@ -101,6 +102,8 @@
 
 	let showCreateDialog = $state(false);
 	let submittingCreate = $state(false);
+	let showDetailDialog = $state(false);
+	let detailSale = $state<InventorySaleListItem | null>(null);
 	let createProductCode = $state('');
 	let createBranchCode = $state('');
 	let createQuantity = $state('1');
@@ -174,7 +177,7 @@
 
 		const preferredBranch = (data.selectedBranchCode as string | undefined) ?? '';
 		if (!filterBranchCode) {
-			filterBranchCode = preferredBranch || branches.find((branch) => branch.state)?.code || '';
+			filterBranchCode = resolveInventoryBranchCode(branches, preferredBranch);
 		}
 	});
 
@@ -204,6 +207,14 @@
 		if (state === 'pending') return 'En camino';
 		if (state === 'in_transit') return 'Entregado';
 		return 'Sin acción';
+	}
+
+	function saleChannelLabel(channel: InventorySaleChannel): string {
+		return channel === 'store' ? 'Tienda' : 'Web';
+	}
+
+	function fulfillmentLabel(type: InventorySaleFulfillmentType): string {
+		return type === 'pickup' ? 'Recojo en tienda' : 'Delivery';
 	}
 
 	function handleFulfillmentChange(next: InventorySaleFulfillmentType): void {
@@ -319,6 +330,11 @@
 		createNote = '';
 		showCreateDialog = true;
 		await loadCustomerOptions();
+	}
+
+	function openSaleDetail(sale: InventorySaleListItem): void {
+		detailSale = sale;
+		showDetailDialog = true;
 	}
 
 	function deriveProductPrice(productCode: string): void {
@@ -605,35 +621,46 @@
 						</div>
 					</td>
 					<td>{sale.quantity}</td>
-					<td>{formatProductPrice(sale.total_amount)}</td>
-					<td>
-						<Chip size="sm" color={sale.sale_channel === 'store' ? 'primary' : 'info'}>
-							{sale.sale_channel === 'store' ? 'Tienda' : 'Web'}
-						</Chip>
-					</td>
+						<td>{formatProductPrice(sale.total_amount)}</td>
+						<td>
+							<Chip size="sm" color={sale.sale_channel === 'store' ? 'primary' : 'info'}>
+								{saleChannelLabel(sale.sale_channel)}
+							</Chip>
+						</td>
 					<td>
 						<Chip color={shippingStateColor(sale.shipping_state)} size="sm">
 							{shippingStateLabel(sale.shipping_state)}
 						</Chip>
 					</td>
-					<td>{formatDate(sale.sold_at)}</td>
-					<td>
-						{#if sale.fulfillment_type === 'delivery' && nextShippingState(sale.shipping_state)}
-							<Button
-								type="flat"
-								size="sm"
-								icon="truck"
-								color="info"
-								disabled={!canUpdate}
-								onclick={() => void advanceShippingState(sale)}
-							>
-								{shippingActionLabel(sale.shipping_state)}
-							</Button>
-						{:else}
-							<span class="lumi-text--xs lumi-text--muted">Sin acción</span>
-						{/if}
-					</td>
-				{/snippet}
+						<td>{formatDate(sale.sold_at)}</td>
+						<td>
+							<div class="lumi-flex lumi-flex--gap-2xs inventory-sales__actions">
+								<Button
+									type="border"
+									size="sm"
+									icon="eye"
+									color="info"
+									aria-label="Ver detalle de venta"
+									onclick={() => openSaleDetail(sale)}
+								>
+									Detalle
+								</Button>
+								{#if sale.fulfillment_type === 'delivery' && nextShippingState(sale.shipping_state)}
+									<Button
+										type="flat"
+										size="sm"
+										icon="truck"
+										color="info"
+										aria-label="Avanzar estado de envío"
+										disabled={!canUpdate}
+										onclick={() => void advanceShippingState(sale)}
+									>
+										{shippingActionLabel(sale.shipping_state)}
+									</Button>
+								{/if}
+							</div>
+						</td>
+					{/snippet}
 			</Table>
 		</Card>
 
@@ -813,6 +840,71 @@
 	{/snippet}
 </Dialog>
 
+<Dialog bind:open={showDetailDialog} title="Detalle de venta" size="md">
+	{#if detailSale}
+		<div class="inventory-sales__detail-grid">
+			<div class="inventory-sales__detail-item">
+				<p class="inventory-sales__detail-label">Producto</p>
+				<p class="inventory-sales__detail-value">{detailSale.product_name}</p>
+				<p class="inventory-sales__detail-meta">{detailSale.product_sku || 'Sin SKU'}</p>
+			</div>
+			<div class="inventory-sales__detail-item">
+				<p class="inventory-sales__detail-label">Cliente</p>
+				<p class="inventory-sales__detail-value">{detailSale.customer_name}</p>
+				<p class="inventory-sales__detail-meta">{detailSale.customer_phone || 'Sin teléfono'}</p>
+			</div>
+			<div class="inventory-sales__detail-item">
+				<p class="inventory-sales__detail-label">Canal / Entrega</p>
+				<p class="inventory-sales__detail-value">{saleChannelLabel(detailSale.sale_channel)}</p>
+				<p class="inventory-sales__detail-meta">{fulfillmentLabel(detailSale.fulfillment_type)}</p>
+			</div>
+			<div class="inventory-sales__detail-item">
+				<p class="inventory-sales__detail-label">Envío</p>
+				<p class="inventory-sales__detail-value">
+					{shippingStateLabel(detailSale.shipping_state)}
+				</p>
+				<p class="inventory-sales__detail-meta">
+					{detailSale.order_reference || 'Sin referencia'}
+				</p>
+			</div>
+			<div class="inventory-sales__detail-item">
+				<p class="inventory-sales__detail-label">Monto</p>
+				<p class="inventory-sales__detail-value">
+					{detailSale.quantity} x {formatProductPrice(detailSale.unit_price)}
+				</p>
+				<p class="inventory-sales__detail-meta">
+					Total: {formatProductPrice(detailSale.total_amount)}
+				</p>
+			</div>
+			<div class="inventory-sales__detail-item">
+				<p class="inventory-sales__detail-label">Fecha / Sede</p>
+				<p class="inventory-sales__detail-value">{formatDate(detailSale.sold_at)}</p>
+				<p class="inventory-sales__detail-meta">{detailSale.branch_name}</p>
+			</div>
+		</div>
+
+			<div class="inventory-sales__detail-extra">
+				{#if detailSale.delivery_address}
+					<p class="lumi-margin--none">
+						<strong>Dirección:</strong> {detailSale.delivery_address}
+					</p>
+				{/if}
+				{#if detailSale.note}
+					<p class="lumi-margin--none">
+						<strong>Nota:</strong> {detailSale.note}
+					</p>
+				{/if}
+				<p class="lumi-margin--none">
+					<strong>Código:</strong> {detailSale.code}
+				</p>
+			</div>
+		{/if}
+
+	{#snippet footer()}
+		<Button type="border" onclick={() => (showDetailDialog = false)}>Cerrar</Button>
+	{/snippet}
+</Dialog>
+
 <style>
 	.inventory-sales__toolbar {
 		align-items: flex-end;
@@ -864,8 +956,62 @@
 		color: var(--lumi-color-warning);
 	}
 
+	.inventory-sales__actions {
+		flex-wrap: wrap;
+	}
+
 	.inventory-sales__dialog-segments {
 		margin-top: var(--lumi-space-xs);
+	}
+
+	.inventory-sales__detail-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--lumi-space-sm);
+	}
+
+	.inventory-sales__detail-item {
+		padding: var(--lumi-space-sm);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
+		border-radius: var(--lumi-radius-md);
+		background: var(--lumi-color-surface);
+	}
+
+	.inventory-sales__detail-label,
+	.inventory-sales__detail-value,
+	.inventory-sales__detail-meta {
+		margin: 0;
+	}
+
+	.inventory-sales__detail-label {
+		font-size: var(--lumi-font-size-2xs);
+		font-weight: var(--lumi-font-weight-semibold);
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--lumi-color-text-muted);
+	}
+
+	.inventory-sales__detail-value {
+		margin-top: var(--lumi-space-2xs);
+		font-size: var(--lumi-font-size-sm);
+		font-weight: var(--lumi-font-weight-semibold);
+		color: var(--lumi-color-text);
+	}
+
+	.inventory-sales__detail-meta {
+		margin-top: var(--lumi-space-2xs);
+		font-size: var(--lumi-font-size-xs);
+		color: var(--lumi-color-text-muted);
+	}
+
+	.inventory-sales__detail-extra {
+		margin-top: var(--lumi-space-sm);
+		padding: var(--lumi-space-sm);
+		border-radius: var(--lumi-radius-md);
+		background: var(--lumi-color-surface);
+		display: flex;
+		flex-direction: column;
+		gap: var(--lumi-space-2xs);
 	}
 
 	.inventory-sales__pagination {
@@ -889,6 +1035,10 @@
 		.inventory-sales__toolbar-search {
 			flex-basis: 100%;
 			min-width: 100%;
+		}
+
+		.inventory-sales__detail-grid {
+			grid-template-columns: 1fr;
 		}
 	}
 </style>

@@ -9,27 +9,19 @@ import {
 	type InventoryMovementDirection,
 	type InventoryMovementReason
 } from '$lib/utils/inventory';
-import { isUuid } from '$lib/utils/validation';
+import { readOptionalUuidSearchParam } from '$lib/server/inventory/api-query';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
 	if (!(await locals.can('inventory:read'))) {
 		throw error(403, 'No tienes permisos para ver movimientos de inventario');
 	}
 
-	const branchCode = (url.searchParams.get('branch_code') || '').trim();
-	const productCode = (url.searchParams.get('product_code') || '').trim();
+	const branchCode = readOptionalUuidSearchParam(url, 'branch_code', 'Sede inválida');
+	const productCode = readOptionalUuidSearchParam(url, 'product_code', 'Producto inválido');
 	const reasonRaw = normalizeInventoryMovementReason(url.searchParams.get('reason'));
 	const directionRaw = normalizeInventoryMovementDirection(url.searchParams.get('direction'));
 	const limitRaw = Number(url.searchParams.get('limit') || 100);
 	const limit = Number.isInteger(limitRaw) ? Math.min(Math.max(limitRaw, 1), 300) : 100;
-
-	if (branchCode && !isUuid(branchCode)) {
-		throw error(400, 'Sede inválida');
-	}
-
-	if (productCode && !isUuid(productCode)) {
-		throw error(400, 'Producto inválido');
-	}
 
 	let reason: InventoryMovementReason | undefined;
 	if (reasonRaw) {
@@ -48,8 +40,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	}
 
 	const movements = await InventoryRepository.listMovements(locals.db, {
-		branchCode: branchCode || undefined,
-		productCode: productCode || undefined,
+		branchCode,
+		productCode,
 		reason,
 		direction,
 		limit
