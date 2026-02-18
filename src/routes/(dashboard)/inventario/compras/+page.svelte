@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onDestroy } from 'svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
@@ -8,12 +9,7 @@
 		Card,
 		Chip,
 		Dialog,
-		Icon,
 		Input,
-		List,
-		ListHeader,
-		ListItem,
-		NumberInput,
 		PageHeader,
 		Select,
 		Table,
@@ -90,7 +86,7 @@
 	let searchTimeout: ReturnType<typeof setTimeout> | undefined;
 	let fetchId = 0;
 
-	let filterBranchCode = $state('all');
+	let filterBranchCode = $state('');
 	let filterState = $state<'all' | InventoryPurchaseState>('all');
 	let filterOrigin = $state<'all' | InventoryPurchaseOrigin>('all');
 	let filterEntryType = $state<'all' | InventoryPurchaseEntryType>('all');
@@ -102,25 +98,19 @@
 	let createOrigin = $state<InventoryPurchaseOrigin>('aliexpress');
 	let createEntryType = $state<InventoryPurchaseEntryType>('restock');
 	let createTrackingNumber = $state('');
-	let createQuantity = $state(1);
+	let createQuantity = $state('1');
 	let createState = $state<InventoryPurchaseState>('in_transit');
 	let createOrderedAt = $state(new Date().toISOString().slice(0, 10));
-	let createUnitCost = $state(0);
+	let createUnitCost = $state('');
 	let createNote = $state('');
 
-	const branchFilterOptions = $derived(
-		[{ value: 'all', label: 'Todas las sedes' } as SelectOption].concat(
-			branches.map((branch) => ({ value: branch.code, label: branch.name }))
-		)
-	);
-
-	const branchCreateOptions = $derived(
+	const branchOptions = $derived(
 		branches
 			.filter((branch) => branch.state)
 			.map((branch) => ({ value: branch.code, label: branch.name }) as SelectOption)
 	);
 
-	const productCreateOptions = $derived(
+	const productOptions = $derived(
 		products
 			.filter((product) => product.is_active)
 			.map((product) => ({ value: product.code, label: product.name }) as SelectOption)
@@ -141,6 +131,11 @@
 		pagination = (data.pagination ?? EMPTY_PAGINATION) as InventoryPagination;
 		branches = (data.branches ?? []) as BranchCatalogItem[];
 		products = (data.products ?? []) as ProductCatalogItem[];
+
+		const preferredBranch = (data.selectedBranchCode as string | undefined) ?? '';
+		if (!filterBranchCode) {
+			filterBranchCode = preferredBranch || branches.find((branch) => branch.state)?.code || '';
+		}
 	});
 
 	function purchaseStateLabel(state: InventoryPurchaseState): string {
@@ -155,8 +150,19 @@
 		return 'danger';
 	}
 
+	function handleSearchInput(value: string): void {
+		searchQuery = value;
+		if (searchTimeout) {
+			clearTimeout(searchTimeout);
+		}
+
+		searchTimeout = setTimeout(() => {
+			void loadPurchases(1);
+		}, 300);
+	}
+
 	async function loadPurchases(page = pagination.page): Promise<void> {
-		if (!canRead) return;
+		if (!canRead || !filterBranchCode) return;
 
 		const requestId = ++fetchId;
 		loading = true;
@@ -164,13 +170,11 @@
 
 		try {
 			const params = new SvelteURLSearchParams({
+				branch_code: filterBranchCode,
 				page: String(page),
 				page_size: String(pagination.page_size || 20)
 			});
 
-			if (filterBranchCode !== 'all') {
-				params.set('branch_code', filterBranchCode);
-			}
 			if (filterState !== 'all') {
 				params.set('state', filterState);
 			}
@@ -205,28 +209,17 @@
 		}
 	}
 
-	function handleSearchInput(value: string): void {
-		searchQuery = value;
-		if (searchTimeout) {
-			clearTimeout(searchTimeout);
-		}
-
-		searchTimeout = setTimeout(() => {
-			void loadPurchases(1);
-		}, 320);
-	}
-
 	function openCreateDialog(): void {
 		if (!canCreate) return;
 		createProductCode = '';
-		createBranchCode = filterBranchCode !== 'all' ? filterBranchCode : '';
+		createBranchCode = filterBranchCode;
 		createOrigin = 'aliexpress';
 		createEntryType = 'restock';
 		createTrackingNumber = '';
-		createQuantity = 1;
+		createQuantity = '1';
 		createState = 'in_transit';
 		createOrderedAt = new Date().toISOString().slice(0, 10);
-		createUnitCost = 0;
+		createUnitCost = '';
 		createNote = '';
 		showCreateDialog = true;
 	}
@@ -234,7 +227,7 @@
 	async function submitCreatePurchase(): Promise<void> {
 		if (submittingCreate) return;
 
-		const quantity = Math.floor(createQuantity);
+		const quantity = Number.parseInt(createQuantity, 10);
 		if (!createProductCode || !createBranchCode || !Number.isInteger(quantity) || quantity <= 0) {
 			showToast('Completa producto, sede y cantidad válida', 'error');
 			return;
@@ -259,7 +252,7 @@
 					quantity,
 					state: createState,
 					ordered_at: createOrderedAt,
-					unit_cost: createUnitCost > 0 ? createUnitCost : null,
+					unit_cost: createUnitCost.trim() ? Number.parseFloat(createUnitCost) : null,
 					note: createNote.trim()
 				})
 			});
@@ -292,8 +285,8 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ state })
 			});
-
 			const payload = await response.json();
+
 			if (!response.ok) {
 				throw new Error((payload?.message as string) || 'No se pudo actualizar la compra');
 			}
@@ -310,15 +303,19 @@
 <div class="lumi-stack lumi-space--md">
 	<PageHeader
 		title="Compras"
-		subtitle="Entradas de stock con tracking y flujo inicial/reposición"
+		subtitle="Entradas por sede con tracking y flujo limpio"
 		icon="shoppingBag"
 	>
 		{#snippet actions()}
 			<div class="lumi-flex lumi-flex--gap-sm">
-				<a href={resolve('/inventario')} class="inventory-purchases__action-link">
-					<Icon icon="boxes" size="sm" />
-					<span>Ver Stock</span>
-				</a>
+				<Button
+					type="border"
+					color="info"
+					icon="boxes"
+					onclick={() => goto(resolve('/inventario'))}
+				>
+					Stock
+				</Button>
 				<Button
 					type="filled"
 					color="primary"
@@ -332,209 +329,190 @@
 		{/snippet}
 	</PageHeader>
 
-	<div class="lumi-layout--two-columns inventory-purchases__layout">
-		<aside class="lumi-layout--sidebar-left">
-			<Card spaced>
-				<div class="lumi-stack lumi-space--sm">
-					<ListHeader title="Sedes" icon="building" color="info" />
-					<List size="sm" color="info">
-						{#each branchFilterOptions as branch (String(branch.value))}
-							<ListItem
-								title={branch.label}
-								clickable
-								active={filterBranchCode === String(branch.value)}
-								icon="building"
-								onclick={async () => {
-									filterBranchCode = String(branch.value);
-									await loadPurchases(1);
-								}}
-							/>
-						{/each}
-					</List>
-				</div>
-			</Card>
-		</aside>
-
-		<section class="lumi-layout--content-right">
-			<div class="lumi-stack lumi-space--md">
-				<Card spaced>
-					<div class="lumi-flex lumi-flex--gap-sm lumi-flex--wrap inventory-purchases__toolbar">
-						<div class="inventory-purchases__toolbar-field">
-							<Select
-								label="Estado"
-								value={filterState}
-								options={PURCHASE_STATE_OPTIONS}
-								clearable={false}
-								onchange={async (value) => {
-									filterState = (typeof value === 'string' ? value : 'all') as
-										| 'all'
-										| InventoryPurchaseState;
-									await loadPurchases(1);
-								}}
-							/>
-						</div>
-						<div class="inventory-purchases__toolbar-field">
-							<Select
-								label="Origen"
-								value={filterOrigin}
-								options={PURCHASE_ORIGIN_OPTIONS}
-								clearable={false}
-								onchange={async (value) => {
-									filterOrigin = (typeof value === 'string' ? value : 'all') as
-										| 'all'
-										| InventoryPurchaseOrigin;
-									await loadPurchases(1);
-								}}
-							/>
-						</div>
-						<div class="inventory-purchases__toolbar-field">
-							<Select
-								label="Tipo"
-								value={filterEntryType}
-								options={ENTRY_TYPE_OPTIONS}
-								clearable={false}
-								onchange={async (value) => {
-									filterEntryType = (typeof value === 'string' ? value : 'all') as
-										| 'all'
-										| InventoryPurchaseEntryType;
-									await loadPurchases(1);
-								}}
-							/>
-						</div>
-						<div class="inventory-purchases__toolbar-search">
-							<Input
-								label="Buscar por producto / SKU / tracking"
-								icon="search"
-								value={searchQuery}
-								oninput={(event) =>
-									handleSearchInput((event.currentTarget as HTMLInputElement | null)?.value ?? '')}
-							/>
-						</div>
-					</div>
-				</Card>
-
-				{#if !canRead}
-					<Alert type="warning" closable>No tienes permisos para consultar compras.</Alert>
-				{:else}
-					{#if errorMessage}
-						<Alert type="danger" closable onclose={() => (errorMessage = '')}>{errorMessage}</Alert>
-					{/if}
-
-					<Card>
-						<Table data={purchaseRows} hover {loading} pagination={false}>
-							{#snippet thead()}
-								<th>Producto</th>
-								<th>Sede</th>
-								<th>Cantidad</th>
-								<th>Origen</th>
-								<th>Tracking</th>
-								<th>Tipo</th>
-								<th>Estado</th>
-								<th>Costo</th>
-								<th>Fecha</th>
-								<th>Acciones</th>
-							{/snippet}
-
-							{#snippet row({ row })}
-								{@const purchase = row as unknown as InventoryPurchaseListItem}
-								<td>
-									<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
-										<a
-											href={resolve(`/products/${purchase.product_code}`)}
-											class="inventory-purchases__product-link"
-										>
-											{purchase.product_name}
-										</a>
-										<span class="lumi-text--xs lumi-text--muted"
-											>{purchase.product_sku || 'Sin SKU'}</span
-										>
-									</div>
-								</td>
-								<td>{purchase.branch_name}</td>
-								<td>{purchase.quantity}</td>
-								<td>{purchase.origin}</td>
-								<td>{purchase.tracking_number || '—'}</td>
-								<td>
-									<Chip size="sm" color={purchase.entry_type === 'initial' ? 'info' : 'primary'}>
-										{purchase.entry_type === 'initial' ? 'Inicial' : 'Reposición'}
-									</Chip>
-								</td>
-								<td>
-									<Chip color={purchaseStateColor(purchase.state)} size="sm">
-										{purchaseStateLabel(purchase.state)}
-									</Chip>
-								</td>
-								<td>{purchase.unit_cost ? formatProductPrice(purchase.unit_cost) : '—'}</td>
-								<td>{formatDate(purchase.ordered_at)}</td>
-								<td>
-									{#if purchase.state === 'in_transit'}
-										<div class="lumi-flex lumi-flex--gap-2xs">
-											<Button
-												type="flat"
-												size="sm"
-												icon="checkCircle"
-												color="success"
-												disabled={!canUpdate}
-												onclick={() => void updatePurchaseState(purchase.code, 'received')}
-											/>
-											<Button
-												type="flat"
-												size="sm"
-												icon="xCircle"
-												color="danger"
-												disabled={!canUpdate}
-												onclick={() => void updatePurchaseState(purchase.code, 'refunded')}
-											/>
-										</div>
-									{:else if purchase.state === 'received'}
-										<Button
-											type="flat"
-											size="sm"
-											icon="undo2"
-											color="danger"
-											disabled={!canUpdate}
-											onclick={() => void updatePurchaseState(purchase.code, 'refunded')}
-										/>
-									{:else}
-										<span class="lumi-text--xs lumi-text--muted">Sin acción</span>
-									{/if}
-								</td>
-							{/snippet}
-						</Table>
-					</Card>
-
-					<Card spaced>
-						<div class="inventory-purchases__pagination">
-							<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-								Página {pagination.page} de {pagination.total_pages} · {pagination.total} registros
-							</p>
-							<div class="lumi-flex lumi-flex--gap-sm">
-								<Button
-									type="border"
-									size="sm"
-									icon="chevronLeft"
-									disabled={!canGoPrev || loading}
-									onclick={() => void loadPurchases(pagination.page - 1)}
-								>
-									Anterior
-								</Button>
-								<Button
-									type="border"
-									size="sm"
-									iconAfter
-									icon="chevronRight"
-									disabled={!canGoNext || loading}
-									onclick={() => void loadPurchases(pagination.page + 1)}
-								>
-									Siguiente
-								</Button>
-							</div>
-						</div>
-					</Card>
-				{/if}
+	<Card spaced>
+		<div class="lumi-flex lumi-flex--gap-sm lumi-flex--wrap inventory-purchases__toolbar">
+			<div class="inventory-purchases__toolbar-field">
+				<Select
+					label="Sede"
+					value={filterBranchCode}
+					options={branchOptions}
+					clearable={false}
+					onchange={async (value) => {
+						filterBranchCode = typeof value === 'string' ? value : filterBranchCode;
+						await loadPurchases(1);
+					}}
+				/>
 			</div>
-		</section>
-	</div>
+			<div class="inventory-purchases__toolbar-field">
+				<Select
+					label="Estado"
+					value={filterState}
+					options={PURCHASE_STATE_OPTIONS}
+					clearable={false}
+					onchange={async (value) => {
+						filterState = (typeof value === 'string' ? value : 'all') as typeof filterState;
+						await loadPurchases(1);
+					}}
+				/>
+			</div>
+			<div class="inventory-purchases__toolbar-field">
+				<Select
+					label="Origen"
+					value={filterOrigin}
+					options={PURCHASE_ORIGIN_OPTIONS}
+					clearable={false}
+					onchange={async (value) => {
+						filterOrigin = (typeof value === 'string' ? value : 'all') as typeof filterOrigin;
+						await loadPurchases(1);
+					}}
+				/>
+			</div>
+			<div class="inventory-purchases__toolbar-field">
+				<Select
+					label="Tipo"
+					value={filterEntryType}
+					options={ENTRY_TYPE_OPTIONS}
+					clearable={false}
+					onchange={async (value) => {
+						filterEntryType = (typeof value === 'string' ? value : 'all') as typeof filterEntryType;
+						await loadPurchases(1);
+					}}
+				/>
+			</div>
+			<div class="inventory-purchases__toolbar-search">
+				<Input
+					label="Buscar producto / SKU / tracking"
+					icon="search"
+					value={searchQuery}
+					oninput={(event) =>
+						handleSearchInput((event.currentTarget as HTMLInputElement | null)?.value ?? '')}
+				/>
+			</div>
+		</div>
+	</Card>
+
+	{#if !canRead}
+		<Alert type="warning" closable>No tienes permisos para consultar compras.</Alert>
+	{:else}
+		{#if errorMessage}
+			<Alert type="danger" closable onclose={() => (errorMessage = '')}>{errorMessage}</Alert>
+		{/if}
+
+		<Card>
+			<Table
+				data={purchaseRows}
+				hover
+				{loading}
+				pagination={false}
+				class="inventory-table inventory-table--purchases"
+			>
+				{#snippet thead()}
+					<th>Producto</th>
+					<th>Cantidad</th>
+					<th>Origen</th>
+					<th>Tracking</th>
+					<th>Tipo</th>
+					<th>Estado</th>
+					<th>Costo</th>
+					<th>Fecha</th>
+					<th>Acciones</th>
+				{/snippet}
+
+				{#snippet row({ row })}
+					{@const purchase = row as unknown as InventoryPurchaseListItem}
+					<td>
+						<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
+							<a
+								href={resolve(`/products/${purchase.product_code}`)}
+								class="inventory-purchases__product-link"
+							>
+								{purchase.product_name}
+							</a>
+							<span class="lumi-text--xs lumi-text--muted">{purchase.product_sku || 'Sin SKU'}</span
+							>
+						</div>
+					</td>
+					<td>{purchase.quantity}</td>
+					<td>{purchase.origin}</td>
+					<td>{purchase.tracking_number || '—'}</td>
+					<td>
+						<Chip size="sm" color={purchase.entry_type === 'initial' ? 'info' : 'primary'}>
+							{purchase.entry_type === 'initial' ? 'Inicial' : 'Reposición'}
+						</Chip>
+					</td>
+					<td>
+						<Chip color={purchaseStateColor(purchase.state)} size="sm">
+							{purchaseStateLabel(purchase.state)}
+						</Chip>
+					</td>
+					<td>{purchase.unit_cost ? formatProductPrice(purchase.unit_cost) : '—'}</td>
+					<td>{formatDate(purchase.ordered_at)}</td>
+					<td>
+						{#if purchase.state === 'in_transit'}
+							<div class="lumi-flex lumi-flex--gap-2xs">
+								<Button
+									type="flat"
+									size="sm"
+									icon="checkCircle"
+									color="success"
+									disabled={!canUpdate}
+									onclick={() => void updatePurchaseState(purchase.code, 'received')}
+								/>
+								<Button
+									type="flat"
+									size="sm"
+									icon="xCircle"
+									color="danger"
+									disabled={!canUpdate}
+									onclick={() => void updatePurchaseState(purchase.code, 'refunded')}
+								/>
+							</div>
+						{:else if purchase.state === 'received'}
+							<Button
+								type="flat"
+								size="sm"
+								icon="undo2"
+								color="danger"
+								disabled={!canUpdate}
+								onclick={() => void updatePurchaseState(purchase.code, 'refunded')}
+							/>
+						{:else}
+							<span class="lumi-text--xs lumi-text--muted">Sin acción</span>
+						{/if}
+					</td>
+				{/snippet}
+			</Table>
+		</Card>
+
+		<Card spaced>
+			<div class="inventory-purchases__pagination">
+				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+					Página {pagination.page} de {pagination.total_pages} · {pagination.total} registros
+				</p>
+				<div class="lumi-flex lumi-flex--gap-sm">
+					<Button
+						type="border"
+						size="sm"
+						icon="chevronLeft"
+						disabled={!canGoPrev || loading}
+						onclick={() => void loadPurchases(pagination.page - 1)}
+					>
+						Anterior
+					</Button>
+					<Button
+						type="border"
+						size="sm"
+						iconAfter
+						icon="chevronRight"
+						disabled={!canGoNext || loading}
+						onclick={() => void loadPurchases(pagination.page + 1)}
+					>
+						Siguiente
+					</Button>
+				</div>
+			</div>
+		</Card>
+	{/if}
 </div>
 
 <Dialog bind:open={showCreateDialog} title="Registrar compra" size="lg">
@@ -542,7 +520,7 @@
 		<Select
 			label="Producto"
 			value={createProductCode}
-			options={productCreateOptions}
+			options={productOptions}
 			placeholder="Selecciona producto"
 			onchange={(value) => {
 				createProductCode = typeof value === 'string' ? value : '';
@@ -551,7 +529,7 @@
 		<Select
 			label="Sede destino"
 			value={createBranchCode}
-			options={branchCreateOptions}
+			options={branchOptions}
 			placeholder="Selecciona sede"
 			onchange={(value) => {
 				createBranchCode = typeof value === 'string' ? value : '';
@@ -569,7 +547,7 @@
 			}}
 		/>
 		<Select
-			label="Tipo de compra"
+			label="Tipo"
 			value={createEntryType}
 			options={ENTRY_TYPE_OPTIONS.filter((option) => option.value !== 'all')}
 			clearable={false}
@@ -585,7 +563,12 @@
 			value={createTrackingNumber}
 			oninput={(event) => (createTrackingNumber = (event.currentTarget as HTMLInputElement).value)}
 		/>
-		<NumberInput label="Cantidad" bind:value={createQuantity} min={1} step={1} color="primary" />
+		<Input
+			label="Cantidad"
+			type="number"
+			value={createQuantity}
+			oninput={(event) => (createQuantity = (event.currentTarget as HTMLInputElement).value)}
+		/>
 		<Select
 			label="Estado inicial"
 			value={createState}
@@ -598,17 +581,16 @@
 			}}
 		/>
 		<Input
-			label="Fecha de pedido"
+			label="Fecha pedido"
 			type="date"
 			value={createOrderedAt}
 			oninput={(event) => (createOrderedAt = (event.currentTarget as HTMLInputElement).value)}
 		/>
-		<NumberInput
+		<Input
 			label="Costo unitario (opcional)"
-			bind:value={createUnitCost}
-			min={0}
-			step={0.01}
-			color="primary"
+			type="number"
+			value={createUnitCost}
+			oninput={(event) => (createUnitCost = (event.currentTarget as HTMLInputElement).value)}
 		/>
 	</div>
 
@@ -633,10 +615,6 @@
 </Dialog>
 
 <style>
-	.inventory-purchases__layout {
-		align-items: stretch;
-	}
-
 	.inventory-purchases__toolbar {
 		align-items: flex-end;
 	}
@@ -659,24 +637,6 @@
 		flex-wrap: wrap;
 	}
 
-	.inventory-purchases__action-link {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--lumi-space-xs);
-		padding: var(--lumi-space-xs) var(--lumi-space-sm);
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
-		border-radius: var(--lumi-radius-md);
-		color: var(--lumi-color-text);
-		text-decoration: none;
-		background: var(--lumi-color-surface);
-		transition: var(--lumi-transition-all);
-	}
-
-	.inventory-purchases__action-link:hover {
-		border-color: color-mix(in srgb, var(--lumi-color-primary) 40%, var(--lumi-color-border-light));
-		background: color-mix(in srgb, var(--lumi-color-primary) 8%, var(--lumi-color-surface));
-	}
-
 	.inventory-purchases__product-link {
 		color: var(--lumi-color-primary);
 		text-decoration: none;
@@ -685,6 +645,10 @@
 
 	.inventory-purchases__product-link:hover {
 		text-decoration: underline;
+	}
+
+	:global(.inventory-table--purchases .lumi-table__content) {
+		min-width: 74rem;
 	}
 
 	@media (max-width: 1024px) {

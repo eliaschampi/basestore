@@ -29,7 +29,11 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	const page = Number.isInteger(pageRaw) ? Math.max(pageRaw, 1) : 1;
 	const pageSize = Number.isInteger(pageSizeRaw) ? Math.min(Math.max(pageSizeRaw, 1), 120) : 30;
 
-	if (branchCode && !isUuid(branchCode)) {
+	if (!branchCode) {
+		throw error(400, 'Debe seleccionar una sede');
+	}
+
+	if (!isUuid(branchCode)) {
 		throw error(400, 'Sede inválida');
 	}
 
@@ -43,7 +47,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 	const [overview, branches, categories] = await Promise.all([
 		InventoryRepository.listOverview(locals.db, {
-			branchCode: branchCode || undefined,
+			branchCode,
 			categoryCode: categoryCode || undefined,
 			search: search || undefined,
 			stock: stockParam,

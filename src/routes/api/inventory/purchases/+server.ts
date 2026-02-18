@@ -43,7 +43,11 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	const page = Number.isInteger(pageRaw) ? Math.max(pageRaw, 1) : 1;
 	const pageSize = Number.isInteger(pageSizeRaw) ? Math.min(Math.max(pageSizeRaw, 1), 120) : 20;
 
-	if (branchCode && !isUuid(branchCode)) {
+	if (!branchCode) {
+		throw error(400, 'Debe seleccionar una sede');
+	}
+
+	if (!isUuid(branchCode)) {
 		throw error(400, 'Sede inválida');
 	}
 
@@ -76,7 +80,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	}
 
 	const result = await InventoryRepository.listPurchases(locals.db, {
-		branchCode: branchCode || undefined,
+		branchCode,
 		productCode: productCode || undefined,
 		origin,
 		entryType,

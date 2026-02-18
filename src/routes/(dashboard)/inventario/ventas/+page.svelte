@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onDestroy } from 'svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
@@ -8,14 +9,8 @@
 		Card,
 		Chip,
 		Dialog,
-		Icon,
 		Input,
-		List,
-		ListHeader,
-		ListItem,
-		NumberInput,
 		PageHeader,
-		Progress,
 		SegmentedControl,
 		Select,
 		Switch,
@@ -100,7 +95,7 @@
 	let searchTimeout: ReturnType<typeof setTimeout> | undefined;
 	let fetchId = 0;
 
-	let filterBranchCode = $state('all');
+	let filterBranchCode = $state('');
 	let filterShippingState = $state<'all' | InventorySaleShippingState>('all');
 	let filterChannel = $state<'all' | InventorySaleChannel>('all');
 
@@ -108,8 +103,8 @@
 	let submittingCreate = $state(false);
 	let createProductCode = $state('');
 	let createBranchCode = $state('');
-	let createQuantity = $state(1);
-	let createUnitPrice = $state(0);
+	let createQuantity = $state('1');
+	let createUnitPrice = $state('');
 	let createSaleChannel = $state<InventorySaleChannel>('store');
 	let createFulfillmentType = $state<InventorySaleFulfillmentType>('pickup');
 	let createShippingState = $state<InventorySaleShippingState>('na');
@@ -126,19 +121,13 @@
 	const canGoPrev = $derived(pagination.page > 1);
 	const canGoNext = $derived(pagination.page < pagination.total_pages);
 
-	const branchFilterOptions = $derived(
-		[{ value: 'all', label: 'Todas las sedes' } as SelectOption].concat(
-			branches.map((branch) => ({ value: branch.code, label: branch.name }))
-		)
-	);
-
-	const branchCreateOptions = $derived(
+	const branchOptions = $derived(
 		branches
 			.filter((branch) => branch.state)
 			.map((branch) => ({ value: branch.code, label: branch.name }) as SelectOption)
 	);
 
-	const productCreateOptions = $derived(
+	const productOptions = $derived(
 		products
 			.filter((product) => product.is_active)
 			.map((product) => ({ value: product.code, label: product.name }) as SelectOption)
@@ -182,6 +171,11 @@
 		branches = (data.branches ?? []) as BranchCatalogItem[];
 		products = (data.products ?? []) as ProductCatalogItem[];
 		favoriteCustomers = (data.favoriteCustomers ?? []) as InventoryCustomerRecord[];
+
+		const preferredBranch = (data.selectedBranchCode as string | undefined) ?? '';
+		if (!filterBranchCode) {
+			filterBranchCode = preferredBranch || branches.find((branch) => branch.state)?.code || '';
+		}
 	});
 
 	function shippingStateLabel(state: InventorySaleShippingState): string {
@@ -193,18 +187,11 @@
 
 	function shippingStateColor(
 		state: InventorySaleShippingState
-	): 'primary' | 'info' | 'warning' | 'success' {
+	): 'primary' | 'warning' | 'info' | 'success' {
 		if (state === 'na') return 'primary';
 		if (state === 'pending') return 'warning';
 		if (state === 'in_transit') return 'info';
 		return 'success';
-	}
-
-	function shippingProgress(state: InventorySaleShippingState): number {
-		if (state === 'na') return 100;
-		if (state === 'pending') return 25;
-		if (state === 'in_transit') return 60;
-		return 100;
 	}
 
 	function nextShippingState(state: InventorySaleShippingState): InventorySaleShippingState | null {
@@ -213,9 +200,9 @@
 		return null;
 	}
 
-	function shippingStateActionLabel(state: InventorySaleShippingState): string {
-		if (state === 'pending') return 'Marcar en camino';
-		if (state === 'in_transit') return 'Marcar entregado';
+	function shippingActionLabel(state: InventorySaleShippingState): string {
+		if (state === 'pending') return 'En camino';
+		if (state === 'in_transit') return 'Entregado';
 		return 'Sin acción';
 	}
 
@@ -229,8 +216,19 @@
 		}
 	}
 
+	function handleSearchInput(value: string): void {
+		searchQuery = value;
+		if (searchTimeout) {
+			clearTimeout(searchTimeout);
+		}
+
+		searchTimeout = setTimeout(() => {
+			void loadSales(1);
+		}, 300);
+	}
+
 	async function loadSales(page = pagination.page): Promise<void> {
-		if (!canRead) return;
+		if (!canRead || !filterBranchCode) return;
 
 		const requestId = ++fetchId;
 		loading = true;
@@ -238,13 +236,11 @@
 
 		try {
 			const params = new SvelteURLSearchParams({
+				branch_code: filterBranchCode,
 				page: String(page),
 				page_size: String(pagination.page_size || 20)
 			});
 
-			if (filterBranchCode !== 'all') {
-				params.set('branch_code', filterBranchCode);
-			}
 			if (filterShippingState !== 'all') {
 				params.set('shipping_state', filterShippingState);
 			}
@@ -281,13 +277,11 @@
 			const response = await fetch(
 				'/api/inventory/customers?favorites_only=true&page=1&page_size=40'
 			);
-			if (!response.ok) {
-				return;
-			}
+			if (!response.ok) return;
 			const payload = await response.json();
 			favoriteCustomers = (payload.customers ?? []) as InventoryCustomerRecord[];
 		} catch {
-			// Non-critical list refresh
+			// non-critical
 		}
 	}
 
@@ -297,36 +291,21 @@
 			if (search.trim()) {
 				params.set('search', search.trim());
 			}
-
 			const response = await fetch(`/api/inventory/customers?${params.toString()}`);
-			if (!response.ok) {
-				return;
-			}
+			if (!response.ok) return;
 			const payload = await response.json();
 			customerOptions = (payload.customers ?? []) as InventoryCustomerRecord[];
 		} catch {
-			// Non-critical options fetch
+			// non-critical
 		}
-	}
-
-	function handleSearchInput(value: string): void {
-		searchQuery = value;
-		if (searchTimeout) {
-			clearTimeout(searchTimeout);
-		}
-
-		searchTimeout = setTimeout(() => {
-			void loadSales(1);
-		}, 320);
 	}
 
 	async function openCreateDialog(): Promise<void> {
 		if (!canCreate) return;
-
 		createProductCode = '';
-		createBranchCode = filterBranchCode !== 'all' ? filterBranchCode : '';
-		createQuantity = 1;
-		createUnitPrice = 0;
+		createBranchCode = filterBranchCode;
+		createQuantity = '1';
+		createUnitPrice = '';
 		createSaleChannel = 'store';
 		createFulfillmentType = 'pickup';
 		createShippingState = 'na';
@@ -342,11 +321,18 @@
 		await loadCustomerOptions();
 	}
 
+	function deriveProductPrice(productCode: string): void {
+		const product = products.find((item) => item.code === productCode);
+		if (product) {
+			createUnitPrice = String(product.price);
+		}
+	}
+
 	async function submitCreateSale(): Promise<void> {
 		if (submittingCreate) return;
 
-		const quantity = Math.floor(createQuantity);
-		const unitPrice = createUnitPrice;
+		const quantity = Number.parseInt(createQuantity, 10);
+		const unitPrice = Number.parseFloat(createUnitPrice);
 
 		if (!createProductCode || !createBranchCode || !Number.isInteger(quantity) || quantity <= 0) {
 			showToast('Completa producto, sede y cantidad válida', 'error');
@@ -359,7 +345,7 @@
 		}
 
 		if (!createCustomerCode && !createCustomerName.trim()) {
-			showToast('Debes seleccionar o registrar un cliente', 'error');
+			showToast('Debes seleccionar o registrar cliente', 'error');
 			return;
 		}
 
@@ -418,14 +404,11 @@
 			const response = await fetch(`/api/inventory/sales/${sale.code}/shipping`, {
 				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					shipping_state: nextState
-				})
+				body: JSON.stringify({ shipping_state: nextState })
 			});
-
 			const payload = await response.json();
 			if (!response.ok) {
-				throw new Error((payload?.message as string) || 'No se pudo actualizar el envío');
+				throw new Error((payload?.message as string) || 'No se pudo actualizar envío');
 			}
 
 			showToast('Estado de envío actualizado', 'success');
@@ -438,14 +421,15 @@
 
 	async function toggleFavoriteCustomer(customer: InventoryCustomerRecord): Promise<void> {
 		if (!canUpdate) return;
+
 		try {
 			const response = await fetch(`/api/inventory/customers/${customer.code}/favorite`, {
 				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ is_favorite: !customer.is_favorite })
 			});
-
 			const payload = await response.json();
+
 			if (!response.ok) {
 				throw new Error((payload?.message as string) || 'No se pudo actualizar favorito');
 			}
@@ -456,26 +440,24 @@
 			showToast(message, 'error');
 		}
 	}
-
-	function deriveProductPrice(productCode: string): void {
-		const product = products.find((item) => item.code === productCode);
-		if (!product) return;
-		createUnitPrice = parseFloat(product.price) || 0;
-	}
 </script>
 
 <div class="lumi-stack lumi-space--md">
 	<PageHeader
 		title="Ventas"
-		subtitle="Ventas rápidas con precio, canal, delivery y clientes favoritos"
+		subtitle="Salidas por sede con delivery y clientes favoritos"
 		icon="creditCard"
 	>
 		{#snippet actions()}
 			<div class="lumi-flex lumi-flex--gap-sm">
-				<a href={resolve('/inventario')} class="inventory-sales__action-link">
-					<Icon icon="boxes" size="sm" />
-					<span>Ver Stock</span>
-				</a>
+				<Button
+					type="border"
+					color="info"
+					icon="boxes"
+					onclick={() => goto(resolve('/inventario'))}
+				>
+					Stock
+				</Button>
 				<Button
 					type="filled"
 					color="primary"
@@ -489,248 +471,201 @@
 		{/snippet}
 	</PageHeader>
 
-	<div class="lumi-layout--two-columns inventory-sales__layout">
-		<aside class="lumi-layout--sidebar-left">
-			<div class="lumi-stack lumi-space--sm">
-				<Card spaced>
-					<div class="lumi-stack lumi-space--sm">
-						<ListHeader title="Sedes" icon="building" color="info" />
-						<List size="sm" color="info">
-							{#each branchFilterOptions as branch (String(branch.value))}
-								<ListItem
-									title={branch.label}
-									icon="building"
-									clickable
-									active={filterBranchCode === String(branch.value)}
-									onclick={async () => {
-										filterBranchCode = String(branch.value);
-										await loadSales(1);
-									}}
-								/>
-							{/each}
-						</List>
-					</div>
-				</Card>
+	<Card spaced>
+		<div class="lumi-flex lumi-flex--gap-sm lumi-flex--wrap inventory-sales__toolbar">
+			<div class="inventory-sales__toolbar-field">
+				<Select
+					label="Sede"
+					value={filterBranchCode}
+					options={branchOptions}
+					clearable={false}
+					onchange={async (value) => {
+						filterBranchCode = typeof value === 'string' ? value : filterBranchCode;
+						await loadSales(1);
+					}}
+				/>
+			</div>
+			<div class="inventory-sales__toolbar-field">
+				<Select
+					label="Envío"
+					value={filterShippingState}
+					options={SHIPPING_FILTER_OPTIONS}
+					clearable={false}
+					onchange={async (value) => {
+						filterShippingState = (
+							typeof value === 'string' ? value : 'all'
+						) as typeof filterShippingState;
+						await loadSales(1);
+					}}
+				/>
+			</div>
+			<div class="inventory-sales__toolbar-field">
+				<Select
+					label="Canal"
+					value={filterChannel}
+					options={CHANNEL_FILTER_OPTIONS}
+					clearable={false}
+					onchange={async (value) => {
+						filterChannel = (typeof value === 'string' ? value : 'all') as typeof filterChannel;
+						await loadSales(1);
+					}}
+				/>
+			</div>
+			<div class="inventory-sales__toolbar-search">
+				<Input
+					label="Buscar producto / cliente / referencia"
+					icon="search"
+					value={searchQuery}
+					oninput={(event) =>
+						handleSearchInput((event.currentTarget as HTMLInputElement | null)?.value ?? '')}
+				/>
+			</div>
+		</div>
+	</Card>
 
-				<Card spaced>
-					<div class="lumi-stack lumi-space--sm">
-						<div class="lumi-flex lumi-justify--between lumi-align-items--center">
-							<ListHeader title="Clientes Favoritos" icon="star" color="warning" />
+	<Card spaced>
+		<div class="lumi-flex lumi-justify--between lumi-align-items--center">
+			<p class="lumi-margin--none lumi-font--semibold">Clientes favoritos</p>
+			<Button type="flat" size="sm" icon="refreshCw" onclick={() => void loadFavoriteCustomers()} />
+		</div>
+		<div class="inventory-sales__favorite-list">
+			{#if favoriteCustomers.length === 0}
+				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">No hay favoritos aún.</p>
+			{:else}
+				{#each favoriteCustomers as customer (customer.code)}
+					<div class="inventory-sales__favorite-item">
+						<div class="inventory-sales__favorite-content">
+							<p class="lumi-margin--none lumi-font--medium">{customer.full_name}</p>
+							<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
+								{customer.phone || 'Sin teléfono'}
+							</p>
+						</div>
+						<Button
+							type="flat"
+							size="sm"
+							icon={customer.is_favorite ? 'starOff' : 'star'}
+							color={customer.is_favorite ? 'warning' : 'primary'}
+							disabled={!canUpdate}
+							onclick={() => void toggleFavoriteCustomer(customer)}
+						/>
+					</div>
+				{/each}
+			{/if}
+		</div>
+	</Card>
+
+	{#if !canRead}
+		<Alert type="warning" closable>No tienes permisos para consultar ventas.</Alert>
+	{:else}
+		{#if errorMessage}
+			<Alert type="danger" closable onclose={() => (errorMessage = '')}>{errorMessage}</Alert>
+		{/if}
+
+		<Card>
+			<Table
+				data={saleRows}
+				hover
+				{loading}
+				pagination={false}
+				class="inventory-table inventory-table--sales"
+			>
+				{#snippet thead()}
+					<th>Producto</th>
+					<th>Cliente</th>
+					<th>Cantidad</th>
+					<th>Total</th>
+					<th>Canal</th>
+					<th>Envío</th>
+					<th>Fecha</th>
+					<th>Acciones</th>
+				{/snippet}
+
+				{#snippet row({ row })}
+					{@const sale = row as unknown as InventorySaleListItem}
+					<td>
+						<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
+							<a
+								href={resolve(`/products/${sale.product_code}`)}
+								class="inventory-sales__product-link"
+							>
+								{sale.product_name}
+							</a>
+							<span class="lumi-text--xs lumi-text--muted">{sale.product_sku || 'Sin SKU'}</span>
+						</div>
+					</td>
+					<td>
+						<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
+							<span>{sale.customer_name}</span>
+							<span class="lumi-text--xs lumi-text--muted">
+								{sale.customer_phone || 'Sin teléfono'}
+								{#if sale.customer_is_favorite}
+									<span class="inventory-sales__favorite-badge">★ favorito</span>
+								{/if}
+							</span>
+						</div>
+					</td>
+					<td>{sale.quantity}</td>
+					<td>{formatProductPrice(sale.total_amount)}</td>
+					<td>
+						<Chip size="sm" color={sale.sale_channel === 'store' ? 'primary' : 'info'}>
+							{sale.sale_channel === 'store' ? 'Tienda' : 'Web'}
+						</Chip>
+					</td>
+					<td>
+						<Chip color={shippingStateColor(sale.shipping_state)} size="sm">
+							{shippingStateLabel(sale.shipping_state)}
+						</Chip>
+					</td>
+					<td>{formatDate(sale.sold_at)}</td>
+					<td>
+						{#if sale.fulfillment_type === 'delivery' && nextShippingState(sale.shipping_state)}
 							<Button
 								type="flat"
 								size="sm"
-								icon="refreshCw"
-								onclick={() => void loadFavoriteCustomers()}
-							/>
-						</div>
-
-						{#if favoriteCustomers.length === 0}
-							<p class="lumi-text--xs lumi-text--muted lumi-margin--none">No hay favoritos aún.</p>
+								icon="truck"
+								color="info"
+								disabled={!canUpdate}
+								onclick={() => void advanceShippingState(sale)}
+							>
+								{shippingActionLabel(sale.shipping_state)}
+							</Button>
 						{:else}
-							<div class="inventory-sales__favorite-list">
-								{#each favoriteCustomers as customer (customer.code)}
-									<div class="inventory-sales__favorite-item">
-										<div class="inventory-sales__favorite-content">
-											<p class="lumi-margin--none lumi-font--medium">{customer.full_name}</p>
-											<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
-												{customer.phone || 'Sin teléfono'}
-											</p>
-										</div>
-										<Button
-											type="flat"
-											size="sm"
-											icon={customer.is_favorite ? 'starOff' : 'star'}
-											color={customer.is_favorite ? 'warning' : 'primary'}
-											disabled={!canUpdate}
-											onclick={() => void toggleFavoriteCustomer(customer)}
-										/>
-									</div>
-								{/each}
-							</div>
+							<span class="lumi-text--xs lumi-text--muted">Sin acción</span>
 						{/if}
-					</div>
-				</Card>
+					</td>
+				{/snippet}
+			</Table>
+		</Card>
+
+		<Card spaced>
+			<div class="inventory-sales__pagination">
+				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+					Página {pagination.page} de {pagination.total_pages} · {pagination.total} registros
+				</p>
+				<div class="lumi-flex lumi-flex--gap-sm">
+					<Button
+						type="border"
+						size="sm"
+						icon="chevronLeft"
+						disabled={!canGoPrev || loading}
+						onclick={() => void loadSales(pagination.page - 1)}
+					>
+						Anterior
+					</Button>
+					<Button
+						type="border"
+						size="sm"
+						iconAfter
+						icon="chevronRight"
+						disabled={!canGoNext || loading}
+						onclick={() => void loadSales(pagination.page + 1)}
+					>
+						Siguiente
+					</Button>
+				</div>
 			</div>
-		</aside>
-
-		<section class="lumi-layout--content-right">
-			<div class="lumi-stack lumi-space--md">
-				<Card spaced>
-					<div class="lumi-flex lumi-flex--gap-sm lumi-flex--wrap inventory-sales__toolbar">
-						<div class="inventory-sales__toolbar-field">
-							<Select
-								label="Envío"
-								value={filterShippingState}
-								options={SHIPPING_FILTER_OPTIONS}
-								clearable={false}
-								onchange={async (value) => {
-									filterShippingState = (typeof value === 'string' ? value : 'all') as
-										| 'all'
-										| InventorySaleShippingState;
-									await loadSales(1);
-								}}
-							/>
-						</div>
-						<div class="inventory-sales__toolbar-field">
-							<Select
-								label="Canal"
-								value={filterChannel}
-								options={CHANNEL_FILTER_OPTIONS}
-								clearable={false}
-								onchange={async (value) => {
-									filterChannel = (typeof value === 'string' ? value : 'all') as
-										| 'all'
-										| InventorySaleChannel;
-									await loadSales(1);
-								}}
-							/>
-						</div>
-						<div class="inventory-sales__toolbar-search">
-							<Input
-								label="Buscar por producto / cliente / referencia"
-								icon="search"
-								value={searchQuery}
-								oninput={(event) =>
-									handleSearchInput((event.currentTarget as HTMLInputElement | null)?.value ?? '')}
-							/>
-						</div>
-					</div>
-				</Card>
-
-				{#if !canRead}
-					<Alert type="warning" closable>No tienes permisos para consultar ventas.</Alert>
-				{:else}
-					{#if errorMessage}
-						<Alert type="danger" closable onclose={() => (errorMessage = '')}>{errorMessage}</Alert>
-					{/if}
-
-					<Card>
-						<Table data={saleRows} hover {loading} pagination={false}>
-							{#snippet thead()}
-								<th>Producto</th>
-								<th>Cliente</th>
-								<th>Cantidad</th>
-								<th>Precio</th>
-								<th>Canal</th>
-								<th>Entrega</th>
-								<th>Envío</th>
-								<th>Fecha</th>
-								<th>Acciones</th>
-							{/snippet}
-
-							{#snippet row({ row })}
-								{@const sale = row as unknown as InventorySaleListItem}
-								<td>
-									<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
-										<a
-											href={resolve(`/products/${sale.product_code}`)}
-											class="inventory-sales__product-link"
-										>
-											{sale.product_name}
-										</a>
-										<span class="lumi-text--xs lumi-text--muted">
-											{sale.branch_name} · {sale.product_sku || 'Sin SKU'}
-										</span>
-									</div>
-								</td>
-								<td>
-									<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
-										<span>{sale.customer_name}</span>
-										<span class="lumi-text--xs lumi-text--muted">
-											{sale.customer_phone || 'Sin teléfono'}
-											{#if sale.customer_is_favorite}
-												<span class="inventory-sales__favorite-badge">★ favorito</span>
-											{/if}
-										</span>
-									</div>
-								</td>
-								<td>{sale.quantity}</td>
-								<td>
-									<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
-										<span>{formatProductPrice(sale.unit_price)}</span>
-										<span class="lumi-text--xs lumi-text--muted">
-											Total {formatProductPrice(sale.total_amount)}
-										</span>
-									</div>
-								</td>
-								<td>
-									<Chip size="sm" color={sale.sale_channel === 'store' ? 'primary' : 'info'}>
-										{sale.sale_channel === 'store' ? 'Tienda' : 'Web'}
-									</Chip>
-								</td>
-								<td>
-									<Chip
-										size="sm"
-										color={sale.fulfillment_type === 'pickup' ? 'success' : 'warning'}
-									>
-										{sale.fulfillment_type === 'pickup' ? 'Recojo' : 'Delivery'}
-									</Chip>
-								</td>
-								<td>
-									<div class="inventory-sales__shipping-cell">
-										<Progress
-											value={shippingProgress(sale.shipping_state)}
-											color={shippingStateColor(sale.shipping_state)}
-											size="sm"
-										/>
-										<Chip color={shippingStateColor(sale.shipping_state)} size="sm">
-											{shippingStateLabel(sale.shipping_state)}
-										</Chip>
-									</div>
-								</td>
-								<td>{formatDate(sale.sold_at)}</td>
-								<td>
-									{#if sale.fulfillment_type === 'delivery' && nextShippingState(sale.shipping_state)}
-										<Button
-											type="flat"
-											size="sm"
-											icon="truck"
-											color="info"
-											disabled={!canUpdate}
-											onclick={() => void advanceShippingState(sale)}
-										>
-											{shippingStateActionLabel(sale.shipping_state)}
-										</Button>
-									{:else}
-										<span class="lumi-text--xs lumi-text--muted">Sin acción</span>
-									{/if}
-								</td>
-							{/snippet}
-						</Table>
-					</Card>
-
-					<Card spaced>
-						<div class="inventory-sales__pagination">
-							<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-								Página {pagination.page} de {pagination.total_pages} · {pagination.total} registros
-							</p>
-							<div class="lumi-flex lumi-flex--gap-sm">
-								<Button
-									type="border"
-									size="sm"
-									icon="chevronLeft"
-									disabled={!canGoPrev || loading}
-									onclick={() => void loadSales(pagination.page - 1)}
-								>
-									Anterior
-								</Button>
-								<Button
-									type="border"
-									size="sm"
-									iconAfter
-									icon="chevronRight"
-									disabled={!canGoNext || loading}
-									onclick={() => void loadSales(pagination.page + 1)}
-								>
-									Siguiente
-								</Button>
-							</div>
-						</div>
-					</Card>
-				{/if}
-			</div>
-		</section>
-	</div>
+		</Card>
+	{/if}
 </div>
 
 <Dialog bind:open={showCreateDialog} title="Registrar venta" size="lg">
@@ -738,7 +673,7 @@
 		<Select
 			label="Producto"
 			value={createProductCode}
-			options={productCreateOptions}
+			options={productOptions}
 			placeholder="Selecciona producto"
 			onchange={(value) => {
 				createProductCode = typeof value === 'string' ? value : '';
@@ -748,28 +683,32 @@
 		<Select
 			label="Sede"
 			value={createBranchCode}
-			options={branchCreateOptions}
+			options={branchOptions}
 			placeholder="Selecciona sede"
 			onchange={(value) => {
 				createBranchCode = typeof value === 'string' ? value : '';
 			}}
 		/>
-		<NumberInput label="Cantidad" bind:value={createQuantity} min={1} step={1} color="primary" />
-		<NumberInput
-			label="Precio unitario"
-			bind:value={createUnitPrice}
-			min={0}
-			step={0.01}
-			color="primary"
+		<Input
+			label="Cantidad"
+			type="number"
+			value={createQuantity}
+			oninput={(event) => (createQuantity = (event.currentTarget as HTMLInputElement).value)}
 		/>
 		<Input
-			label="Fecha de venta"
+			label="Precio unitario"
+			type="number"
+			value={createUnitPrice}
+			oninput={(event) => (createUnitPrice = (event.currentTarget as HTMLInputElement).value)}
+		/>
+		<Input
+			label="Fecha venta"
 			type="date"
 			value={createSoldAt}
 			oninput={(event) => (createSoldAt = (event.currentTarget as HTMLInputElement).value)}
 		/>
 		<Input
-			label="Referencia pedido (opcional)"
+			label="Referencia (opcional)"
 			value={createOrderReference}
 			oninput={(event) => (createOrderReference = (event.currentTarget as HTMLInputElement).value)}
 		/>
@@ -812,7 +751,7 @@
 			}}
 		/>
 		<Select
-			label="Estado de envío"
+			label="Estado envío"
 			value={createShippingState}
 			options={filteredShippingStateOptions}
 			clearable={false}
@@ -838,7 +777,7 @@
 			/>
 		</div>
 		<Switch
-			label="Guardar cliente en favoritos"
+			label="Guardar cliente como favorito"
 			checked={createMarkCustomerFavorite}
 			onchange={(checked) => {
 				createMarkCustomerFavorite = checked;
@@ -848,7 +787,7 @@
 
 	{#if createFulfillmentType === 'delivery'}
 		<Input
-			label="Dirección de delivery"
+			label="Dirección delivery"
 			value={createDeliveryAddress}
 			oninput={(event) => (createDeliveryAddress = (event.currentTarget as HTMLInputElement).value)}
 		/>
@@ -875,10 +814,6 @@
 </Dialog>
 
 <style>
-	.inventory-sales__layout {
-		align-items: stretch;
-	}
-
 	.inventory-sales__toolbar {
 		align-items: flex-end;
 	}
@@ -889,53 +824,28 @@
 	}
 
 	.inventory-sales__toolbar-search {
-		flex: 1 1 360px;
-		min-width: 280px;
-	}
-
-	.inventory-sales__pagination {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--lumi-space-sm);
-		flex-wrap: wrap;
-	}
-
-	.inventory-sales__action-link {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--lumi-space-xs);
-		padding: var(--lumi-space-xs) var(--lumi-space-sm);
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
-		border-radius: var(--lumi-radius-md);
-		color: var(--lumi-color-text);
-		text-decoration: none;
-		background: var(--lumi-color-surface);
-		transition: var(--lumi-transition-all);
-	}
-
-	.inventory-sales__action-link:hover {
-		border-color: color-mix(in srgb, var(--lumi-color-primary) 40%, var(--lumi-color-border-light));
-		background: color-mix(in srgb, var(--lumi-color-primary) 8%, var(--lumi-color-surface));
+		flex: 1 1 320px;
+		min-width: 260px;
 	}
 
 	.inventory-sales__favorite-list {
 		display: flex;
-		flex-direction: column;
+		flex-wrap: wrap;
 		gap: var(--lumi-space-xs);
+		margin-top: var(--lumi-space-sm);
 	}
 
 	.inventory-sales__favorite-item {
 		display: flex;
 		align-items: center;
 		gap: var(--lumi-space-sm);
-		padding: var(--lumi-space-xs);
+		padding: var(--lumi-space-xs) var(--lumi-space-sm);
 		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-md);
+		background: var(--lumi-color-surface);
 	}
 
 	.inventory-sales__favorite-content {
-		flex: 1;
 		min-width: 0;
 	}
 
@@ -954,15 +864,20 @@
 		color: var(--lumi-color-warning);
 	}
 
-	.inventory-sales__shipping-cell {
-		min-width: 150px;
-		display: flex;
-		flex-direction: column;
-		gap: var(--lumi-space-2xs);
-	}
-
 	.inventory-sales__dialog-segments {
 		margin-top: var(--lumi-space-xs);
+	}
+
+	.inventory-sales__pagination {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--lumi-space-sm);
+		flex-wrap: wrap;
+	}
+
+	:global(.inventory-table--sales .lumi-table__content) {
+		min-width: 72rem;
 	}
 
 	@media (max-width: 1024px) {
