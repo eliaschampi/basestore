@@ -11,6 +11,7 @@
 		IconBadge,
 		Image,
 		Input,
+		NumberInput,
 		PageHeader,
 		Select,
 		Switch,
@@ -56,7 +57,7 @@
 	let formDescription = $state('');
 	let formBrandCode = $state('');
 	let formCategoryCode = $state('');
-	let formPrice = $state('');
+	let formPrice = $state(0);
 	let formSku = $state('');
 	let formIsActive = $state(true);
 
@@ -78,7 +79,7 @@
 		formDescription = '';
 		formBrandCode = '';
 		formCategoryCode = '';
-		formPrice = '';
+		formPrice = 0;
 		formSku = '';
 		formIsActive = true;
 		errorMessage = '';
@@ -96,7 +97,7 @@
 		formDescription = product.description || '';
 		formBrandCode = product.brand_code || '';
 		formCategoryCode = product.category_code || '';
-		formPrice = product.price ?? '';
+		formPrice = parseFloat(product.price ?? '0') || 0;
 		formSku = product.sku || '';
 		formIsActive = product.is_active !== false;
 		errorMessage = '';
@@ -300,17 +301,18 @@
 				/>
 
 				<div class="lumi-grid lumi-grid--columns-2 lumi-grid--gap-md">
-					<Input
+					<NumberInput
 						bind:value={formPrice}
-						name="price"
-						type="number"
 						label="Precio"
 						placeholder="0.00"
-						icon="creditCard"
-						required
+						min={0}
+						step={0.01}
+						color="primary"
 					/>
 					<Input bind:value={formSku} name="sku" label="SKU" placeholder="Ej: PC00012" icon="tag" />
 				</div>
+
+				<input type="hidden" name="price" value={formPrice} />
 			</div>
 		</div>
 	</form>

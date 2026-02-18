@@ -70,6 +70,8 @@ export type { NavbarProps } from './Navbar';
 export { Navbar } from './Navbar';
 export type { NotificationPosition, NotificationProps, NotificationType } from './Notification';
 export { Notification } from './Notification';
+export type { NumberInputColor, NumberInputProps, NumberInputSize } from './NumberInput';
+export { NumberInput } from './NumberInput';
 export type { PageHeaderProps } from './PageHeader';
 export { PageHeader } from './PageHeader';
 export type { ProgressColor, ProgressProps, ProgressSize } from './Progress';

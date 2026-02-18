@@ -13,6 +13,7 @@
 		List,
 		ListHeader,
 		ListItem,
+		NumberInput,
 		PageHeader,
 		Select,
 		Table,
@@ -101,10 +102,10 @@
 	let createOrigin = $state<InventoryPurchaseOrigin>('aliexpress');
 	let createEntryType = $state<InventoryPurchaseEntryType>('restock');
 	let createTrackingNumber = $state('');
-	let createQuantity = $state('1');
+	let createQuantity = $state(1);
 	let createState = $state<InventoryPurchaseState>('in_transit');
 	let createOrderedAt = $state(new Date().toISOString().slice(0, 10));
-	let createUnitCost = $state('');
+	let createUnitCost = $state(0);
 	let createNote = $state('');
 
 	const branchFilterOptions = $derived(
@@ -222,10 +223,10 @@
 		createOrigin = 'aliexpress';
 		createEntryType = 'restock';
 		createTrackingNumber = '';
-		createQuantity = '1';
+		createQuantity = 1;
 		createState = 'in_transit';
 		createOrderedAt = new Date().toISOString().slice(0, 10);
-		createUnitCost = '';
+		createUnitCost = 0;
 		createNote = '';
 		showCreateDialog = true;
 	}
@@ -233,7 +234,7 @@
 	async function submitCreatePurchase(): Promise<void> {
 		if (submittingCreate) return;
 
-		const quantity = Number.parseInt(createQuantity, 10);
+		const quantity = Math.floor(createQuantity);
 		if (!createProductCode || !createBranchCode || !Number.isInteger(quantity) || quantity <= 0) {
 			showToast('Completa producto, sede y cantidad válida', 'error');
 			return;
@@ -258,7 +259,7 @@
 					quantity,
 					state: createState,
 					ordered_at: createOrderedAt,
-					unit_cost: createUnitCost.trim() ? Number.parseFloat(createUnitCost) : null,
+					unit_cost: createUnitCost > 0 ? createUnitCost : null,
 					note: createNote.trim()
 				})
 			});
@@ -584,12 +585,7 @@
 			value={createTrackingNumber}
 			oninput={(event) => (createTrackingNumber = (event.currentTarget as HTMLInputElement).value)}
 		/>
-		<Input
-			label="Cantidad"
-			type="number"
-			value={createQuantity}
-			oninput={(event) => (createQuantity = (event.currentTarget as HTMLInputElement).value)}
-		/>
+		<NumberInput label="Cantidad" bind:value={createQuantity} min={1} step={1} color="primary" />
 		<Select
 			label="Estado inicial"
 			value={createState}
@@ -607,11 +603,12 @@
 			value={createOrderedAt}
 			oninput={(event) => (createOrderedAt = (event.currentTarget as HTMLInputElement).value)}
 		/>
-		<Input
+		<NumberInput
 			label="Costo unitario (opcional)"
-			type="number"
-			value={createUnitCost}
-			oninput={(event) => (createUnitCost = (event.currentTarget as HTMLInputElement).value)}
+			bind:value={createUnitCost}
+			min={0}
+			step={0.01}
+			color="primary"
 		/>
 	</div>
 

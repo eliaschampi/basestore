@@ -13,6 +13,7 @@
 		List,
 		ListHeader,
 		ListItem,
+		NumberInput,
 		PageHeader,
 		Progress,
 		SegmentedControl,
@@ -107,8 +108,8 @@
 	let submittingCreate = $state(false);
 	let createProductCode = $state('');
 	let createBranchCode = $state('');
-	let createQuantity = $state('1');
-	let createUnitPrice = $state('');
+	let createQuantity = $state(1);
+	let createUnitPrice = $state(0);
 	let createSaleChannel = $state<InventorySaleChannel>('store');
 	let createFulfillmentType = $state<InventorySaleFulfillmentType>('pickup');
 	let createShippingState = $state<InventorySaleShippingState>('na');
@@ -324,8 +325,8 @@
 
 		createProductCode = '';
 		createBranchCode = filterBranchCode !== 'all' ? filterBranchCode : '';
-		createQuantity = '1';
-		createUnitPrice = '';
+		createQuantity = 1;
+		createUnitPrice = 0;
 		createSaleChannel = 'store';
 		createFulfillmentType = 'pickup';
 		createShippingState = 'na';
@@ -344,8 +345,8 @@
 	async function submitCreateSale(): Promise<void> {
 		if (submittingCreate) return;
 
-		const quantity = Number.parseInt(createQuantity, 10);
-		const unitPrice = Number.parseFloat(createUnitPrice);
+		const quantity = Math.floor(createQuantity);
+		const unitPrice = createUnitPrice;
 
 		if (!createProductCode || !createBranchCode || !Number.isInteger(quantity) || quantity <= 0) {
 			showToast('Completa producto, sede y cantidad válida', 'error');
@@ -459,7 +460,7 @@
 	function deriveProductPrice(productCode: string): void {
 		const product = products.find((item) => item.code === productCode);
 		if (!product) return;
-		createUnitPrice = String(product.price);
+		createUnitPrice = parseFloat(product.price) || 0;
 	}
 </script>
 
@@ -753,17 +754,13 @@
 				createBranchCode = typeof value === 'string' ? value : '';
 			}}
 		/>
-		<Input
-			label="Cantidad"
-			type="number"
-			value={createQuantity}
-			oninput={(event) => (createQuantity = (event.currentTarget as HTMLInputElement).value)}
-		/>
-		<Input
+		<NumberInput label="Cantidad" bind:value={createQuantity} min={1} step={1} color="primary" />
+		<NumberInput
 			label="Precio unitario"
-			type="number"
-			value={createUnitPrice}
-			oninput={(event) => (createUnitPrice = (event.currentTarget as HTMLInputElement).value)}
+			bind:value={createUnitPrice}
+			min={0}
+			step={0.01}
+			color="primary"
 		/>
 		<Input
 			label="Fecha de venta"
