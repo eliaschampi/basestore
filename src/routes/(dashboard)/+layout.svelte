@@ -167,8 +167,8 @@
 
 		{#if canReadInventory}
 			<SidebarItem
-				href="/inventario"
-				active={page.url.pathname === '/inventario'}
+				href="/inventory"
+				active={page.url.pathname === '/inventory'}
 				collapsed={sidebarCollapsed}
 			>
 				{#snippet icon()}
@@ -178,10 +178,9 @@
 			</SidebarItem>
 
 			<SidebarItem
-				href="/inventario/compras"
-				active={page.url.pathname.startsWith('/inventario/compras')}
+				href="/inventory/purchases"
+				active={page.url.pathname.startsWith('/inventory/purchases')}
 				collapsed={sidebarCollapsed}
-				class="lumi-sidebar-item--inventory-sub"
 			>
 				{#snippet icon()}
 					<Icon icon="shoppingBag" size="20px" />
@@ -190,10 +189,9 @@
 			</SidebarItem>
 
 			<SidebarItem
-				href="/inventario/ventas"
-				active={page.url.pathname.startsWith('/inventario/ventas')}
+				href="/inventory/sales"
+				active={page.url.pathname.startsWith('/inventory/sales')}
 				collapsed={sidebarCollapsed}
-				class="lumi-sidebar-item--inventory-sub"
 			>
 				{#snippet icon()}
 					<Icon icon="creditCard" size="20px" />
@@ -333,13 +331,5 @@
 
 	.lumi-navbar-user-dropdown {
 		max-width: 220px;
-	}
-
-	:global(.lumi-sidebar-item--inventory-sub) {
-		margin-left: var(--lumi-space-sm);
-	}
-
-	:global(.lumi-sidebar-item--collapsed.lumi-sidebar-item--inventory-sub) {
-		margin-left: 0;
 	}
 </style>

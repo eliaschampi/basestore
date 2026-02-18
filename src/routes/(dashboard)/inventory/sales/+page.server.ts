@@ -25,7 +25,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 			favoritesOnly: true,
 			page: 1,
 			pageSize: 30
-			})
+		})
 	]);
 	const selectedBranchCode = resolveInventoryBranchCode(branches) || null;
 	const sales = selectedBranchCode

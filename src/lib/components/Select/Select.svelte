@@ -502,6 +502,7 @@
 		position: relative;
 		display: flex;
 		align-items: center;
+		min-height: var(--lumi-control-height-md);
 		background: var(--select-bg);
 		border: var(--lumi-border-width-thin) solid var(--select-border);
 		border-radius: var(--lumi-radius-md);
@@ -530,7 +531,8 @@
 		flex: 1;
 		width: 100%;
 		min-width: 0;
-		padding: var(--lumi-space-sm);
+		padding-block: var(--lumi-space-xs);
+		padding-inline: var(--lumi-space-sm);
 		background: transparent;
 		border: none;
 		outline: none;
@@ -765,6 +767,10 @@
 	}
 
 	/* ── Size variants ────────────────────────── */
+	.lumi-select--sm .lumi-select__container {
+		min-height: var(--lumi-control-height-sm);
+	}
+
 	.lumi-select--sm .lumi-select__input {
 		padding-block: var(--lumi-space-xs);
 		padding-inline: var(--lumi-space-sm);
@@ -773,6 +779,20 @@
 	.lumi-select--sm .lumi-select__option {
 		padding: var(--lumi-space-xs) var(--lumi-space-sm);
 		font-size: var(--lumi-font-size-sm);
+	}
+
+	.lumi-select--md .lumi-select__container {
+		min-height: var(--lumi-control-height-md);
+	}
+
+	.lumi-select--md .lumi-select__input {
+		padding-block: var(--lumi-space-xs);
+		padding-inline: var(--lumi-space-sm);
+		font-size: var(--lumi-font-size-base);
+	}
+
+	.lumi-select--lg .lumi-select__container {
+		min-height: var(--lumi-control-height-lg);
 	}
 
 	.lumi-select--lg .lumi-select__input {

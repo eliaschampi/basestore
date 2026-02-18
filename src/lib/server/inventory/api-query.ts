@@ -14,11 +14,7 @@ interface RequiredUuidSearchParamOptions {
 
 export function readInventoryPagination(
 	url: URL,
-	{
-		defaultPage = 1,
-		defaultPageSize = 20,
-		maxPageSize = 120
-	}: InventoryPaginationQueryOptions = {}
+	{ defaultPage = 1, defaultPageSize = 20, maxPageSize = 120 }: InventoryPaginationQueryOptions = {}
 ): { page: number; pageSize: number } {
 	const pageRaw = Number(url.searchParams.get('page') || defaultPage);
 	const pageSizeRaw = Number(url.searchParams.get('page_size') || defaultPageSize);

@@ -1,25 +1,50 @@
-import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-const HOME_ENTRY_ROUTES = [
-	{ href: '/inventario', permission: 'inventory:read' },
-	{ href: '/products', permission: 'products:read' },
-	{ href: '/drive', permission: 'drive:read' },
-	{ href: '/branches', permission: 'branches:read' },
-	{ href: '/categories', permission: 'categories:read' },
-	{ href: '/brands', permission: 'brands:read' },
-	{ href: '/users', permission: 'users:read' }
-] as const;
-
 export const load: PageServerLoad = async ({ locals }) => {
-	const permissions = await Promise.all(
-		HOME_ENTRY_ROUTES.map((route) => locals.can(route.permission))
+	const db = locals.db;
+	const canReadAnyEntity = locals.userPermissions.some((permission) =>
+		permission.endsWith(':read')
 	);
-	const firstAllowedRoute = HOME_ENTRY_ROUTES.find((_, index) => permissions[index]);
+	const canViewDashboard = (await locals.can('dashboard:read')) || canReadAnyEntity;
 
-	if (firstAllowedRoute) {
-		throw redirect(307, firstAllowedRoute.href);
+	if (!canViewDashboard) {
+		return {
+			title: 'Dashboard',
+			stats: {
+				users: 0,
+				branches: 0,
+				categories: 0,
+				brands: 0
+			}
+		};
 	}
 
-	return { title: 'Inicio' };
+	const [usersCount, branchesCount, categoriesCount, brandsCount] = await Promise.all([
+		db
+			.selectFrom('users')
+			.select((eb) => eb.fn.count('code').as('count'))
+			.executeTakeFirst(),
+		db
+			.selectFrom('branches')
+			.select((eb) => eb.fn.count('code').as('count'))
+			.executeTakeFirst(),
+		db
+			.selectFrom('categories')
+			.select((eb) => eb.fn.count('code').as('count'))
+			.executeTakeFirst(),
+		db
+			.selectFrom('brands')
+			.select((eb) => eb.fn.count('code').as('count'))
+			.executeTakeFirst()
+	]);
+
+	return {
+		title: 'Dashboard',
+		stats: {
+			users: Number(usersCount?.count || 0),
+			branches: Number(branchesCount?.count || 0),
+			categories: Number(categoriesCount?.count || 0),
+			brands: Number(brandsCount?.count || 0)
+		}
+	};
 };

@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 			.select(['code', 'name', 'state'])
 			.orderBy('name', 'asc')
 			.execute(),
-			locals.db.selectFrom('categories').select(['code', 'name']).orderBy('name', 'asc').execute()
+		locals.db.selectFrom('categories').select(['code', 'name']).orderBy('name', 'asc').execute()
 	]);
 	const selectedBranchCode = resolveInventoryBranchCode(branches) || null;
 	const overview = selectedBranchCode

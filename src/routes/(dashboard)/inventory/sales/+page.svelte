@@ -10,6 +10,7 @@
 		Chip,
 		Dialog,
 		Input,
+		NumberInput,
 		PageHeader,
 		SegmentedControl,
 		Select,
@@ -88,7 +89,7 @@
 	let branches = $state<BranchCatalogItem[]>([]);
 	let products = $state<ProductCatalogItem[]>([]);
 	let favoriteCustomers = $state<InventoryCustomerRecord[]>([]);
-	let customerOptions = $state<InventoryCustomerRecord[]>([]);
+	let favoriteCustomerOptions = $state<InventoryCustomerRecord[]>([]);
 
 	let loading = $state(false);
 	let errorMessage = $state('');
@@ -103,11 +104,16 @@
 	let showCreateDialog = $state(false);
 	let submittingCreate = $state(false);
 	let showDetailDialog = $state(false);
+	let showCreateFavoriteDialog = $state(false);
 	let detailSale = $state<InventorySaleListItem | null>(null);
+	let submittingFavoriteCustomer = $state(false);
+	let favoriteCustomerName = $state('');
+	let favoriteCustomerPhone = $state('');
+	let favoriteCustomerNote = $state('');
 	let createProductCode = $state('');
 	let createBranchCode = $state('');
-	let createQuantity = $state('1');
-	let createUnitPrice = $state('');
+	let createQuantity = $state(1);
+	let createUnitPrice = $state(0);
 	let createSaleChannel = $state<InventorySaleChannel>('store');
 	let createFulfillmentType = $state<InventorySaleFulfillmentType>('pickup');
 	let createShippingState = $state<InventorySaleShippingState>('na');
@@ -138,9 +144,9 @@
 
 	const customerSelectOptions = $derived([
 		{ value: '', label: 'Registrar cliente manualmente' } as SelectOption,
-		...customerOptions.map((customer) => ({
+		...favoriteCustomerOptions.map((customer) => ({
 			value: customer.code,
-			label: `${customer.full_name}${customer.is_favorite ? ' ★' : ''}`
+			label: `${customer.full_name} ★`
 		}))
 	]);
 
@@ -169,15 +175,22 @@
 	});
 
 	$effect(() => {
-		sales = (data.sales ?? []) as InventorySaleListItem[];
-		pagination = (data.pagination ?? EMPTY_PAGINATION) as InventoryPagination;
-		branches = (data.branches ?? []) as BranchCatalogItem[];
-		products = (data.products ?? []) as ProductCatalogItem[];
-		favoriteCustomers = (data.favoriteCustomers ?? []) as InventoryCustomerRecord[];
+		const nextSales = (data.sales ?? []) as InventorySaleListItem[];
+		const nextPagination = (data.pagination ?? EMPTY_PAGINATION) as InventoryPagination;
+		const nextBranches = (data.branches ?? []) as BranchCatalogItem[];
+		const nextProducts = (data.products ?? []) as ProductCatalogItem[];
+		const nextFavoriteCustomers = (data.favoriteCustomers ?? []) as InventoryCustomerRecord[];
+
+		sales = nextSales;
+		pagination = nextPagination;
+		branches = nextBranches;
+		products = nextProducts;
+		favoriteCustomers = nextFavoriteCustomers;
+		favoriteCustomerOptions = nextFavoriteCustomers;
 
 		const preferredBranch = (data.selectedBranchCode as string | undefined) ?? '';
 		if (!filterBranchCode) {
-			filterBranchCode = resolveInventoryBranchCode(branches, preferredBranch);
+			filterBranchCode = resolveInventoryBranchCode(nextBranches, preferredBranch);
 		}
 	});
 
@@ -283,29 +296,25 @@
 		}
 	}
 
-	async function loadFavoriteCustomers(): Promise<void> {
+	async function loadFavoriteCustomers(search = ''): Promise<void> {
 		try {
-			const response = await fetch(
-				'/api/inventory/customers?favorites_only=true&page=1&page_size=40'
-			);
-			if (!response.ok) return;
-			const payload = await response.json();
-			favoriteCustomers = (payload.customers ?? []) as InventoryCustomerRecord[];
-		} catch {
-			// non-critical
-		}
-	}
-
-	async function loadCustomerOptions(search = ''): Promise<void> {
-		try {
-			const params = new SvelteURLSearchParams({ page: '1', page_size: '60' });
+			const params = new SvelteURLSearchParams({
+				favorites_only: 'true',
+				page: '1',
+				page_size: '80'
+			});
 			if (search.trim()) {
 				params.set('search', search.trim());
 			}
+
 			const response = await fetch(`/api/inventory/customers?${params.toString()}`);
 			if (!response.ok) return;
 			const payload = await response.json();
-			customerOptions = (payload.customers ?? []) as InventoryCustomerRecord[];
+			const customers = (payload.customers ?? []) as InventoryCustomerRecord[];
+			favoriteCustomerOptions = customers;
+			if (!search.trim()) {
+				favoriteCustomers = customers;
+			}
 		} catch {
 			// non-critical
 		}
@@ -315,8 +324,8 @@
 		if (!canCreate) return;
 		createProductCode = '';
 		createBranchCode = filterBranchCode;
-		createQuantity = '1';
-		createUnitPrice = '';
+		createQuantity = 1;
+		createUnitPrice = 0;
 		createSaleChannel = 'store';
 		createFulfillmentType = 'pickup';
 		createShippingState = 'na';
@@ -329,7 +338,7 @@
 		createMarkCustomerFavorite = false;
 		createNote = '';
 		showCreateDialog = true;
-		await loadCustomerOptions();
+		await loadFavoriteCustomers();
 	}
 
 	function openSaleDetail(sale: InventorySaleListItem): void {
@@ -340,15 +349,15 @@
 	function deriveProductPrice(productCode: string): void {
 		const product = products.find((item) => item.code === productCode);
 		if (product) {
-			createUnitPrice = String(product.price);
+			createUnitPrice = Number(product.price);
 		}
 	}
 
 	async function submitCreateSale(): Promise<void> {
 		if (submittingCreate) return;
 
-		const quantity = Number.parseInt(createQuantity, 10);
-		const unitPrice = Number.parseFloat(createUnitPrice);
+		const quantity = Number(createQuantity);
+		const unitPrice = Number(createUnitPrice);
 
 		if (!createProductCode || !createBranchCode || !Number.isInteger(quantity) || quantity <= 0) {
 			showToast('Completa producto, sede y cantidad válida', 'error');
@@ -450,10 +459,66 @@
 				throw new Error((payload?.message as string) || 'No se pudo actualizar favorito');
 			}
 
-			await Promise.all([loadFavoriteCustomers(), loadCustomerOptions()]);
+			if (createCustomerCode === customer.code && customer.is_favorite) {
+				createCustomerCode = '';
+			}
+			await loadFavoriteCustomers();
 		} catch (caught) {
 			const message = caught instanceof Error ? caught.message : 'Error al actualizar favorito';
 			showToast(message, 'error');
+		}
+	}
+
+	function openCreateFavoriteDialog(): void {
+		if (!canCreate) return;
+		favoriteCustomerName = '';
+		favoriteCustomerPhone = '';
+		favoriteCustomerNote = '';
+		showCreateFavoriteDialog = true;
+	}
+
+	async function submitCreateFavoriteCustomer(): Promise<void> {
+		if (submittingFavoriteCustomer) return;
+
+		const fullName = favoriteCustomerName.trim();
+		const phone = favoriteCustomerPhone.trim();
+		const note = favoriteCustomerNote.trim();
+
+		if (!fullName) {
+			showToast('El nombre del cliente es obligatorio', 'error');
+			return;
+		}
+
+		submittingFavoriteCustomer = true;
+		try {
+			const response = await fetch('/api/inventory/customers', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					full_name: fullName,
+					phone,
+					note,
+					is_favorite: true
+				})
+			});
+
+			const payload = await response.json();
+			if (!response.ok) {
+				throw new Error((payload?.message as string) || 'No se pudo crear cliente favorito');
+			}
+
+			const customer = payload.customer as InventoryCustomerRecord;
+			showCreateFavoriteDialog = false;
+			createCustomerCode = customer.code;
+			createCustomerName = '';
+			createCustomerPhone = '';
+			showToast('Cliente favorito creado', 'success');
+			await loadFavoriteCustomers();
+		} catch (caught) {
+			const message = caught instanceof Error ? caught.message : 'Error al crear cliente favorito';
+			showToast(message, 'error');
+		} finally {
+			submittingFavoriteCustomer = false;
 		}
 	}
 </script>
@@ -466,12 +531,7 @@
 	>
 		{#snippet actions()}
 			<div class="lumi-flex lumi-flex--gap-sm">
-				<Button
-					type="border"
-					color="info"
-					icon="boxes"
-					onclick={() => goto(resolve('/inventario'))}
-				>
+				<Button type="border" color="info" icon="boxes" onclick={() => goto(resolve('/inventory'))}>
 					Stock
 				</Button>
 				<Button
@@ -487,88 +547,102 @@
 		{/snippet}
 	</PageHeader>
 
-	<Card spaced>
-		<div class="lumi-flex lumi-flex--gap-sm lumi-flex--wrap inventory-sales__toolbar">
-			<div class="inventory-sales__toolbar-field">
-				<Select
-					label="Sede"
-					value={filterBranchCode}
-					options={branchOptions}
-					clearable={false}
-					onchange={async (value) => {
-						filterBranchCode = typeof value === 'string' ? value : filterBranchCode;
-						await loadSales(1);
-					}}
-				/>
+	<div class="inventory-sales__top-grid">
+		<Card spaced>
+			<div class="lumi-flex lumi-flex--gap-sm lumi-flex--wrap inventory-sales__toolbar">
+				<div class="inventory-sales__toolbar-field">
+					<Select
+						size="md"
+						label="Sede"
+						value={filterBranchCode}
+						options={branchOptions}
+						clearable={false}
+						onchange={async (value) => {
+							filterBranchCode = typeof value === 'string' ? value : filterBranchCode;
+							await loadSales(1);
+						}}
+					/>
+				</div>
+				<div class="inventory-sales__toolbar-field">
+					<Select
+						size="md"
+						label="Envío"
+						value={filterShippingState}
+						options={SHIPPING_FILTER_OPTIONS}
+						clearable={false}
+						onchange={async (value) => {
+							filterShippingState = (
+								typeof value === 'string' ? value : 'all'
+							) as typeof filterShippingState;
+							await loadSales(1);
+						}}
+					/>
+				</div>
+				<div class="inventory-sales__toolbar-field">
+					<Select
+						size="md"
+						label="Canal"
+						value={filterChannel}
+						options={CHANNEL_FILTER_OPTIONS}
+						clearable={false}
+						onchange={async (value) => {
+							filterChannel = (typeof value === 'string' ? value : 'all') as typeof filterChannel;
+							await loadSales(1);
+						}}
+					/>
+				</div>
+				<div class="inventory-sales__toolbar-search">
+					<Input
+						size="md"
+						label="Buscar producto / cliente / referencia"
+						icon="search"
+						value={searchQuery}
+						oninput={(event) =>
+							handleSearchInput((event.currentTarget as HTMLInputElement | null)?.value ?? '')}
+					/>
+				</div>
 			</div>
-			<div class="inventory-sales__toolbar-field">
-				<Select
-					label="Envío"
-					value={filterShippingState}
-					options={SHIPPING_FILTER_OPTIONS}
-					clearable={false}
-					onchange={async (value) => {
-						filterShippingState = (
-							typeof value === 'string' ? value : 'all'
-						) as typeof filterShippingState;
-						await loadSales(1);
-					}}
-				/>
-			</div>
-			<div class="inventory-sales__toolbar-field">
-				<Select
-					label="Canal"
-					value={filterChannel}
-					options={CHANNEL_FILTER_OPTIONS}
-					clearable={false}
-					onchange={async (value) => {
-						filterChannel = (typeof value === 'string' ? value : 'all') as typeof filterChannel;
-						await loadSales(1);
-					}}
-				/>
-			</div>
-			<div class="inventory-sales__toolbar-search">
-				<Input
-					label="Buscar producto / cliente / referencia"
-					icon="search"
-					value={searchQuery}
-					oninput={(event) =>
-						handleSearchInput((event.currentTarget as HTMLInputElement | null)?.value ?? '')}
-				/>
-			</div>
-		</div>
-	</Card>
+		</Card>
 
-	<Card spaced>
-		<div class="lumi-flex lumi-justify--between lumi-align-items--center">
-			<p class="lumi-margin--none lumi-font--semibold">Clientes favoritos</p>
-			<Button type="flat" size="sm" icon="refreshCw" onclick={() => void loadFavoriteCustomers()} />
-		</div>
-		<div class="inventory-sales__favorite-list">
-			{#if favoriteCustomers.length === 0}
-				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">No hay favoritos aún.</p>
-			{:else}
-				{#each favoriteCustomers as customer (customer.code)}
-					<div class="inventory-sales__favorite-item">
-						<div class="inventory-sales__favorite-content">
-							<p class="lumi-margin--none lumi-font--medium">{customer.full_name}</p>
-							<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
-								{customer.phone || 'Sin teléfono'}
-							</p>
+		<Card spaced>
+			<div class="lumi-flex lumi-justify--between lumi-align-items--center">
+				<p class="lumi-margin--none lumi-font--semibold">Clientes favoritos</p>
+				<Button
+					type="border"
+					size="sm"
+					icon="userPlus"
+					disabled={!canCreate}
+					onclick={openCreateFavoriteDialog}
+				>
+					Nuevo
+				</Button>
+			</div>
+			<div class="inventory-sales__favorite-list">
+				{#if favoriteCustomers.length === 0}
+					<p class="lumi-margin--none lumi-text--xs lumi-text--muted">No hay favoritos aún.</p>
+				{:else}
+					{#each favoriteCustomers as customer (customer.code)}
+						<div class="inventory-sales__favorite-item">
+							<div class="inventory-sales__favorite-content">
+								<p class="lumi-margin--none lumi-font--medium">{customer.full_name}</p>
+								<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
+									{customer.phone || 'Sin teléfono'}
+								</p>
+							</div>
+							<Button
+								type="flat"
+								size="sm"
+								icon={customer.is_favorite ? 'starOff' : 'star'}
+								color={customer.is_favorite ? 'warning' : 'primary'}
+								disabled={!canUpdate}
+								onclick={() => void toggleFavoriteCustomer(customer)}
+							/>
 						</div>
-						<Button
-							type="flat"
-							size="sm"
-							icon={customer.is_favorite ? 'starOff' : 'star'}
-							color={customer.is_favorite ? 'warning' : 'primary'}
-							disabled={!canUpdate}
-							onclick={() => void toggleFavoriteCustomer(customer)}
-						/>
-					</div>
-				{/each}
-			{/if}
-		</div>
-	</Card>
+					{/each}
+				{/if}
+			</div>
+		</Card>
+	</div>
 
 	{#if !canRead}
 		<Alert type="warning" closable>No tienes permisos para consultar ventas.</Alert>
@@ -621,46 +695,46 @@
 						</div>
 					</td>
 					<td>{sale.quantity}</td>
-						<td>{formatProductPrice(sale.total_amount)}</td>
-						<td>
-							<Chip size="sm" color={sale.sale_channel === 'store' ? 'primary' : 'info'}>
-								{saleChannelLabel(sale.sale_channel)}
-							</Chip>
-						</td>
+					<td>{formatProductPrice(sale.total_amount)}</td>
+					<td>
+						<Chip size="sm" color={sale.sale_channel === 'store' ? 'primary' : 'info'}>
+							{saleChannelLabel(sale.sale_channel)}
+						</Chip>
+					</td>
 					<td>
 						<Chip color={shippingStateColor(sale.shipping_state)} size="sm">
 							{shippingStateLabel(sale.shipping_state)}
 						</Chip>
 					</td>
-						<td>{formatDate(sale.sold_at)}</td>
-						<td>
-							<div class="lumi-flex lumi-flex--gap-2xs inventory-sales__actions">
+					<td>{formatDate(sale.sold_at)}</td>
+					<td>
+						<div class="lumi-flex lumi-flex--gap-2xs inventory-sales__actions">
+							<Button
+								type="border"
+								size="sm"
+								icon="eye"
+								color="info"
+								aria-label="Ver detalle de venta"
+								onclick={() => openSaleDetail(sale)}
+							>
+								Detalle
+							</Button>
+							{#if sale.fulfillment_type === 'delivery' && nextShippingState(sale.shipping_state)}
 								<Button
-									type="border"
+									type="flat"
 									size="sm"
-									icon="eye"
+									icon="truck"
 									color="info"
-									aria-label="Ver detalle de venta"
-									onclick={() => openSaleDetail(sale)}
+									aria-label="Avanzar estado de envío"
+									disabled={!canUpdate}
+									onclick={() => void advanceShippingState(sale)}
 								>
-									Detalle
+									{shippingActionLabel(sale.shipping_state)}
 								</Button>
-								{#if sale.fulfillment_type === 'delivery' && nextShippingState(sale.shipping_state)}
-									<Button
-										type="flat"
-										size="sm"
-										icon="truck"
-										color="info"
-										aria-label="Avanzar estado de envío"
-										disabled={!canUpdate}
-										onclick={() => void advanceShippingState(sale)}
-									>
-										{shippingActionLabel(sale.shipping_state)}
-									</Button>
-								{/if}
-							</div>
-						</td>
-					{/snippet}
+							{/if}
+						</div>
+					</td>
+				{/snippet}
 			</Table>
 		</Card>
 
@@ -716,17 +790,25 @@
 				createBranchCode = typeof value === 'string' ? value : '';
 			}}
 		/>
-		<Input
+		<NumberInput
 			label="Cantidad"
-			type="number"
 			value={createQuantity}
-			oninput={(event) => (createQuantity = (event.currentTarget as HTMLInputElement).value)}
+			min={1}
+			max={100000}
+			step={1}
+			onchange={(value) => {
+				createQuantity = value;
+			}}
 		/>
-		<Input
+		<NumberInput
 			label="Precio unitario"
-			type="number"
 			value={createUnitPrice}
-			oninput={(event) => (createUnitPrice = (event.currentTarget as HTMLInputElement).value)}
+			min={0}
+			max={1000000}
+			step={0.5}
+			onchange={(value) => {
+				createUnitPrice = value;
+			}}
 		/>
 		<Input
 			label="Fecha venta"
@@ -768,11 +850,13 @@
 
 	<div class="lumi-grid lumi-grid--columns-2 lumi-grid--gap-md">
 		<Select
-			label="Cliente favorito o existente"
+			label="Cliente favorito (opcional)"
 			value={createCustomerCode}
 			options={customerSelectOptions}
+			autocomplete
 			clearable={false}
-			onsearch={(query) => void loadCustomerOptions(query)}
+			noDataText="No hay clientes favoritos"
+			onsearch={(query) => void loadFavoriteCustomers(query)}
 			onchange={(value) => {
 				createCustomerCode = typeof value === 'string' ? value : '';
 			}}
@@ -883,29 +967,69 @@
 			</div>
 		</div>
 
-			<div class="inventory-sales__detail-extra">
-				{#if detailSale.delivery_address}
-					<p class="lumi-margin--none">
-						<strong>Dirección:</strong> {detailSale.delivery_address}
-					</p>
-				{/if}
-				{#if detailSale.note}
-					<p class="lumi-margin--none">
-						<strong>Nota:</strong> {detailSale.note}
-					</p>
-				{/if}
+		<div class="inventory-sales__detail-extra">
+			{#if detailSale.delivery_address}
 				<p class="lumi-margin--none">
-					<strong>Código:</strong> {detailSale.code}
+					<strong>Dirección:</strong>
+					{detailSale.delivery_address}
 				</p>
-			</div>
-		{/if}
+			{/if}
+			{#if detailSale.note}
+				<p class="lumi-margin--none">
+					<strong>Nota:</strong>
+					{detailSale.note}
+				</p>
+			{/if}
+		</div>
+	{/if}
 
 	{#snippet footer()}
 		<Button type="border" onclick={() => (showDetailDialog = false)}>Cerrar</Button>
 	{/snippet}
 </Dialog>
 
+<Dialog bind:open={showCreateFavoriteDialog} title="Nuevo cliente favorito" size="sm">
+	<div class="lumi-stack lumi-space--sm">
+		<Input
+			label="Nombre"
+			value={favoriteCustomerName}
+			oninput={(event) => (favoriteCustomerName = (event.currentTarget as HTMLInputElement).value)}
+		/>
+		<Input
+			label="Teléfono (opcional)"
+			value={favoriteCustomerPhone}
+			oninput={(event) => (favoriteCustomerPhone = (event.currentTarget as HTMLInputElement).value)}
+		/>
+		<Textarea
+			label="Nota (opcional)"
+			rows={3}
+			value={favoriteCustomerNote}
+			oninput={(event) =>
+				(favoriteCustomerNote = (event.currentTarget as HTMLTextAreaElement).value)}
+		/>
+	</div>
+
+	{#snippet footer()}
+		<Button type="border" onclick={() => (showCreateFavoriteDialog = false)}>Cancelar</Button>
+		<Button
+			type="filled"
+			color="primary"
+			loading={submittingFavoriteCustomer}
+			onclick={() => void submitCreateFavoriteCustomer()}
+		>
+			Guardar
+		</Button>
+	{/snippet}
+</Dialog>
+
 <style>
+	.inventory-sales__top-grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+		gap: var(--lumi-space-md);
+		align-items: start;
+	}
+
 	.inventory-sales__toolbar {
 		align-items: flex-end;
 	}
@@ -1027,6 +1151,10 @@
 	}
 
 	@media (max-width: 1024px) {
+		.inventory-sales__top-grid {
+			grid-template-columns: 1fr;
+		}
+
 		.inventory-sales__toolbar {
 			align-items: stretch;
 		}

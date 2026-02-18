@@ -118,15 +118,21 @@
 	});
 
 	$effect(() => {
-		branches = (data.branches ?? []) as BranchCatalogItem[];
-		categories = (data.categories ?? []) as CategoryCatalogItem[];
-		items = (data.items ?? []) as InventoryOverviewItem[];
-		summary = (data.summary ?? EMPTY_SUMMARY) as InventoryOverviewSummary;
-		pagination = (data.pagination ?? EMPTY_PAGINATION) as InventoryPagination;
+		const nextBranches = (data.branches ?? []) as BranchCatalogItem[];
+		const nextCategories = (data.categories ?? []) as CategoryCatalogItem[];
+		const nextItems = (data.items ?? []) as InventoryOverviewItem[];
+		const nextSummary = (data.summary ?? EMPTY_SUMMARY) as InventoryOverviewSummary;
+		const nextPagination = (data.pagination ?? EMPTY_PAGINATION) as InventoryPagination;
+
+		branches = nextBranches;
+		categories = nextCategories;
+		items = nextItems;
+		summary = nextSummary;
+		pagination = nextPagination;
 
 		const preferredBranch = (data.selectedBranchCode as string | undefined) ?? '';
 		if (!filterBranchCode) {
-			filterBranchCode = resolveInventoryBranchCode(branches, preferredBranch);
+			filterBranchCode = resolveInventoryBranchCode(nextBranches, preferredBranch);
 		}
 	});
 
@@ -266,7 +272,7 @@
 					type="border"
 					color="info"
 					icon="shoppingBag"
-					onclick={() => goto(resolve('/inventario/compras'))}
+					onclick={() => goto(resolve('/inventory/purchases'))}
 				>
 					Compras
 				</Button>
@@ -274,7 +280,7 @@
 					type="filled"
 					color="primary"
 					icon="creditCard"
-					onclick={() => goto(resolve('/inventario/ventas'))}
+					onclick={() => goto(resolve('/inventory/sales'))}
 				>
 					Ventas
 				</Button>
@@ -323,6 +329,7 @@
 		<div class="lumi-flex lumi-flex--gap-sm lumi-flex--wrap inventory-stock__toolbar">
 			<div class="inventory-stock__toolbar-field">
 				<Select
+					size="md"
 					label="Sede"
 					value={filterBranchCode}
 					options={branchOptions}
@@ -335,6 +342,7 @@
 			</div>
 			<div class="inventory-stock__toolbar-field">
 				<Select
+					size="md"
 					label="Categoría"
 					value={filterCategoryCode}
 					options={categoryOptions}
@@ -347,6 +355,7 @@
 			</div>
 			<div class="inventory-stock__toolbar-search">
 				<Input
+					size="md"
 					label="Buscar producto o SKU"
 					placeholder="Ej: polo, SKU-100"
 					icon="search"
@@ -359,6 +368,7 @@
 				<Button
 					type={includeInactive ? 'filled' : 'border'}
 					color={includeInactive ? 'warning' : 'primary'}
+					size="md"
 					icon={includeInactive ? 'eyeOff' : 'eye'}
 					onclick={async () => {
 						includeInactive = !includeInactive;
@@ -537,6 +547,8 @@
 
 	.inventory-stock__toolbar-toggle {
 		flex: 0 0 auto;
+		display: flex;
+		align-items: flex-end;
 	}
 
 	.inventory-stock__filter-state {

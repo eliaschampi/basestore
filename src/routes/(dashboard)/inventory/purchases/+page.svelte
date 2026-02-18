@@ -10,6 +10,7 @@
 		Chip,
 		Dialog,
 		Input,
+		NumberInput,
 		PageHeader,
 		Select,
 		Table,
@@ -101,10 +102,10 @@
 	let createOrigin = $state<InventoryPurchaseOrigin>('aliexpress');
 	let createEntryType = $state<InventoryPurchaseEntryType>('restock');
 	let createTrackingNumber = $state('');
-	let createQuantity = $state('1');
+	let createQuantity = $state(1);
 	let createState = $state<InventoryPurchaseState>('in_transit');
 	let createOrderedAt = $state(new Date().toISOString().slice(0, 10));
-	let createUnitCost = $state('');
+	let createUnitCost = $state(0);
 	let createNote = $state('');
 
 	const branchOptions = $derived(
@@ -130,14 +131,19 @@
 	});
 
 	$effect(() => {
-		purchases = (data.purchases ?? []) as InventoryPurchaseListItem[];
-		pagination = (data.pagination ?? EMPTY_PAGINATION) as InventoryPagination;
-		branches = (data.branches ?? []) as BranchCatalogItem[];
-		products = (data.products ?? []) as ProductCatalogItem[];
+		const nextPurchases = (data.purchases ?? []) as InventoryPurchaseListItem[];
+		const nextPagination = (data.pagination ?? EMPTY_PAGINATION) as InventoryPagination;
+		const nextBranches = (data.branches ?? []) as BranchCatalogItem[];
+		const nextProducts = (data.products ?? []) as ProductCatalogItem[];
+
+		purchases = nextPurchases;
+		pagination = nextPagination;
+		branches = nextBranches;
+		products = nextProducts;
 
 		const preferredBranch = (data.selectedBranchCode as string | undefined) ?? '';
 		if (!filterBranchCode) {
-			filterBranchCode = resolveInventoryBranchCode(branches, preferredBranch);
+			filterBranchCode = resolveInventoryBranchCode(nextBranches, preferredBranch);
 		}
 	});
 
@@ -225,10 +231,10 @@
 		createOrigin = 'aliexpress';
 		createEntryType = 'restock';
 		createTrackingNumber = '';
-		createQuantity = '1';
+		createQuantity = 1;
 		createState = 'in_transit';
 		createOrderedAt = new Date().toISOString().slice(0, 10);
-		createUnitCost = '';
+		createUnitCost = 0;
 		createNote = '';
 		showCreateDialog = true;
 	}
@@ -241,7 +247,7 @@
 	async function submitCreatePurchase(): Promise<void> {
 		if (submittingCreate) return;
 
-		const quantity = Number.parseInt(createQuantity, 10);
+		const quantity = Number(createQuantity);
 		if (!createProductCode || !createBranchCode || !Number.isInteger(quantity) || quantity <= 0) {
 			showToast('Completa producto, sede y cantidad válida', 'error');
 			return;
@@ -254,6 +260,8 @@
 
 		submittingCreate = true;
 		try {
+			const unitCost =
+				Number.isFinite(createUnitCost) && createUnitCost > 0 ? createUnitCost : null;
 			const response = await fetch('/api/inventory/purchases', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -266,7 +274,7 @@
 					quantity,
 					state: createState,
 					ordered_at: createOrderedAt,
-					unit_cost: createUnitCost.trim() ? Number.parseFloat(createUnitCost) : null,
+					unit_cost: unitCost,
 					note: createNote.trim()
 				})
 			});
@@ -322,12 +330,7 @@
 	>
 		{#snippet actions()}
 			<div class="lumi-flex lumi-flex--gap-sm">
-				<Button
-					type="border"
-					color="info"
-					icon="boxes"
-					onclick={() => goto(resolve('/inventario'))}
-				>
+				<Button type="border" color="info" icon="boxes" onclick={() => goto(resolve('/inventory'))}>
 					Stock
 				</Button>
 				<Button
@@ -347,6 +350,7 @@
 		<div class="lumi-flex lumi-flex--gap-sm lumi-flex--wrap inventory-purchases__toolbar">
 			<div class="inventory-purchases__toolbar-field">
 				<Select
+					size="md"
 					label="Sede"
 					value={filterBranchCode}
 					options={branchOptions}
@@ -359,6 +363,7 @@
 			</div>
 			<div class="inventory-purchases__toolbar-field">
 				<Select
+					size="md"
 					label="Estado"
 					value={filterState}
 					options={PURCHASE_STATE_OPTIONS}
@@ -371,6 +376,7 @@
 			</div>
 			<div class="inventory-purchases__toolbar-field">
 				<Select
+					size="md"
 					label="Origen"
 					value={filterOrigin}
 					options={PURCHASE_ORIGIN_OPTIONS}
@@ -383,6 +389,7 @@
 			</div>
 			<div class="inventory-purchases__toolbar-field">
 				<Select
+					size="md"
 					label="Tipo"
 					value={filterEntryType}
 					options={ENTRY_TYPE_OPTIONS}
@@ -395,6 +402,7 @@
 			</div>
 			<div class="inventory-purchases__toolbar-search">
 				<Input
+					size="md"
 					label="Buscar producto / SKU / tracking"
 					icon="search"
 					value={searchQuery}
@@ -445,10 +453,10 @@
 							<span class="lumi-text--xs lumi-text--muted">{purchase.product_sku || 'Sin SKU'}</span
 							>
 						</div>
-						</td>
-						<td>{purchase.quantity}</td>
-						<td>{purchaseOriginLabel(purchase.origin)}</td>
-						<td>{purchase.tracking_number || '—'}</td>
+					</td>
+					<td>{purchase.quantity}</td>
+					<td>{purchaseOriginLabel(purchase.origin)}</td>
+					<td>{purchase.tracking_number || '—'}</td>
 					<td>
 						<Chip size="sm" color={purchase.entry_type === 'initial' ? 'info' : 'primary'}>
 							{purchase.entry_type === 'initial' ? 'Inicial' : 'Reposición'}
@@ -459,60 +467,60 @@
 							{purchaseStateLabel(purchase.state)}
 						</Chip>
 					</td>
-						<td>{purchase.unit_cost ? formatProductPrice(purchase.unit_cost) : '—'}</td>
-						<td>{formatDate(purchase.ordered_at)}</td>
-						<td>
-							<div class="lumi-flex lumi-flex--gap-2xs inventory-purchases__actions">
+					<td>{purchase.unit_cost ? formatProductPrice(purchase.unit_cost) : '—'}</td>
+					<td>{formatDate(purchase.ordered_at)}</td>
+					<td>
+						<div class="lumi-flex lumi-flex--gap-2xs inventory-purchases__actions">
+							<Button
+								type="border"
+								size="sm"
+								icon="eye"
+								color="info"
+								aria-label="Ver detalle de compra"
+								onclick={() => openPurchaseDetail(purchase)}
+							>
+								Detalle
+							</Button>
+							{#if purchase.state === 'in_transit'}
 								<Button
-									type="border"
+									type="flat"
 									size="sm"
-									icon="eye"
-									color="info"
-									aria-label="Ver detalle de compra"
-									onclick={() => openPurchaseDetail(purchase)}
+									icon="checkCircle"
+									color="success"
+									aria-label="Marcar compra como recibida"
+									disabled={!canUpdate}
+									onclick={() => void updatePurchaseState(purchase.code, 'received')}
 								>
-									Detalle
+									Recibir
 								</Button>
-								{#if purchase.state === 'in_transit'}
-									<Button
-										type="flat"
-										size="sm"
-										icon="checkCircle"
-										color="success"
-										aria-label="Marcar compra como recibida"
-										disabled={!canUpdate}
-										onclick={() => void updatePurchaseState(purchase.code, 'received')}
-									>
-										Recibir
-									</Button>
-									<Button
-										type="flat"
-										size="sm"
-										icon="xCircle"
-										color="danger"
-										aria-label="Marcar compra como reembolsada"
-										disabled={!canUpdate}
-										onclick={() => void updatePurchaseState(purchase.code, 'refunded')}
-									>
-										Reembolsar
-									</Button>
-								{:else if purchase.state === 'received'}
-									<Button
-										type="flat"
-										size="sm"
-										icon="undo2"
-										color="danger"
-										aria-label="Marcar compra como reembolsada"
-										disabled={!canUpdate}
-										onclick={() => void updatePurchaseState(purchase.code, 'refunded')}
-									>
-										Reembolsar
-									</Button>
-								{/if}
-							</div>
-						</td>
-					{/snippet}
-				</Table>
+								<Button
+									type="flat"
+									size="sm"
+									icon="xCircle"
+									color="danger"
+									aria-label="Marcar compra como reembolsada"
+									disabled={!canUpdate}
+									onclick={() => void updatePurchaseState(purchase.code, 'refunded')}
+								>
+									Reembolsar
+								</Button>
+							{:else if purchase.state === 'received'}
+								<Button
+									type="flat"
+									size="sm"
+									icon="undo2"
+									color="danger"
+									aria-label="Marcar compra como reembolsada"
+									disabled={!canUpdate}
+									onclick={() => void updatePurchaseState(purchase.code, 'refunded')}
+								>
+									Reembolsar
+								</Button>
+							{/if}
+						</div>
+					</td>
+				{/snippet}
+			</Table>
 		</Card>
 
 		<Card spaced>
@@ -594,11 +602,15 @@
 			value={createTrackingNumber}
 			oninput={(event) => (createTrackingNumber = (event.currentTarget as HTMLInputElement).value)}
 		/>
-		<Input
+		<NumberInput
 			label="Cantidad"
-			type="number"
 			value={createQuantity}
-			oninput={(event) => (createQuantity = (event.currentTarget as HTMLInputElement).value)}
+			min={1}
+			max={100000}
+			step={1}
+			onchange={(value) => {
+				createQuantity = value;
+			}}
 		/>
 		<Select
 			label="Estado inicial"
@@ -617,11 +629,15 @@
 			value={createOrderedAt}
 			oninput={(event) => (createOrderedAt = (event.currentTarget as HTMLInputElement).value)}
 		/>
-		<Input
+		<NumberInput
 			label="Costo unitario (opcional)"
-			type="number"
 			value={createUnitCost}
-			oninput={(event) => (createUnitCost = (event.currentTarget as HTMLInputElement).value)}
+			min={0}
+			max={1000000}
+			step={0.5}
+			onchange={(value) => {
+				createUnitCost = value;
+			}}
 		/>
 	</div>
 
@@ -656,7 +672,6 @@
 			<div class="inventory-purchases__detail-item">
 				<p class="inventory-purchases__detail-label">Sede</p>
 				<p class="inventory-purchases__detail-value">{detailPurchase.branch_name}</p>
-				<p class="inventory-purchases__detail-meta">{detailPurchase.branch_code}</p>
 			</div>
 			<div class="inventory-purchases__detail-item">
 				<p class="inventory-purchases__detail-label">Estado</p>
@@ -672,8 +687,9 @@
 			</div>
 			<div class="inventory-purchases__detail-item">
 				<p class="inventory-purchases__detail-label">Tracking</p>
-				<p class="inventory-purchases__detail-value">{detailPurchase.tracking_number || 'Sin tracking'}</p>
-				<p class="inventory-purchases__detail-meta">Código: {detailPurchase.code}</p>
+				<p class="inventory-purchases__detail-value">
+					{detailPurchase.tracking_number || 'Sin tracking'}
+				</p>
 			</div>
 			<div class="inventory-purchases__detail-item">
 				<p class="inventory-purchases__detail-label">Fechas</p>
@@ -696,12 +712,14 @@
 			<div class="inventory-purchases__detail-extra">
 				{#if detailPurchase.unit_cost}
 					<p class="lumi-margin--none">
-						<strong>Costo unitario:</strong> {formatProductPrice(detailPurchase.unit_cost)}
+						<strong>Costo unitario:</strong>
+						{formatProductPrice(detailPurchase.unit_cost)}
 					</p>
 				{/if}
 				{#if detailPurchase.note}
 					<p class="lumi-margin--none">
-						<strong>Nota:</strong> {detailPurchase.note}
+						<strong>Nota:</strong>
+						{detailPurchase.note}
 					</p>
 				{/if}
 			</div>
