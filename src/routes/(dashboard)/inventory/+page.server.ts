@@ -24,7 +24,7 @@ export const load: PageServerLoad = async ({ locals, depends, url }) => {
 		? await InventoryRepository.listOverview(locals.db, {
 				branchCode: selectedBranchCode,
 				stock: 'all',
-				includeInactive: false,
+				includeInactive: true,
 				page: 1,
 				pageSize: 30
 			})

@@ -12,7 +12,7 @@
 	}
 
 	const {
-		title = 'No data available',
+		title = 'No hay datos disponibles aquí',
 		description = '',
 		image = '',
 		icon = '',

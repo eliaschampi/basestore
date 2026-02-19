@@ -178,22 +178,22 @@ faztore/
 
 ## 📜 Scripts Reference
 
-| Script             | Description                                     |
-| :----------------- | :---------------------------------------------- |
-| `pnpm dev`         | Start local development server.                 |
-| `pnpm build`       | Build the application for production.           |
-| `pnpm check`       | Run Svelte-Check for type validation.           |
-| `pnpm lint`        | Run ESLint.                                     |
-| `pnpm db:setup`    | Run the database setup shell script.            |
+| Script             | Description                                          |
+| :----------------- | :--------------------------------------------------- |
+| `pnpm dev`         | Start local development server.                      |
+| `pnpm build`       | Build the application for production.                |
+| `pnpm check`       | Run Svelte-Check for type validation.                |
+| `pnpm lint`        | Run ESLint.                                          |
+| `pnpm db:setup`    | Run the database setup shell script.                 |
 | `pnpm db:up`       | Bootstrap DB (init from snapshot + migrate + types). |
-| `pnpm db:down`     | Drop and recreate `public` schema (empty DB).   |
-| `pnpm db:reset`    | Interactive reset + rebuild flow.               |
-| `pnpm db:rebuild`  | Reset and fully rebuild schema + types.         |
-| `pnpm db:migrate`  | Apply pending database migrations (if any).     |
-| `pnpm db:rollback` | Rollback last non-baseline migration batch.     |
-| `pnpm db:status`   | Show initialization and migration status.       |
-| `pnpm db:create`   | Create a new migration file.                    |
-| `pnpm db:generate` | Generate TypeScript types from database schema. |
+| `pnpm db:down`     | Drop and recreate `public` schema (empty DB).        |
+| `pnpm db:reset`    | Interactive reset + rebuild flow.                    |
+| `pnpm db:rebuild`  | Reset and fully rebuild schema + types.              |
+| `pnpm db:migrate`  | Apply pending database migrations (if any).          |
+| `pnpm db:rollback` | Rollback last non-baseline migration batch.          |
+| `pnpm db:status`   | Show initialization and migration status.            |
+| `pnpm db:create`   | Create a new migration file.                         |
+| `pnpm db:generate` | Generate TypeScript types from database schema.      |
 
 ---
 
@@ -208,8 +208,8 @@ faztore/
 1.  **Schema:** update `database/init/*.sql` (source of truth).
 2.  **Optional Migration (future changes):** `pnpm db:create create_<feature>_table`
 3.  **Types:** `pnpm db:migrate` && `pnpm db:generate`
-3.  **Backend:** Create server load functions and actions.
-4.  **Frontend:** Build UI using Lumi UI components (`Card`, `Table`, `PageHeader`).
+4.  **Backend:** Create server load functions and actions.
+5.  **Frontend:** Build UI using Lumi UI components (`Card`, `Table`, `PageHeader`).
 
 ---
 

@@ -10,18 +10,11 @@ export const load: PageServerLoad = async ({ locals, depends, url }) => {
 		throw error(403, 'No tienes permisos para ver ventas');
 	}
 
-	const [branches, favoriteCustomers] = await Promise.all([
-		locals.db
-			.selectFrom('branches')
-			.select(['code', 'name', 'state'])
-			.orderBy('name', 'asc')
-			.execute(),
-		InventoryRepository.listCustomers(locals.db, {
-			favoritesOnly: true,
-			page: 1,
-			pageSize: 30
-		})
-	]);
+	const branches = await locals.db
+		.selectFrom('branches')
+		.select(['code', 'name', 'state'])
+		.orderBy('name', 'asc')
+		.execute();
 	const selectedBranchCode =
 		resolveInventoryBranchCode(branches, url.searchParams.get('branch_code')) || null;
 	const sales = selectedBranchCode
@@ -38,7 +31,6 @@ export const load: PageServerLoad = async ({ locals, depends, url }) => {
 		selectedBranchCode,
 		sales: sales.items,
 		pagination: sales.pagination,
-		branches,
-		favoriteCustomers: favoriteCustomers.items
+		branches
 	};
 };

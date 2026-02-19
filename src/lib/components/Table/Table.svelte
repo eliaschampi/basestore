@@ -25,7 +25,7 @@
 		search = false,
 		selectable = false,
 		pagination = false,
-		noDataText = 'No data available',
+		noDataText = 'No hay datos disponibles aquí',
 		data = undefined,
 		itemsPerPage = 10,
 		loading = false,

@@ -40,6 +40,20 @@
 			`--seg-color: var(--lumi-color-${color}); --seg-transition-duration: ${transitionDuration};`
 	);
 
+	function scrollActiveOptionIntoView(behavior: 'auto' | 'smooth' = 'auto'): void {
+		if (!containerRef || !options.length) return;
+
+		const activeIndex = options.findIndex((option) => option.value === value);
+		const activeEl = activeIndex >= 0 ? optionRefs[activeIndex] : null;
+		if (!activeEl) return;
+
+		activeEl.scrollIntoView({
+			block: 'nearest',
+			inline: 'nearest',
+			behavior
+		});
+	}
+
 	function updateGlider(): void {
 		if (!containerRef || !options.length) return;
 
@@ -55,8 +69,8 @@
 		const containerRect = containerRef.getBoundingClientRect();
 		const activeRect = activeEl.getBoundingClientRect();
 
-		// Calculate relative position including padding
-		const left = activeRect.left - containerRect.left;
+		// Keep glider aligned when the control scrolls horizontally.
+		const left = activeRect.left - containerRect.left + containerRef.scrollLeft;
 
 		gliderStyle = {
 			width: `${activeRect.width}px`,
@@ -69,19 +83,28 @@
 		value = newValue;
 		onchange?.(newValue);
 		// Use requestAnimationFrame to ensure DOM has updated
-		requestAnimationFrame(updateGlider);
+		requestAnimationFrame(() => {
+			updateGlider();
+			scrollActiveOptionIntoView('smooth');
+		});
 	}
 
 	$effect(() => {
 		if (value !== undefined) {
 			// Wait for potential layout shifts
-			requestAnimationFrame(updateGlider);
+			requestAnimationFrame(() => {
+				updateGlider();
+				scrollActiveOptionIntoView();
+			});
 		}
 	});
 
 	onMount(() => {
 		// Initial update
-		requestAnimationFrame(updateGlider);
+		requestAnimationFrame(() => {
+			updateGlider();
+			scrollActiveOptionIntoView();
+		});
 
 		// Observe container resizing
 		if (containerRef) {
@@ -171,9 +194,27 @@
 		isolation: isolate;
 		max-width: 100%;
 		box-shadow: var(--lumi-shadow-sm);
+		overflow-x: auto;
+		overflow-y: hidden;
+		overscroll-behavior-inline: contain;
+		scrollbar-width: thin;
+		scrollbar-color: var(--lumi-color-border-strong) transparent;
 		transition:
 			border-color 0.15s ease,
 			box-shadow 0.15s ease;
+	}
+
+	.lumi-segmented-control::-webkit-scrollbar {
+		height: var(--lumi-space-2xs);
+	}
+
+	.lumi-segmented-control::-webkit-scrollbar-thumb {
+		background: var(--lumi-color-border-strong);
+		border-radius: var(--lumi-radius-full);
+	}
+
+	.lumi-segmented-control::-webkit-scrollbar-track {
+		background: transparent;
 	}
 
 	.lumi-segmented-control--full {
@@ -249,13 +290,11 @@
 		text-overflow: ellipsis;
 	}
 
-	/* Active State */
 	.lumi-segmented-control__option--active .lumi-segmented-control__content {
 		color: var(--seg-color);
 		font-weight: var(--lumi-font-weight-semibold);
 	}
 
-	/* Hover State */
 	.lumi-segmented-control__option:not(.lumi-segmented-control__option--disabled):not(
 			.lumi-segmented-control__option--active
 		):hover
@@ -265,7 +304,6 @@
 		transform: translateY(var(--seg-lift));
 	}
 
-	/* Focus State */
 	.lumi-segmented-control__input:focus-visible + .lumi-segmented-control__content {
 		outline: var(--lumi-border-width-thick) solid
 			color-mix(in srgb, var(--seg-color) 35%, transparent);
@@ -279,13 +317,16 @@
 	}
 
 	@media (max-width: 768px) {
-		.lumi-segmented-control--full .lumi-segmented-control__content {
-			white-space: normal;
+		.lumi-segmented-control--full {
+			justify-content: flex-start;
 		}
 
-		.lumi-segmented-control--full .lumi-segmented-control__label {
-			overflow: visible;
-			text-overflow: clip;
+		.lumi-segmented-control--full .lumi-segmented-control__option {
+			flex: 0 0 auto;
+		}
+
+		.lumi-segmented-control--full .lumi-segmented-control__content {
+			padding: var(--lumi-space-xs) var(--lumi-space-sm);
 		}
 	}
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
@@ -192,8 +193,9 @@
 		return `?${params.toString()}`;
 	}
 
-	function goToSalesList(): void {
-		window.location.assign(`${resolve('/inventory/sales')}${branchQuery(createBranchCode)}`);
+	async function goToSalesList(): Promise<void> {
+		const destination = `/inventory/sales${branchQuery(createBranchCode)}` as '/inventory/sales';
+		await goto(resolve(destination));
 	}
 
 	async function loadFavoriteCustomers(search = ''): Promise<void> {
@@ -240,29 +242,29 @@
 			return;
 		}
 
-			if (!createCustomerCode && !createCustomerName.trim()) {
-				errorMessage = 'Debes seleccionar o registrar cliente.';
-				activeTab = 'customer';
-				return;
-			}
+		if (!createCustomerCode && !createCustomerName.trim()) {
+			errorMessage = 'Debes seleccionar o registrar cliente.';
+			activeTab = 'customer';
+			return;
+		}
 
-			const selectedCustomer = selectedFavoriteCustomer();
-			const customerNameForPayload = (
-				createCustomerCode ? selectedCustomer?.full_name || createCustomerName : createCustomerName
-			).trim();
-			const customerPhoneForPayload = (
-				createCustomerCode ? selectedCustomer?.phone || createCustomerPhone : createCustomerPhone
-			).trim();
+		const selectedCustomer = selectedFavoriteCustomer();
+		const customerNameForPayload = (
+			createCustomerCode ? selectedCustomer?.full_name || createCustomerName : createCustomerName
+		).trim();
+		const customerPhoneForPayload = (
+			createCustomerCode ? selectedCustomer?.phone || createCustomerPhone : createCustomerPhone
+		).trim();
 
-			if (!customerNameForPayload) {
-				errorMessage = 'El cliente seleccionado no tiene nombre válido.';
-				activeTab = 'customer';
-				return;
-			}
+		if (!customerNameForPayload) {
+			errorMessage = 'El cliente seleccionado no tiene nombre válido.';
+			activeTab = 'customer';
+			return;
+		}
 
-			submitting = true;
-			errorMessage = '';
-			try {
+		submitting = true;
+		errorMessage = '';
+		try {
 			const response = await fetch('/api/inventory/sales', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -274,47 +276,41 @@
 					sale_channel: createSaleChannel,
 					fulfillment_type: createFulfillmentType,
 					shipping_state: createShippingState,
-						delivery_address:
-							createFulfillmentType === 'delivery' ? createDeliveryAddress.trim() : null,
-						order_reference: createOrderReference.trim(),
-						customer_code: createCustomerCode || null,
-						customer_name: customerNameForPayload,
-						customer_phone: customerPhoneForPayload || null,
-						mark_customer_favorite: createMarkCustomerFavorite,
-						sold_at: createSoldAt,
-						note: createNote.trim()
+					delivery_address:
+						createFulfillmentType === 'delivery' ? createDeliveryAddress.trim() : null,
+					order_reference: createOrderReference.trim(),
+					customer_code: createCustomerCode || null,
+					customer_name: customerNameForPayload,
+					customer_phone: customerPhoneForPayload || null,
+					mark_customer_favorite: createMarkCustomerFavorite,
+					sold_at: createSoldAt,
+					note: createNote.trim()
 				})
 			});
 			const payload = await response.json();
 			if (!response.ok) {
 				throw new Error((payload?.message as string) || 'No se pudo registrar la venta');
-				}
-
-				showToast('Venta registrada', 'success');
-				goToSalesList();
-			} catch (caught) {
-				errorMessage = caught instanceof Error ? caught.message : 'Error al registrar venta';
-			} finally {
-				submitting = false;
 			}
+
+			showToast('Venta registrada', 'success');
+			await goToSalesList();
+		} catch (caught) {
+			errorMessage = caught instanceof Error ? caught.message : 'Error al registrar venta';
+		} finally {
+			submitting = false;
+		}
 	}
 </script>
 
 <div class="lumi-stack lumi-space--md">
 	<PageHeader
-			title="Nueva venta"
-			subtitle="Formulario por etapas para operar rapido sin saturar al usuario"
-			icon="creditCard"
-		>
-			{#snippet actions()}
-				<div class="lumi-flex lumi-flex--gap-sm">
-					<Button
-						type="border"
-						icon="chevronLeft"
-						onclick={goToSalesList}
-					>
-						Volver
-					</Button>
+		title="Nueva venta"
+		subtitle="Formulario por etapas para operar rapido sin saturar al usuario"
+		icon="creditCard"
+	>
+		{#snippet actions()}
+			<div class="lumi-flex lumi-flex--gap-sm">
+				<Button type="border" icon="chevronLeft" onclick={goToSalesList}>Volver</Button>
 				<Button
 					type="filled"
 					color="primary"
@@ -511,11 +507,23 @@
 				<div class="lumi-stack lumi-space--md">
 					<Fieldset legend="Resumen">
 						<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
-							<p class="lumi-margin--none"><strong>Producto:</strong> {createProductCode ? 'Seleccionado' : 'Pendiente'}</p>
-							<p class="lumi-margin--none"><strong>Sede:</strong> {createBranchCode ? 'Seleccionada' : 'Pendiente'}</p>
+							<p class="lumi-margin--none">
+								<strong>Producto:</strong>
+								{createProductCode ? 'Seleccionado' : 'Pendiente'}
+							</p>
+							<p class="lumi-margin--none">
+								<strong>Sede:</strong>
+								{createBranchCode ? 'Seleccionada' : 'Pendiente'}
+							</p>
 							<p class="lumi-margin--none"><strong>Cantidad:</strong> {createQuantity}</p>
-							<p class="lumi-margin--none"><strong>Total:</strong> {formatProductPrice(saleTotal)}</p>
-							<p class="lumi-margin--none"><strong>Entrega:</strong> {createFulfillmentType === 'pickup' ? 'Recojo' : 'Delivery'}</p>
+							<p class="lumi-margin--none">
+								<strong>Total:</strong>
+								{formatProductPrice(saleTotal)}
+							</p>
+							<p class="lumi-margin--none">
+								<strong>Entrega:</strong>
+								{createFulfillmentType === 'pickup' ? 'Recojo' : 'Delivery'}
+							</p>
 						</div>
 					</Fieldset>
 					<Fieldset legend="Nota">

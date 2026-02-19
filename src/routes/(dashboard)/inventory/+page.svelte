@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onDestroy } from 'svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
@@ -10,6 +11,8 @@
 		Dialog,
 		Icon,
 		Input,
+		List,
+		ListItem,
 		PageHeader,
 		SegmentedControl,
 		Select,
@@ -91,7 +94,6 @@
 	let filterBranchCode = $state('');
 	let filterCategoryCode = $state('all');
 	let filterStock = $state<'all' | 'critical' | 'low' | 'healthy'>('all');
-	let includeInactive = $state(false);
 	let showMobileSidebar = $state(false);
 
 	let showThresholdDialog = $state(false);
@@ -127,11 +129,14 @@
 	const canGoPrev = $derived(pagination.page > 1);
 	const canGoNext = $derived(pagination.page < pagination.total_pages);
 	const activeBranchLabel = $derived.by(
-		() => branches.find((branch) => branch.code === filterBranchCode)?.name ?? 'Sin sede seleccionada'
+		() =>
+			branches.find((branch) => branch.code === filterBranchCode)?.name ?? 'Sin sede seleccionada'
 	);
 	const activeCategoryLabel = $derived.by(() => {
 		if (filterCategoryCode === 'all') return 'Todas las categorias';
-		return categories.find((category) => category.code === filterCategoryCode)?.name ?? 'Sin categoria';
+		return (
+			categories.find((category) => category.code === filterCategoryCode)?.name ?? 'Sin categoria'
+		);
 	});
 
 	onDestroy(() => {
@@ -273,11 +278,6 @@
 		showMobileSidebar = false;
 	}
 
-	async function toggleInactive(): Promise<void> {
-		includeInactive = !includeInactive;
-		await loadStock(1);
-	}
-
 	async function loadStock(page = pagination.page): Promise<void> {
 		if (!canRead || !filterBranchCode) return;
 
@@ -289,7 +289,7 @@
 			const params = new SvelteURLSearchParams();
 			params.set('branch_code', filterBranchCode);
 			params.set('stock', filterStock as InventoryListFilterState);
-			params.set('include_inactive', includeInactive ? 'true' : 'false');
+			params.set('include_inactive', 'true');
 			params.set('page', String(page));
 			params.set('page_size', String(pagination.page_size || 30));
 
@@ -366,14 +366,11 @@
 	}
 
 	function navigateWithBranch(path: '/inventory/purchases' | '/inventory/sales'): void {
-		const target = resolve(path);
-		if (!filterBranchCode) {
-			window.location.assign(target);
-			return;
-		}
-
-		const params = new URLSearchParams({ branch_code: filterBranchCode });
-		window.location.assign(`${target}?${params.toString()}`);
+		const query = !filterBranchCode
+			? ''
+			: `?${new URLSearchParams({ branch_code: filterBranchCode }).toString()}`;
+		const destination = `${path}${query}` as '/inventory/purchases' | '/inventory/sales';
+		void goto(resolve(destination));
 	}
 </script>
 
@@ -384,7 +381,9 @@
 		icon="boxes"
 	>
 		{#snippet actions()}
-			<div class="lumi-flex lumi-flex--gap-sm lumi-align-items--center inventory-stock__header-actions">
+			<div
+				class="lumi-flex lumi-flex--gap-sm lumi-align-items--center inventory-stock__header-actions"
+			>
 				<button
 					type="button"
 					class="inventory-stock__mobile-toggle"
@@ -413,7 +412,8 @@
 	</PageHeader>
 
 	<Alert type="info" closable>
-		Stock inicial: registralo desde <strong>Compras</strong> como tipo <strong>Inicial</strong> y estado
+		Stock inicial: registralo desde <strong>Compras</strong> como tipo <strong>Inicial</strong> y
+		estado
 		<strong>Recibido</strong>.
 	</Alert>
 
@@ -508,8 +508,8 @@
 								<th>Acciones</th>
 							{/snippet}
 
-								{#snippet row({ row })}
-									{@const item = row as unknown as InventoryOverviewItem}
+							{#snippet row({ row })}
+								{@const item = row as unknown as InventoryOverviewItem}
 								<td>
 									<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
 										<a
@@ -528,32 +528,32 @@
 										{stockLabel(item.stock_state)}
 									</Chip>
 								</td>
-									<td>{item.last_movement_at ? formatDate(item.last_movement_at) : '-'}</td>
-									<td>
-										<div class="inventory-stock__actions">
-											<Button
-												type="border"
-												size="sm"
-												icon="list"
-												color="primary"
-												disabled={!canRead}
-												onclick={() => void openMovementsDialog(item)}
-											>
-												Historico
-											</Button>
-											<Button
-												type="flat"
-												size="sm"
-												icon="slidersHorizontal"
-												color="info"
-												disabled={!canUpdate}
-												onclick={() => openThresholdDialog(item)}
-											/>
-										</div>
-									</td>
-								{/snippet}
-							</Table>
-						</Card>
+								<td>{item.last_movement_at ? formatDate(item.last_movement_at) : '-'}</td>
+								<td>
+									<div class="inventory-stock__actions">
+										<Button
+											type="border"
+											size="sm"
+											icon="list"
+											color="primary"
+											disabled={!canRead}
+											onclick={() => void openMovementsDialog(item)}
+										>
+											Historico
+										</Button>
+										<Button
+											type="flat"
+											size="sm"
+											icon="slidersHorizontal"
+											color="info"
+											disabled={!canUpdate}
+											onclick={() => openThresholdDialog(item)}
+										/>
+									</div>
+								</td>
+							{/snippet}
+						</Table>
+					</Card>
 
 					<Card spaced>
 						<div class="inventory-stock__pagination">
@@ -622,39 +622,30 @@
 					fullWidth
 					onchange={(value) => void applyStockFilter(value)}
 				/>
+				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
+					Se muestran productos activos e inactivos.
+				</p>
 			</div>
-			<Button
-				type={includeInactive ? 'filled' : 'border'}
-				color={includeInactive ? 'warning' : 'primary'}
-				size="md"
-				icon={includeInactive ? 'eyeOff' : 'eye'}
-				onclick={() => void toggleInactive()}
-			>
-				{includeInactive ? 'Incluye inactivos' : 'Solo activos'}
-			</Button>
 		</div>
 
 		<div class="inventory-stock__sidebar-section">
 			<p class="inventory-stock__sidebar-label">Categorias</p>
-			<div class="inventory-stock__folders">
+			<List size="sm" color="primary" class="inventory-stock__category-list">
 				{#each categoryFolders as folder (folder.code)}
-					<button
-						type="button"
-						class="inventory-stock__folder {filterCategoryCode === folder.code
-							? 'inventory-stock__folder--active'
-							: ''}"
+					<ListItem
+						title={folder.name}
+						subtitle={folder.code === 'all' ? 'Vista completa del catalogo' : undefined}
+						icon={folder.code === 'all' ? 'layers' : 'folder'}
+						clickable
+						active={filterCategoryCode === folder.code}
 						onclick={() => void applyCategoryFilter(folder.code)}
 					>
-						<span class="inventory-stock__folder-main">
-							<Icon icon="folder" size="sm" />
-							<span>{folder.name}</span>
-						</span>
 						{#if filterCategoryCode === folder.code}
 							<Icon icon="checkCircle" size="sm" />
 						{/if}
-					</button>
+					</ListItem>
 				{/each}
-			</div>
+			</List>
 		</div>
 	</div>
 {/snippet}
@@ -794,50 +785,12 @@
 		color: var(--lumi-color-text-muted);
 	}
 
-	.inventory-stock__folders {
-		display: flex;
-		flex-direction: column;
-		gap: var(--lumi-space-2xs);
+	:global(.inventory-stock__category-list) {
+		max-height: var(--lumi-drive-sidebar-nav-max-height);
 	}
 
-	.inventory-stock__folder {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--lumi-space-sm);
-		width: 100%;
-		padding: var(--lumi-space-sm);
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
-		border-radius: var(--lumi-radius-md);
-		background: color-mix(in srgb, var(--lumi-color-surface) 94%, transparent);
-		color: var(--lumi-color-text);
-		font: inherit;
-		cursor: pointer;
-		transition: var(--lumi-transition-all);
-	}
-
-	.inventory-stock__folder:hover {
-		border-color: color-mix(in srgb, var(--lumi-color-primary) 32%, var(--lumi-color-border-light));
-		background: color-mix(in srgb, var(--lumi-color-primary) 6%, var(--lumi-color-surface));
-	}
-
-	.inventory-stock__folder--active {
-		border-color: color-mix(in srgb, var(--lumi-color-primary) 36%, var(--lumi-color-border-light));
-		background: color-mix(in srgb, var(--lumi-color-primary) 10%, var(--lumi-color-surface));
+	:global(.inventory-stock__category-list .lumi-list-item__actions) {
 		color: var(--lumi-color-primary);
-	}
-
-	.inventory-stock__folder-main {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--lumi-space-xs);
-		min-width: 0;
-	}
-
-	.inventory-stock__folder-main span {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 
 	.inventory-stock__active-context {

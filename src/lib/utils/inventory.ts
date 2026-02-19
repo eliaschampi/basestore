@@ -95,7 +95,9 @@ export function isValidInventorySaleShippingState(
 	return INVENTORY_SALE_SHIPPING_STATES.includes(value as InventorySaleShippingState);
 }
 
-export function isValidInventorySaleStatusFilter(value: string): value is InventorySaleStatusFilter {
+export function isValidInventorySaleStatusFilter(
+	value: string
+): value is InventorySaleStatusFilter {
 	return INVENTORY_SALE_STATUS_FILTERS.includes(value as InventorySaleStatusFilter);
 }
 

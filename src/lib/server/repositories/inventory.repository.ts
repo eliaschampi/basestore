@@ -209,7 +209,9 @@ function toDateOnly(value: Date | string): string {
 	return String(value);
 }
 
-function unpackPagedRows<T extends RowWithTotalCount>(rows: T[]): {
+function unpackPagedRows<T extends RowWithTotalCount>(
+	rows: T[]
+): {
 	items: Omit<T, 'total_count'>[];
 	total: number;
 } {
@@ -448,7 +450,10 @@ export class InventoryRepository {
 		return result.rows[0] ?? null;
 	}
 
-	static async createSale(db: Database, input: CreateInventorySaleInput): Promise<InventorySaleRecord> {
+	static async createSale(
+		db: Database,
+		input: CreateInventorySaleInput
+	): Promise<InventorySaleRecord> {
 		const resolvedCustomer = await this.resolveSaleCustomer(db, {
 			customerCode: input.customerCode,
 			customerName: input.customerName,
@@ -456,7 +461,8 @@ export class InventoryRepository {
 			markFavorite: input.markCustomerFavorite ?? false
 		});
 		const customerName = (resolvedCustomer.customer_name ?? input.customerName ?? '').trim();
-		const customerPhone = (resolvedCustomer.customer_phone ?? input.customerPhone ?? '').trim() || null;
+		const customerPhone =
+			(resolvedCustomer.customer_phone ?? input.customerPhone ?? '').trim() || null;
 
 		if (!customerName) {
 			throw new Error('El nombre del cliente es obligatorio');
@@ -510,7 +516,10 @@ export class InventoryRepository {
 		return result.rows[0] ?? null;
 	}
 
-	static async voidSale(db: Database, input: VoidInventorySaleInput): Promise<InventorySaleRecord | null> {
+	static async voidSale(
+		db: Database,
+		input: VoidInventorySaleInput
+	): Promise<InventorySaleRecord | null> {
 		const result = await sql<InventorySaleRecord>`
 			SELECT *
 			FROM public.inventory_void_sale(

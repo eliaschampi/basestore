@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import {
@@ -133,8 +134,10 @@
 		return `?${params.toString()}`;
 	}
 
-	function goToPurchasesList(): void {
-		window.location.assign(`${resolve('/inventory/purchases')}${branchQuery(createBranchCode)}`);
+	async function goToPurchasesList(): Promise<void> {
+		const destination =
+			`/inventory/purchases${branchQuery(createBranchCode)}` as '/inventory/purchases';
+		await goto(resolve(destination));
 	}
 
 	async function submitCreatePurchase(): Promise<void> {
@@ -156,7 +159,8 @@
 		submitting = true;
 		errorMessage = '';
 		try {
-			const unitCost = Number.isFinite(createUnitCost) && createUnitCost > 0 ? createUnitCost : null;
+			const unitCost =
+				Number.isFinite(createUnitCost) && createUnitCost > 0 ? createUnitCost : null;
 			const response = await fetch('/api/inventory/purchases', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -176,33 +180,27 @@
 			const payload = await response.json();
 			if (!response.ok) {
 				throw new Error((payload?.message as string) || 'No se pudo registrar la compra');
-				}
-
-				showToast('Compra registrada', 'success');
-				goToPurchasesList();
-			} catch (caught) {
-				errorMessage = caught instanceof Error ? caught.message : 'Error al registrar compra';
-			} finally {
-				submitting = false;
 			}
+
+			showToast('Compra registrada', 'success');
+			await goToPurchasesList();
+		} catch (caught) {
+			errorMessage = caught instanceof Error ? caught.message : 'Error al registrar compra';
+		} finally {
+			submitting = false;
+		}
 	}
 </script>
 
 <div class="lumi-stack lumi-space--md">
 	<PageHeader
-			title="Nueva compra"
-			subtitle="Formulario por etapas para registrar entradas sin sobrecarga visual"
-			icon="shoppingBag"
-		>
-			{#snippet actions()}
-				<div class="lumi-flex lumi-flex--gap-sm">
-					<Button
-						type="border"
-						icon="chevronLeft"
-						onclick={goToPurchasesList}
-					>
-						Volver
-					</Button>
+		title="Nueva compra"
+		subtitle="Formulario por etapas para registrar entradas sin sobrecarga visual"
+		icon="shoppingBag"
+	>
+		{#snippet actions()}
+			<div class="lumi-flex lumi-flex--gap-sm">
+				<Button type="border" icon="chevronLeft" onclick={goToPurchasesList}>Volver</Button>
 				<Button
 					type="filled"
 					color="primary"
@@ -307,10 +305,13 @@
 					<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
 						<Input
 							label="NRO Tracking"
-							placeholder={createOrigin === 'lima' ? 'No requerido para Lima' : 'Ej: LP009123456789'}
+							placeholder={createOrigin === 'lima'
+								? 'No requerido para Lima'
+								: 'Ej: LP009123456789'}
 							value={createTrackingNumber}
 							disabled={createOrigin === 'lima'}
-							oninput={(event) => (createTrackingNumber = (event.currentTarget as HTMLInputElement).value)}
+							oninput={(event) =>
+								(createTrackingNumber = (event.currentTarget as HTMLInputElement).value)}
 						/>
 						<NumberInput
 							label="Cantidad"
@@ -326,7 +327,8 @@
 							label="Fecha pedido"
 							type="date"
 							value={createOrderedAt}
-							oninput={(event) => (createOrderedAt = (event.currentTarget as HTMLInputElement).value)}
+							oninput={(event) =>
+								(createOrderedAt = (event.currentTarget as HTMLInputElement).value)}
 						/>
 						<NumberInput
 							label="Costo unitario (opcional)"
@@ -351,10 +353,19 @@
 				<div class="lumi-stack lumi-space--md">
 					<Fieldset legend="Resumen">
 						<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
-							<p class="lumi-margin--none"><strong>Producto:</strong> {createProductCode ? 'Seleccionado' : 'Pendiente'}</p>
-							<p class="lumi-margin--none"><strong>Sede:</strong> {createBranchCode ? 'Seleccionada' : 'Pendiente'}</p>
+							<p class="lumi-margin--none">
+								<strong>Producto:</strong>
+								{createProductCode ? 'Seleccionado' : 'Pendiente'}
+							</p>
+							<p class="lumi-margin--none">
+								<strong>Sede:</strong>
+								{createBranchCode ? 'Seleccionada' : 'Pendiente'}
+							</p>
 							<p class="lumi-margin--none"><strong>Cantidad:</strong> {createQuantity}</p>
-							<p class="lumi-margin--none"><strong>Total estimado:</strong> {formatProductPrice(totalCost)}</p>
+							<p class="lumi-margin--none">
+								<strong>Total estimado:</strong>
+								{formatProductPrice(totalCost)}
+							</p>
 						</div>
 					</Fieldset>
 					<Fieldset legend="Nota">
@@ -369,7 +380,9 @@
 			{/if}
 
 			<div class="lumi-flex lumi-justify--between lumi-align-items--center">
-				<Button type="border" disabled={activeTab === 'product'} onclick={goPrevTab}>Anterior</Button>
+				<Button type="border" disabled={activeTab === 'product'} onclick={goPrevTab}
+					>Anterior</Button
+				>
 				{#if activeTab !== 'review'}
 					<Button type="filled" color="info" onclick={goNextTab}>Siguiente</Button>
 				{/if}

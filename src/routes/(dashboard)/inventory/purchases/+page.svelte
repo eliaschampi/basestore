@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onDestroy } from 'svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
@@ -96,7 +97,8 @@
 	const canGoPrev = $derived(pagination.page > 1);
 	const canGoNext = $derived(pagination.page < pagination.total_pages);
 	const activeBranchLabel = $derived.by(
-		() => branches.find((branch) => branch.code === filterBranchCode)?.name ?? 'Sin sede seleccionada'
+		() =>
+			branches.find((branch) => branch.code === filterBranchCode)?.name ?? 'Sin sede seleccionada'
 	);
 
 	function branchQuery(branchCode: string): string {
@@ -106,7 +108,10 @@
 	}
 
 	function navigateWithBranch(path: '/inventory' | '/inventory/purchases/new'): void {
-		window.location.assign(`${resolve(path)}${branchQuery(filterBranchCode)}`);
+		const destination = `${path}${branchQuery(filterBranchCode)}` as
+			| '/inventory'
+			| '/inventory/purchases/new';
+		void goto(resolve(destination));
 	}
 
 	onDestroy(() => {
@@ -173,16 +178,16 @@
 		errorMessage = '';
 
 		try {
-				const params = new SvelteURLSearchParams({
-					branch_code: filterBranchCode,
-					state: filterState,
-					page: String(page),
-					page_size: String(pagination.page_size || 20)
-				});
+			const params = new SvelteURLSearchParams({
+				branch_code: filterBranchCode,
+				state: filterState,
+				page: String(page),
+				page_size: String(pagination.page_size || 20)
+			});
 
-				if (filterOrigin !== 'all') {
-					params.set('origin', filterOrigin);
-				}
+			if (filterOrigin !== 'all') {
+				params.set('origin', filterOrigin);
+			}
 			if (filterEntryType !== 'all') {
 				params.set('entry_type', filterEntryType);
 			}
@@ -250,7 +255,9 @@
 		icon="shoppingBag"
 	>
 		{#snippet actions()}
-			<div class="lumi-flex lumi-flex--gap-sm lumi-align-items--center inventory-purchases__header-actions">
+			<div
+				class="lumi-flex lumi-flex--gap-sm lumi-align-items--center inventory-purchases__header-actions"
+			>
 				<button
 					type="button"
 					class="inventory-purchases__mobile-toggle"
@@ -352,7 +359,9 @@
 										>
 											{purchase.product_name}
 										</a>
-										<span class="lumi-text--xs lumi-text--muted">{purchase.product_sku || 'Sin SKU'}</span>
+										<span class="lumi-text--xs lumi-text--muted"
+											>{purchase.product_sku || 'Sin SKU'}</span
+										>
 									</div>
 								</td>
 								<td>{purchase.quantity}</td>
@@ -505,12 +514,12 @@
 					value: string;
 					icon?: string;
 				}[]}
-					fullWidth
-					onchange={async (value) => {
-						filterState = (typeof value === 'string' ? value : 'received') as InventoryPurchaseState;
-						await loadPurchases(1);
-						showMobileSidebar = false;
-					}}
+				fullWidth
+				onchange={async (value) => {
+					filterState = (typeof value === 'string' ? value : 'received') as InventoryPurchaseState;
+					await loadPurchases(1);
+					showMobileSidebar = false;
+				}}
 			/>
 		</div>
 
@@ -525,7 +534,9 @@
 							value={option.value}
 							label={option.label}
 							onchange={async (value) => {
-								filterEntryType = (typeof value === 'string' ? value : 'all') as typeof filterEntryType;
+								filterEntryType = (
+									typeof value === 'string' ? value : 'all'
+								) as typeof filterEntryType;
 								await loadPurchases(1);
 								showMobileSidebar = false;
 							}}
@@ -576,7 +587,9 @@
 			</div>
 			<div class="inventory-purchases__detail-item">
 				<p class="inventory-purchases__detail-label">Fechas</p>
-				<p class="inventory-purchases__detail-value">Pedido: {formatDate(detailPurchase.ordered_at)}</p>
+				<p class="inventory-purchases__detail-value">
+					Pedido: {formatDate(detailPurchase.ordered_at)}
+				</p>
 				<p class="inventory-purchases__detail-meta">
 					{#if detailPurchase.received_at}
 						Recibido: {formatDate(detailPurchase.received_at)}

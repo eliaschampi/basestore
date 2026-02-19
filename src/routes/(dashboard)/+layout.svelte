@@ -198,6 +198,17 @@
 				{/snippet}
 				Ventas
 			</SidebarItem>
+
+			<SidebarItem
+				href="/inventory/customers"
+				active={page.url.pathname.startsWith('/inventory/customers')}
+				collapsed={sidebarCollapsed}
+			>
+				{#snippet icon()}
+					<Icon icon="users" size="20px" />
+				{/snippet}
+				Clientes
+			</SidebarItem>
 		{/if}
 
 		{#if canReadDrive}
