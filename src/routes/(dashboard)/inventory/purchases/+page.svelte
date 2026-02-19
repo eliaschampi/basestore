@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onDestroy } from 'svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
@@ -46,7 +45,6 @@
 	};
 
 	const PURCHASE_STATE_SEGMENT_OPTIONS = [
-		{ label: 'Todo', value: 'all', icon: 'listChecks' },
 		{ label: 'Camino', value: 'in_transit', icon: 'clock' },
 		{ label: 'Recibido', value: 'received', icon: 'checkCircle' },
 		{ label: 'Reemb.', value: 'refunded', icon: 'undo2' }
@@ -80,7 +78,7 @@
 	let fetchId = 0;
 
 	let filterBranchCode = $state('');
-	let filterState = $state<'all' | InventoryPurchaseState>('all');
+	let filterState = $state<InventoryPurchaseState>('received');
 	let filterOrigin = $state<'all' | InventoryPurchaseOrigin>('all');
 	let filterEntryType = $state<'all' | InventoryPurchaseEntryType>('all');
 	let showMobileSidebar = $state(false);
@@ -100,6 +98,17 @@
 	const activeBranchLabel = $derived.by(
 		() => branches.find((branch) => branch.code === filterBranchCode)?.name ?? 'Sin sede seleccionada'
 	);
+
+	function branchQuery(branchCode: string): string {
+		if (!branchCode) return '';
+		const params = new URLSearchParams({ branch_code: branchCode });
+		return `?${params.toString()}`;
+	}
+
+	function navigateWithBranch(path: '/inventory' | '/inventory/purchases/new'): void {
+		window.location.assign(`${resolve(path)}${branchQuery(filterBranchCode)}`);
+	}
+
 	onDestroy(() => {
 		if (searchTimeout) {
 			clearTimeout(searchTimeout);
@@ -164,18 +173,16 @@
 		errorMessage = '';
 
 		try {
-			const params = new SvelteURLSearchParams({
-				branch_code: filterBranchCode,
-				page: String(page),
-				page_size: String(pagination.page_size || 20)
-			});
+				const params = new SvelteURLSearchParams({
+					branch_code: filterBranchCode,
+					state: filterState,
+					page: String(page),
+					page_size: String(pagination.page_size || 20)
+				});
 
-			if (filterState !== 'all') {
-				params.set('state', filterState);
-			}
-			if (filterOrigin !== 'all') {
-				params.set('origin', filterOrigin);
-			}
+				if (filterOrigin !== 'all') {
+					params.set('origin', filterOrigin);
+				}
 			if (filterEntryType !== 'all') {
 				params.set('entry_type', filterEntryType);
 			}
@@ -251,14 +258,19 @@
 				>
 					Filtros
 				</button>
-				<Button type="border" color="info" icon="boxes" onclick={() => goto(resolve('/inventory'))}>
+				<Button
+					type="border"
+					color="info"
+					icon="boxes"
+					onclick={() => navigateWithBranch('/inventory')}
+				>
 					Stock
 				</Button>
 				<Button
 					type="filled"
 					color="primary"
 					icon="plus"
-					onclick={() => goto(resolve('/inventory/purchases/new'))}
+					onclick={() => navigateWithBranch('/inventory/purchases/new')}
 					disabled={!canCreate}
 				>
 					Nueva compra
@@ -493,12 +505,12 @@
 					value: string;
 					icon?: string;
 				}[]}
-				fullWidth
-				onchange={async (value) => {
-					filterState = (typeof value === 'string' ? value : 'all') as typeof filterState;
-					await loadPurchases(1);
-					showMobileSidebar = false;
-				}}
+					fullWidth
+					onchange={async (value) => {
+						filterState = (typeof value === 'string' ? value : 'received') as InventoryPurchaseState;
+						await loadPurchases(1);
+						showMobileSidebar = false;
+					}}
 			/>
 		</div>
 

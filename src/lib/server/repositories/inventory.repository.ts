@@ -455,6 +455,12 @@ export class InventoryRepository {
 			customerPhone: input.customerPhone,
 			markFavorite: input.markCustomerFavorite ?? false
 		});
+		const customerName = (resolvedCustomer.customer_name ?? input.customerName ?? '').trim();
+		const customerPhone = (resolvedCustomer.customer_phone ?? input.customerPhone ?? '').trim() || null;
+
+		if (!customerName) {
+			throw new Error('El nombre del cliente es obligatorio');
+		}
 
 		const result = await sql<InventorySaleRecord>`
 			SELECT *
@@ -463,8 +469,8 @@ export class InventoryRepository {
 				${input.branchCode},
 				${input.userCode},
 				${resolvedCustomer.customer_code},
-				${resolvedCustomer.customer_name},
-				${resolvedCustomer.customer_phone},
+				${customerName},
+				${customerPhone},
 				${input.quantity},
 				${input.unitPrice},
 				${input.saleChannel},

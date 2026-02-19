@@ -23,6 +23,8 @@ import {
 } from '$lib/server/inventory/api-query';
 import { isUuid } from '$lib/utils/validation';
 
+const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
 interface CreateSaleBody {
 	product_code?: string;
 	branch_code?: string;
@@ -39,6 +41,26 @@ interface CreateSaleBody {
 	mark_customer_favorite?: boolean;
 	sold_at?: string;
 	note?: string;
+}
+
+function parseDateOnlyAsUtcNoon(value: string): Date | null {
+	const match = DATE_ONLY_PATTERN.exec(value);
+	if (!match) return null;
+
+	const year = Number(match[1]);
+	const month = Number(match[2]);
+	const day = Number(match[3]);
+	const parsed = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+
+	if (
+		parsed.getUTCFullYear() !== year ||
+		parsed.getUTCMonth() !== month - 1 ||
+		parsed.getUTCDate() !== day
+	) {
+		return null;
+	}
+
+	return parsed;
 }
 
 export const GET: RequestHandler = async ({ url, locals }) => {
@@ -185,11 +207,16 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	let soldAt: Date | string = new Date();
 	if (soldAtRaw) {
-		const parsed = new Date(soldAtRaw);
-		if (Number.isNaN(parsed.getTime())) {
-			throw error(400, 'Fecha de venta inválida');
+		const parsedDateOnly = parseDateOnlyAsUtcNoon(soldAtRaw);
+		if (parsedDateOnly) {
+			soldAt = parsedDateOnly;
+		} else {
+			const parsed = new Date(soldAtRaw);
+			if (Number.isNaN(parsed.getTime())) {
+				throw error(400, 'Fecha de venta inválida');
+			}
+			soldAt = parsed;
 		}
-		soldAt = parsed;
 	}
 
 	try {

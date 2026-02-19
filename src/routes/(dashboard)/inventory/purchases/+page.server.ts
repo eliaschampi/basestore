@@ -20,6 +20,7 @@ export const load: PageServerLoad = async ({ locals, depends, url }) => {
 	const purchases = selectedBranchCode
 		? await InventoryRepository.listPurchases(locals.db, {
 				branchCode: selectedBranchCode,
+				state: 'received',
 				page: 1,
 				pageSize: 20
 			})

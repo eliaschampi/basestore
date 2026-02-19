@@ -123,7 +123,7 @@ pnpm db:down
 pnpm db:rebuild
 ```
 
-> **Note:** The `database/init/` folder contains SQL scripts that are automatically executed when the Postgres container is created for the first time.
+> **Note:** The `database/init/` folder is the schema source of truth and is executed when the Postgres container is created for the first time.
 
 ---
 
@@ -157,7 +157,7 @@ faztore/
 ├── database/               # Database scripts & migrations
 │   ├── dev/                # Developer utility scripts (setup, migrate)
 │   ├── init/               # Docker init SQL scripts
-│   └── migrations/         # Kysely migration files
+│   └── migrations/         # Future Kysely migrations (post-baseline)
 ├── docker/                 # Docker configuration
 ├── src/
 │   ├── lib/
@@ -185,11 +185,11 @@ faztore/
 | `pnpm check`       | Run Svelte-Check for type validation.           |
 | `pnpm lint`        | Run ESLint.                                     |
 | `pnpm db:setup`    | Run the database setup shell script.            |
-| `pnpm db:up`       | Bootstrap DB (init if empty + migrate + types). |
+| `pnpm db:up`       | Bootstrap DB (init from snapshot + migrate + types). |
 | `pnpm db:down`     | Drop and recreate `public` schema (empty DB).   |
 | `pnpm db:reset`    | Interactive reset + rebuild flow.               |
 | `pnpm db:rebuild`  | Reset and fully rebuild schema + types.         |
-| `pnpm db:migrate`  | Apply pending database migrations.              |
+| `pnpm db:migrate`  | Apply pending database migrations (if any).     |
 | `pnpm db:rollback` | Rollback last non-baseline migration batch.     |
 | `pnpm db:status`   | Show initialization and migration status.       |
 | `pnpm db:create`   | Create a new migration file.                    |
@@ -205,8 +205,9 @@ faztore/
 
 ### Creating a New Feature
 
-1.  **Migration:** `pnpm db:create create_<feature>_table`
-2.  **Types:** `pnpm db:migrate` && `pnpm db:generate`
+1.  **Schema:** update `database/init/*.sql` (source of truth).
+2.  **Optional Migration (future changes):** `pnpm db:create create_<feature>_table`
+3.  **Types:** `pnpm db:migrate` && `pnpm db:generate`
 3.  **Backend:** Create server load functions and actions.
 4.  **Frontend:** Build UI using Lumi UI components (`Card`, `Table`, `PageHeader`).
 

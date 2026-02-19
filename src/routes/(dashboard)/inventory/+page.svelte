@@ -22,6 +22,7 @@
 	import { showToast } from '$lib/stores/Toast';
 	import { formatDate } from '$lib/utils/formatDate';
 	import type {
+		InventoryMovementListItem,
 		InventoryOverviewItem,
 		InventoryOverviewSummary,
 		InventoryPagination
@@ -101,6 +102,15 @@
 	let thresholdEmergencyPoint = $state(0);
 	let submittingThreshold = $state(false);
 
+	let showMovementsDialog = $state(false);
+	let movementsLoading = $state(false);
+	let movementsError = $state('');
+	let movementsProductCode = $state('');
+	let movementsBranchCode = $state('');
+	let movementsProductLabel = $state('');
+	let movementsBranchLabel = $state('');
+	let movements = $state<InventoryMovementListItem[]>([]);
+
 	const branchOptions = $derived(
 		branches
 			.filter((branch) => branch.state)
@@ -113,6 +123,7 @@
 	]);
 
 	const stockRows = $derived(items as unknown as TableRow[]);
+	const movementRows = $derived(movements as unknown as TableRow[]);
 	const canGoPrev = $derived(pagination.page > 1);
 	const canGoNext = $derived(pagination.page < pagination.total_pages);
 	const activeBranchLabel = $derived.by(
@@ -171,6 +182,62 @@
 		thresholdReorderPoint = Number(item.reorder_point);
 		thresholdEmergencyPoint = Number(item.emergency_point);
 		showThresholdDialog = true;
+	}
+
+	function movementReasonLabel(reason: InventoryMovementListItem['reason']): string {
+		if (reason === 'purchase') return 'Compra';
+		if (reason === 'sale') return 'Venta';
+		if (reason === 'purchase_refund') return 'Reembolso compra';
+		return 'Ajuste manual';
+	}
+
+	function movementDirectionLabel(direction: InventoryMovementListItem['direction']): string {
+		return direction === 'in' ? 'Entrada' : 'Salida';
+	}
+
+	function movementDirectionColor(
+		direction: InventoryMovementListItem['direction']
+	): 'success' | 'danger' {
+		return direction === 'in' ? 'success' : 'danger';
+	}
+
+	async function loadMovements(
+		productCode = movementsProductCode,
+		branchCode = movementsBranchCode
+	): Promise<void> {
+		if (!canRead || !productCode || !branchCode) return;
+
+		movementsLoading = true;
+		movementsError = '';
+		try {
+			const params = new SvelteURLSearchParams({
+				product_code: productCode,
+				branch_code: branchCode,
+				limit: '120'
+			});
+
+			const response = await fetch(`/api/inventory/movements?${params.toString()}`);
+			const payload = await response.json();
+			if (!response.ok) {
+				throw new Error((payload?.message as string) || 'No se pudo cargar el histórico');
+			}
+
+			movements = (payload.movements ?? []) as InventoryMovementListItem[];
+		} catch (caught) {
+			movementsError = caught instanceof Error ? caught.message : 'Error al cargar movimientos';
+		} finally {
+			movementsLoading = false;
+		}
+	}
+
+	async function openMovementsDialog(item: InventoryOverviewItem): Promise<void> {
+		if (!canRead) return;
+		movementsProductCode = item.product_code;
+		movementsBranchCode = item.branch_code;
+		movementsProductLabel = item.product_name;
+		movementsBranchLabel = item.branch_name;
+		showMovementsDialog = true;
+		await loadMovements(item.product_code, item.branch_code);
 	}
 
 	function handleSearchInput(value: string): void {
@@ -441,8 +508,8 @@
 								<th>Acciones</th>
 							{/snippet}
 
-							{#snippet row({ row })}
-								{@const item = row as unknown as InventoryOverviewItem}
+								{#snippet row({ row })}
+									{@const item = row as unknown as InventoryOverviewItem}
 								<td>
 									<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
 										<a
@@ -461,20 +528,32 @@
 										{stockLabel(item.stock_state)}
 									</Chip>
 								</td>
-								<td>{item.last_movement_at ? formatDate(item.last_movement_at) : '-'}</td>
-								<td>
-									<Button
-										type="flat"
-										size="sm"
-										icon="slidersHorizontal"
-										color="info"
-										disabled={!canUpdate}
-										onclick={() => openThresholdDialog(item)}
-									/>
-								</td>
-							{/snippet}
-						</Table>
-					</Card>
+									<td>{item.last_movement_at ? formatDate(item.last_movement_at) : '-'}</td>
+									<td>
+										<div class="inventory-stock__actions">
+											<Button
+												type="border"
+												size="sm"
+												icon="list"
+												color="primary"
+												disabled={!canRead}
+												onclick={() => void openMovementsDialog(item)}
+											>
+												Historico
+											</Button>
+											<Button
+												type="flat"
+												size="sm"
+												icon="slidersHorizontal"
+												color="info"
+												disabled={!canUpdate}
+												onclick={() => openThresholdDialog(item)}
+											/>
+										</div>
+									</td>
+								{/snippet}
+							</Table>
+						</Card>
 
 					<Card spaced>
 						<div class="inventory-stock__pagination">
@@ -624,6 +703,50 @@
 	{/snippet}
 </Dialog>
 
+<Dialog bind:open={showMovementsDialog} title="Historico de entradas y salidas" size="lg">
+	<div class="lumi-stack lumi-space--sm">
+		<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+			{movementsProductLabel || 'Producto'} · {movementsBranchLabel || 'Sede'}
+		</p>
+		{#if movementsError}
+			<Alert type="danger" closable onclose={() => (movementsError = '')}>{movementsError}</Alert>
+		{/if}
+		<Table
+			data={movementRows}
+			hover
+			loading={movementsLoading}
+			pagination={false}
+			class="inventory-table inventory-table--movements"
+		>
+			{#snippet thead()}
+				<th>Fecha</th>
+				<th>Tipo</th>
+				<th>Motivo</th>
+				<th>Cantidad</th>
+				<th>Nota</th>
+			{/snippet}
+
+			{#snippet row({ row })}
+				{@const movement = row as unknown as InventoryMovementListItem}
+				<td>{formatDate(movement.occurred_at)}</td>
+				<td>
+					<Chip size="sm" color={movementDirectionColor(movement.direction)}>
+						{movementDirectionLabel(movement.direction)}
+					</Chip>
+				</td>
+				<td>{movementReasonLabel(movement.reason)}</td>
+				<td>
+					{movement.direction === 'in' ? '+' : '-'}{movement.quantity}
+				</td>
+				<td>{movement.note || '-'}</td>
+			{/snippet}
+		</Table>
+	</div>
+	{#snippet footer()}
+		<Button type="border" onclick={() => (showMovementsDialog = false)}>Cerrar</Button>
+	{/snippet}
+</Dialog>
+
 <style>
 	.inventory-stock__layout {
 		align-items: start;
@@ -742,8 +865,19 @@
 		flex-wrap: wrap;
 	}
 
+	.inventory-stock__actions {
+		display: flex;
+		align-items: center;
+		gap: var(--lumi-space-2xs);
+		flex-wrap: wrap;
+	}
+
 	:global(.inventory-table--stock .lumi-table__content) {
 		min-width: 64rem;
+	}
+
+	:global(.inventory-table--movements .lumi-table__content) {
+		min-width: 48rem;
 	}
 
 	.inventory-stock__mobile-toggle {

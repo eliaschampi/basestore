@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onDestroy } from 'svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
@@ -11,6 +10,7 @@
 		Dialog,
 		Input,
 		PageHeader,
+		Radio,
 		SegmentedControl,
 		Select,
 		Table,
@@ -58,17 +58,17 @@
 		{ value: 'delivered', label: 'Entregado' }
 	];
 
-	const CHANNEL_FILTER_OPTIONS: SelectOption[] = [
+	const CHANNEL_FILTER_OPTIONS = [
 		{ value: 'all', label: 'Todos los canales' },
 		{ value: 'store', label: 'Tienda' },
 		{ value: 'web', label: 'Web' }
-	];
+	] as const;
 
 	const SALE_STATUS_SEGMENT_OPTIONS = [
 		{ label: 'Activas', value: 'active', icon: 'checkCircle' },
-		{ label: 'Anuladas', value: 'voided', icon: 'xCircle' },
-		{ label: 'Todas', value: 'all', icon: 'listChecks' }
+		{ label: 'Anuladas', value: 'voided', icon: 'xCircle' }
 	] as const;
+	type SalesStatusFilter = Exclude<InventorySaleStatusFilter, 'all'>;
 
 	const canRead = $derived(can('inventory:read'));
 	const canCreate = $derived(can('inventory:create'));
@@ -88,7 +88,7 @@
 	let filterBranchCode = $state('');
 	let filterShippingState = $state<'all' | InventorySaleShippingState>('all');
 	let filterChannel = $state<'all' | InventorySaleChannel>('all');
-	let filterSaleStatus = $state<InventorySaleStatusFilter>('active');
+	let filterSaleStatus = $state<SalesStatusFilter>('active');
 	let showMobileSidebar = $state(false);
 
 	let showDetailDialog = $state(false);
@@ -113,14 +113,24 @@
 	);
 	const activeStatusLabel = $derived.by(() => {
 		if (filterSaleStatus === 'active') return 'Activas';
-		if (filterSaleStatus === 'voided') return 'Anuladas';
-		return 'Todas';
+		return 'Anuladas';
 	});
 	const branchOptions = $derived(
 		branches
 			.filter((branch) => branch.state)
 			.map((branch) => ({ value: branch.code, label: branch.name }) as SelectOption)
 	);
+
+	function branchQuery(branchCode: string): string {
+		if (!branchCode) return '';
+		const params = new URLSearchParams({ branch_code: branchCode });
+		return `?${params.toString()}`;
+	}
+
+	function navigateWithBranch(path: '/inventory' | '/inventory/sales/new'): void {
+		window.location.assign(`${resolve(path)}${branchQuery(filterBranchCode)}`);
+	}
+
 	onDestroy(() => {
 		if (searchTimeout) {
 			clearTimeout(searchTimeout);
@@ -220,15 +230,13 @@
 			if (filterShippingState !== 'all') {
 				params.set('shipping_state', filterShippingState);
 			}
-			if (filterChannel !== 'all') {
-				params.set('sale_channel', filterChannel);
-			}
-			if (filterSaleStatus !== 'all') {
+				if (filterChannel !== 'all') {
+					params.set('sale_channel', filterChannel);
+				}
 				params.set('status', filterSaleStatus);
-			}
-			if (searchQuery.trim()) {
-				params.set('search', searchQuery.trim());
-			}
+				if (searchQuery.trim()) {
+					params.set('search', searchQuery.trim());
+				}
 
 			const response = await fetch(`/api/inventory/sales?${params.toString()}`);
 			const payload = await response.json();
@@ -426,14 +434,19 @@
 				>
 					Filtros
 				</button>
-				<Button type="border" color="info" icon="boxes" onclick={() => goto(resolve('/inventory'))}>
+				<Button
+					type="border"
+					color="info"
+					icon="boxes"
+					onclick={() => navigateWithBranch('/inventory')}
+				>
 					Stock
 				</Button>
 				<Button
 					type="filled"
 					color="primary"
 					icon="plus"
-					onclick={() => goto(resolve('/inventory/sales/new'))}
+					onclick={() => navigateWithBranch('/inventory/sales/new')}
 					disabled={!canCreate}
 				>
 					Nueva venta
@@ -635,7 +648,7 @@
 					onchange={async (value) => {
 						filterSaleStatus = (
 							typeof value === 'string' ? value : 'active'
-						) as InventorySaleStatusFilter;
+						) as SalesStatusFilter;
 						await loadSales(1);
 						showMobileSidebar = false;
 					}}
@@ -667,18 +680,24 @@
 					showMobileSidebar = false;
 				}}
 			/>
-			<Select
-				size="md"
-				label="Canal"
-				value={filterChannel}
-				options={CHANNEL_FILTER_OPTIONS}
-				clearable={false}
-				onchange={async (value) => {
-					filterChannel = (typeof value === 'string' ? value : 'all') as typeof filterChannel;
-					await loadSales(1);
-					showMobileSidebar = false;
-				}}
-			/>
+			<div class="inventory-sales__sidebar-section">
+				<p class="inventory-sales__sidebar-label">Canales</p>
+				<div class="inventory-sales__channel-options">
+					{#each CHANNEL_FILTER_OPTIONS as option (option.value)}
+						<Radio
+							name="sales-channel-filter"
+							group={filterChannel}
+							value={option.value}
+							label={option.label}
+							onchange={async (value) => {
+								filterChannel = (typeof value === 'string' ? value : 'all') as typeof filterChannel;
+								await loadSales(1);
+								showMobileSidebar = false;
+							}}
+						/>
+					{/each}
+				</div>
+			</div>
 			<Input
 				size="md"
 				label="Buscar producto / cliente / referencia"
@@ -909,6 +928,30 @@
 		letter-spacing: 0.05em;
 		text-transform: uppercase;
 		color: var(--lumi-color-text-muted);
+	}
+
+	.inventory-sales__channel-options {
+		display: grid;
+		gap: var(--lumi-space-2xs);
+	}
+
+	.inventory-sales__channel-options :global(.lumi-radio) {
+		width: 100%;
+		padding: var(--lumi-space-sm) var(--lumi-space-md);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
+		border-radius: var(--lumi-radius-md);
+		background: var(--lumi-color-surface);
+		transition: var(--lumi-transition-all);
+	}
+
+	.inventory-sales__channel-options :global(.lumi-radio:not(.lumi-radio--disabled):hover) {
+		border-color: var(--lumi-color-primary);
+		background: color-mix(in srgb, var(--lumi-color-primary) 4%, var(--lumi-color-surface));
+	}
+
+	.inventory-sales__channel-options :global(.lumi-radio--checked) {
+		border-color: color-mix(in srgb, var(--lumi-color-primary) 30%, var(--lumi-color-border-light));
+		background: color-mix(in srgb, var(--lumi-color-primary) 8%, var(--lumi-color-surface));
 	}
 
 	.inventory-sales__active-context {

@@ -19,6 +19,8 @@ import {
 } from '$lib/server/inventory/api-query';
 import { isUuid } from '$lib/utils/validation';
 
+const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
 interface CreatePurchaseBody {
 	product_code?: string;
 	branch_code?: string;
@@ -30,6 +32,26 @@ interface CreatePurchaseBody {
 	ordered_at?: string;
 	unit_cost?: number | string | null;
 	note?: string;
+}
+
+function parseDateOnly(value: string): string | null {
+	const match = DATE_ONLY_PATTERN.exec(value);
+	if (!match) return null;
+
+	const year = Number(match[1]);
+	const month = Number(match[2]);
+	const day = Number(match[3]);
+	const parsed = new Date(Date.UTC(year, month - 1, day));
+
+	if (
+		parsed.getUTCFullYear() !== year ||
+		parsed.getUTCMonth() !== month - 1 ||
+		parsed.getUTCDate() !== day
+	) {
+		return null;
+	}
+
+	return `${match[1]}-${match[2]}-${match[3]}`;
 }
 
 export const GET: RequestHandler = async ({ url, locals }) => {
@@ -141,13 +163,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		throw error(400, 'El NRO de tracking es obligatorio para Temu y AliExpress');
 	}
 
-	let orderedAt: Date | string = new Date();
+	let orderedAt: Date | string = new Date().toISOString().slice(0, 10);
 	if (orderedAtRaw) {
-		const parsed = new Date(orderedAtRaw);
-		if (Number.isNaN(parsed.getTime())) {
+		const parsedDateOnly = parseDateOnly(orderedAtRaw);
+		if (!parsedDateOnly) {
 			throw error(400, 'Fecha de compra inválida');
 		}
-		orderedAt = parsed.toISOString().slice(0, 10);
+		orderedAt = parsedDateOnly;
 	}
 
 	let unitCost: number | null = null;

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
@@ -44,6 +43,12 @@
 		price: string;
 	}
 
+	function todayLocalDate(): string {
+		const now = new Date();
+		const offsetMilliseconds = now.getTimezoneOffset() * 60_000;
+		return new Date(now.getTime() - offsetMilliseconds).toISOString().slice(0, 10);
+	}
+
 	const { data }: { data: PageData } = $props();
 
 	const SALE_FORM_TABS: Tab[] = [
@@ -84,7 +89,7 @@
 	let createShippingState = $state<InventorySaleShippingState>('na');
 	let createDeliveryAddress = $state('');
 	let createOrderReference = $state('');
-	let createSoldAt = $state(new Date().toISOString().slice(0, 10));
+	let createSoldAt = $state(todayLocalDate());
 	let createCustomerCode = $state('');
 	let createCustomerName = $state('');
 	let createCustomerPhone = $state('');
@@ -176,6 +181,21 @@
 		}
 	}
 
+	function selectedFavoriteCustomer(): InventoryCustomerRecord | null {
+		if (!createCustomerCode) return null;
+		return customerSearchOptions.find((customer) => customer.code === createCustomerCode) ?? null;
+	}
+
+	function branchQuery(branchCode: string): string {
+		if (!branchCode) return '';
+		const params = new URLSearchParams({ branch_code: branchCode });
+		return `?${params.toString()}`;
+	}
+
+	function goToSalesList(): void {
+		window.location.assign(`${resolve('/inventory/sales')}${branchQuery(createBranchCode)}`);
+	}
+
 	async function loadFavoriteCustomers(search = ''): Promise<void> {
 		try {
 			const params = new SvelteURLSearchParams({
@@ -220,15 +240,29 @@
 			return;
 		}
 
-		if (!createCustomerCode && !createCustomerName.trim()) {
-			errorMessage = 'Debes seleccionar o registrar cliente.';
-			activeTab = 'customer';
-			return;
-		}
+			if (!createCustomerCode && !createCustomerName.trim()) {
+				errorMessage = 'Debes seleccionar o registrar cliente.';
+				activeTab = 'customer';
+				return;
+			}
 
-		submitting = true;
-		errorMessage = '';
-		try {
+			const selectedCustomer = selectedFavoriteCustomer();
+			const customerNameForPayload = (
+				createCustomerCode ? selectedCustomer?.full_name || createCustomerName : createCustomerName
+			).trim();
+			const customerPhoneForPayload = (
+				createCustomerCode ? selectedCustomer?.phone || createCustomerPhone : createCustomerPhone
+			).trim();
+
+			if (!customerNameForPayload) {
+				errorMessage = 'El cliente seleccionado no tiene nombre válido.';
+				activeTab = 'customer';
+				return;
+			}
+
+			submitting = true;
+			errorMessage = '';
+			try {
 			const response = await fetch('/api/inventory/sales', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -240,43 +274,47 @@
 					sale_channel: createSaleChannel,
 					fulfillment_type: createFulfillmentType,
 					shipping_state: createShippingState,
-					delivery_address:
-						createFulfillmentType === 'delivery' ? createDeliveryAddress.trim() : null,
-					order_reference: createOrderReference.trim(),
-					customer_code: createCustomerCode || null,
-					customer_name: createCustomerCode ? null : createCustomerName.trim(),
-					customer_phone: createCustomerCode ? null : createCustomerPhone.trim(),
-					mark_customer_favorite: createMarkCustomerFavorite,
-					sold_at: createSoldAt,
-					note: createNote.trim()
+						delivery_address:
+							createFulfillmentType === 'delivery' ? createDeliveryAddress.trim() : null,
+						order_reference: createOrderReference.trim(),
+						customer_code: createCustomerCode || null,
+						customer_name: customerNameForPayload,
+						customer_phone: customerPhoneForPayload || null,
+						mark_customer_favorite: createMarkCustomerFavorite,
+						sold_at: createSoldAt,
+						note: createNote.trim()
 				})
 			});
 			const payload = await response.json();
 			if (!response.ok) {
 				throw new Error((payload?.message as string) || 'No se pudo registrar la venta');
-			}
+				}
 
-			showToast('Venta registrada', 'success');
-			await goto(resolve('/inventory/sales'));
-		} catch (caught) {
-			errorMessage = caught instanceof Error ? caught.message : 'Error al registrar venta';
-		} finally {
-			submitting = false;
-		}
+				showToast('Venta registrada', 'success');
+				goToSalesList();
+			} catch (caught) {
+				errorMessage = caught instanceof Error ? caught.message : 'Error al registrar venta';
+			} finally {
+				submitting = false;
+			}
 	}
 </script>
 
 <div class="lumi-stack lumi-space--md">
 	<PageHeader
-		title="Nueva venta"
-		subtitle="Formulario por etapas para operar rapido sin saturar al usuario"
-		icon="creditCard"
-	>
-		{#snippet actions()}
-			<div class="lumi-flex lumi-flex--gap-sm">
-				<Button type="border" icon="chevronLeft" onclick={() => goto(resolve('/inventory/sales'))}>
-					Volver
-				</Button>
+			title="Nueva venta"
+			subtitle="Formulario por etapas para operar rapido sin saturar al usuario"
+			icon="creditCard"
+		>
+			{#snippet actions()}
+				<div class="lumi-flex lumi-flex--gap-sm">
+					<Button
+						type="border"
+						icon="chevronLeft"
+						onclick={goToSalesList}
+					>
+						Volver
+					</Button>
 				<Button
 					type="filled"
 					color="primary"
@@ -435,6 +473,9 @@
 								createCustomerCode = typeof value === 'string' ? value : '';
 								if (createCustomerCode) {
 									createMarkCustomerFavorite = false;
+									const selected = selectedFavoriteCustomer();
+									createCustomerName = selected?.full_name ?? '';
+									createCustomerPhone = selected?.phone ?? '';
 								}
 							}}
 						/>

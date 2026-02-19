@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import {
@@ -37,6 +36,12 @@
 		price: string;
 	}
 
+	function todayLocalDate(): string {
+		const now = new Date();
+		const offsetMilliseconds = now.getTimezoneOffset() * 60_000;
+		return new Date(now.getTime() - offsetMilliseconds).toISOString().slice(0, 10);
+	}
+
 	const { data }: { data: PageData } = $props();
 
 	const PURCHASE_FORM_TABS: Tab[] = [
@@ -72,7 +77,7 @@
 	let createTrackingNumber = $state('');
 	let createQuantity = $state(1);
 	let createState = $state<'in_transit' | 'received'>('in_transit');
-	let createOrderedAt = $state(new Date().toISOString().slice(0, 10));
+	let createOrderedAt = $state(todayLocalDate());
 	let createUnitCost = $state(0);
 	let createNote = $state('');
 
@@ -122,6 +127,16 @@
 		}
 	}
 
+	function branchQuery(branchCode: string): string {
+		if (!branchCode) return '';
+		const params = new URLSearchParams({ branch_code: branchCode });
+		return `?${params.toString()}`;
+	}
+
+	function goToPurchasesList(): void {
+		window.location.assign(`${resolve('/inventory/purchases')}${branchQuery(createBranchCode)}`);
+	}
+
 	async function submitCreatePurchase(): Promise<void> {
 		if (submitting) return;
 
@@ -161,29 +176,33 @@
 			const payload = await response.json();
 			if (!response.ok) {
 				throw new Error((payload?.message as string) || 'No se pudo registrar la compra');
-			}
+				}
 
-			showToast('Compra registrada', 'success');
-			await goto(resolve('/inventory/purchases'));
-		} catch (caught) {
-			errorMessage = caught instanceof Error ? caught.message : 'Error al registrar compra';
-		} finally {
-			submitting = false;
-		}
+				showToast('Compra registrada', 'success');
+				goToPurchasesList();
+			} catch (caught) {
+				errorMessage = caught instanceof Error ? caught.message : 'Error al registrar compra';
+			} finally {
+				submitting = false;
+			}
 	}
 </script>
 
 <div class="lumi-stack lumi-space--md">
 	<PageHeader
-		title="Nueva compra"
-		subtitle="Formulario por etapas para registrar entradas sin sobrecarga visual"
-		icon="shoppingBag"
-	>
-		{#snippet actions()}
-			<div class="lumi-flex lumi-flex--gap-sm">
-				<Button type="border" icon="chevronLeft" onclick={() => goto(resolve('/inventory/purchases'))}>
-					Volver
-				</Button>
+			title="Nueva compra"
+			subtitle="Formulario por etapas para registrar entradas sin sobrecarga visual"
+			icon="shoppingBag"
+		>
+			{#snippet actions()}
+				<div class="lumi-flex lumi-flex--gap-sm">
+					<Button
+						type="border"
+						icon="chevronLeft"
+						onclick={goToPurchasesList}
+					>
+						Volver
+					</Button>
 				<Button
 					type="filled"
 					color="primary"
