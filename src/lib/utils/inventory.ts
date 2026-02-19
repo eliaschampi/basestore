@@ -27,6 +27,9 @@ export type InventorySaleFulfillmentType = (typeof INVENTORY_SALE_FULFILLMENT_TY
 export const INVENTORY_SALE_SHIPPING_STATES = ['na', 'pending', 'in_transit', 'delivered'] as const;
 export type InventorySaleShippingState = (typeof INVENTORY_SALE_SHIPPING_STATES)[number];
 
+export const INVENTORY_SALE_STATUS_FILTERS = ['all', 'active', 'voided'] as const;
+export type InventorySaleStatusFilter = (typeof INVENTORY_SALE_STATUS_FILTERS)[number];
+
 export const INVENTORY_STOCK_STATES = [
 	'healthy',
 	'low',
@@ -92,6 +95,10 @@ export function isValidInventorySaleShippingState(
 	return INVENTORY_SALE_SHIPPING_STATES.includes(value as InventorySaleShippingState);
 }
 
+export function isValidInventorySaleStatusFilter(value: string): value is InventorySaleStatusFilter {
+	return INVENTORY_SALE_STATUS_FILTERS.includes(value as InventorySaleStatusFilter);
+}
+
 export function isValidInventoryListFilterState(value: string): value is InventoryListFilterState {
 	return INVENTORY_LIST_FILTER_STATES.includes(value as InventoryListFilterState);
 }
@@ -145,6 +152,10 @@ export function normalizeInventorySaleFulfillmentType(value: string | null | und
 }
 
 export function normalizeInventorySaleShippingState(value: string | null | undefined): string {
+	return normalizeInventoryValue(value);
+}
+
+export function normalizeInventorySaleStatusFilter(value: string | null | undefined): string {
 	return normalizeInventoryValue(value);
 }
 

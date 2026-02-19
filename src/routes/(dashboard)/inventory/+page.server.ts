@@ -3,7 +3,7 @@ import { InventoryRepository } from '$lib/server/repositories/inventory.reposito
 import { resolveInventoryBranchCode } from '$lib/utils/inventory';
 import { error } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async ({ locals, depends }) => {
+export const load: PageServerLoad = async ({ locals, depends, url }) => {
 	depends('inventory:stock:load');
 
 	if (!(await locals.can('inventory:read'))) {
@@ -18,7 +18,8 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 			.execute(),
 		locals.db.selectFrom('categories').select(['code', 'name']).orderBy('name', 'asc').execute()
 	]);
-	const selectedBranchCode = resolveInventoryBranchCode(branches) || null;
+	const requestedBranchCode = url.searchParams.get('branch_code') || undefined;
+	const selectedBranchCode = resolveInventoryBranchCode(branches, requestedBranchCode) || null;
 	const overview = selectedBranchCode
 		? await InventoryRepository.listOverview(locals.db, {
 				branchCode: selectedBranchCode,

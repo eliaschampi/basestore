@@ -3,12 +3,11 @@
  * Please do not edit it manually.
  */
 
-import type { ColumnType } from 'kysely';
+import type { ColumnType } from "kysely";
 
-export type Generated<T> =
-	T extends ColumnType<infer S, infer I, infer U>
-		? ColumnType<S, I | undefined, U>
-		: ColumnType<T, T | undefined, T>;
+export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
+  ? ColumnType<S, I | undefined, U>
+  : ColumnType<T, T | undefined, T>;
 
 export type Int8 = ColumnType<string, bigint | number | string, bigint | number | string>;
 
@@ -17,7 +16,7 @@ export type Json = JsonValue;
 export type JsonArray = JsonValue[];
 
 export type JsonObject = {
-	[x: string]: JsonValue | undefined;
+  [x: string]: JsonValue | undefined;
 };
 
 export type JsonPrimitive = boolean | number | string | null;
@@ -29,245 +28,335 @@ export type Numeric = ColumnType<string, number | string, number | string>;
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export interface AuthLoginRateLimits {
-	blocked_until: Timestamp;
-	failed_count: Generated<number>;
-	first_attempt_at: Timestamp;
-	rate_key: string;
-	updated_at: Generated<Timestamp>;
+  blocked_until: Timestamp;
+  failed_count: Generated<number>;
+  first_attempt_at: Timestamp;
+  rate_key: string;
+  updated_at: Generated<Timestamp>;
 }
 
 export interface Branches {
-	code: Generated<string>;
-	created_at: Generated<Timestamp | null>;
-	name: string;
-	state: boolean;
-	users: string[];
+  code: Generated<string>;
+  created_at: Generated<Timestamp | null>;
+  name: string;
+  state: boolean;
+  users: string[];
 }
 
 export interface Brands {
-	code: Generated<string>;
-	created_at: Generated<Timestamp>;
-	description: string | null;
-	name: string;
-	updated_at: Generated<Timestamp>;
+  code: Generated<string>;
+  created_at: Generated<Timestamp>;
+  description: string | null;
+  name: string;
+  updated_at: Generated<Timestamp>;
 }
 
 export interface Categories {
-	code: Generated<string>;
-	created_at: Generated<Timestamp>;
-	description: string | null;
-	name: string;
-	updated_at: Generated<Timestamp>;
+  code: Generated<string>;
+  created_at: Generated<Timestamp>;
+  description: string | null;
+  name: string;
+  updated_at: Generated<Timestamp>;
 }
 
 export interface DriveFiles {
-	code: Generated<string>;
-	created_at: Generated<Timestamp>;
-	is_trashed: Generated<boolean>;
-	mime_type: string | null;
-	name: string;
-	parent_code: string | null;
-	scope: Generated<string>;
-	size: Generated<Int8>;
-	storage_path: string | null;
-	tag: string | null;
-	type: Generated<string>;
-	updated_at: Generated<Timestamp>;
-	user_code: string;
+  code: Generated<string>;
+  created_at: Generated<Timestamp>;
+  is_trashed: Generated<boolean>;
+  mime_type: string | null;
+  name: string;
+  parent_code: string | null;
+  scope: Generated<string>;
+  size: Generated<Int8>;
+  storage_path: string | null;
+  tag: string | null;
+  type: Generated<string>;
+  updated_at: Generated<Timestamp>;
+  user_code: string;
 }
 
 export interface DriveLinks {
-	code: Generated<string>;
-	created_at: Generated<Timestamp>;
-	entity_code: string;
-	entity_type: string;
-	file_code: string;
-	is_primary: Generated<boolean>;
-	linked_by_user_code: string;
-	position: Generated<number>;
+  code: Generated<string>;
+  created_at: Generated<Timestamp>;
+  entity_code: string;
+  entity_type: string;
+  file_code: string;
+  is_primary: Generated<boolean>;
+  linked_by_user_code: string;
+  position: Generated<number>;
 }
 
 export interface InventoryBalances {
-	available: Generated<number | null>;
-	branch_code: string;
-	created_at: Generated<Timestamp>;
-	emergency_point: Generated<number>;
-	inbound: Generated<number>;
-	last_movement_at: Timestamp | null;
-	on_hand: Generated<number>;
-	product_code: string;
-	reorder_point: Generated<number>;
-	reserved: Generated<number>;
-	updated_at: Generated<Timestamp>;
+  available: Generated<number | null>;
+  branch_code: string;
+  created_at: Generated<Timestamp>;
+  emergency_point: Generated<number>;
+  inbound: Generated<number>;
+  last_movement_at: Timestamp | null;
+  on_hand: Generated<number>;
+  product_code: string;
+  reorder_point: Generated<number>;
+  reserved: Generated<number>;
+  updated_at: Generated<Timestamp>;
+}
+
+export interface InventoryCustomerFeed {
+  code: string | null;
+  created_at: Timestamp | null;
+  full_name: string | null;
+  is_favorite: boolean | null;
+  note: string | null;
+  phone: string | null;
+  updated_at: Timestamp | null;
 }
 
 export interface InventoryCustomers {
-	code: Generated<string>;
-	created_at: Generated<Timestamp>;
-	full_name: string;
-	is_favorite: Generated<boolean>;
-	note: string | null;
-	phone: string | null;
-	updated_at: Generated<Timestamp>;
+  code: Generated<string>;
+  created_at: Generated<Timestamp>;
+  full_name: string;
+  is_favorite: Generated<boolean>;
+  note: string | null;
+  phone: string | null;
+  updated_at: Generated<Timestamp>;
+}
+
+export interface InventoryMovementFeed {
+  branch_code: string | null;
+  branch_name: string | null;
+  code: string | null;
+  created_at: Timestamp | null;
+  direction: string | null;
+  note: string | null;
+  occurred_at: Timestamp | null;
+  product_code: string | null;
+  product_name: string | null;
+  product_sku: string | null;
+  purchase_code: string | null;
+  quantity: number | null;
+  reason: string | null;
+  sale_code: string | null;
+  updated_at: Timestamp | null;
+  user_code: string | null;
 }
 
 export interface InventoryMovements {
-	branch_code: string;
-	code: Generated<string>;
-	created_at: Generated<Timestamp>;
-	direction: string;
-	note: string | null;
-	occurred_at: Generated<Timestamp>;
-	product_code: string;
-	purchase_code: string | null;
-	quantity: number;
-	reason: string;
-	sale_code: string | null;
-	updated_at: Generated<Timestamp>;
-	user_code: string;
+  branch_code: string;
+  code: Generated<string>;
+  created_at: Generated<Timestamp>;
+  direction: string;
+  note: string | null;
+  occurred_at: Generated<Timestamp>;
+  product_code: string;
+  purchase_code: string | null;
+  quantity: number;
+  reason: string;
+  sale_code: string | null;
+  updated_at: Generated<Timestamp>;
+  user_code: string;
 }
 
 export interface InventoryOverview {
-	available: number | null;
-	awaiting_first_stock: boolean | null;
-	branch_code: string | null;
-	branch_name: string | null;
-	category_code: string | null;
-	category_name: string | null;
-	created_at: Timestamp | null;
-	emergency_point: number | null;
-	inbound: number | null;
-	last_movement_at: Timestamp | null;
-	on_hand: number | null;
-	product_code: string | null;
-	product_is_active: boolean | null;
-	product_name: string | null;
-	reorder_point: number | null;
-	reserved: number | null;
-	sku: string | null;
-	stock_health_pct: number | null;
-	stock_state: string | null;
-	updated_at: Timestamp | null;
+  available: number | null;
+  awaiting_first_stock: boolean | null;
+  branch_code: string | null;
+  branch_name: string | null;
+  category_code: string | null;
+  category_name: string | null;
+  created_at: Timestamp | null;
+  emergency_point: number | null;
+  inbound: number | null;
+  last_movement_at: Timestamp | null;
+  on_hand: number | null;
+  product_code: string | null;
+  product_is_active: boolean | null;
+  product_name: string | null;
+  reorder_point: number | null;
+  reserved: number | null;
+  sku: string | null;
+  stock_health_pct: number | null;
+  stock_state: string | null;
+  updated_at: Timestamp | null;
+}
+
+export interface InventoryPurchaseFeed {
+  branch_code: string | null;
+  branch_name: string | null;
+  can_refund: boolean | null;
+  code: string | null;
+  created_at: Timestamp | null;
+  entry_type: string | null;
+  note: string | null;
+  ordered_at: Timestamp | null;
+  origin: string | null;
+  product_code: string | null;
+  product_name: string | null;
+  product_sku: string | null;
+  quantity: number | null;
+  received_at: Timestamp | null;
+  refunded_at: Timestamp | null;
+  state: string | null;
+  tracking_number: string | null;
+  unit_cost: Numeric | null;
+  updated_at: Timestamp | null;
+  user_code: string | null;
 }
 
 export interface InventoryPurchases {
-	branch_code: string;
-	code: Generated<string>;
-	created_at: Generated<Timestamp>;
-	entry_type: Generated<string>;
-	note: string | null;
-	ordered_at: Generated<Timestamp>;
-	origin: string;
-	product_code: string;
-	quantity: number;
-	received_at: Timestamp | null;
-	refunded_at: Timestamp | null;
-	state: Generated<string>;
-	tracking_number: string | null;
-	unit_cost: Numeric | null;
-	updated_at: Generated<Timestamp>;
-	user_code: string;
+  branch_code: string;
+  code: Generated<string>;
+  created_at: Generated<Timestamp>;
+  entry_type: Generated<string>;
+  note: string | null;
+  ordered_at: Generated<Timestamp>;
+  origin: string;
+  product_code: string;
+  quantity: number;
+  received_at: Timestamp | null;
+  refunded_at: Timestamp | null;
+  state: Generated<string>;
+  tracking_number: string | null;
+  unit_cost: Numeric | null;
+  updated_at: Generated<Timestamp>;
+  user_code: string;
+}
+
+export interface InventorySaleFeed {
+  branch_code: string | null;
+  branch_name: string | null;
+  code: string | null;
+  created_at: Timestamp | null;
+  customer_code: string | null;
+  customer_full_name: string | null;
+  customer_is_favorite: boolean | null;
+  customer_name: string | null;
+  customer_phone: string | null;
+  delivery_address: string | null;
+  fulfillment_type: string | null;
+  note: string | null;
+  order_reference: string | null;
+  product_code: string | null;
+  product_name: string | null;
+  product_sku: string | null;
+  quantity: number | null;
+  sale_channel: string | null;
+  shipping_state: string | null;
+  sold_at: Timestamp | null;
+  total_amount: Numeric | null;
+  unit_price: Numeric | null;
+  updated_at: Timestamp | null;
+  user_code: string | null;
+  void_note: string | null;
+  voided_at: Timestamp | null;
+  voided_by_name: string | null;
+  voided_by_user_code: string | null;
 }
 
 export interface InventorySales {
-	branch_code: string;
-	code: Generated<string>;
-	created_at: Generated<Timestamp>;
-	customer_code: string | null;
-	customer_name: string;
-	customer_phone: string | null;
-	delivery_address: string | null;
-	fulfillment_type: Generated<string>;
-	note: string | null;
-	order_reference: string | null;
-	product_code: string;
-	quantity: number;
-	sale_channel: Generated<string>;
-	shipping_state: Generated<string>;
-	sold_at: Generated<Timestamp>;
-	total_amount: Generated<Numeric | null>;
-	unit_price: Generated<Numeric>;
-	updated_at: Generated<Timestamp>;
-	user_code: string;
+  branch_code: string;
+  code: Generated<string>;
+  created_at: Generated<Timestamp>;
+  customer_code: string | null;
+  customer_name: string;
+  customer_phone: string | null;
+  delivery_address: string | null;
+  fulfillment_type: Generated<string>;
+  note: string | null;
+  order_reference: string | null;
+  product_code: string;
+  quantity: number;
+  sale_channel: Generated<string>;
+  shipping_state: Generated<string>;
+  sold_at: Generated<Timestamp>;
+  total_amount: Generated<Numeric | null>;
+  unit_price: Generated<Numeric>;
+  updated_at: Generated<Timestamp>;
+  user_code: string;
+  void_note: string | null;
+  voided_at: Timestamp | null;
+  voided_by_user_code: string | null;
 }
 
 export interface Migrations {
-	batch: number;
-	executed_at: Generated<Timestamp>;
-	id: string;
-	name: string;
+  batch: number;
+  executed_at: Generated<Timestamp>;
+  id: string;
+  name: string;
 }
 
 export interface Permissions {
-	action: string;
-	code: Generated<string>;
-	created_at: Generated<Timestamp>;
-	entity: string;
-	user_code: string;
+  action: string;
+  code: Generated<string>;
+  created_at: Generated<Timestamp>;
+  entity: string;
+  user_code: string;
 }
 
 export interface Products {
-	brand_code: string;
-	category_code: string;
-	code: Generated<string>;
-	created_at: Generated<Timestamp>;
-	description: string | null;
-	is_active: Generated<boolean>;
-	name: string;
-	price: Numeric;
-	sku: string | null;
-	updated_at: Generated<Timestamp>;
-	user_code: string;
+  brand_code: string;
+  category_code: string;
+  code: Generated<string>;
+  created_at: Generated<Timestamp>;
+  description: string | null;
+  is_active: Generated<boolean>;
+  name: string;
+  price: Numeric;
+  sku: string | null;
+  updated_at: Generated<Timestamp>;
+  user_code: string;
 }
 
 export interface ProductsOverview {
-	brand_code: string | null;
-	brand_name: string | null;
-	category_code: string | null;
-	category_name: string | null;
-	code: string | null;
-	created_at: Timestamp | null;
-	description: string | null;
-	has_images: boolean | null;
-	images: Json | null;
-	images_count: number | null;
-	is_active: boolean | null;
-	name: string | null;
-	price: Numeric | null;
-	primary_image_url: string | null;
-	sku: string | null;
-	updated_at: Timestamp | null;
+  brand_code: string | null;
+  brand_name: string | null;
+  category_code: string | null;
+  category_name: string | null;
+  code: string | null;
+  created_at: Timestamp | null;
+  description: string | null;
+  has_images: boolean | null;
+  images: Json | null;
+  images_count: number | null;
+  is_active: boolean | null;
+  name: string | null;
+  price: Numeric | null;
+  primary_image_url: string | null;
+  sku: string | null;
+  updated_at: Timestamp | null;
 }
 
 export interface Users {
-	code: Generated<string>;
-	created_at: Generated<Timestamp>;
-	email: string;
-	is_super_admin: Generated<boolean>;
-	last_login: Timestamp | null;
-	last_name: string | null;
-	name: string | null;
-	password_hash: string;
-	photo_url: string | null;
-	updated_at: Generated<Timestamp>;
+  code: Generated<string>;
+  created_at: Generated<Timestamp>;
+  email: string;
+  is_super_admin: Generated<boolean>;
+  last_login: Timestamp | null;
+  last_name: string | null;
+  name: string | null;
+  password_hash: string;
+  photo_url: string | null;
+  updated_at: Generated<Timestamp>;
 }
 
 export interface DB {
-	auth_login_rate_limits: AuthLoginRateLimits;
-	branches: Branches;
-	brands: Brands;
-	categories: Categories;
-	drive_files: DriveFiles;
-	drive_links: DriveLinks;
-	inventory_balances: InventoryBalances;
-	inventory_customers: InventoryCustomers;
-	inventory_movements: InventoryMovements;
-	inventory_overview: InventoryOverview;
-	inventory_purchases: InventoryPurchases;
-	inventory_sales: InventorySales;
-	migrations: Migrations;
-	permissions: Permissions;
-	products: Products;
-	products_overview: ProductsOverview;
-	users: Users;
+  auth_login_rate_limits: AuthLoginRateLimits;
+  branches: Branches;
+  brands: Brands;
+  categories: Categories;
+  drive_files: DriveFiles;
+  drive_links: DriveLinks;
+  inventory_balances: InventoryBalances;
+  inventory_customer_feed: InventoryCustomerFeed;
+  inventory_customers: InventoryCustomers;
+  inventory_movement_feed: InventoryMovementFeed;
+  inventory_movements: InventoryMovements;
+  inventory_overview: InventoryOverview;
+  inventory_purchase_feed: InventoryPurchaseFeed;
+  inventory_purchases: InventoryPurchases;
+  inventory_sale_feed: InventorySaleFeed;
+  inventory_sales: InventorySales;
+  migrations: Migrations;
+  permissions: Permissions;
+  products: Products;
+  products_overview: ProductsOverview;
+  users: Users;
 }

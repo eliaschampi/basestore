@@ -5,12 +5,15 @@ import {
 	defaultShippingStateForFulfillment,
 	isValidInventorySaleChannel,
 	isValidInventorySaleFulfillmentType,
+	isValidInventorySaleStatusFilter,
 	isValidInventorySaleShippingState,
 	normalizeInventorySaleChannel,
 	normalizeInventorySaleFulfillmentType,
+	normalizeInventorySaleStatusFilter,
 	normalizeInventorySaleShippingState,
 	type InventorySaleChannel,
 	type InventorySaleFulfillmentType,
+	type InventorySaleStatusFilter,
 	type InventorySaleShippingState
 } from '$lib/utils/inventory';
 import {
@@ -54,6 +57,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	const shippingStateRaw = normalizeInventorySaleShippingState(
 		url.searchParams.get('shipping_state')
 	);
+	const statusRaw = normalizeInventorySaleStatusFilter(url.searchParams.get('status'));
 	const { page, pageSize } = readInventoryPagination(url, {
 		defaultPage: 1,
 		defaultPageSize: 20,
@@ -76,6 +80,14 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		shippingState = shippingStateRaw;
 	}
 
+	let status: InventorySaleStatusFilter | undefined;
+	if (statusRaw) {
+		if (!isValidInventorySaleStatusFilter(statusRaw)) {
+			throw error(400, 'Estado de venta inválido');
+		}
+		status = statusRaw;
+	}
+
 	const result = await InventoryRepository.listSales(locals.db, {
 		branchCode,
 		productCode,
@@ -83,6 +95,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		search: search || undefined,
 		shippingState,
 		saleChannel,
+		status,
 		page,
 		pageSize
 	});

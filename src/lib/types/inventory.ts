@@ -74,6 +74,7 @@ export interface InventoryPurchaseListItem extends InventoryPurchaseRecord {
 	product_name: string;
 	product_sku: string | null;
 	branch_name: string;
+	can_refund: boolean;
 }
 
 export interface InventoryCustomerRecord {
@@ -104,6 +105,9 @@ export interface InventorySaleRecord {
 	customer_phone: string | null;
 	sold_at: string | Date;
 	note: string | null;
+	voided_at: string | Date | null;
+	voided_by_user_code: string | null;
+	void_note: string | null;
 	created_at: string | Date;
 	updated_at: string | Date;
 }
@@ -114,6 +118,7 @@ export interface InventorySaleListItem extends InventorySaleRecord {
 	branch_name: string;
 	customer_full_name: string | null;
 	customer_is_favorite: boolean | null;
+	voided_by_name: string | null;
 }
 
 export interface InventoryMovementListItem {

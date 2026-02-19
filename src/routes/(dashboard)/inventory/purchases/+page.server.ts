@@ -3,26 +3,20 @@ import type { PageServerLoad } from './$types';
 import { InventoryRepository } from '$lib/server/repositories/inventory.repository';
 import { resolveInventoryBranchCode } from '$lib/utils/inventory';
 
-export const load: PageServerLoad = async ({ locals, depends }) => {
+export const load: PageServerLoad = async ({ locals, depends, url }) => {
 	depends('inventory:purchases:load');
 
 	if (!(await locals.can('inventory:read'))) {
 		throw error(403, 'No tienes permisos para ver compras');
 	}
 
-	const [branches, products] = await Promise.all([
-		locals.db
-			.selectFrom('branches')
-			.select(['code', 'name', 'state'])
-			.orderBy('name', 'asc')
-			.execute(),
-		locals.db
-			.selectFrom('products')
-			.select(['code', 'name', 'category_code', 'is_active', 'price'])
-			.orderBy('name', 'asc')
-			.execute()
-	]);
-	const selectedBranchCode = resolveInventoryBranchCode(branches) || null;
+	const branches = await locals.db
+		.selectFrom('branches')
+		.select(['code', 'name', 'state'])
+		.orderBy('name', 'asc')
+		.execute();
+	const selectedBranchCode =
+		resolveInventoryBranchCode(branches, url.searchParams.get('branch_code')) || null;
 	const purchases = selectedBranchCode
 		? await InventoryRepository.listPurchases(locals.db, {
 				branchCode: selectedBranchCode,
@@ -36,7 +30,6 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 		selectedBranchCode,
 		purchases: purchases.items,
 		pagination: purchases.pagination,
-		branches,
-		products
+		branches
 	};
 };
