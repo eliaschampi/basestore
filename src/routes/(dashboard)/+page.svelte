@@ -92,7 +92,7 @@
 </script>
 
 <div class="lumi-stack lumi-space--xl">
-	<PageHeader title="Dashboard" subtitle="Bienvenido a Faztore" size="xl" icon="home" />
+	<PageHeader title="Dashboard" subtitle="Bienvenido a Faztore" size="xl" icon="house" />
 
 	<div class="lumi-grid lumi-grid--auto-fit lumi-grid--gap-lg">
 		{#each statCards as stat (stat.title)}

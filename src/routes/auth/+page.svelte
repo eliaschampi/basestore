@@ -58,11 +58,11 @@
 				>
 					<Input
 						bind:value={email}
+						icon="mail"
 						name="email"
 						type="email"
 						label="Correo electrónico"
 						placeholder="tu@correo.com"
-						icon="mail"
 						required
 					/>
 

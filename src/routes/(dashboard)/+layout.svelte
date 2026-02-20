@@ -112,7 +112,7 @@
 
 		<SidebarItem href="/" active={page.url.pathname === '/'} collapsed={sidebarCollapsed}>
 			{#snippet icon()}
-				<Icon icon="home" size="20px" />
+				<Icon icon="house" size="20px" />
 			{/snippet}
 			Inicio
 		</SidebarItem>

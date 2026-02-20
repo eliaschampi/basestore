@@ -48,7 +48,7 @@
 	const PURCHASE_STATE_SEGMENT_OPTIONS = [
 		{ label: 'Camino', value: 'in_transit', icon: 'clock' },
 		{ label: 'Recibido', value: 'received', icon: 'checkCircle' },
-		{ label: 'Reemb.', value: 'refunded', icon: 'undo2' }
+		{ label: 'Reemb.', value: 'refunded', icon: 'undo' }
 	] as const;
 
 	const PURCHASE_ORIGIN_OPTIONS: SelectOption[] = [
@@ -266,14 +266,6 @@
 					Filtros
 				</button>
 				<Button
-					type="border"
-					color="info"
-					icon="boxes"
-					onclick={() => navigateWithBranch('/inventory')}
-				>
-					Stock
-				</Button>
-				<Button
 					type="filled"
 					color="primary"
 					icon="plus"
@@ -418,7 +410,7 @@
 											<Button
 												type="flat"
 												size="sm"
-												icon="undo2"
+												icon="undo"
 												color="danger"
 												aria-label="Marcar compra como reembolsada"
 												disabled={!canUpdate || !canRefundPurchase(purchase)}
