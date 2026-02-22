@@ -386,7 +386,8 @@
 	--lumi-drive-search-control-min-width: 15rem;
 	--lumi-drive-content-min-height: 26.25rem;
 	--lumi-drive-loading-min-height: 13.75rem;
-	--lumi-drive-drawer-width: 20rem;
+	--lumi-page-sidebar-drawer-width: 20rem;
+	--lumi-drive-drawer-width: var(--lumi-page-sidebar-drawer-width);
 	--lumi-drive-sidebar-nav-max-height: 20rem;
 	--lumi-drive-uploader-queue-max-height: 15rem;
 	--lumi-drive-preview-min-height: 17.5rem;

@@ -14,10 +14,10 @@
 		DriveFileUploader,
 		DriveSidebar,
 		EmptyState,
-		Icon,
 		Input,
 		Loading,
 		PageHeader,
+		PageSidebar,
 		Radio,
 		SegmentedControl,
 		Select,
@@ -681,15 +681,17 @@
 		icon="hardDrive"
 	>
 		{#snippet actions()}
-			<div class="lumi-flex lumi-flex--gap-sm lumi-align-items--center drive-page__header-actions">
-				<button
-					type="button"
-					class="drive-page__mobile-toggle"
+			<div
+				class="lumi-flex lumi-flex--gap-sm lumi-align-items--center lumi-page-sidebar__header-actions"
+			>
+				<Button
+					type="ghost"
+					size="sm"
+					icon="slidersHorizontal"
+					class="lumi-page-sidebar__mobile-trigger"
 					onclick={() => (showMobileSidebar = true)}
 					aria-label="Abrir navegación"
-				>
-					<Icon icon="menu" size="sm" />
-				</button>
+				/>
 				{#if !isTrashView}
 					{#if canCreate}
 						<Button
@@ -719,26 +721,23 @@
 		{/snippet}
 	</PageHeader>
 
-	<div class="lumi-layout--two-columns drive-page__layout">
-		<aside class="lumi-layout--sidebar-left drive-page__sidebar">
-			<DriveSidebar
-				{selectedMenu}
-				{selectedTag}
-				{storageInfo}
-				onmenuselect={handleMenuSelect}
-				ontagselect={handleTagSelect}
-			/>
-		</aside>
-
-		<!-- Mobile sidebar drawer -->
-		{#if showMobileSidebar}
-			<button
-				type="button"
-				class="drive-page__drawer-backdrop"
-				onclick={() => (showMobileSidebar = false)}
-				aria-label="Cerrar navegación"
-			></button>
-			<aside class="drive-page__drawer">
+	<div class="lumi-layout--two-columns lumi-page-sidebar-layout drive-page__layout">
+		<PageSidebar
+			bind:mobileOpen={showMobileSidebar}
+			variant="drive"
+			mobileAriaLabel="Cerrar navegación"
+			hideMobileHeader
+		>
+			{#snippet sidebar()}
+				<DriveSidebar
+					{selectedMenu}
+					{selectedTag}
+					{storageInfo}
+					onmenuselect={handleMenuSelect}
+					ontagselect={handleTagSelect}
+				/>
+			{/snippet}
+			{#snippet drawer()}
 				<DriveSidebar
 					{selectedMenu}
 					{selectedTag}
@@ -754,8 +753,8 @@
 					}}
 					onclose={() => (showMobileSidebar = false)}
 				/>
-			</aside>
-		{/if}
+			{/snippet}
+		</PageSidebar>
 
 		<section class="lumi-layout--content-right">
 			<div class="lumi-stack lumi-space--sm">
@@ -1102,10 +1101,6 @@
 		align-items: stretch;
 	}
 
-	.drive-page__sidebar {
-		min-width: 0;
-	}
-
 	.drive-page__scope-control {
 		min-width: var(--lumi-drive-scope-control-min-width);
 		flex: 0 1 var(--lumi-drive-scope-control-basis);
@@ -1128,11 +1123,6 @@
 	.drive-page__toolbar {
 		align-items: center;
 		flex-wrap: wrap;
-	}
-
-	.drive-page__header-actions {
-		flex-wrap: wrap;
-		justify-content: flex-end;
 	}
 
 	.drive-page__content {
@@ -1224,46 +1214,7 @@
 		background: var(--lumi-color-border);
 	}
 
-	.drive-page__mobile-toggle {
-		display: none;
-		align-items: center;
-		justify-content: center;
-		padding: var(--lumi-space-sm);
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
-		border-radius: var(--lumi-radius-md);
-		background: var(--lumi-color-surface);
-		color: var(--lumi-color-text);
-		cursor: pointer;
-		transition: var(--lumi-transition-all);
-		flex-shrink: 0;
-	}
-
-	.drive-page__mobile-toggle:hover {
-		background: var(--lumi-color-background-hover);
-		border-color: var(--lumi-color-primary);
-	}
-
-	.drive-page__drawer-backdrop {
-		display: none;
-		border: none;
-		padding: 0;
-		margin: 0;
-		cursor: pointer;
-	}
-
-	.drive-page__drawer {
-		display: none;
-	}
-
 	@media (max-width: 1024px) {
-		.drive-page__layout {
-			grid-template-columns: 1fr;
-		}
-
-		.drive-page__sidebar {
-			display: none;
-		}
-
 		.drive-page__scope-control {
 			width: 100%;
 			flex: 1 1 100%;
@@ -1278,51 +1229,8 @@
 			flex-basis: 100%;
 		}
 
-		.drive-page__header-actions {
-			justify-content: flex-start;
-		}
-
-		.drive-page__mobile-toggle {
-			display: flex;
-			padding: var(--lumi-space-xs) var(--lumi-space-sm);
-		}
-
 		.drive-page__toolbar {
 			align-items: center;
-		}
-
-		.drive-page__drawer-backdrop {
-			display: block;
-			position: fixed;
-			inset: 0;
-			z-index: var(--lumi-z-modal);
-			background: var(--lumi-color-overlay);
-			backdrop-filter: blur(var(--lumi-blur-sm));
-			animation: lumi-fade-in 0.2s ease;
-		}
-
-		.drive-page__drawer {
-			display: block;
-			position: fixed;
-			top: 0;
-			left: 0;
-			bottom: 0;
-			width: min(var(--lumi-drive-drawer-width), 85vw);
-			z-index: calc(var(--lumi-z-modal) + 1);
-			padding: var(--lumi-space-sm);
-			overflow-y: auto;
-			animation: drive-drawer-slide 0.25s cubic-bezier(0.2, 0, 0.13, 1.5);
-		}
-	}
-
-	@keyframes drive-drawer-slide {
-		from {
-			transform: translateX(-100%);
-			opacity: 0;
-		}
-		to {
-			transform: translateX(0);
-			opacity: 1;
 		}
 	}
 </style>

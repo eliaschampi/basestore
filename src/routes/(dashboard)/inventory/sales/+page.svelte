@@ -11,6 +11,7 @@
 		Dialog,
 		Input,
 		PageHeader,
+		PageSidebar,
 		Radio,
 		SegmentedControl,
 		Select,
@@ -328,15 +329,16 @@
 	>
 		{#snippet actions()}
 			<div
-				class="lumi-flex lumi-flex--gap-sm lumi-align-items--center inventory-sales__header-actions"
+				class="lumi-flex lumi-flex--gap-sm lumi-align-items--center lumi-page-sidebar__header-actions"
 			>
-				<button
-					type="button"
-					class="inventory-sales__mobile-toggle"
+				<Button
+					type="ghost"
+					size="sm"
+					icon="slidersHorizontal"
+					class="lumi-page-sidebar__mobile-trigger"
 					onclick={() => (showMobileSidebar = true)}
-				>
-					Filtros
-				</button>
+					aria-label="Abrir filtros de ventas"
+				/>
 				<Button
 					type="filled"
 					color="primary"
@@ -350,30 +352,17 @@
 		{/snippet}
 	</PageHeader>
 
-	<div class="lumi-layout--two-columns inventory-sales__layout">
-		<aside class="lumi-layout--sidebar-left inventory-sales__sidebar">
-			<Card spaced>
+	<div class="lumi-layout--two-columns lumi-page-sidebar-layout inventory-sales__layout">
+		<PageSidebar
+			bind:mobileOpen={showMobileSidebar}
+			variant="inventory-sales"
+			mobileTitle="Panel de ventas"
+			mobileAriaLabel="Cerrar filtros de ventas"
+		>
+			{#snippet sidebar()}
 				{@render salesSidebar()}
-			</Card>
-		</aside>
-
-		{#if showMobileSidebar}
-			<button
-				type="button"
-				class="inventory-sales__drawer-backdrop"
-				onclick={() => (showMobileSidebar = false)}
-				aria-label="Cerrar filtros de ventas"
-			></button>
-			<aside class="inventory-sales__drawer">
-				<Card spaced>
-					<div class="inventory-sales__drawer-header">
-						<p class="lumi-margin--none lumi-font--semibold">Panel de ventas</p>
-						<Button type="flat" size="sm" icon="x" onclick={() => (showMobileSidebar = false)} />
-					</div>
-					{@render salesSidebar()}
-				</Card>
-			</aside>
-		{/if}
+			{/snippet}
+		</PageSidebar>
 
 		<section class="lumi-layout--content-right">
 			<div class="lumi-stack lumi-space--sm">
@@ -530,8 +519,8 @@
 
 {#snippet salesSidebar()}
 	<div class="lumi-stack lumi-space--sm">
-		<div class="inventory-sales__sidebar-section">
-			<p class="inventory-sales__sidebar-label">Filtros</p>
+		<div class="lumi-page-sidebar__section">
+			<p class="lumi-page-sidebar__label">Filtros</p>
 			<div>
 				<p class="lumi-text--xs lumi-text--muted lumi-margin-bottom--xs">Estado de venta</p>
 				<SegmentedControl
@@ -575,32 +564,34 @@
 					showMobileSidebar = false;
 				}}
 			/>
-			<div class="inventory-sales__sidebar-section">
-				<p class="inventory-sales__sidebar-label">Canales</p>
-				<div class="inventory-sales__channel-options">
-					{#each CHANNEL_FILTER_OPTIONS as option (option.value)}
-						<Radio
-							name="sales-channel-filter"
-							group={filterChannel}
-							value={option.value}
-							label={option.label}
-							onchange={async (value) => {
-								filterChannel = (typeof value === 'string' ? value : 'all') as typeof filterChannel;
-								await loadSales(1);
-								showMobileSidebar = false;
-							}}
-						/>
-					{/each}
-				</div>
-			</div>
 			<Input
 				size="md"
 				label="Buscar producto / cliente / referencia"
+				placeholder="Ej: polo, SKU-100"
 				icon="search"
 				value={searchQuery}
 				oninput={(event) =>
 					handleSearchInput((event.currentTarget as HTMLInputElement | null)?.value ?? '')}
 			/>
+		</div>
+
+		<div class="lumi-page-sidebar__section">
+			<p class="lumi-page-sidebar__label">Canales</p>
+			<div class="lumi-page-sidebar__radio-group">
+				{#each CHANNEL_FILTER_OPTIONS as option (option.value)}
+					<Radio
+						name="sales-channel-filter"
+						group={filterChannel}
+						value={option.value}
+						label={option.label}
+						onchange={async (value) => {
+							filterChannel = (typeof value === 'string' ? value : 'all') as typeof filterChannel;
+							await loadSales(1);
+							showMobileSidebar = false;
+						}}
+					/>
+				{/each}
+			</div>
 		</div>
 	</div>
 {/snippet}
@@ -715,68 +706,6 @@
 		align-items: start;
 	}
 
-	.inventory-sales__header-actions {
-		flex-wrap: wrap;
-		justify-content: flex-end;
-	}
-
-	.inventory-sales__sidebar {
-		min-width: 0;
-	}
-
-	.inventory-sales__sidebar :global(.lumi-card) {
-		height: 100%;
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
-		background:
-			linear-gradient(
-				160deg,
-				color-mix(in srgb, var(--lumi-color-info) 7%, transparent) 0%,
-				color-mix(in srgb, var(--lumi-color-primary) 4%, transparent) 55%,
-				transparent 100%
-			),
-			color-mix(in srgb, var(--lumi-color-surface) 94%, transparent);
-		backdrop-filter: blur(var(--lumi-blur-md));
-	}
-
-	.inventory-sales__sidebar-section {
-		display: flex;
-		flex-direction: column;
-		gap: var(--lumi-space-sm);
-	}
-
-	.inventory-sales__sidebar-label {
-		margin: 0;
-		font-size: var(--lumi-font-size-xs);
-		font-weight: var(--lumi-font-weight-semibold);
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-		color: var(--lumi-color-text-muted);
-	}
-
-	.inventory-sales__channel-options {
-		display: grid;
-		gap: var(--lumi-space-2xs);
-	}
-
-	.inventory-sales__channel-options :global(.lumi-radio) {
-		width: 100%;
-		padding: var(--lumi-space-sm) var(--lumi-space-md);
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
-		border-radius: var(--lumi-radius-md);
-		background: var(--lumi-color-surface);
-		transition: var(--lumi-transition-all);
-	}
-
-	.inventory-sales__channel-options :global(.lumi-radio:not(.lumi-radio--disabled):hover) {
-		border-color: var(--lumi-color-primary);
-		background: color-mix(in srgb, var(--lumi-color-primary) 4%, var(--lumi-color-surface));
-	}
-
-	.inventory-sales__channel-options :global(.lumi-radio--checked) {
-		border-color: color-mix(in srgb, var(--lumi-color-primary) 30%, var(--lumi-color-border-light));
-		background: color-mix(in srgb, var(--lumi-color-primary) 8%, var(--lumi-color-surface));
-	}
-
 	.inventory-sales__active-context {
 		padding: var(--lumi-space-sm);
 		border-radius: var(--lumi-radius-lg);
@@ -860,101 +789,9 @@
 		min-width: 72rem;
 	}
 
-	.inventory-sales__mobile-toggle {
-		display: none;
-		align-items: center;
-		justify-content: center;
-		padding: var(--lumi-space-sm);
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
-		border-radius: var(--lumi-radius-md);
-		background: var(--lumi-color-surface);
-		color: var(--lumi-color-text);
-		cursor: pointer;
-		transition: var(--lumi-transition-all);
-		flex-shrink: 0;
-	}
-
-	.inventory-sales__mobile-toggle:hover {
-		background: var(--lumi-color-background-hover);
-		border-color: var(--lumi-color-primary);
-	}
-
-	.inventory-sales__drawer-backdrop {
-		display: none;
-		border: none;
-		padding: 0;
-		margin: 0;
-		cursor: pointer;
-	}
-
-	.inventory-sales__drawer {
-		display: none;
-	}
-
-	.inventory-sales__drawer-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-	}
-
 	@media (max-width: 1024px) {
-		.inventory-sales__layout {
-			grid-template-columns: 1fr;
-		}
-
-		.inventory-sales__sidebar {
-			display: none;
-		}
-
-		.inventory-sales__header-actions {
-			justify-content: flex-start;
-		}
-
-		.inventory-sales__mobile-toggle {
-			display: flex;
-			padding: var(--lumi-space-xs) var(--lumi-space-sm);
-		}
-
-		.inventory-sales__drawer-backdrop {
-			display: block;
-			position: fixed;
-			inset: 0;
-			z-index: var(--lumi-z-modal);
-			background: var(--lumi-color-overlay);
-			backdrop-filter: blur(var(--lumi-blur-sm));
-			animation: lumi-fade-in 0.2s ease;
-		}
-
-		.inventory-sales__drawer {
-			display: block;
-			position: fixed;
-			top: 0;
-			left: 0;
-			bottom: 0;
-			width: min(var(--lumi-drive-drawer-width), 85vw);
-			z-index: calc(var(--lumi-z-modal) + 1);
-			padding: var(--lumi-space-sm);
-			overflow-y: auto;
-			animation: inventory-sales-drawer-slide 0.25s cubic-bezier(0.2, 0, 0.13, 1.5);
-		}
-
-		.inventory-sales__drawer :global(.lumi-card) {
-			height: 100%;
-		}
-
 		.inventory-sales__detail-grid {
 			grid-template-columns: 1fr;
-		}
-	}
-
-	@keyframes inventory-sales-drawer-slide {
-		from {
-			transform: translateX(-100%);
-			opacity: 0;
-		}
-		to {
-			transform: translateX(0);
-			opacity: 1;
 		}
 	}
 </style>

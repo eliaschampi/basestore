@@ -11,6 +11,7 @@
 		Dialog,
 		Input,
 		PageHeader,
+		PageSidebar,
 		Radio,
 		SegmentedControl,
 		Select,
@@ -256,15 +257,16 @@
 	>
 		{#snippet actions()}
 			<div
-				class="lumi-flex lumi-flex--gap-sm lumi-align-items--center inventory-purchases__header-actions"
+				class="lumi-flex lumi-flex--gap-sm lumi-align-items--center lumi-page-sidebar__header-actions"
 			>
-				<button
-					type="button"
-					class="inventory-purchases__mobile-toggle"
+				<Button
+					type="ghost"
+					size="sm"
+					icon="slidersHorizontal"
+					class="lumi-page-sidebar__mobile-trigger"
 					onclick={() => (showMobileSidebar = true)}
-				>
-					Filtros
-				</button>
+					aria-label="Abrir filtros de compras"
+				/>
 				<Button
 					type="filled"
 					color="primary"
@@ -278,30 +280,17 @@
 		{/snippet}
 	</PageHeader>
 
-	<div class="lumi-layout--two-columns inventory-purchases__layout">
-		<aside class="lumi-layout--sidebar-left inventory-purchases__sidebar">
-			<Card spaced>
+	<div class="lumi-layout--two-columns lumi-page-sidebar-layout inventory-purchases__layout">
+		<PageSidebar
+			bind:mobileOpen={showMobileSidebar}
+			variant="inventory-purchases"
+			mobileTitle="Panel de compras"
+			mobileAriaLabel="Cerrar filtros de compras"
+		>
+			{#snippet sidebar()}
 				{@render purchasesSidebar()}
-			</Card>
-		</aside>
-
-		{#if showMobileSidebar}
-			<button
-				type="button"
-				class="inventory-purchases__drawer-backdrop"
-				onclick={() => (showMobileSidebar = false)}
-				aria-label="Cerrar filtros de compras"
-			></button>
-			<aside class="inventory-purchases__drawer">
-				<Card spaced>
-					<div class="inventory-purchases__drawer-header">
-						<p class="lumi-margin--none lumi-font--semibold">Panel de compras</p>
-						<Button type="flat" size="sm" icon="x" onclick={() => (showMobileSidebar = false)} />
-					</div>
-					{@render purchasesSidebar()}
-				</Card>
-			</aside>
-		{/if}
+			{/snippet}
+		</PageSidebar>
 
 		<section class="lumi-layout--content-right">
 			<div class="lumi-stack lumi-space--sm">
@@ -461,8 +450,27 @@
 
 {#snippet purchasesSidebar()}
 	<div class="lumi-stack lumi-space--sm">
-		<div class="inventory-purchases__sidebar-section">
-			<p class="inventory-purchases__sidebar-label">Filtros</p>
+		<div class="lumi-page-sidebar__section">
+			<p class="lumi-page-sidebar__label">Filtros</p>
+			<div>
+				<p class="lumi-text--xs lumi-text--muted lumi-margin-bottom--xs">Estado de compra</p>
+				<SegmentedControl
+					value={filterState}
+					options={PURCHASE_STATE_SEGMENT_OPTIONS as unknown as {
+						label: string;
+						value: string;
+						icon?: string;
+					}[]}
+					fullWidth
+					onchange={async (value) => {
+						filterState = (
+							typeof value === 'string' ? value : 'received'
+						) as InventoryPurchaseState;
+						await loadPurchases(1);
+						showMobileSidebar = false;
+					}}
+				/>
+			</div>
 			<Select
 				size="md"
 				label="Sede"
@@ -474,14 +482,6 @@
 					await loadPurchases(1);
 					showMobileSidebar = false;
 				}}
-			/>
-			<Input
-				size="md"
-				label="Buscar producto / SKU / tracking"
-				icon="search"
-				value={searchQuery}
-				oninput={(event) =>
-					handleSearchInput((event.currentTarget as HTMLInputElement | null)?.value ?? '')}
 			/>
 			<Select
 				size="md"
@@ -495,31 +495,22 @@
 					showMobileSidebar = false;
 				}}
 			/>
-		</div>
-
-		<div class="inventory-purchases__sidebar-section">
-			<p class="inventory-purchases__sidebar-label">Estado</p>
-			<SegmentedControl
-				value={filterState}
-				options={PURCHASE_STATE_SEGMENT_OPTIONS as unknown as {
-					label: string;
-					value: string;
-					icon?: string;
-				}[]}
-				fullWidth
-				onchange={async (value) => {
-					filterState = (typeof value === 'string' ? value : 'received') as InventoryPurchaseState;
-					await loadPurchases(1);
-					showMobileSidebar = false;
-				}}
+			<Input
+				size="md"
+				label="Buscar producto / SKU / tracking"
+				placeholder="Ej: polo, SKU-100"
+				icon="search"
+				value={searchQuery}
+				oninput={(event) =>
+					handleSearchInput((event.currentTarget as HTMLInputElement | null)?.value ?? '')}
 			/>
 		</div>
 
-		<div class="inventory-purchases__sidebar-section">
-			<p class="inventory-purchases__sidebar-label">Tipo</p>
-			<div class="inventory-purchases__type-options">
+		<div class="lumi-page-sidebar__section">
+			<p class="lumi-page-sidebar__label">Tipo</p>
+			<div class="lumi-page-sidebar__radio-group">
 				{#each ENTRY_TYPE_OPTIONS as option (option.value)}
-					<div class="inventory-purchases__type-option">
+					<div class="lumi-page-sidebar__radio-option">
 						<Radio
 							name="purchase-type-filter"
 							group={filterEntryType}
@@ -533,13 +524,6 @@
 								showMobileSidebar = false;
 							}}
 						/>
-						<span class="inventory-purchases__type-option-description">
-							{option.value === 'initial'
-								? 'Ingreso de arranque'
-								: option.value === 'restock'
-									? 'Reposicion operativa'
-									: 'Todos los tipos'}
-						</span>
 					</div>
 				{/each}
 			</div>
@@ -620,80 +604,6 @@
 <style>
 	.inventory-purchases__layout {
 		align-items: start;
-	}
-
-	.inventory-purchases__header-actions {
-		flex-wrap: wrap;
-		justify-content: flex-end;
-	}
-
-	.inventory-purchases__sidebar {
-		min-width: 0;
-	}
-
-	.inventory-purchases__sidebar :global(.lumi-card) {
-		height: 100%;
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
-		background:
-			linear-gradient(
-				155deg,
-				color-mix(in srgb, var(--lumi-color-warning) 8%, transparent) 0%,
-				color-mix(in srgb, var(--lumi-color-info) 4%, transparent) 55%,
-				transparent 100%
-			),
-			color-mix(in srgb, var(--lumi-color-surface) 94%, transparent);
-		backdrop-filter: blur(var(--lumi-blur-md));
-	}
-
-	.inventory-purchases__sidebar-section {
-		display: flex;
-		flex-direction: column;
-		gap: var(--lumi-space-sm);
-	}
-
-	.inventory-purchases__sidebar-label {
-		margin: 0;
-		font-size: var(--lumi-font-size-xs);
-		font-weight: var(--lumi-font-weight-semibold);
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-		color: var(--lumi-color-text-muted);
-	}
-
-	.inventory-purchases__type-options {
-		display: grid;
-		gap: var(--lumi-space-sm);
-	}
-
-	.inventory-purchases__type-options :global(.lumi-radio) {
-		width: 100%;
-		padding: var(--lumi-space-sm) var(--lumi-space-md);
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
-		border-radius: var(--lumi-radius-lg);
-		background: var(--lumi-color-surface);
-		transition: var(--lumi-transition-all);
-	}
-
-	.inventory-purchases__type-options :global(.lumi-radio:not(.lumi-radio--disabled):hover) {
-		border-color: var(--lumi-color-primary);
-		background: color-mix(in srgb, var(--lumi-color-primary) 4%, var(--lumi-color-surface));
-	}
-
-	.inventory-purchases__type-options :global(.lumi-radio--checked) {
-		border-color: color-mix(in srgb, var(--lumi-color-primary) 32%, var(--lumi-color-border));
-		background: color-mix(in srgb, var(--lumi-color-primary) 8%, var(--lumi-color-surface));
-	}
-
-	.inventory-purchases__type-option {
-		display: flex;
-		flex-direction: column;
-		gap: var(--lumi-space-2xs);
-	}
-
-	.inventory-purchases__type-option-description {
-		font-size: var(--lumi-font-size-xs);
-		color: var(--lumi-color-text-muted);
-		padding-left: calc(var(--lumi-icon-md) + var(--lumi-space-sm));
 	}
 
 	.inventory-purchases__active-context {
@@ -779,101 +689,9 @@
 		min-width: 74rem;
 	}
 
-	.inventory-purchases__mobile-toggle {
-		display: none;
-		align-items: center;
-		justify-content: center;
-		padding: var(--lumi-space-sm);
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
-		border-radius: var(--lumi-radius-md);
-		background: var(--lumi-color-surface);
-		color: var(--lumi-color-text);
-		cursor: pointer;
-		transition: var(--lumi-transition-all);
-		flex-shrink: 0;
-	}
-
-	.inventory-purchases__mobile-toggle:hover {
-		background: var(--lumi-color-background-hover);
-		border-color: var(--lumi-color-primary);
-	}
-
-	.inventory-purchases__drawer-backdrop {
-		display: none;
-		border: none;
-		padding: 0;
-		margin: 0;
-		cursor: pointer;
-	}
-
-	.inventory-purchases__drawer {
-		display: none;
-	}
-
-	.inventory-purchases__drawer-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-	}
-
 	@media (max-width: 1024px) {
-		.inventory-purchases__layout {
-			grid-template-columns: 1fr;
-		}
-
-		.inventory-purchases__sidebar {
-			display: none;
-		}
-
-		.inventory-purchases__header-actions {
-			justify-content: flex-start;
-		}
-
-		.inventory-purchases__mobile-toggle {
-			display: flex;
-			padding: var(--lumi-space-xs) var(--lumi-space-sm);
-		}
-
-		.inventory-purchases__drawer-backdrop {
-			display: block;
-			position: fixed;
-			inset: 0;
-			z-index: var(--lumi-z-modal);
-			background: var(--lumi-color-overlay);
-			backdrop-filter: blur(var(--lumi-blur-sm));
-			animation: lumi-fade-in 0.2s ease;
-		}
-
-		.inventory-purchases__drawer {
-			display: block;
-			position: fixed;
-			top: 0;
-			left: 0;
-			bottom: 0;
-			width: min(var(--lumi-drive-drawer-width), 85vw);
-			z-index: calc(var(--lumi-z-modal) + 1);
-			padding: var(--lumi-space-sm);
-			overflow-y: auto;
-			animation: inventory-purchases-drawer-slide 0.25s cubic-bezier(0.2, 0, 0.13, 1.5);
-		}
-
-		.inventory-purchases__drawer :global(.lumi-card) {
-			height: 100%;
-		}
-
 		.inventory-purchases__detail-grid {
 			grid-template-columns: 1fr;
-		}
-	}
-
-	@keyframes inventory-purchases-drawer-slide {
-		from {
-			transform: translateX(-100%);
-			opacity: 0;
-		}
-		to {
-			transform: translateX(0);
-			opacity: 1;
 		}
 	}
 </style>

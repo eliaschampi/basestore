@@ -74,6 +74,8 @@ export type { NumberInputColor, NumberInputProps, NumberInputSize } from './Numb
 export { NumberInput } from './NumberInput';
 export type { PageHeaderProps } from './PageHeader';
 export { PageHeader } from './PageHeader';
+export type { PageSidebarProps, PageSidebarVariant } from './PageSidebar';
+export { PageSidebar } from './PageSidebar';
 export type { ProgressColor, ProgressProps, ProgressSize } from './Progress';
 export { Progress } from './Progress';
 export type { RadioColor, RadioProps, RadioSize } from './Radio';

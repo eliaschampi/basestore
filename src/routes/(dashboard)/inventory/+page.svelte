@@ -14,6 +14,7 @@
 		List,
 		ListItem,
 		PageHeader,
+		PageSidebar,
 		SegmentedControl,
 		Select,
 		Slider,
@@ -382,15 +383,16 @@
 	>
 		{#snippet actions()}
 			<div
-				class="lumi-flex lumi-flex--gap-sm lumi-align-items--center inventory-stock__header-actions"
+				class="lumi-flex lumi-flex--gap-sm lumi-align-items--center lumi-page-sidebar__header-actions"
 			>
-				<button
-					type="button"
-					class="inventory-stock__mobile-toggle"
+				<Button
+					type="ghost"
+					size="sm"
+					icon="slidersHorizontal"
+					class="lumi-page-sidebar__mobile-trigger"
 					onclick={() => (showMobileSidebar = true)}
-				>
-					Filtros
-				</button>
+					aria-label="Abrir filtros de stock"
+				/>
 				<Button
 					type="border"
 					color="info"
@@ -417,30 +419,17 @@
 		<strong>Recibido</strong>.
 	</Alert>
 
-	<div class="lumi-layout--two-columns inventory-stock__layout">
-		<aside class="lumi-layout--sidebar-left inventory-stock__sidebar">
-			<Card spaced>
+	<div class="lumi-layout--two-columns lumi-page-sidebar-layout inventory-stock__layout">
+		<PageSidebar
+			bind:mobileOpen={showMobileSidebar}
+			variant="inventory-stock"
+			mobileTitle="Filtros de stock"
+			mobileAriaLabel="Cerrar filtros de stock"
+		>
+			{#snippet sidebar()}
 				{@render stockSidebar()}
-			</Card>
-		</aside>
-
-		{#if showMobileSidebar}
-			<button
-				type="button"
-				class="inventory-stock__drawer-backdrop"
-				onclick={() => (showMobileSidebar = false)}
-				aria-label="Cerrar filtros de stock"
-			></button>
-			<aside class="inventory-stock__drawer">
-				<Card spaced>
-					<div class="inventory-stock__drawer-header">
-						<p class="lumi-margin--none lumi-font--semibold">Filtros de stock</p>
-						<Button type="flat" size="sm" icon="x" onclick={() => (showMobileSidebar = false)} />
-					</div>
-					{@render stockSidebar()}
-				</Card>
-			</aside>
-		{/if}
+			{/snippet}
+		</PageSidebar>
 
 		<section class="lumi-layout--content-right">
 			<div class="lumi-stack lumi-space--sm">
@@ -591,8 +580,24 @@
 
 {#snippet stockSidebar()}
 	<div class="lumi-stack lumi-space--sm">
-		<div class="inventory-stock__sidebar-section">
-			<p class="inventory-stock__sidebar-label">Vista</p>
+		<div class="lumi-page-sidebar__section">
+			<p class="lumi-page-sidebar__label">Vista</p>
+			<div class="lumi-margin--bottom-sm">
+				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Estado de stock</p>
+				<SegmentedControl
+					value={filterStock}
+					options={STOCK_FILTER_OPTIONS as unknown as {
+						label: string;
+						value: string;
+						icon?: string;
+					}[]}
+					fullWidth
+					onchange={(value) => void applyStockFilter(value)}
+				/>
+				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
+					Se muestran productos activos e inactivos.
+				</p>
+			</div>
 			<Select
 				size="md"
 				label="Sede"
@@ -610,26 +615,10 @@
 				oninput={(event) =>
 					handleSearchInput((event.currentTarget as HTMLInputElement | null)?.value ?? '')}
 			/>
-			<div>
-				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Estado de stock</p>
-				<SegmentedControl
-					value={filterStock}
-					options={STOCK_FILTER_OPTIONS as unknown as {
-						label: string;
-						value: string;
-						icon?: string;
-					}[]}
-					fullWidth
-					onchange={(value) => void applyStockFilter(value)}
-				/>
-				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
-					Se muestran productos activos e inactivos.
-				</p>
-			</div>
 		</div>
 
-		<div class="inventory-stock__sidebar-section">
-			<p class="inventory-stock__sidebar-label">Categorias</p>
+		<div class="lumi-page-sidebar__section">
+			<p class="lumi-page-sidebar__label">Categorias</p>
 			<List size="sm" color="primary" class="inventory-stock__category-list">
 				{#each categoryFolders as folder (folder.code)}
 					<ListItem
@@ -743,46 +732,8 @@
 		align-items: start;
 	}
 
-	.inventory-stock__header-actions {
-		flex-wrap: wrap;
-		justify-content: flex-end;
-	}
-
 	.inventory-stock__stats-grid {
 		margin-bottom: var(--lumi-space-2xs);
-	}
-
-	.inventory-stock__sidebar {
-		min-width: 0;
-	}
-
-	.inventory-stock__sidebar :global(.lumi-card) {
-		height: 100%;
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
-		background:
-			linear-gradient(
-				160deg,
-				color-mix(in srgb, var(--lumi-color-primary) 6%, transparent) 0%,
-				color-mix(in srgb, var(--lumi-color-info) 5%, transparent) 52%,
-				transparent 100%
-			),
-			color-mix(in srgb, var(--lumi-color-surface) 94%, transparent);
-		backdrop-filter: blur(var(--lumi-blur-md));
-	}
-
-	.inventory-stock__sidebar-section {
-		display: flex;
-		flex-direction: column;
-		gap: var(--lumi-space-sm);
-	}
-
-	.inventory-stock__sidebar-label {
-		margin: 0;
-		font-size: var(--lumi-font-size-xs);
-		font-weight: var(--lumi-font-weight-semibold);
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-		color: var(--lumi-color-text-muted);
 	}
 
 	:global(.inventory-stock__category-list) {
@@ -833,109 +784,15 @@
 		min-width: 48rem;
 	}
 
-	.inventory-stock__mobile-toggle {
-		display: none;
-		align-items: center;
-		justify-content: center;
-		padding: var(--lumi-space-sm);
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
-		border-radius: var(--lumi-radius-md);
-		background: var(--lumi-color-surface);
-		color: var(--lumi-color-text);
-		cursor: pointer;
-		transition: var(--lumi-transition-all);
-		flex-shrink: 0;
-	}
-
-	.inventory-stock__mobile-toggle:hover {
-		background: var(--lumi-color-background-hover);
-		border-color: var(--lumi-color-primary);
-	}
-
-	.inventory-stock__drawer-backdrop {
-		display: none;
-		border: none;
-		padding: 0;
-		margin: 0;
-		cursor: pointer;
-	}
-
-	.inventory-stock__drawer {
-		display: none;
-	}
-
-	.inventory-stock__drawer-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-	}
-
 	@media (max-width: 1200px) {
 		.inventory-stock__stats-grid {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
 	}
 
-	@media (max-width: 1024px) {
-		.inventory-stock__layout {
-			grid-template-columns: 1fr;
-		}
-
-		.inventory-stock__sidebar {
-			display: none;
-		}
-
-		.inventory-stock__header-actions {
-			justify-content: flex-start;
-		}
-
-		.inventory-stock__mobile-toggle {
-			display: flex;
-			padding: var(--lumi-space-xs) var(--lumi-space-sm);
-		}
-
-		.inventory-stock__drawer-backdrop {
-			display: block;
-			position: fixed;
-			inset: 0;
-			z-index: var(--lumi-z-modal);
-			background: var(--lumi-color-overlay);
-			backdrop-filter: blur(var(--lumi-blur-sm));
-			animation: lumi-fade-in 0.2s ease;
-		}
-
-		.inventory-stock__drawer {
-			display: block;
-			position: fixed;
-			top: 0;
-			left: 0;
-			bottom: 0;
-			width: min(var(--lumi-drive-drawer-width), 85vw);
-			z-index: calc(var(--lumi-z-modal) + 1);
-			padding: var(--lumi-space-sm);
-			overflow-y: auto;
-			animation: inventory-stock-drawer-slide 0.25s cubic-bezier(0.2, 0, 0.13, 1.5);
-		}
-
-		.inventory-stock__drawer :global(.lumi-card) {
-			height: 100%;
-		}
-	}
-
 	@media (max-width: 768px) {
 		.inventory-stock__stats-grid {
 			grid-template-columns: 1fr;
-		}
-	}
-
-	@keyframes inventory-stock-drawer-slide {
-		from {
-			transform: translateX(-100%);
-			opacity: 0;
-		}
-		to {
-			transform: translateX(0);
-			opacity: 1;
 		}
 	}
 </style>
