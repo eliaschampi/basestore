@@ -7,7 +7,6 @@ interface CreateCustomerBody {
 	full_name?: string;
 	phone?: string;
 	note?: string;
-	is_favorite?: boolean;
 }
 
 export const GET: RequestHandler = async ({ url, locals }) => {
@@ -16,7 +15,6 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	}
 
 	const search = (url.searchParams.get('search') || '').trim();
-	const favoritesOnly = url.searchParams.get('favorites_only') === 'true';
 	const { page, pageSize } = readInventoryPagination(url, {
 		defaultPage: 1,
 		defaultPageSize: 20,
@@ -25,7 +23,6 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 	const result = await InventoryRepository.listCustomers(locals.db, {
 		search: search || undefined,
-		favoritesOnly,
 		page,
 		pageSize
 	});
@@ -42,7 +39,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const fullName = (body.full_name || '').trim();
 	const phone = (body.phone || '').trim();
 	const note = (body.note || '').trim();
-	const isFavorite = body.is_favorite === true;
 
 	if (!fullName) {
 		throw error(400, 'El nombre del cliente es obligatorio');
@@ -52,8 +48,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const customer = await InventoryRepository.createCustomer(locals.db, {
 			fullName,
 			phone: phone || null,
-			note: note || null,
-			isFavorite
+			note: note || null
 		});
 
 		return json({ customer }, { status: 201 });

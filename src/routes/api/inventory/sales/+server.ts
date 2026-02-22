@@ -38,7 +38,6 @@ interface CreateSaleBody {
 	order_reference?: string;
 	customer_name?: string;
 	customer_phone?: string;
-	mark_customer_favorite?: boolean;
 	sold_at?: string;
 	note?: string;
 }
@@ -148,7 +147,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const shippingStateRaw = normalizeInventorySaleShippingState(body.shipping_state || '');
 	const deliveryAddress = (body.delivery_address || '').trim();
 	const orderReference = (body.order_reference || '').trim();
-	const markCustomerFavorite = body.mark_customer_favorite === true;
 	const soldAtRaw = (body.sold_at || '').trim();
 	const note = (body.note || '').trim();
 
@@ -234,7 +232,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			customerCode: customerCode || null,
 			customerName: customerName || null,
 			customerPhone: customerPhone || null,
-			markCustomerFavorite,
 			soldAt,
 			note: note || null
 		});

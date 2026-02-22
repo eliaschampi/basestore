@@ -13,7 +13,6 @@
 		PageHeader,
 		SegmentedControl,
 		Select,
-		Switch,
 		Tabs,
 		Textarea
 	} from '$lib/components';
@@ -94,7 +93,6 @@
 	let createCustomerCode = $state('');
 	let createCustomerName = $state('');
 	let createCustomerPhone = $state('');
-	let createMarkCustomerFavorite = $state(false);
 	let createNote = $state('');
 
 	onMount(() => {
@@ -103,7 +101,7 @@
 		}
 
 		if (customerSearchOptions.length === 0) {
-			customerSearchOptions = (data.favoriteCustomers ?? []) as InventoryCustomerRecord[];
+			customerSearchOptions = (data.customers ?? []) as InventoryCustomerRecord[];
 		}
 	});
 
@@ -125,7 +123,7 @@
 		{ value: '', label: 'Registrar cliente manualmente' } as SelectOption,
 		...customerSearchOptions.map((customer) => ({
 			value: customer.code,
-			label: `${customer.full_name} ★`
+			label: customer.phone ? `${customer.full_name} · ${customer.phone}` : customer.full_name
 		}))
 	]);
 
@@ -182,7 +180,7 @@
 		}
 	}
 
-	function selectedFavoriteCustomer(): InventoryCustomerRecord | null {
+	function selectedCustomerOption(): InventoryCustomerRecord | null {
 		if (!createCustomerCode) return null;
 		return customerSearchOptions.find((customer) => customer.code === createCustomerCode) ?? null;
 	}
@@ -198,10 +196,9 @@
 		await goto(resolve(destination));
 	}
 
-	async function loadFavoriteCustomers(search = ''): Promise<void> {
+	async function loadCustomers(search = ''): Promise<void> {
 		try {
 			const params = new SvelteURLSearchParams({
-				favorites_only: 'true',
 				page: '1',
 				page_size: '80'
 			});
@@ -248,7 +245,7 @@
 			return;
 		}
 
-		const selectedCustomer = selectedFavoriteCustomer();
+		const selectedCustomer = selectedCustomerOption();
 		const customerNameForPayload = (
 			createCustomerCode ? selectedCustomer?.full_name || createCustomerName : createCustomerName
 		).trim();
@@ -282,7 +279,6 @@
 					customer_code: createCustomerCode || null,
 					customer_name: customerNameForPayload,
 					customer_phone: customerPhoneForPayload || null,
-					mark_customer_favorite: createMarkCustomerFavorite,
 					sold_at: createSoldAt,
 					note: createNote.trim()
 				})
@@ -458,18 +454,17 @@
 				<Fieldset legend="Cliente">
 					<div class="lumi-stack lumi-space--sm">
 						<Select
-							label="Cliente favorito (opcional)"
+							label="Cliente registrado (opcional)"
 							value={createCustomerCode}
 							options={customerSelectOptions}
 							autocomplete
 							clearable={false}
-							noDataText="No hay clientes favoritos"
-							onsearch={(query) => void loadFavoriteCustomers(query)}
+							noDataText="No hay clientes registrados"
+							onsearch={(query) => void loadCustomers(query)}
 							onchange={(value) => {
 								createCustomerCode = typeof value === 'string' ? value : '';
 								if (createCustomerCode) {
-									createMarkCustomerFavorite = false;
-									const selected = selectedFavoriteCustomer();
+									const selected = selectedCustomerOption();
 									createCustomerName = selected?.full_name ?? '';
 									createCustomerPhone = selected?.phone ?? '';
 								}
@@ -491,13 +486,6 @@
 										(createCustomerPhone = (event.currentTarget as HTMLInputElement).value)}
 								/>
 							</div>
-							<Switch
-								label="Guardar cliente como favorito"
-								checked={createMarkCustomerFavorite}
-								onchange={(checked) => {
-									createMarkCustomerFavorite = checked;
-								}}
-							/>
 						{/if}
 					</div>
 				</Fieldset>

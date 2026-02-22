@@ -81,7 +81,6 @@ export interface InventoryCustomerRecord {
 	code: string;
 	full_name: string;
 	phone: string | null;
-	is_favorite: boolean;
 	note: string | null;
 	created_at: string | Date;
 	updated_at: string | Date;
@@ -117,7 +116,6 @@ export interface InventorySaleListItem extends InventorySaleRecord {
 	product_sku: string | null;
 	branch_name: string;
 	customer_full_name: string | null;
-	customer_is_favorite: boolean | null;
 	voided_by_name: string | null;
 }
 

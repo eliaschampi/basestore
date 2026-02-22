@@ -166,7 +166,6 @@ SELECT
   p.sku AS product_sku,
   b.name AS branch_name,
   c.full_name AS customer_full_name,
-  c.is_favorite AS customer_is_favorite,
   u.name AS voided_by_name
 FROM public.inventory_sales s
 INNER JOIN public.products p ON p.code = s.product_code
@@ -201,7 +200,6 @@ SELECT
   c.code,
   c.full_name,
   c.phone,
-  c.is_favorite,
   c.note,
   c.created_at,
   c.updated_at
@@ -470,7 +468,6 @@ RETURNS TABLE(
   product_sku TEXT,
   branch_name TEXT,
   customer_full_name TEXT,
-  customer_is_favorite BOOLEAN,
   voided_by_name TEXT,
   total_count INTEGER
 )
@@ -536,7 +533,6 @@ SELECT
   ranked.product_sku,
   ranked.branch_name,
   ranked.customer_full_name,
-  ranked.customer_is_favorite,
   ranked.voided_by_name,
   ranked.total_count
 FROM ranked;
@@ -544,7 +540,6 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.inventory_list_customers(
   p_search TEXT DEFAULT NULL,
-  p_favorites_only BOOLEAN DEFAULT false,
   p_page INTEGER DEFAULT 1,
   p_page_size INTEGER DEFAULT 30
 )
@@ -552,7 +547,6 @@ RETURNS TABLE(
   code UUID,
   full_name TEXT,
   phone TEXT,
-  is_favorite BOOLEAN,
   note TEXT,
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ,
@@ -564,19 +558,18 @@ AS $$
 WITH filtered AS (
   SELECT icf.*
   FROM public.inventory_customer_feed icf
-  WHERE (NOT COALESCE(p_favorites_only, false) OR icf.is_favorite = true)
-    AND (
-      NULLIF(BTRIM(COALESCE(p_search, '')), '') IS NULL
-      OR icf.full_name ILIKE '%' || BTRIM(p_search) || '%'
-      OR COALESCE(icf.phone, '') ILIKE '%' || BTRIM(p_search) || '%'
-    )
+  WHERE (
+    NULLIF(BTRIM(COALESCE(p_search, '')), '') IS NULL
+    OR icf.full_name ILIKE '%' || BTRIM(p_search) || '%'
+    OR COALESCE(icf.phone, '') ILIKE '%' || BTRIM(p_search) || '%'
+  )
 ),
 ranked AS (
   SELECT
     filtered.*,
     COUNT(*) OVER ()::int AS total_count
   FROM filtered
-  ORDER BY filtered.is_favorite DESC, filtered.updated_at DESC, filtered.full_name ASC
+  ORDER BY filtered.updated_at DESC, filtered.full_name ASC
   LIMIT GREATEST(COALESCE(p_page_size, 30), 1)
   OFFSET (GREATEST(COALESCE(p_page, 1), 1) - 1) * GREATEST(COALESCE(p_page_size, 30), 1)
 )
@@ -584,7 +577,6 @@ SELECT
   ranked.code,
   ranked.full_name,
   ranked.phone,
-  ranked.is_favorite,
   ranked.note,
   ranked.created_at,
   ranked.updated_at,

@@ -105,7 +105,6 @@ export interface InventoryCustomerFeed {
 	code: string | null;
 	created_at: Timestamp | null;
 	full_name: string | null;
-	is_favorite: boolean | null;
 	note: string | null;
 	phone: string | null;
 	updated_at: Timestamp | null;
@@ -115,7 +114,6 @@ export interface InventoryCustomers {
 	code: Generated<string>;
 	created_at: Generated<Timestamp>;
 	full_name: string;
-	is_favorite: Generated<boolean>;
 	note: string | null;
 	phone: string | null;
 	updated_at: Generated<Timestamp>;
@@ -228,7 +226,6 @@ export interface InventorySaleFeed {
 	created_at: Timestamp | null;
 	customer_code: string | null;
 	customer_full_name: string | null;
-	customer_is_favorite: boolean | null;
 	customer_name: string | null;
 	customer_phone: string | null;
 	delivery_address: string | null;

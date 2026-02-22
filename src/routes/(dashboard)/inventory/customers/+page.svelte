@@ -1,18 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { invalidate } from '$app/navigation';
-	import {
-		Alert,
-		Button,
-		Card,
-		Chip,
-		Dialog,
-		Input,
-		PageHeader,
-		Switch,
-		Table,
-		Textarea
-	} from '$lib/components';
+	import { Alert, Button, Card, Dialog, Input, PageHeader, Table, Textarea } from '$lib/components';
 	import { can } from '$lib/stores/permissions';
 	import { showToast } from '$lib/stores/Toast';
 	import type { PageData } from './$types';
@@ -22,7 +11,6 @@
 		full_name: string;
 		phone: string | null;
 		note: string | null;
-		is_favorite: boolean;
 		created_at: Date | string;
 		updated_at: Date | string;
 	}
@@ -32,16 +20,16 @@
 	const canRead = $derived(can('inventory:read'));
 	const canCreate = $derived(can('inventory:create'));
 	const canUpdate = $derived(can('inventory:update'));
+	const canDelete = $derived(can('inventory:delete'));
 
-	let showCreateDialog = $state(false);
-	let createErrorMessage = $state('');
-	let createName = $state('');
-	let createPhone = $state('');
-	let createNote = $state('');
-	let createFavorite = $state(true);
-
-	let favoriteFormCode = $state('');
-	let favoriteFormValue = $state(false);
+	let showFormDialog = $state(false);
+	let showDeleteDialog = $state(false);
+	let isEditing = $state(false);
+	let formErrorMessage = $state('');
+	let selectedCustomer = $state<Customer | null>(null);
+	let formName = $state('');
+	let formPhone = $state('');
+	let formNote = $state('');
 
 	function formatDate(value: Date | string): string {
 		return new Date(value).toLocaleDateString('es-ES', {
@@ -60,31 +48,58 @@
 
 	function openCreateDialog(): void {
 		if (!canCreate) return;
-		createErrorMessage = '';
-		createName = '';
-		createPhone = '';
-		createNote = '';
-		createFavorite = true;
-		showCreateDialog = true;
+		isEditing = false;
+		formErrorMessage = '';
+		formName = '';
+		formPhone = '';
+		formNote = '';
+		selectedCustomer = null;
+		showFormDialog = true;
 	}
 
-	function closeCreateDialog(): void {
-		showCreateDialog = false;
-		createErrorMessage = '';
-	}
-
-	function toggleFavorite(customer: Customer): void {
+	function openEditDialog(customer: Customer): void {
 		if (!canUpdate) return;
-		favoriteFormCode = customer.code;
-		favoriteFormValue = !customer.is_favorite;
-		submitForm('customer-favorite-form');
+		isEditing = true;
+		selectedCustomer = customer;
+		formName = customer.full_name;
+		formPhone = customer.phone || '';
+		formNote = customer.note || '';
+		formErrorMessage = '';
+		showFormDialog = true;
+	}
+
+	function closeFormDialog(): void {
+		showFormDialog = false;
+		formErrorMessage = '';
+		selectedCustomer = null;
+	}
+
+	function openDeleteDialog(customer: Customer): void {
+		if (!canDelete) return;
+		selectedCustomer = customer;
+		showDeleteDialog = true;
+	}
+
+	function closeDeleteDialog(): void {
+		showDeleteDialog = false;
+		selectedCustomer = null;
+	}
+
+	function deleteSuccessMessage(linkedSalesCount: number): string {
+		if (linkedSalesCount <= 0) {
+			return 'Cliente eliminado exitosamente';
+		}
+
+		const noun = linkedSalesCount === 1 ? 'venta' : 'ventas';
+		const verb = linkedSalesCount === 1 ? 'conservo' : 'conservaron';
+		return `Cliente eliminado. ${linkedSalesCount} ${noun} ${verb} historial con nombre y telefono.`;
 	}
 </script>
 
 <div class="lumi-stack lumi-space--lg">
 	<PageHeader
 		title="Clientes"
-		subtitle="Gestión centralizada de clientes y favoritos para ventas"
+		subtitle="Gestion centralizada de clientes para ventas y seguimiento"
 		icon="users"
 	>
 		{#snippet actions()}
@@ -109,7 +124,6 @@
 					<th>Cliente</th>
 					<th>Teléfono</th>
 					<th>Nota</th>
-					<th>Favorito</th>
 					<th>Creación</th>
 					<th>Actualización</th>
 					<th>Acciones</th>
@@ -120,9 +134,6 @@
 					<td>
 						<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
 							<span class="lumi-font--medium">{customer.full_name}</span>
-							{#if customer.is_favorite}
-								<span class="lumi-text--xs lumi-text--muted">Cliente destacado</span>
-							{/if}
 						</div>
 					</td>
 					<td>
@@ -132,29 +143,31 @@
 						{#if customer.note}
 							<span class="lumi-text--sm lumi-text--muted">{customer.note}</span>
 						{:else}
-							<span class="lumi-text--sm lumi-text--muted inventory-customers__muted-italic"
-								>Sin nota</span
-							>
+							<span class="lumi-text--sm lumi-text--muted inventory-customers__muted-italic">
+								Sin nota
+							</span>
 						{/if}
-					</td>
-					<td>
-						<Chip size="sm" color={customer.is_favorite ? 'warning' : 'primary'}>
-							{customer.is_favorite ? 'Favorito' : 'Regular'}
-						</Chip>
 					</td>
 					<td>{formatDate(customer.created_at)}</td>
 					<td>{formatDate(customer.updated_at)}</td>
 					<td>
-						<Button
-							type="flat"
-							size="sm"
-							color={customer.is_favorite ? 'warning' : 'primary'}
-							icon={customer.is_favorite ? 'starOff' : 'star'}
-							disabled={!canUpdate}
-							onclick={() => toggleFavorite(customer)}
-						>
-							{customer.is_favorite ? 'Quitar' : 'Destacar'}
-						</Button>
+						<div class="lumi-flex lumi-flex--gap-xs">
+							<Button
+								type="flat"
+								size="sm"
+								icon="edit"
+								disabled={!canUpdate}
+								onclick={() => openEditDialog(customer)}
+							/>
+							<Button
+								type="flat"
+								size="sm"
+								icon="trash"
+								color="danger"
+								disabled={!canDelete}
+								onclick={() => openDeleteDialog(customer)}
+							/>
+						</div>
 					</td>
 				{/snippet}
 			</Table>
@@ -162,61 +175,40 @@
 	{/if}
 </div>
 
-<form
-	id="customer-favorite-form"
-	method="POST"
-	action="?/update"
-	use:enhance={() => {
-		return async ({ result }) => {
-			if (result.type === 'success') {
-				showToast(
-					favoriteFormValue ? 'Cliente marcado como favorito' : 'Favorito removido',
-					'success'
-				);
-				await invalidate('inventory:customers:load');
-			} else if (result.type === 'failure') {
-				const error = result.data?.error;
-				showToast(
-					(typeof error === 'string' ? error : null) || 'No se pudo actualizar favorito',
-					'error'
-				);
-			}
-		};
-	}}
->
-	<input type="hidden" name="code" value={favoriteFormCode} />
-	<input type="hidden" name="is_favorite" value={favoriteFormValue ? 'true' : 'false'} />
-</form>
-
-<Dialog bind:open={showCreateDialog} title="Nuevo cliente" size="md">
+<Dialog bind:open={showFormDialog} title={isEditing ? 'Editar cliente' : 'Nuevo cliente'} size="md">
 	<form
-		id="customer-create-form"
+		id="customer-form"
 		method="POST"
-		action="?/create"
+		action="?/{isEditing ? 'update' : 'create'}"
 		use:enhance={() => {
 			return async ({ result }) => {
 				if (result.type === 'success') {
-					showToast('Cliente creado exitosamente', 'success');
+					showToast(
+						isEditing ? 'Cliente actualizado exitosamente' : 'Cliente creado exitosamente',
+						'success'
+					);
 					await invalidate('inventory:customers:load');
-					closeCreateDialog();
+					closeFormDialog();
 				} else if (result.type === 'failure') {
 					const error = result.data?.error;
-					createErrorMessage = (typeof error === 'string' ? error : null) || 'Ocurrió un error';
+					formErrorMessage = (typeof error === 'string' ? error : null) || 'Ocurrio un error';
 				}
 			};
 		}}
 	>
-		<input type="hidden" name="is_favorite" value={createFavorite ? 'true' : 'false'} />
+		{#if isEditing && selectedCustomer}
+			<input type="hidden" name="code" value={selectedCustomer.code} />
+		{/if}
 
-		{#if createErrorMessage}
-			<Alert type="danger" closable onclose={() => (createErrorMessage = '')}>
-				{createErrorMessage}
+		{#if formErrorMessage}
+			<Alert type="danger" closable onclose={() => (formErrorMessage = '')}>
+				{formErrorMessage}
 			</Alert>
 		{/if}
 
 		<div class="lumi-stack lumi-space--md">
 			<Input
-				bind:value={createName}
+				bind:value={formName}
 				name="full_name"
 				label="Nombre del cliente"
 				placeholder="Ingresa el nombre"
@@ -224,32 +216,70 @@
 			/>
 
 			<Input
-				bind:value={createPhone}
+				bind:value={formPhone}
 				name="phone"
 				label="Teléfono"
 				placeholder="Ingresa el teléfono (opcional)"
 			/>
 
 			<Textarea
-				bind:value={createNote}
+				bind:value={formNote}
 				name="note"
 				label="Nota"
 				placeholder="Agrega una nota opcional"
 				rows={3}
 			/>
-
-			<Switch
-				checked={createFavorite}
-				label="Marcar como cliente favorito"
-				onchange={(value) => (createFavorite = value)}
-			/>
 		</div>
 	</form>
 
 	{#snippet footer()}
-		<Button type="border" onclick={closeCreateDialog}>Cancelar</Button>
-		<Button type="filled" color="primary" onclick={() => submitForm('customer-create-form')}>
-			Guardar
+		<Button type="border" onclick={closeFormDialog}>Cancelar</Button>
+		<Button type="filled" color="primary" onclick={() => submitForm('customer-form')}>
+			{isEditing ? 'Actualizar' : 'Guardar'}
+		</Button>
+	{/snippet}
+</Dialog>
+
+<Dialog bind:open={showDeleteDialog} title="Confirmar eliminacion" size="sm">
+	<form
+		id="delete-customer-form"
+		method="POST"
+		action="?/delete"
+		use:enhance={() => {
+			return async ({ result }) => {
+				if (result.type === 'success') {
+					const linkedSalesCountRaw = result.data?.linkedSalesCount;
+					const linkedSalesCount =
+						typeof linkedSalesCountRaw === 'number' ? linkedSalesCountRaw : 0;
+					showToast(deleteSuccessMessage(linkedSalesCount), 'success');
+					await invalidate('inventory:customers:load');
+					closeDeleteDialog();
+				} else if (result.type === 'failure') {
+					const error = result.data?.error;
+					showToast((typeof error === 'string' ? error : null) || 'No se pudo eliminar', 'error');
+				}
+			};
+		}}
+	>
+		{#if selectedCustomer}
+			<input type="hidden" name="code" value={selectedCustomer.code} />
+			<div class="lumi-stack lumi-space--sm">
+				<p class="lumi-margin--none">
+					Se eliminara el cliente <strong>{selectedCustomer.full_name}</strong>. Esta accion no se
+					puede deshacer.
+				</p>
+				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+					Si tiene ventas registradas, la referencia se limpiara automaticamente y cada venta
+					conservara su nombre y telefono historico.
+				</p>
+			</div>
+		{/if}
+	</form>
+
+	{#snippet footer()}
+		<Button type="border" onclick={closeDeleteDialog}>Cancelar</Button>
+		<Button type="filled" color="danger" onclick={() => submitForm('delete-customer-form')}>
+			Eliminar
 		</Button>
 	{/snippet}
 </Dialog>

@@ -84,7 +84,6 @@ export interface CreateInventorySaleInput {
 	customerCode?: string | null;
 	customerName?: string | null;
 	customerPhone?: string | null;
-	markCustomerFavorite?: boolean;
 	soldAt: Date | string;
 	note: string | null;
 }
@@ -130,7 +129,6 @@ export interface InventorySaleListFilters extends PaginationParams {
 
 export interface InventoryCustomerListFilters extends PaginationParams {
 	search?: string;
-	favoritesOnly?: boolean;
 }
 
 export interface InventoryMovementListFilters {
@@ -145,7 +143,18 @@ export interface CreateInventoryCustomerInput {
 	fullName: string;
 	phone?: string | null;
 	note?: string | null;
-	isFavorite?: boolean;
+}
+
+export interface UpdateInventoryCustomerInput {
+	customerCode: string;
+	fullName: string;
+	phone?: string | null;
+	note?: string | null;
+}
+
+export interface DeleteInventoryCustomerResult {
+	customer: InventoryCustomerRecord;
+	linkedSalesCount: number;
 }
 
 interface InventoryOverviewSummaryRow {
@@ -366,7 +375,6 @@ export class InventoryRepository {
 			SELECT *
 			FROM public.inventory_list_customers(
 				${search},
-				${filters.favoritesOnly === true},
 				${page},
 				${pageSize}
 			)
@@ -457,8 +465,7 @@ export class InventoryRepository {
 		const resolvedCustomer = await this.resolveSaleCustomer(db, {
 			customerCode: input.customerCode,
 			customerName: input.customerName,
-			customerPhone: input.customerPhone,
-			markFavorite: input.markCustomerFavorite ?? false
+			customerPhone: input.customerPhone
 		});
 		const customerName = (resolvedCustomer.customer_name ?? input.customerName ?? '').trim();
 		const customerPhone =
@@ -541,8 +548,7 @@ export class InventoryRepository {
 			FROM public.inventory_create_customer(
 				${input.fullName},
 				${input.phone ?? null},
-				${input.note ?? null},
-				${input.isFavorite === true}
+				${input.note ?? null}
 			)
 		`.execute(db);
 
@@ -554,20 +560,49 @@ export class InventoryRepository {
 		return customer;
 	}
 
-	static async updateCustomerFavorite(
+	static async updateCustomer(
 		db: Database,
-		customerCode: string,
-		isFavorite: boolean
+		input: UpdateInventoryCustomerInput
 	): Promise<InventoryCustomerRecord | null> {
 		const result = await sql<InventoryCustomerRecord>`
 			SELECT *
-			FROM public.inventory_update_customer_favorite(
-				${customerCode},
-				${isFavorite}
+			FROM public.inventory_update_customer(
+				${input.customerCode},
+				${input.fullName},
+				${input.phone ?? null},
+				${input.note ?? null}
 			)
 		`.execute(db);
 
 		return result.rows[0] ?? null;
+	}
+
+	static async deleteCustomer(
+		db: Database,
+		customerCode: string
+	): Promise<DeleteInventoryCustomerResult | null> {
+		return db.transaction().execute(async (trx) => {
+			const linkedSales = await sql<{ linked_sales_count: number | string }>`
+				SELECT COUNT(*)::int AS linked_sales_count
+				FROM public.inventory_sales
+				WHERE customer_code = ${customerCode}
+			`.execute(trx);
+
+			const deletedCustomer = await sql<InventoryCustomerRecord>`
+				SELECT *
+				FROM public.inventory_delete_customer(${customerCode})
+			`.execute(trx);
+
+			const customer = deletedCustomer.rows[0];
+			if (!customer) {
+				return null;
+			}
+
+			return {
+				customer,
+				linkedSalesCount: toNumber(linkedSales.rows[0]?.linked_sales_count)
+			};
+		});
 	}
 
 	static async updateThresholds(
@@ -593,7 +628,6 @@ export class InventoryRepository {
 			customerCode?: string | null;
 			customerName?: string | null;
 			customerPhone?: string | null;
-			markFavorite: boolean;
 		}
 	): Promise<{
 		customer_code: string | null;
@@ -609,17 +643,6 @@ export class InventoryRepository {
 			const customer = result.rows[0];
 			if (!customer) {
 				throw new Error('Cliente no encontrado');
-			}
-
-			if (input.markFavorite && !customer.is_favorite) {
-				const updated = await this.updateCustomerFavorite(db, customer.code, true);
-				if (updated) {
-					return {
-						customer_code: updated.code,
-						customer_name: updated.full_name,
-						customer_phone: updated.phone
-					};
-				}
 			}
 
 			return {
@@ -647,14 +670,8 @@ export class InventoryRepository {
 		if (!customer) {
 			customer = await this.createCustomer(db, {
 				fullName: customerName,
-				phone: customerPhone,
-				isFavorite: input.markFavorite
+				phone: customerPhone
 			});
-		} else if (input.markFavorite && !customer.is_favorite) {
-			const updated = await this.updateCustomerFavorite(db, customer.code, true);
-			if (updated) {
-				customer = updated;
-			}
 		}
 
 		return {

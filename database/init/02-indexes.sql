@@ -76,8 +76,8 @@ CREATE INDEX inventory_purchases_tracking_number_idx
 -- Inventory customers indexes
 CREATE UNIQUE INDEX inventory_customers_identity_udx
   ON public.inventory_customers (LOWER(full_name), COALESCE(phone, ''));
-CREATE INDEX inventory_customers_favorite_idx
-  ON public.inventory_customers (is_favorite DESC, updated_at DESC);
+CREATE INDEX inventory_customers_updated_idx
+  ON public.inventory_customers (updated_at DESC, full_name);
 
 -- Inventory sales indexes
 CREATE INDEX inventory_sales_product_branch_idx

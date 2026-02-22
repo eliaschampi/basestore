@@ -433,9 +433,6 @@
 										<span>{sale.customer_name}</span>
 										<span class="lumi-text--xs lumi-text--muted">
 											{sale.customer_phone || 'Sin telefono'}
-											{#if sale.customer_is_favorite}
-												<span class="inventory-sales__favorite-badge">★ favorito</span>
-											{/if}
 										</span>
 									</div>
 								</td>
@@ -795,11 +792,6 @@
 
 	.inventory-sales__product-link:hover {
 		text-decoration: underline;
-	}
-
-	.inventory-sales__favorite-badge {
-		margin-left: var(--lumi-space-2xs);
-		color: var(--lumi-color-warning);
 	}
 
 	.inventory-sales__actions {

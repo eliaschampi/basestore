@@ -8,7 +8,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		throw error(403, 'No tienes permisos para registrar ventas');
 	}
 
-	const [branches, products, favoriteCustomers] = await Promise.all([
+	const [branches, products, customers] = await Promise.all([
 		locals.db
 			.selectFrom('branches')
 			.select(['code', 'name', 'state'])
@@ -20,7 +20,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.orderBy('name', 'asc')
 			.execute(),
 		InventoryRepository.listCustomers(locals.db, {
-			favoritesOnly: true,
 			page: 1,
 			pageSize: 80
 		})
@@ -36,6 +35,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		selectedBranchCode: selectedBranchCode || null,
 		branches,
 		products,
-		favoriteCustomers: favoriteCustomers.items
+		customers: customers.items
 	};
 };

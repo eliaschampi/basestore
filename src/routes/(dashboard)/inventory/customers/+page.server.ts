@@ -14,8 +14,8 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 	try {
 		const customers = await locals.db
 			.selectFrom('inventory_customers')
-			.select(['code', 'full_name', 'phone', 'note', 'is_favorite', 'created_at', 'updated_at'])
-			.orderBy('is_favorite', 'desc')
+			.select(['code', 'full_name', 'phone', 'note', 'created_at', 'updated_at'])
+			.orderBy('updated_at', 'desc')
 			.orderBy('full_name', 'asc')
 			.execute();
 
@@ -35,7 +35,6 @@ export const actions: Actions = {
 		const fullName = readFormField(formData, 'full_name');
 		const phone = readFormField(formData, 'phone');
 		const note = readFormField(formData, 'note');
-		const isFavorite = readFormField(formData, 'is_favorite') === 'true';
 
 		if (!fullName) {
 			return fail(400, { error: 'El nombre del cliente es obligatorio' });
@@ -45,8 +44,7 @@ export const actions: Actions = {
 			await InventoryRepository.createCustomer(locals.db, {
 				fullName,
 				phone: phone || null,
-				note: note || null,
-				isFavorite
+				note: note || null
 			});
 			return { success: true, type: 'success' };
 		} catch (caught) {
@@ -66,22 +64,25 @@ export const actions: Actions = {
 
 		const formData = await request.formData();
 		const customerCode = readFormField(formData, 'code');
-		const isFavoriteField = readFormField(formData, 'is_favorite');
+		const fullName = readFormField(formData, 'full_name');
+		const phone = readFormField(formData, 'phone');
+		const note = readFormField(formData, 'note');
 
 		if (!customerCode || !isUuid(customerCode)) {
 			return fail(400, { error: 'Cliente inválido' });
 		}
 
-		if (isFavoriteField !== 'true' && isFavoriteField !== 'false') {
-			return fail(400, { error: 'Debes indicar si el cliente es favorito' });
+		if (!fullName) {
+			return fail(400, { error: 'El nombre del cliente es obligatorio' });
 		}
 
 		try {
-			const customer = await InventoryRepository.updateCustomerFavorite(
-				locals.db,
+			const customer = await InventoryRepository.updateCustomer(locals.db, {
 				customerCode,
-				isFavoriteField === 'true'
-			);
+				fullName,
+				phone: phone || null,
+				note: note || null
+			});
 
 			if (!customer) {
 				return fail(404, { error: 'Cliente no encontrado' });
@@ -89,8 +90,47 @@ export const actions: Actions = {
 
 			return { success: true, type: 'success' };
 		} catch (caught) {
-			const message = caught instanceof Error ? caught.message : 'No se pudo actualizar el cliente';
-			return fail(400, { error: message });
+			const dbError = caught as { code?: string; message?: string };
+			if (dbError.code === '23505') {
+				return fail(409, { error: 'Ya existe un cliente con ese nombre y teléfono' });
+			}
+
+			if (dbError.code === '23514') {
+				return fail(400, { error: 'El nombre del cliente es obligatorio' });
+			}
+
+			return fail(400, { error: dbError.message || 'No se pudo actualizar el cliente' });
+		}
+	},
+
+	delete: async ({ locals, request }) => {
+		if (!(await locals.can('inventory:delete'))) {
+			return fail(403, { error: 'No tienes permisos para eliminar clientes' });
+		}
+
+		const formData = await request.formData();
+		const customerCode = readFormField(formData, 'code');
+
+		if (!customerCode || !isUuid(customerCode)) {
+			return fail(400, { error: 'Cliente inválido' });
+		}
+
+		try {
+			const result = await InventoryRepository.deleteCustomer(locals.db, customerCode);
+
+			if (!result) {
+				return fail(404, { error: 'Cliente no encontrado' });
+			}
+
+			return {
+				success: true,
+				type: 'success',
+				linkedSalesCount: result.linkedSalesCount,
+				customerName: result.customer.full_name
+			};
+		} catch (caught) {
+			const dbError = caught as { message?: string };
+			return fail(400, { error: dbError.message || 'No se pudo eliminar el cliente' });
 		}
 	}
 };

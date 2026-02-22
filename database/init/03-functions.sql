@@ -162,8 +162,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.inventory_create_customer(
   p_full_name TEXT,
   p_phone TEXT DEFAULT NULL,
-  p_note TEXT DEFAULT NULL,
-  p_is_favorite BOOLEAN DEFAULT false
+  p_note TEXT DEFAULT NULL
 )
 RETURNS public.inventory_customers
 LANGUAGE plpgsql
@@ -174,12 +173,10 @@ BEGIN
   INSERT INTO public.inventory_customers (
     full_name,
     phone,
-    is_favorite,
     note
   ) VALUES (
     p_full_name,
     NULLIF(BTRIM(COALESCE(p_phone, '')), ''),
-    COALESCE(p_is_favorite, false),
     NULLIF(BTRIM(COALESCE(p_note, '')), '')
   )
   RETURNING * INTO v_customer;
@@ -188,15 +185,30 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.inventory_update_customer_favorite(
+CREATE OR REPLACE FUNCTION public.inventory_update_customer(
   p_customer_code UUID,
-  p_is_favorite BOOLEAN
+  p_full_name TEXT,
+  p_phone TEXT DEFAULT NULL,
+  p_note TEXT DEFAULT NULL
 )
 RETURNS public.inventory_customers
 LANGUAGE sql
 AS $$
   UPDATE public.inventory_customers
-  SET is_favorite = p_is_favorite
+  SET full_name = BTRIM(COALESCE(p_full_name, '')),
+      phone = NULLIF(BTRIM(COALESCE(p_phone, '')), ''),
+      note = NULLIF(BTRIM(COALESCE(p_note, '')), '')
+  WHERE code = p_customer_code
+  RETURNING *;
+$$;
+
+CREATE OR REPLACE FUNCTION public.inventory_delete_customer(
+  p_customer_code UUID
+)
+RETURNS public.inventory_customers
+LANGUAGE sql
+AS $$
+  DELETE FROM public.inventory_customers
   WHERE code = p_customer_code
   RETURNING *;
 $$;
