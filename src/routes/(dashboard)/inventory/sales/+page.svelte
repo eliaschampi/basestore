@@ -409,7 +409,8 @@
 									<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
 										<span class="lumi-font--medium">{sale.products_summary || 'Sin items'}</span>
 										<span class="lumi-text--xs lumi-text--muted">
-											{sale.item_count} {sale.item_count === 1 ? 'item' : 'items'}
+											{sale.item_count}
+											{sale.item_count === 1 ? 'item' : 'items'}
 										</span>
 									</div>
 								</td>
@@ -600,7 +601,8 @@
 				<p class="inventory-sales__detail-label">Resumen items</p>
 				<p class="inventory-sales__detail-value">{detailSale.products_summary || 'Sin items'}</p>
 				<p class="inventory-sales__detail-meta">
-					{detailSale.item_count} {detailSale.item_count === 1 ? 'item' : 'items'}
+					{detailSale.item_count}
+					{detailSale.item_count === 1 ? 'item' : 'items'}
 				</p>
 			</div>
 			<div class="inventory-sales__detail-item">
@@ -631,7 +633,9 @@
 			</div>
 			<div class="inventory-sales__detail-item">
 				<p class="inventory-sales__detail-label">Monto</p>
-				<p class="inventory-sales__detail-value">Total: {formatProductPrice(detailSale.total_amount)}</p>
+				<p class="inventory-sales__detail-value">
+					Total: {formatProductPrice(detailSale.total_amount)}
+				</p>
 				<p class="inventory-sales__detail-meta">
 					Utilidad: {formatProductPrice(detailSale.profit_amount)}
 				</p>
@@ -688,9 +692,9 @@
 <Dialog bind:open={showVoidDialog} title="Confirmar anulacion" size="sm">
 	{#if voidSaleTarget}
 		<p class="lumi-margin--none">
-			Se anulara la venta de <strong>{voidSaleTarget.products_summary || 'items seleccionados'}</strong>.
-			El stock volvera a
-			inventario.
+			Se anulara la venta de <strong
+				>{voidSaleTarget.products_summary || 'items seleccionados'}</strong
+			>. El stock volvera a inventario.
 		</p>
 		<Textarea
 			label="Motivo (opcional)"

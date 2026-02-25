@@ -1,6 +1,9 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { InventoryRepository, type CreateInventorySaleItemInput } from '$lib/server/repositories/inventory.repository';
+import {
+	InventoryRepository,
+	type CreateInventorySaleItemInput
+} from '$lib/server/repositories/inventory.repository';
 import {
 	defaultShippingStateForFulfillment,
 	isValidInventorySaleChannel,

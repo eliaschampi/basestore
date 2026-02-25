@@ -71,12 +71,8 @@
 	let linkedFiles = $derived<ProductDriveLink[]>(data.linkedFiles);
 	let linkedLoading = $state(false);
 
-	const inventoryByBranch = $derived(
-		(data.inventoryByBranch ?? []) as ProductInventorySnapshot[]
-	);
-	const inventoryMovements = $derived(
-		(data.inventoryMovements ?? []) as ProductMovementSnapshot[]
-	);
+	const inventoryByBranch = $derived((data.inventoryByBranch ?? []) as ProductInventorySnapshot[]);
+	const inventoryMovements = $derived((data.inventoryMovements ?? []) as ProductMovementSnapshot[]);
 	const stockRows = $derived(inventoryByBranch as unknown as TableRow[]);
 	const movementRows = $derived(inventoryMovements as unknown as TableRow[]);
 	const totalAvailable = $derived(
@@ -453,7 +449,11 @@
 		{/snippet}
 	</PageHeader>
 
-	<Tabs value={activeTab} tabs={DETAIL_TABS} onchange={(value) => (activeTab = value as typeof activeTab)}>
+	<Tabs
+		value={activeTab}
+		tabs={DETAIL_TABS}
+		onchange={(value) => (activeTab = value as typeof activeTab)}
+	>
 		{#if activeTab === 'overview'}
 			<Card title="Información del producto" subtitle="Resumen principal del registro">
 				<div class="lumi-grid lumi-grid--columns-4 lumi-grid--gap-md">
@@ -507,7 +507,9 @@
 				{#if data.product.description}
 					<Divider />
 					<Fieldset legend="Descripción">
-						<p class="lumi-margin--none lumi-text--sm lumi-text--muted">{data.product.description}</p>
+						<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+							{data.product.description}
+						</p>
 					</Fieldset>
 				{/if}
 				{#if linkedImageName}
@@ -598,7 +600,10 @@
 						{/if}
 					</Card>
 
-					<Card title="Histórico de movimientos" subtitle="Entradas y salidas recientes del producto">
+					<Card
+						title="Histórico de movimientos"
+						subtitle="Entradas y salidas recientes del producto"
+					>
 						{#if inventoryMovements.length === 0}
 							<EmptyState
 								title="Sin movimientos"
@@ -733,7 +738,9 @@
 								</div>
 							</td>
 							<td>
-								<span class="lumi-text--sm lumi-text--muted">{getDriveTypeLabel(file.file_type)}</span>
+								<span class="lumi-text--sm lumi-text--muted"
+									>{getDriveTypeLabel(file.file_type)}</span
+								>
 							</td>
 							<td>
 								<span class="lumi-text--sm lumi-text--muted">

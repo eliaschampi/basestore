@@ -336,9 +336,11 @@
 								{@const purchase = row as unknown as InventoryPurchaseListItem}
 								<td>
 									<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
-										<span class="lumi-font--medium">{purchase.products_summary || 'Sin items'}</span>
+										<span class="lumi-font--medium">{purchase.products_summary || 'Sin items'}</span
+										>
 										<span class="lumi-text--xs lumi-text--muted">
-											{purchase.item_count} {purchase.item_count === 1 ? 'item' : 'items'}
+											{purchase.item_count}
+											{purchase.item_count === 1 ? 'item' : 'items'}
 										</span>
 									</div>
 								</td>
@@ -533,9 +535,12 @@
 		<div class="inventory-purchases__detail-grid">
 			<div class="inventory-purchases__detail-item">
 				<p class="inventory-purchases__detail-label">Resumen items</p>
-				<p class="inventory-purchases__detail-value">{detailPurchase.products_summary || 'Sin items'}</p>
+				<p class="inventory-purchases__detail-value">
+					{detailPurchase.products_summary || 'Sin items'}
+				</p>
 				<p class="inventory-purchases__detail-meta">
-					{detailPurchase.item_count} {detailPurchase.item_count === 1 ? 'item' : 'items'}
+					{detailPurchase.item_count}
+					{detailPurchase.item_count === 1 ? 'item' : 'items'}
 				</p>
 			</div>
 			<div class="inventory-purchases__detail-item">
@@ -562,7 +567,9 @@
 			</div>
 			<div class="inventory-purchases__detail-item">
 				<p class="inventory-purchases__detail-label">Monto total</p>
-				<p class="inventory-purchases__detail-value">{formatProductPrice(detailPurchase.total_amount)}</p>
+				<p class="inventory-purchases__detail-value">
+					{formatProductPrice(detailPurchase.total_amount)}
+				</p>
 			</div>
 			<div class="inventory-purchases__detail-item">
 				<p class="inventory-purchases__detail-label">Fechas</p>

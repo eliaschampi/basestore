@@ -297,7 +297,9 @@ function toDateOnly(value: Date | string): string {
 
 function parseJsonArray(value: unknown): Record<string, unknown>[] {
 	if (Array.isArray(value)) {
-		return value.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object');
+		return value.filter(
+			(item): item is Record<string, unknown> => !!item && typeof item === 'object'
+		);
 	}
 
 	if (typeof value === 'string') {
@@ -322,10 +324,13 @@ function toPurchaseLineItems(value: unknown): InventoryPurchaseLineItem[] {
 		purchase_code: String(item.purchase_code ?? ''),
 		product_code: String(item.product_code ?? ''),
 		product_name: String(item.product_name ?? ''),
-		product_sku: item.product_sku === null || item.product_sku === undefined ? null : String(item.product_sku),
+		product_sku:
+			item.product_sku === null || item.product_sku === undefined ? null : String(item.product_sku),
 		quantity: toNumber(item.quantity as number | string | null | undefined),
 		unit_cost:
-			item.unit_cost === null || item.unit_cost === undefined ? null : toStringMoney(item.unit_cost as number | string),
+			item.unit_cost === null || item.unit_cost === undefined
+				? null
+				: toStringMoney(item.unit_cost as number | string),
 		total_amount: toStringMoney(item.total_amount as number | string | null | undefined),
 		created_at: String(item.created_at ?? ''),
 		updated_at: String(item.updated_at ?? '')
@@ -338,7 +343,8 @@ function toSaleLineItems(value: unknown): InventorySaleLineItem[] {
 		sale_code: String(item.sale_code ?? ''),
 		product_code: String(item.product_code ?? ''),
 		product_name: String(item.product_name ?? ''),
-		product_sku: item.product_sku === null || item.product_sku === undefined ? null : String(item.product_sku),
+		product_sku:
+			item.product_sku === null || item.product_sku === undefined ? null : String(item.product_sku),
 		quantity: toNumber(item.quantity as number | string | null | undefined),
 		unit_price: toStringMoney(item.unit_price as number | string | null | undefined),
 		unit_cost: toStringMoney(item.unit_cost as number | string | null | undefined),
@@ -679,7 +685,10 @@ export class InventoryRepository {
 		return purchaseRow ? mapPurchaseFeedRow(purchaseRow) : null;
 	}
 
-	static async createSale(db: Database, input: CreateInventorySaleInput): Promise<InventorySaleRecord> {
+	static async createSale(
+		db: Database,
+		input: CreateInventorySaleInput
+	): Promise<InventorySaleRecord> {
 		const resolvedCustomer = await this.resolveSaleCustomer(db, {
 			customerCode: input.customerCode,
 			customerName: input.customerName,

@@ -130,10 +130,7 @@
 		);
 	});
 	const totalCostStockValue = $derived(
-		items.reduce(
-			(total, item) => total + item.available * toNumeric(item.cost_price),
-			0
-		)
+		items.reduce((total, item) => total + item.available * toNumeric(item.cost_price), 0)
 	);
 
 	onDestroy(() => {
@@ -478,8 +475,7 @@
 											icon="eye"
 											color="primary"
 											disabled={!canRead}
-											onclick={() =>
-												void goto(resolve(`/products/${item.product_code}` as '/'))}
+											onclick={() => void goto(resolve(`/products/${item.product_code}` as '/'))}
 										>
 											Detalle
 										</Button>

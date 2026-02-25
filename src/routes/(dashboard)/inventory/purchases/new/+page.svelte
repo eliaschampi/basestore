@@ -74,7 +74,12 @@
 		{ value: 'lima', label: 'Lima', apiOrigin: 'lima' },
 		{ value: 'amazon', label: 'Amazon', apiOrigin: 'other', customLabel: 'Amazon' },
 		{ value: 'ebay', label: 'eBay', apiOrigin: 'other', customLabel: 'eBay' },
-		{ value: 'local_supplier', label: 'Proveedor local', apiOrigin: 'other', customLabel: 'Proveedor local' },
+		{
+			value: 'local_supplier',
+			label: 'Proveedor local',
+			apiOrigin: 'other',
+			customLabel: 'Proveedor local'
+		},
 		{ value: 'other', label: 'Otros', apiOrigin: 'other' }
 	];
 

@@ -554,7 +554,8 @@
 								label="Fecha venta"
 								type="date"
 								value={createSoldAt}
-								oninput={(event) => (createSoldAt = (event.currentTarget as HTMLInputElement).value)}
+								oninput={(event) =>
+									(createSoldAt = (event.currentTarget as HTMLInputElement).value)}
 							/>
 							<Input
 								label="Referencia (opcional)"

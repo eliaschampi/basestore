@@ -1,6 +1,9 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { InventoryRepository, type CreateInventoryPurchaseItemInput } from '$lib/server/repositories/inventory.repository';
+import {
+	InventoryRepository,
+	type CreateInventoryPurchaseItemInput
+} from '$lib/server/repositories/inventory.repository';
 import {
 	isValidInventoryPurchaseEntryType,
 	isValidInventoryPurchaseOrigin,
@@ -59,7 +62,9 @@ function parseDateOnly(value: string): string | null {
 	return `${match[1]}-${match[2]}-${match[3]}`;
 }
 
-function normalizePurchaseItems(items: PurchaseItemBody[] | undefined): CreateInventoryPurchaseItemInput[] {
+function normalizePurchaseItems(
+	items: PurchaseItemBody[] | undefined
+): CreateInventoryPurchaseItemInput[] {
 	if (!Array.isArray(items) || items.length === 0) {
 		throw error(400, 'Debes incluir al menos un item de compra');
 	}
@@ -85,7 +90,11 @@ function normalizePurchaseItems(items: PurchaseItemBody[] | undefined): CreateIn
 		}
 
 		let unitCost: number | null = null;
-		if (item.unit_cost !== null && item.unit_cost !== undefined && `${item.unit_cost}`.trim() !== '') {
+		if (
+			item.unit_cost !== null &&
+			item.unit_cost !== undefined &&
+			`${item.unit_cost}`.trim() !== ''
+		) {
 			const parsed = Number(item.unit_cost);
 			if (!Number.isFinite(parsed) || parsed < 0) {
 				throw error(400, 'Costo unitario inválido en los items');
@@ -218,9 +227,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		throw error(400, 'Cuando el origen es "Otros", especifica el origen personalizado');
 	}
 
-	const finalNote = origin === 'other'
-		? [`Origen personalizado: ${originCustom}`, note].filter(Boolean).join(' · ')
-		: note;
+	const finalNote =
+		origin === 'other'
+			? [`Origen personalizado: ${originCustom}`, note].filter(Boolean).join(' · ')
+			: note;
 
 	let orderedAt: Date | string = new Date().toISOString().slice(0, 10);
 	if (orderedAtRaw) {
