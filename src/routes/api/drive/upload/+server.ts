@@ -29,7 +29,7 @@ const DRIVE_COLUMNS = [
 	'mime_type',
 	'parent_code',
 	'user_code',
-	'is_trashed',
+	'deleted_at',
 	'created_at',
 	'updated_at'
 ] as const;
@@ -98,7 +98,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		)
 			.where('code', '=', parentCode)
 			.where('type', '=', 'dir')
-			.where('is_trashed', '=', false)
+			.where('deleted_at', 'is', null)
 			.executeTakeFirst();
 
 		if (!parent) {

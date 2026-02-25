@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { InventoryRepository } from '$lib/server/repositories/inventory.repository';
+import { InventoryRepository, type CreateInventorySaleItemInput } from '$lib/server/repositories/inventory.repository';
 import {
 	defaultShippingStateForFulfillment,
 	isValidInventorySaleChannel,
@@ -25,12 +25,15 @@ import { isUuid } from '$lib/utils/validation';
 
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-interface CreateSaleBody {
+interface SaleItemBody {
 	product_code?: string;
+	quantity?: number | string;
+	unit_price?: number | string;
+}
+
+interface CreateSaleBody {
 	branch_code?: string;
 	customer_code?: string;
-	quantity?: number;
-	unit_price?: number | string;
 	sale_channel?: string;
 	fulfillment_type?: string;
 	shipping_state?: string;
@@ -40,6 +43,7 @@ interface CreateSaleBody {
 	customer_phone?: string;
 	sold_at?: string;
 	note?: string;
+	items?: SaleItemBody[];
 }
 
 function parseDateOnlyAsUtcNoon(value: string): Date | null {
@@ -60,6 +64,52 @@ function parseDateOnlyAsUtcNoon(value: string): Date | null {
 	}
 
 	return parsed;
+}
+
+function normalizeSaleItems(items: SaleItemBody[] | undefined): CreateInventorySaleItemInput[] {
+	if (!Array.isArray(items) || items.length === 0) {
+		throw error(400, 'Debes incluir al menos un item de venta');
+	}
+
+	const grouped = new Map<
+		string,
+		{
+			quantity: number;
+			priceWeightedSum: number;
+		}
+	>();
+
+	for (const item of items) {
+		const productCode = (item.product_code || '').trim();
+		if (!isUuid(productCode)) {
+			throw error(400, 'Producto inválido en los items');
+		}
+
+		const quantity = Number(item.quantity);
+		if (!Number.isInteger(quantity) || quantity <= 0) {
+			throw error(400, 'La cantidad de cada item debe ser un entero mayor a 0');
+		}
+
+		const unitPrice = Number(item.unit_price);
+		if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+			throw error(400, 'El precio unitario de cada item debe ser válido y >= 0');
+		}
+
+		const existing = grouped.get(productCode) ?? {
+			quantity: 0,
+			priceWeightedSum: 0
+		};
+
+		existing.quantity += quantity;
+		existing.priceWeightedSum += unitPrice * quantity;
+		grouped.set(productCode, existing);
+	}
+
+	return [...grouped.entries()].map(([productCode, value]) => ({
+		productCode,
+		quantity: value.quantity,
+		unitPrice: value.quantity > 0 ? value.priceWeightedSum / value.quantity : 0
+	}));
 }
 
 export const GET: RequestHandler = async ({ url, locals }) => {
@@ -133,11 +183,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 
 	const body = (await request.json()) as CreateSaleBody;
-	const productCode = (body.product_code || '').trim();
 	const branchCode = (body.branch_code || '').trim();
 	const customerCode = (body.customer_code || '').trim();
-	const quantity = Number(body.quantity);
-	const unitPrice = Number(body.unit_price);
 	const saleChannelRaw = normalizeInventorySaleChannel(body.sale_channel || 'store');
 	const fulfillmentTypeRaw = normalizeInventorySaleFulfillmentType(
 		body.fulfillment_type || 'pickup'
@@ -149,21 +196,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const orderReference = (body.order_reference || '').trim();
 	const soldAtRaw = (body.sold_at || '').trim();
 	const note = (body.note || '').trim();
-
-	if (!isUuid(productCode)) {
-		throw error(400, 'Producto inválido');
-	}
+	const items = normalizeSaleItems(body.items);
 
 	if (!isUuid(branchCode)) {
 		throw error(400, 'Sede inválida');
-	}
-
-	if (!Number.isInteger(quantity) || quantity <= 0) {
-		throw error(400, 'La cantidad debe ser un entero mayor a 0');
-	}
-
-	if (!Number.isFinite(unitPrice) || unitPrice < 0) {
-		throw error(400, 'El precio unitario debe ser un número válido mayor o igual a 0');
 	}
 
 	if (customerCode && !isUuid(customerCode)) {
@@ -219,11 +255,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	try {
 		const sale = await InventoryRepository.createSale(locals.db, {
-			productCode,
 			branchCode,
 			userCode: locals.user.code,
-			quantity,
-			unitPrice,
 			saleChannel,
 			fulfillmentType,
 			shippingState,
@@ -233,7 +266,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			customerName: customerName || null,
 			customerPhone: customerPhone || null,
 			soldAt,
-			note: note || null
+			note: note || null,
+			items
 		});
 
 		return json({ sale }, { status: 201 });
@@ -242,6 +276,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		if (dbError.code === '23503') {
 			throw error(404, 'Producto o sede no encontrada');
+		}
+
+		if (dbError.code === '23505') {
+			throw error(400, 'No repitas el mismo producto en varias líneas');
 		}
 
 		if (dbError.code === '23514') {

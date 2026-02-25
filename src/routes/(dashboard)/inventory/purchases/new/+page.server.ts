@@ -15,7 +15,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.execute(),
 		locals.db
 			.selectFrom('products')
-			.select(['code', 'name', 'category_code', 'is_active', 'price'])
+			.select(['code', 'name', 'category_code', 'is_active', 'price', 'cost_price'])
 			.orderBy('name', 'asc')
 			.execute()
 	]);

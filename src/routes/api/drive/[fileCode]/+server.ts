@@ -16,7 +16,7 @@ interface UpdateFileBody {
 	parent_code?: string | null;
 	tag?: string | null;
 	scope?: string;
-	is_trashed?: boolean;
+	deleted_at?: boolean; // true = trash, false = restore
 }
 
 /**
@@ -38,7 +38,7 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 
 	const needsUpdatePermission =
 		'name' in body || 'parent_code' in body || 'tag' in body || 'scope' in body;
-	const needsDeletePermission = 'is_trashed' in body;
+	const needsDeletePermission = 'deleted_at' in body;
 
 	if (needsUpdatePermission && !(await locals.can('drive:update'))) {
 		throw error(403, 'No tienes permisos para editar archivos');
@@ -54,7 +54,7 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 
 	const file = await locals.db
 		.selectFrom('drive_files')
-		.select(['code', 'scope', 'user_code', 'parent_code', 'name', 'type', 'is_trashed'])
+		.select(['code', 'scope', 'user_code', 'parent_code', 'name', 'type', 'deleted_at'])
 		.where('code', '=', fileCode)
 		.executeTakeFirst();
 
@@ -72,7 +72,7 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 	let targetScope = fileScope;
 	let targetScopeContext = fileScopeContext;
 	const updates: Record<string, unknown> = {};
-	let nextTrashState: boolean | undefined;
+	let nextDeletedAt: Date | null | undefined;
 
 	if ('scope' in body) {
 		if (typeof body.scope !== 'string') {
@@ -115,7 +115,7 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 
 			const targetParent = await locals.db
 				.selectFrom('drive_files')
-				.select(['code', 'scope', 'user_code', 'type', 'is_trashed'])
+				.select(['code', 'scope', 'user_code', 'type', 'deleted_at'])
 				.where('code', '=', parentCode)
 				.executeTakeFirst();
 
@@ -127,7 +127,7 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 				throw error(400, 'El destino debe ser una carpeta');
 			}
 
-			if (targetParent.is_trashed) {
+			if (targetParent.deleted_at !== null) {
 				throw error(400, 'No se puede mover a una carpeta en papelera');
 			}
 
@@ -155,8 +155,8 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 		}
 	}
 
-	if ('is_trashed' in body) {
-		if (typeof body.is_trashed !== 'boolean') {
+	if ('deleted_at' in body) {
+		if (typeof body.deleted_at !== 'boolean') {
 			throw error(400, 'Estado de papelera inválido');
 		}
 
@@ -168,16 +168,17 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 			: file.parent_code;
 
 		if (
-			body.is_trashed === false &&
+			body.deleted_at === false &&
 			(await hasTrashedAncestor(locals.db, parentForRestoreCheck, targetScopeContext))
 		) {
 			throw error(400, 'No se puede restaurar mientras la carpeta padre esté en papelera');
 		}
 
-		nextTrashState = body.is_trashed;
+		// true → trash (set deleted_at = NOW()), false → restore (set deleted_at = NULL)
+		nextDeletedAt = body.deleted_at ? new Date() : null;
 	}
 
-	if (Object.keys(updates).length === 0 && nextTrashState === undefined) {
+	if (Object.keys(updates).length === 0 && nextDeletedAt === undefined) {
 		throw error(400, 'No hay cambios para aplicar');
 	}
 
@@ -235,12 +236,12 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 				}
 			}
 
-			if (nextTrashState === undefined) {
+			if (nextDeletedAt === undefined) {
 				return;
 			}
 
 			if (file.type === 'dir') {
-				const updatedRows = await setDirectoryTreeTrashState(trx, fileCode, nextTrashState);
+				const updatedRows = await setDirectoryTreeTrashState(trx, fileCode, nextDeletedAt);
 				if (updatedRows === 0) {
 					throw error(404, 'Archivo no encontrado');
 				}
@@ -249,7 +250,7 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 
 			const result = await trx
 				.updateTable('drive_files')
-				.set({ is_trashed: nextTrashState })
+				.set({ deleted_at: nextDeletedAt })
 				.where('code', '=', fileCode)
 				.executeTakeFirst();
 
@@ -284,7 +285,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 
 	const file = await locals.db
 		.selectFrom('drive_files')
-		.select(['code', 'scope', 'user_code', 'is_trashed'])
+		.select(['code', 'scope', 'user_code', 'deleted_at'])
 		.where('code', '=', fileCode)
 		.executeTakeFirst();
 
@@ -294,7 +295,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 
 	await DriveRepository.assertFileRecordAccess(locals.user, file);
 
-	if (!file.is_trashed) {
+	if (file.deleted_at === null) {
 		throw error(400, 'Solo se pueden eliminar permanentemente archivos en papelera');
 	}
 
@@ -376,7 +377,7 @@ async function hasTrashedAncestor(
 
 		const ancestor = await db
 			.selectFrom('drive_files')
-			.select(['code', 'scope', 'user_code', 'parent_code', 'is_trashed'])
+			.select(['code', 'scope', 'user_code', 'parent_code', 'deleted_at'])
 			.where('code', '=', currentCode)
 			.executeTakeFirst();
 
@@ -384,7 +385,7 @@ async function hasTrashedAncestor(
 			return false;
 		}
 
-		if (ancestor.is_trashed) {
+		if (ancestor.deleted_at !== null) {
 			return true;
 		}
 
@@ -397,7 +398,7 @@ async function hasTrashedAncestor(
 async function setDirectoryTreeTrashState(
 	db: App.Locals['db'],
 	rootCode: string,
-	isTrashed: boolean
+	deletedAt: Date | null
 ): Promise<number> {
 	const updated = await sql<{ code: string }>`
 		WITH RECURSIVE drive_tree AS (
@@ -413,7 +414,7 @@ async function setDirectoryTreeTrashState(
 				AND (dt.scope <> 'user_private' OR f.user_code = dt.user_code)
 		)
 		UPDATE drive_files
-		SET is_trashed = ${isTrashed}
+		SET deleted_at = ${deletedAt}
 		WHERE code IN (SELECT code FROM drive_tree)
 		RETURNING code
 	`.execute(db);

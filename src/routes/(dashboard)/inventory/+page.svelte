@@ -25,8 +25,8 @@
 	import { can } from '$lib/stores/permissions';
 	import { showToast } from '$lib/stores/Toast';
 	import { formatDate } from '$lib/utils/formatDate';
+	import { formatProductPrice } from '$lib/utils/products';
 	import type {
-		InventoryMovementListItem,
 		InventoryOverviewItem,
 		InventoryOverviewSummary,
 		InventoryPagination
@@ -105,15 +105,6 @@
 	let thresholdEmergencyPoint = $state(0);
 	let submittingThreshold = $state(false);
 
-	let showMovementsDialog = $state(false);
-	let movementsLoading = $state(false);
-	let movementsError = $state('');
-	let movementsProductCode = $state('');
-	let movementsBranchCode = $state('');
-	let movementsProductLabel = $state('');
-	let movementsBranchLabel = $state('');
-	let movements = $state<InventoryMovementListItem[]>([]);
-
 	const branchOptions = $derived(
 		branches
 			.filter((branch) => branch.state)
@@ -126,7 +117,6 @@
 	]);
 
 	const stockRows = $derived(items as unknown as TableRow[]);
-	const movementRows = $derived(movements as unknown as TableRow[]);
 	const canGoPrev = $derived(pagination.page > 1);
 	const canGoNext = $derived(pagination.page < pagination.total_pages);
 	const activeBranchLabel = $derived.by(
@@ -139,6 +129,12 @@
 			categories.find((category) => category.code === filterCategoryCode)?.name ?? 'Sin categoria'
 		);
 	});
+	const totalCostStockValue = $derived(
+		items.reduce(
+			(total, item) => total + item.available * toNumeric(item.cost_price),
+			0
+		)
+	);
 
 	onDestroy(() => {
 		if (searchTimeout) {
@@ -180,6 +176,12 @@
 		return 'success';
 	}
 
+	function toNumeric(value: string | number | null | undefined): number {
+		if (typeof value === 'number') return value;
+		const parsed = Number(value ?? 0);
+		return Number.isFinite(parsed) ? parsed : 0;
+	}
+
 	function openThresholdDialog(item: InventoryOverviewItem): void {
 		if (!canUpdate) return;
 		thresholdProductCode = item.product_code;
@@ -188,62 +190,6 @@
 		thresholdReorderPoint = Number(item.reorder_point);
 		thresholdEmergencyPoint = Number(item.emergency_point);
 		showThresholdDialog = true;
-	}
-
-	function movementReasonLabel(reason: InventoryMovementListItem['reason']): string {
-		if (reason === 'purchase') return 'Compra';
-		if (reason === 'sale') return 'Venta';
-		if (reason === 'purchase_refund') return 'Reembolso compra';
-		return 'Ajuste manual';
-	}
-
-	function movementDirectionLabel(direction: InventoryMovementListItem['direction']): string {
-		return direction === 'in' ? 'Entrada' : 'Salida';
-	}
-
-	function movementDirectionColor(
-		direction: InventoryMovementListItem['direction']
-	): 'success' | 'danger' {
-		return direction === 'in' ? 'success' : 'danger';
-	}
-
-	async function loadMovements(
-		productCode = movementsProductCode,
-		branchCode = movementsBranchCode
-	): Promise<void> {
-		if (!canRead || !productCode || !branchCode) return;
-
-		movementsLoading = true;
-		movementsError = '';
-		try {
-			const params = new SvelteURLSearchParams({
-				product_code: productCode,
-				branch_code: branchCode,
-				limit: '120'
-			});
-
-			const response = await fetch(`/api/inventory/movements?${params.toString()}`);
-			const payload = await response.json();
-			if (!response.ok) {
-				throw new Error((payload?.message as string) || 'No se pudo cargar el histórico');
-			}
-
-			movements = (payload.movements ?? []) as InventoryMovementListItem[];
-		} catch (caught) {
-			movementsError = caught instanceof Error ? caught.message : 'Error al cargar movimientos';
-		} finally {
-			movementsLoading = false;
-		}
-	}
-
-	async function openMovementsDialog(item: InventoryOverviewItem): Promise<void> {
-		if (!canRead) return;
-		movementsProductCode = item.product_code;
-		movementsBranchCode = item.branch_code;
-		movementsProductLabel = item.product_name;
-		movementsBranchLabel = item.branch_name;
-		showMovementsDialog = true;
-		await loadMovements(item.product_code, item.branch_code);
 	}
 
 	function handleSearchInput(value: string): void {
@@ -449,18 +395,18 @@
 						subtitle="Unidades inbound"
 					/>
 					<StatCard
+						title="Valor stock"
+						value={formatProductPrice(totalCostStockValue)}
+						icon="wallet"
+						color="warning"
+						subtitle="Costo de unidades disponibles"
+					/>
+					<StatCard
 						title="Criticos"
 						value={summary.emergency_count + summary.out_of_stock_count}
 						icon="alertTriangle"
 						color="danger"
-						subtitle="Prioridad alta"
-					/>
-					<StatCard
-						title="Registros"
-						value={pagination.total}
-						icon="listChecks"
-						color="primary"
-						subtitle="Resultados en la sede"
+						subtitle={`${pagination.total} registros en la sede`}
 					/>
 				</div>
 
@@ -492,6 +438,9 @@
 								<th>Producto</th>
 								<th>Disponible</th>
 								<th>En camino</th>
+								<th>Costo</th>
+								<th>Precio</th>
+								<th>Valor costo</th>
 								<th>Estado</th>
 								<th>Ultimo movimiento</th>
 								<th>Acciones</th>
@@ -512,6 +461,9 @@
 								</td>
 								<td>{item.available}</td>
 								<td>{item.inbound}</td>
+								<td>{formatProductPrice(item.cost_price)}</td>
+								<td>{formatProductPrice(item.price)}</td>
+								<td>{formatProductPrice(item.available * toNumeric(item.cost_price))}</td>
 								<td>
 									<Chip color={stockColor(item.stock_state)} size="sm">
 										{stockLabel(item.stock_state)}
@@ -523,12 +475,13 @@
 										<Button
 											type="border"
 											size="sm"
-											icon="list"
+											icon="eye"
 											color="primary"
 											disabled={!canRead}
-											onclick={() => void openMovementsDialog(item)}
+											onclick={() =>
+												void goto(resolve(`/products/${item.product_code}` as '/'))}
 										>
-											Historico
+											Detalle
 										</Button>
 										<Button
 											type="flat"
@@ -683,50 +636,6 @@
 	{/snippet}
 </Dialog>
 
-<Dialog bind:open={showMovementsDialog} title="Historico de entradas y salidas" size="lg">
-	<div class="lumi-stack lumi-space--sm">
-		<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-			{movementsProductLabel || 'Producto'} · {movementsBranchLabel || 'Sede'}
-		</p>
-		{#if movementsError}
-			<Alert type="danger" closable onclose={() => (movementsError = '')}>{movementsError}</Alert>
-		{/if}
-		<Table
-			data={movementRows}
-			hover
-			loading={movementsLoading}
-			pagination={false}
-			class="inventory-table inventory-table--movements"
-		>
-			{#snippet thead()}
-				<th>Fecha</th>
-				<th>Tipo</th>
-				<th>Motivo</th>
-				<th>Cantidad</th>
-				<th>Nota</th>
-			{/snippet}
-
-			{#snippet row({ row })}
-				{@const movement = row as unknown as InventoryMovementListItem}
-				<td>{formatDate(movement.occurred_at)}</td>
-				<td>
-					<Chip size="sm" color={movementDirectionColor(movement.direction)}>
-						{movementDirectionLabel(movement.direction)}
-					</Chip>
-				</td>
-				<td>{movementReasonLabel(movement.reason)}</td>
-				<td>
-					{movement.direction === 'in' ? '+' : '-'}{movement.quantity}
-				</td>
-				<td>{movement.note || '-'}</td>
-			{/snippet}
-		</Table>
-	</div>
-	{#snippet footer()}
-		<Button type="border" onclick={() => (showMovementsDialog = false)}>Cerrar</Button>
-	{/snippet}
-</Dialog>
-
 <style>
 	.inventory-stock__layout {
 		align-items: start;
@@ -777,11 +686,7 @@
 	}
 
 	:global(.inventory-table--stock .lumi-table__content) {
-		min-width: 64rem;
-	}
-
-	:global(.inventory-table--movements .lumi-table__content) {
-		min-width: 48rem;
+		min-width: 78rem;
 	}
 
 	@media (max-width: 1200px) {

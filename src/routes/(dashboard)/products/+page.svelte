@@ -58,6 +58,7 @@
 	let formBrandCode = $state('');
 	let formCategoryCode = $state('');
 	let formPrice = $state(0);
+	let formCostPrice = $state(0);
 	let formSku = $state('');
 	let formIsActive = $state(true);
 
@@ -80,6 +81,7 @@
 		formBrandCode = '';
 		formCategoryCode = '';
 		formPrice = 0;
+		formCostPrice = 0;
 		formSku = '';
 		formIsActive = true;
 		errorMessage = '';
@@ -98,6 +100,7 @@
 		formBrandCode = product.brand_code || '';
 		formCategoryCode = product.category_code || '';
 		formPrice = parseFloat(product.price ?? '0') || 0;
+		formCostPrice = parseFloat(product.cost_price ?? '0') || 0;
 		formSku = product.sku || '';
 		formIsActive = product.is_active !== false;
 		errorMessage = '';
@@ -300,20 +303,27 @@
 					autocomplete
 				/>
 
-				<div class="lumi-grid lumi-grid--columns-2 lumi-grid--gap-md">
-					<NumberInput
-						bind:value={formPrice}
-						label="Precio"
-						placeholder="0.00"
-						min={0}
-						step={0.01}
-						color="primary"
-					/>
-					<Input bind:value={formSku} name="sku" label="SKU" placeholder="Ej: PC00012" icon="tag" />
-				</div>
-
-				<input type="hidden" name="price" value={formPrice} />
+				<NumberInput
+					bind:value={formPrice}
+					label="Precio de venta"
+					placeholder="0.00"
+					min={0}
+					step={0.01}
+					color="primary"
+				/>
+				<NumberInput
+					bind:value={formCostPrice}
+					label="Costo de compra"
+					placeholder="0.00"
+					min={0}
+					step={0.01}
+					color="warning"
+				/>
+				<Input bind:value={formSku} name="sku" label="SKU" placeholder="Ej: PC00012" icon="tag" />
 			</div>
+
+			<input type="hidden" name="price" value={formPrice} />
+			<input type="hidden" name="cost_price" value={formCostPrice} />
 		</div>
 	</form>
 

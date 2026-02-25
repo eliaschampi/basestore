@@ -15,14 +15,24 @@ CREATE TRIGGER inventory_balances_updated_at_tg
 BEFORE UPDATE ON public.inventory_balances
 FOR EACH ROW EXECUTE FUNCTION public.timestamp_updater();
 
--- Inventory purchases timestamp trigger
-CREATE TRIGGER inventory_purchases_updated_at_tg
-BEFORE UPDATE ON public.inventory_purchases
+-- Purchases timestamp trigger
+CREATE TRIGGER purchases_updated_at_tg
+BEFORE UPDATE ON public.purchases
 FOR EACH ROW EXECUTE FUNCTION public.timestamp_updater();
 
--- Inventory sales timestamp trigger
-CREATE TRIGGER inventory_sales_updated_at_tg
-BEFORE UPDATE ON public.inventory_sales
+-- Purchase items timestamp trigger
+CREATE TRIGGER purchase_items_updated_at_tg
+BEFORE UPDATE ON public.purchase_items
+FOR EACH ROW EXECUTE FUNCTION public.timestamp_updater();
+
+-- Sales timestamp trigger
+CREATE TRIGGER sales_updated_at_tg
+BEFORE UPDATE ON public.sales
+FOR EACH ROW EXECUTE FUNCTION public.timestamp_updater();
+
+-- Sale items timestamp trigger
+CREATE TRIGGER sale_items_updated_at_tg
+BEFORE UPDATE ON public.sale_items
 FOR EACH ROW EXECUTE FUNCTION public.timestamp_updater();
 
 -- Inventory movements timestamp trigger
@@ -39,11 +49,6 @@ FOR EACH ROW EXECUTE FUNCTION public.timestamp_updater();
 CREATE TRIGGER inventory_apply_movement_tg
 BEFORE INSERT ON public.inventory_movements
 FOR EACH ROW EXECUTE FUNCTION public.inventory_apply_movement_to_balance();
-
--- Synchronize inbound quantities on purchase state changes.
-CREATE TRIGGER inventory_sync_inbound_tg
-AFTER INSERT OR UPDATE OR DELETE ON public.inventory_purchases
-FOR EACH ROW EXECUTE FUNCTION public.inventory_sync_inbound_from_purchase();
 
 -- Seed inventory balances when a new product is created.
 CREATE TRIGGER inventory_seed_balances_product_tg

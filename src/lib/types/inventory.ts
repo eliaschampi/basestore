@@ -21,6 +21,8 @@ export interface InventoryOverviewItem {
 	product_code: string;
 	product_name: string;
 	sku: string | null;
+	price: string;
+	cost_price: string;
 	product_is_active: boolean;
 	category_code: string | null;
 	category_name: string | null;
@@ -51,31 +53,46 @@ export interface InventoryOverviewSummary {
 	total_inbound: number;
 }
 
+export interface InventoryPurchaseLineItem {
+	code: string;
+	purchase_code: string;
+	product_code: string;
+	product_name: string;
+	product_sku: string | null;
+	quantity: number;
+	unit_cost: string | null;
+	total_amount: string;
+	created_at: string | Date;
+	updated_at: string | Date;
+}
+
 export interface InventoryPurchaseRecord {
 	code: string;
-	product_code: string;
 	branch_code: string;
 	user_code: string;
 	origin: InventoryPurchaseOrigin;
 	entry_type: InventoryPurchaseEntryType;
 	tracking_number: string | null;
-	quantity: number;
 	state: InventoryPurchaseState;
 	ordered_at: string | Date;
 	received_at: string | Date | null;
 	refunded_at: string | Date | null;
-	unit_cost: string | null;
 	note: string | null;
 	created_at: string | Date;
 	updated_at: string | Date;
-}
-
-export interface InventoryPurchaseListItem extends InventoryPurchaseRecord {
-	product_name: string;
-	product_sku: string | null;
+	item_count: number;
+	total_quantity: number;
+	total_amount: string;
+	products_summary: string;
+	primary_product_code: string | null;
+	primary_product_name: string | null;
+	primary_product_sku: string | null;
+	items: InventoryPurchaseLineItem[];
 	branch_name: string;
 	can_refund: boolean;
 }
+
+export type InventoryPurchaseListItem = InventoryPurchaseRecord;
 
 export interface InventoryCustomerRecord {
 	code: string;
@@ -86,15 +103,26 @@ export interface InventoryCustomerRecord {
 	updated_at: string | Date;
 }
 
+export interface InventorySaleLineItem {
+	code: string;
+	sale_code: string;
+	product_code: string;
+	product_name: string;
+	product_sku: string | null;
+	quantity: number;
+	unit_price: string;
+	unit_cost: string;
+	total_amount: string;
+	profit_amount: string;
+	created_at: string | Date;
+	updated_at: string | Date;
+}
+
 export interface InventorySaleRecord {
 	code: string;
-	product_code: string;
 	branch_code: string;
 	user_code: string;
 	customer_code: string | null;
-	quantity: number;
-	unit_price: string;
-	total_amount: string;
 	sale_channel: InventorySaleChannel;
 	fulfillment_type: InventorySaleFulfillmentType;
 	shipping_state: InventorySaleShippingState;
@@ -109,15 +137,21 @@ export interface InventorySaleRecord {
 	void_note: string | null;
 	created_at: string | Date;
 	updated_at: string | Date;
-}
-
-export interface InventorySaleListItem extends InventorySaleRecord {
-	product_name: string;
-	product_sku: string | null;
+	item_count: number;
+	total_quantity: number;
+	total_amount: string;
+	profit_amount: string;
+	products_summary: string;
+	primary_product_code: string | null;
+	primary_product_name: string | null;
+	primary_product_sku: string | null;
+	items: InventorySaleLineItem[];
 	branch_name: string;
 	customer_full_name: string | null;
 	voided_by_name: string | null;
 }
+
+export type InventorySaleListItem = InventorySaleRecord;
 
 export interface InventoryMovementListItem {
 	code: string;

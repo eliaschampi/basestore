@@ -23,7 +23,7 @@ CREATE INDEX categories_created_at_idx ON public.categories (created_at);
 CREATE INDEX brands_name_idx ON public.brands (name);
 CREATE INDEX brands_created_at_idx ON public.brands (created_at);
 
--- Optimized indexes for performance
+-- Products table indexes
 CREATE INDEX products_name_idx ON public.products (name);
 CREATE INDEX products_brand_code_idx ON public.products (brand_code);
 CREATE INDEX products_category_code_idx ON public.products (category_code);
@@ -34,27 +34,27 @@ CREATE INDEX products_is_active_idx ON public.products (is_active);
 CREATE INDEX products_created_at_idx ON public.products (created_at);
 
 -- Drive files table indexes
+-- Soft-delete: all active-file indexes filter on deleted_at IS NULL
 CREATE INDEX drive_files_scope_idx ON public.drive_files (scope);
 CREATE INDEX drive_files_user_code_idx ON public.drive_files (user_code);
 CREATE INDEX drive_files_parent_code_idx ON public.drive_files (parent_code);
 CREATE INDEX drive_files_type_idx ON public.drive_files (type);
-CREATE INDEX drive_files_is_trashed_idx ON public.drive_files (is_trashed);
+CREATE INDEX drive_files_deleted_at_idx ON public.drive_files (deleted_at) WHERE deleted_at IS NOT NULL;
 CREATE INDEX drive_files_created_at_idx ON public.drive_files (created_at);
-CREATE INDEX drive_files_scope_parent_idx ON public.drive_files (scope, parent_code) WHERE is_trashed = FALSE;
-CREATE INDEX drive_files_scope_trashed_idx ON public.drive_files (scope) WHERE is_trashed = TRUE;
+CREATE INDEX drive_files_scope_parent_idx ON public.drive_files (scope, parent_code) WHERE deleted_at IS NULL;
 CREATE INDEX drive_files_user_private_idx ON public.drive_files (user_code) WHERE scope = 'user_private';
 CREATE UNIQUE INDEX drive_files_active_name_scope_uq ON public.drive_files (
   scope,
   COALESCE(CASE WHEN scope = 'user_private' THEN user_code ELSE NULL END, '00000000-0000-0000-0000-000000000000'::uuid),
   COALESCE(parent_code, '00000000-0000-0000-0000-000000000000'::uuid),
   LOWER(name)
-) WHERE is_trashed = FALSE;
+) WHERE deleted_at IS NULL;
 
 -- Drive links table indexes
+-- product_code is now a direct FK (no more polymorphic entity_type/entity_code)
 CREATE INDEX drive_links_file_code_idx ON public.drive_links (file_code);
-CREATE INDEX drive_links_entity_lookup_idx ON public.drive_links (entity_type, entity_code);
-CREATE UNIQUE INDEX drive_links_primary_uq ON public.drive_links (entity_type, entity_code)
-WHERE is_primary = TRUE;
+CREATE INDEX drive_links_product_code_idx ON public.drive_links (product_code);
+CREATE UNIQUE INDEX drive_links_primary_uq ON public.drive_links (product_code) WHERE is_primary = TRUE;
 
 -- Inventory balances indexes
 CREATE INDEX inventory_balances_branch_available_idx
@@ -62,16 +62,22 @@ CREATE INDEX inventory_balances_branch_available_idx
 CREATE INDEX inventory_balances_branch_updated_idx
   ON public.inventory_balances (branch_code, updated_at DESC);
 
--- Inventory purchases indexes
-CREATE INDEX inventory_purchases_product_branch_idx
-  ON public.inventory_purchases (product_code, branch_code);
-CREATE INDEX inventory_purchases_state_branch_idx
-  ON public.inventory_purchases (state, branch_code, ordered_at DESC);
-CREATE INDEX inventory_purchases_entry_type_idx
-  ON public.inventory_purchases (entry_type, ordered_at DESC);
-CREATE INDEX inventory_purchases_tracking_number_idx
-  ON public.inventory_purchases (tracking_number)
+-- Purchases indexes (header + lines)
+CREATE INDEX purchases_branch_state_idx
+  ON public.purchases (branch_code, state, ordered_at DESC);
+CREATE INDEX purchases_origin_idx
+  ON public.purchases (origin, ordered_at DESC);
+CREATE INDEX purchases_entry_type_idx
+  ON public.purchases (entry_type, ordered_at DESC);
+CREATE INDEX purchases_tracking_number_idx
+  ON public.purchases (tracking_number)
   WHERE tracking_number IS NOT NULL;
+CREATE INDEX purchase_items_purchase_idx
+  ON public.purchase_items (purchase_code);
+CREATE INDEX purchase_items_product_idx
+  ON public.purchase_items (product_code);
+CREATE INDEX purchase_items_product_purchase_idx
+  ON public.purchase_items (product_code, purchase_code);
 
 -- Inventory customers indexes
 CREATE UNIQUE INDEX inventory_customers_identity_udx
@@ -79,22 +85,26 @@ CREATE UNIQUE INDEX inventory_customers_identity_udx
 CREATE INDEX inventory_customers_updated_idx
   ON public.inventory_customers (updated_at DESC, full_name);
 
--- Inventory sales indexes
-CREATE INDEX inventory_sales_product_branch_idx
-  ON public.inventory_sales (product_code, branch_code);
-CREATE INDEX inventory_sales_branch_sold_idx
-  ON public.inventory_sales (branch_code, sold_at DESC);
-CREATE INDEX inventory_sales_customer_idx
-  ON public.inventory_sales (customer_code, sold_at DESC);
-CREATE INDEX inventory_sales_channel_idx
-  ON public.inventory_sales (sale_channel, sold_at DESC);
-CREATE INDEX inventory_sales_shipping_idx
-  ON public.inventory_sales (shipping_state, sold_at DESC);
-CREATE INDEX inventory_sales_voided_at_idx
-  ON public.inventory_sales (voided_at, sold_at DESC);
-CREATE INDEX inventory_sales_branch_active_idx
-  ON public.inventory_sales (branch_code, sold_at DESC)
+-- Sales indexes (header + lines)
+CREATE INDEX sales_branch_sold_idx
+  ON public.sales (branch_code, sold_at DESC);
+CREATE INDEX sales_customer_idx
+  ON public.sales (customer_code, sold_at DESC);
+CREATE INDEX sales_channel_idx
+  ON public.sales (sale_channel, sold_at DESC);
+CREATE INDEX sales_shipping_idx
+  ON public.sales (shipping_state, sold_at DESC);
+CREATE INDEX sales_voided_at_idx
+  ON public.sales (voided_at, sold_at DESC);
+CREATE INDEX sales_branch_active_idx
+  ON public.sales (branch_code, sold_at DESC)
   WHERE voided_at IS NULL;
+CREATE INDEX sale_items_sale_idx
+  ON public.sale_items (sale_code);
+CREATE INDEX sale_items_product_idx
+  ON public.sale_items (product_code);
+CREATE INDEX sale_items_product_sale_idx
+  ON public.sale_items (product_code, sale_code);
 
 -- Inventory movements indexes
 CREATE INDEX inventory_movements_product_branch_idx

@@ -3,7 +3,7 @@
 -- =====================================================
 
 -- Products Overview View
--- Product media now comes from drive_links + drive_files (scope: product_shared).
+-- Product media comes from drive_links.product_code + drive_files (scope: product_shared).
 CREATE OR REPLACE VIEW products_overview AS
 SELECT
     p.code,
@@ -12,6 +12,7 @@ SELECT
     p.brand_code,
     p.category_code,
     p.price,
+    p.cost_price,
     p.sku,
     COALESCE(media.images, '[]'::jsonb) AS images,
     p.is_active,
@@ -47,9 +48,8 @@ LEFT JOIN LATERAL (
     LEFT JOIN drive_files df
       ON df.code = dl.file_code
      AND df.scope = 'product_shared'
-     AND df.is_trashed = FALSE
-    WHERE dl.entity_type = 'product'
-      AND dl.entity_code = p.code
+     AND df.deleted_at IS NULL
+    WHERE dl.product_code = p.code
 ) AS media ON TRUE;
 
 -- Create index on products columns used by products_overview for better performance
@@ -64,6 +64,8 @@ SELECT
   ib.product_code,
   p.name AS product_name,
   p.sku,
+  p.price,
+  p.cost_price,
   p.is_active AS product_is_active,
   p.category_code,
   c.name AS category_name,
@@ -108,46 +110,81 @@ LEFT JOIN public.categories c ON c.code = p.category_code;
 
 CREATE OR REPLACE VIEW public.inventory_purchase_feed AS
 SELECT
-  ip.code,
-  ip.product_code,
-  ip.branch_code,
-  ip.user_code,
-  ip.origin,
-  ip.entry_type,
-  ip.tracking_number,
-  ip.quantity,
-  ip.state,
-  ip.ordered_at,
-  ip.received_at,
-  ip.refunded_at,
-  ip.unit_cost,
-  ip.note,
-  ip.created_at,
-  ip.updated_at,
-  p.name AS product_name,
-  p.sku AS product_sku,
+  pu.code,
+  pu.branch_code,
+  pu.user_code,
+  pu.origin,
+  pu.entry_type,
+  pu.tracking_number,
+  pu.state,
+  pu.ordered_at,
+  pu.received_at,
+  pu.refunded_at,
+  pu.note,
+  pu.created_at,
+  pu.updated_at,
+  COALESCE(items.item_count, 0) AS item_count,
+  COALESCE(items.total_quantity, 0) AS total_quantity,
+  COALESCE(items.total_amount, 0::numeric)::numeric(14,2) AS total_amount,
+  COALESCE(items.products_summary, '') AS products_summary,
+  items.primary_product_code,
+  items.primary_product_name,
+  items.primary_product_sku,
+  COALESCE(items.items, '[]'::jsonb) AS items,
   b.name AS branch_name,
   CASE
-    WHEN ip.state = 'received' THEN COALESCE(ib.on_hand, 0) >= ip.quantity
+    WHEN pu.state = 'received' THEN COALESCE(items.can_refund, true)
     ELSE true
   END AS can_refund
-FROM public.inventory_purchases ip
-INNER JOIN public.products p ON p.code = ip.product_code
-INNER JOIN public.branches b ON b.code = ip.branch_code
-LEFT JOIN public.inventory_balances ib
-  ON ib.product_code = ip.product_code
-  AND ib.branch_code = ip.branch_code;
+FROM public.purchases pu
+INNER JOIN public.branches b ON b.code = pu.branch_code
+LEFT JOIN LATERAL (
+  SELECT
+    COUNT(*)::int AS item_count,
+    COALESCE(SUM(pi.quantity), 0)::int AS total_quantity,
+    COALESCE(SUM(pi.total_amount), 0::numeric) AS total_amount,
+    STRING_AGG(DISTINCT p.name, ', ' ORDER BY p.name) AS products_summary,
+    (ARRAY_AGG(p.code ORDER BY p.name ASC, pi.created_at ASC))[1] AS primary_product_code,
+    (ARRAY_AGG(p.name ORDER BY p.name ASC, pi.created_at ASC))[1] AS primary_product_name,
+    (ARRAY_AGG(p.sku ORDER BY p.name ASC, pi.created_at ASC))[1] AS primary_product_sku,
+    COALESCE(
+      BOOL_AND(
+        CASE
+          WHEN pu.state = 'received' THEN COALESCE(ib.on_hand, 0) >= pi.quantity
+          ELSE true
+        END
+      ),
+      true
+    ) AS can_refund,
+    jsonb_agg(
+      jsonb_build_object(
+        'code', pi.code,
+        'purchase_code', pi.purchase_code,
+        'product_code', pi.product_code,
+        'product_name', p.name,
+        'product_sku', p.sku,
+        'quantity', pi.quantity,
+        'unit_cost', pi.unit_cost,
+        'total_amount', pi.total_amount,
+        'created_at', pi.created_at,
+        'updated_at', pi.updated_at
+      )
+      ORDER BY p.name ASC, pi.created_at ASC
+    ) AS items
+  FROM public.purchase_items pi
+  INNER JOIN public.products p ON p.code = pi.product_code
+  LEFT JOIN public.inventory_balances ib
+    ON ib.product_code = pi.product_code
+   AND ib.branch_code = pu.branch_code
+  WHERE pi.purchase_code = pu.code
+) AS items ON TRUE;
 
 CREATE OR REPLACE VIEW public.inventory_sale_feed AS
 SELECT
   s.code,
-  s.product_code,
   s.branch_code,
   s.user_code,
   s.customer_code,
-  s.quantity,
-  s.unit_price,
-  s.total_amount,
   s.sale_channel,
   s.fulfillment_type,
   s.shipping_state,
@@ -162,16 +199,53 @@ SELECT
   s.void_note,
   s.created_at,
   s.updated_at,
-  p.name AS product_name,
-  p.sku AS product_sku,
+  COALESCE(items.item_count, 0) AS item_count,
+  COALESCE(items.total_quantity, 0) AS total_quantity,
+  COALESCE(items.total_amount, 0::numeric)::numeric(14,2) AS total_amount,
+  COALESCE(items.profit_amount, 0::numeric)::numeric(14,2) AS profit_amount,
+  COALESCE(items.products_summary, '') AS products_summary,
+  items.primary_product_code,
+  items.primary_product_name,
+  items.primary_product_sku,
+  COALESCE(items.items, '[]'::jsonb) AS items,
   b.name AS branch_name,
   c.full_name AS customer_full_name,
   u.name AS voided_by_name
-FROM public.inventory_sales s
-INNER JOIN public.products p ON p.code = s.product_code
+FROM public.sales s
 INNER JOIN public.branches b ON b.code = s.branch_code
 LEFT JOIN public.inventory_customers c ON c.code = s.customer_code
-LEFT JOIN public.users u ON u.code = s.voided_by_user_code;
+LEFT JOIN public.users u ON u.code = s.voided_by_user_code
+LEFT JOIN LATERAL (
+  SELECT
+    COUNT(*)::int AS item_count,
+    COALESCE(SUM(si.quantity), 0)::int AS total_quantity,
+    COALESCE(SUM(si.total_amount), 0::numeric) AS total_amount,
+    COALESCE(SUM((si.unit_price - si.unit_cost) * si.quantity::numeric), 0::numeric) AS profit_amount,
+    STRING_AGG(DISTINCT p.name, ', ' ORDER BY p.name) AS products_summary,
+    (ARRAY_AGG(p.code ORDER BY p.name ASC, si.created_at ASC))[1] AS primary_product_code,
+    (ARRAY_AGG(p.name ORDER BY p.name ASC, si.created_at ASC))[1] AS primary_product_name,
+    (ARRAY_AGG(p.sku ORDER BY p.name ASC, si.created_at ASC))[1] AS primary_product_sku,
+    jsonb_agg(
+      jsonb_build_object(
+        'code', si.code,
+        'sale_code', si.sale_code,
+        'product_code', si.product_code,
+        'product_name', p.name,
+        'product_sku', p.sku,
+        'quantity', si.quantity,
+        'unit_price', si.unit_price,
+        'unit_cost', si.unit_cost,
+        'total_amount', si.total_amount,
+        'profit_amount', ((si.unit_price - si.unit_cost) * si.quantity::numeric)::numeric(14,2),
+        'created_at', si.created_at,
+        'updated_at', si.updated_at
+      )
+      ORDER BY p.name ASC, si.created_at ASC
+    ) AS items
+  FROM public.sale_items si
+  INNER JOIN public.products p ON p.code = si.product_code
+  WHERE si.sale_code = s.code
+) AS items ON TRUE;
 
 CREATE OR REPLACE VIEW public.inventory_movement_feed AS
 SELECT
@@ -218,6 +292,8 @@ RETURNS TABLE(
   product_code UUID,
   product_name TEXT,
   sku TEXT,
+  price NUMERIC(12,2),
+  cost_price NUMERIC(12,2),
   product_is_active BOOLEAN,
   category_code UUID,
   category_name TEXT,
@@ -279,6 +355,8 @@ SELECT
   ranked.product_code,
   ranked.product_name,
   ranked.sku,
+  ranked.price,
+  ranked.cost_price,
   ranked.product_is_active,
   ranked.category_code,
   ranked.category_name,
@@ -357,23 +435,26 @@ CREATE OR REPLACE FUNCTION public.inventory_list_purchases(
 )
 RETURNS TABLE(
   code UUID,
-  product_code UUID,
   branch_code UUID,
   user_code UUID,
   origin TEXT,
   entry_type TEXT,
   tracking_number TEXT,
-  quantity INTEGER,
   state TEXT,
   ordered_at DATE,
   received_at TIMESTAMPTZ,
   refunded_at TIMESTAMPTZ,
-  unit_cost NUMERIC(12,2),
   note TEXT,
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ,
-  product_name TEXT,
-  product_sku TEXT,
+  item_count INTEGER,
+  total_quantity INTEGER,
+  total_amount NUMERIC(14,2),
+  products_summary TEXT,
+  primary_product_code UUID,
+  primary_product_name TEXT,
+  primary_product_sku TEXT,
+  items JSONB,
   branch_name TEXT,
   can_refund BOOLEAN,
   total_count INTEGER
@@ -385,15 +466,29 @@ WITH filtered AS (
   SELECT ipf.*
   FROM public.inventory_purchase_feed ipf
   WHERE (p_branch_code IS NULL OR ipf.branch_code = p_branch_code)
-    AND (p_product_code IS NULL OR ipf.product_code = p_product_code)
     AND (p_state IS NULL OR ipf.state = p_state)
     AND (p_origin IS NULL OR ipf.origin = p_origin)
     AND (p_entry_type IS NULL OR ipf.entry_type = p_entry_type)
     AND (
+      p_product_code IS NULL
+      OR EXISTS (
+        SELECT 1
+        FROM public.purchase_items pi
+        WHERE pi.purchase_code = ipf.code
+          AND pi.product_code = p_product_code
+      )
+    )
+    AND (
       NULLIF(BTRIM(COALESCE(p_search, '')), '') IS NULL
-      OR ipf.product_name ILIKE '%' || BTRIM(p_search) || '%'
-      OR COALESCE(ipf.product_sku, '') ILIKE '%' || BTRIM(p_search) || '%'
+      OR ipf.products_summary ILIKE '%' || BTRIM(p_search) || '%'
       OR COALESCE(ipf.tracking_number, '') ILIKE '%' || BTRIM(p_search) || '%'
+      OR EXISTS (
+        SELECT 1
+        FROM public.purchase_items pi
+        INNER JOIN public.products p ON p.code = pi.product_code
+        WHERE pi.purchase_code = ipf.code
+          AND COALESCE(p.sku, '') ILIKE '%' || BTRIM(p_search) || '%'
+      )
     )
 ),
 ranked AS (
@@ -407,23 +502,26 @@ ranked AS (
 )
 SELECT
   ranked.code,
-  ranked.product_code,
   ranked.branch_code,
   ranked.user_code,
   ranked.origin,
   ranked.entry_type,
   ranked.tracking_number,
-  ranked.quantity,
   ranked.state,
   ranked.ordered_at,
   ranked.received_at,
   ranked.refunded_at,
-  ranked.unit_cost,
   ranked.note,
   ranked.created_at,
   ranked.updated_at,
-  ranked.product_name,
-  ranked.product_sku,
+  ranked.item_count,
+  ranked.total_quantity,
+  ranked.total_amount,
+  ranked.products_summary,
+  ranked.primary_product_code,
+  ranked.primary_product_name,
+  ranked.primary_product_sku,
+  ranked.items,
   ranked.branch_name,
   ranked.can_refund,
   ranked.total_count
@@ -443,13 +541,9 @@ CREATE OR REPLACE FUNCTION public.inventory_list_sales(
 )
 RETURNS TABLE(
   code UUID,
-  product_code UUID,
   branch_code UUID,
   user_code UUID,
   customer_code UUID,
-  quantity INTEGER,
-  unit_price NUMERIC(12,2),
-  total_amount NUMERIC(14,2),
   sale_channel TEXT,
   fulfillment_type TEXT,
   shipping_state TEXT,
@@ -464,8 +558,15 @@ RETURNS TABLE(
   void_note TEXT,
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ,
-  product_name TEXT,
-  product_sku TEXT,
+  item_count INTEGER,
+  total_quantity INTEGER,
+  total_amount NUMERIC(14,2),
+  profit_amount NUMERIC(14,2),
+  products_summary TEXT,
+  primary_product_code UUID,
+  primary_product_name TEXT,
+  primary_product_sku TEXT,
+  items JSONB,
   branch_name TEXT,
   customer_full_name TEXT,
   voided_by_name TEXT,
@@ -478,10 +579,18 @@ WITH filtered AS (
   SELECT isf.*
   FROM public.inventory_sale_feed isf
   WHERE (p_branch_code IS NULL OR isf.branch_code = p_branch_code)
-    AND (p_product_code IS NULL OR isf.product_code = p_product_code)
     AND (p_customer_code IS NULL OR isf.customer_code = p_customer_code)
     AND (p_shipping_state IS NULL OR isf.shipping_state = p_shipping_state)
     AND (p_sale_channel IS NULL OR isf.sale_channel = p_sale_channel)
+    AND (
+      p_product_code IS NULL
+      OR EXISTS (
+        SELECT 1
+        FROM public.sale_items si
+        WHERE si.sale_code = isf.code
+          AND si.product_code = p_product_code
+      )
+    )
     AND (
       COALESCE(p_status, 'all') = 'all'
       OR (COALESCE(p_status, 'all') = 'active' AND isf.voided_at IS NULL)
@@ -489,12 +598,18 @@ WITH filtered AS (
     )
     AND (
       NULLIF(BTRIM(COALESCE(p_search, '')), '') IS NULL
-      OR isf.product_name ILIKE '%' || BTRIM(p_search) || '%'
-      OR COALESCE(isf.product_sku, '') ILIKE '%' || BTRIM(p_search) || '%'
+      OR isf.products_summary ILIKE '%' || BTRIM(p_search) || '%'
       OR isf.customer_name ILIKE '%' || BTRIM(p_search) || '%'
       OR COALESCE(isf.customer_phone, '') ILIKE '%' || BTRIM(p_search) || '%'
       OR COALESCE(isf.order_reference, '') ILIKE '%' || BTRIM(p_search) || '%'
       OR COALESCE(isf.void_note, '') ILIKE '%' || BTRIM(p_search) || '%'
+      OR EXISTS (
+        SELECT 1
+        FROM public.sale_items si
+        INNER JOIN public.products p ON p.code = si.product_code
+        WHERE si.sale_code = isf.code
+          AND COALESCE(p.sku, '') ILIKE '%' || BTRIM(p_search) || '%'
+      )
     )
 ),
 ranked AS (
@@ -508,13 +623,9 @@ ranked AS (
 )
 SELECT
   ranked.code,
-  ranked.product_code,
   ranked.branch_code,
   ranked.user_code,
   ranked.customer_code,
-  ranked.quantity,
-  ranked.unit_price,
-  ranked.total_amount::NUMERIC(14,2),
   ranked.sale_channel,
   ranked.fulfillment_type,
   ranked.shipping_state,
@@ -529,8 +640,15 @@ SELECT
   ranked.void_note,
   ranked.created_at,
   ranked.updated_at,
-  ranked.product_name,
-  ranked.product_sku,
+  ranked.item_count,
+  ranked.total_quantity,
+  ranked.total_amount,
+  ranked.profit_amount,
+  ranked.products_summary,
+  ranked.primary_product_code,
+  ranked.primary_product_name,
+  ranked.primary_product_sku,
+  ranked.items,
   ranked.branch_name,
   ranked.customer_full_name,
   ranked.voided_by_name,

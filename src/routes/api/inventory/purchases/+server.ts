@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { InventoryRepository } from '$lib/server/repositories/inventory.repository';
+import { InventoryRepository, type CreateInventoryPurchaseItemInput } from '$lib/server/repositories/inventory.repository';
 import {
 	isValidInventoryPurchaseEntryType,
 	isValidInventoryPurchaseOrigin,
@@ -21,17 +21,22 @@ import { isUuid } from '$lib/utils/validation';
 
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-interface CreatePurchaseBody {
+interface PurchaseItemBody {
 	product_code?: string;
+	quantity?: number | string;
+	unit_cost?: number | string | null;
+}
+
+interface CreatePurchaseBody {
 	branch_code?: string;
 	origin?: string;
+	origin_custom?: string;
 	entry_type?: string;
 	tracking_number?: string;
-	quantity?: number;
 	state?: string;
 	ordered_at?: string;
-	unit_cost?: number | string | null;
 	note?: string;
+	items?: PurchaseItemBody[];
 }
 
 function parseDateOnly(value: string): string | null {
@@ -52,6 +57,61 @@ function parseDateOnly(value: string): string | null {
 	}
 
 	return `${match[1]}-${match[2]}-${match[3]}`;
+}
+
+function normalizePurchaseItems(items: PurchaseItemBody[] | undefined): CreateInventoryPurchaseItemInput[] {
+	if (!Array.isArray(items) || items.length === 0) {
+		throw error(400, 'Debes incluir al menos un item de compra');
+	}
+
+	const grouped = new Map<
+		string,
+		{
+			quantity: number;
+			costWeightedSum: number;
+			costQty: number;
+		}
+	>();
+
+	for (const item of items) {
+		const productCode = (item.product_code || '').trim();
+		if (!isUuid(productCode)) {
+			throw error(400, 'Producto inválido en los items');
+		}
+
+		const quantity = Number(item.quantity);
+		if (!Number.isInteger(quantity) || quantity <= 0) {
+			throw error(400, 'La cantidad de cada item debe ser un entero mayor a 0');
+		}
+
+		let unitCost: number | null = null;
+		if (item.unit_cost !== null && item.unit_cost !== undefined && `${item.unit_cost}`.trim() !== '') {
+			const parsed = Number(item.unit_cost);
+			if (!Number.isFinite(parsed) || parsed < 0) {
+				throw error(400, 'Costo unitario inválido en los items');
+			}
+			unitCost = parsed;
+		}
+
+		const existing = grouped.get(productCode) ?? {
+			quantity: 0,
+			costWeightedSum: 0,
+			costQty: 0
+		};
+
+		existing.quantity += quantity;
+		if (unitCost !== null) {
+			existing.costWeightedSum += unitCost * quantity;
+			existing.costQty += quantity;
+		}
+		grouped.set(productCode, existing);
+	}
+
+	return [...grouped.entries()].map(([productCode, value]) => ({
+		productCode,
+		quantity: value.quantity,
+		unitCost: value.costQty > 0 ? value.costWeightedSum / value.costQty : null
+	}));
 }
 
 export const GET: RequestHandler = async ({ url, locals }) => {
@@ -121,27 +181,22 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 
 	const body = (await request.json()) as CreatePurchaseBody;
-	const productCode = (body.product_code || '').trim();
 	const branchCode = (body.branch_code || '').trim();
 	const originRaw = normalizeInventoryPurchaseOrigin(body.origin || '');
 	const stateRaw = normalizeInventoryPurchaseState(body.state || 'in_transit');
 	const entryTypeRaw = normalizeInventoryPurchaseEntryType(body.entry_type || 'restock');
 	const trackingNumber = (body.tracking_number || '').trim();
-	const quantity = Number(body.quantity);
 	const orderedAtRaw = (body.ordered_at || '').trim();
-	const unitCostRaw = body.unit_cost;
 	const note = (body.note || '').trim();
-
-	if (!isUuid(productCode)) {
-		throw error(400, 'Producto inválido');
-	}
+	const originCustom = (body.origin_custom || '').trim();
+	const items = normalizePurchaseItems(body.items);
 
 	if (!isUuid(branchCode)) {
 		throw error(400, 'Sede inválida');
 	}
 
 	if (!isValidInventoryPurchaseOrigin(originRaw)) {
-		throw error(400, 'Origen inválido. Usa: temu, aliexpress o lima');
+		throw error(400, 'Origen inválido. Usa: temu, aliexpress, lima u other');
 	}
 	const origin: InventoryPurchaseOrigin = originRaw;
 
@@ -155,13 +210,17 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 	const entryType: InventoryPurchaseEntryType = entryTypeRaw;
 
-	if (!Number.isInteger(quantity) || quantity <= 0) {
-		throw error(400, 'La cantidad debe ser un entero mayor a 0');
+	if (origin !== 'lima' && trackingNumber.length < 5) {
+		throw error(400, 'El NRO de tracking es obligatorio para compras con envío');
 	}
 
-	if (origin !== 'lima' && trackingNumber.length < 5) {
-		throw error(400, 'El NRO de tracking es obligatorio para Temu y AliExpress');
+	if (origin === 'other' && originCustom.length < 2) {
+		throw error(400, 'Cuando el origen es "Otros", especifica el origen personalizado');
 	}
+
+	const finalNote = origin === 'other'
+		? [`Origen personalizado: ${originCustom}`, note].filter(Boolean).join(' · ')
+		: note;
 
 	let orderedAt: Date | string = new Date().toISOString().slice(0, 10);
 	if (orderedAtRaw) {
@@ -172,28 +231,17 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		orderedAt = parsedDateOnly;
 	}
 
-	let unitCost: number | null = null;
-	if (unitCostRaw !== null && unitCostRaw !== undefined && `${unitCostRaw}`.trim() !== '') {
-		const parsed = Number(unitCostRaw);
-		if (!Number.isFinite(parsed) || parsed < 0) {
-			throw error(400, 'Costo unitario inválido');
-		}
-		unitCost = parsed;
-	}
-
 	try {
 		const purchase = await InventoryRepository.createPurchase(locals.db, {
-			productCode,
 			branchCode,
 			userCode: locals.user.code,
 			origin,
 			entryType,
 			trackingNumber: trackingNumber || null,
-			quantity,
 			state,
 			orderedAt,
-			unitCost,
-			note: note || null
+			note: finalNote || null,
+			items
 		});
 
 		return json({ purchase }, { status: 201 });
@@ -202,6 +250,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		if (dbError.code === '23503') {
 			throw error(404, 'Producto o sede no encontrada');
+		}
+
+		if (dbError.code === '23505') {
+			throw error(400, 'No repitas el mismo producto en varias líneas');
 		}
 
 		if (dbError.code === '23514') {

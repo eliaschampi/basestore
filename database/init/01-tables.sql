@@ -74,7 +74,7 @@ CREATE TABLE public.brands (
   CONSTRAINT brands_name_uq UNIQUE (name)
 );
 
--- Products table (media managed through drive_links)
+-- Products table (media managed through drive_links → product_code)
 CREATE TABLE public.products (
   code UUID NOT NULL DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
@@ -83,6 +83,7 @@ CREATE TABLE public.products (
   category_code UUID NOT NULL,
   user_code UUID NOT NULL,
   price DECIMAL(10,2) NOT NULL,
+  cost_price NUMERIC(12,2) NOT NULL DEFAULT 0,
   sku VARCHAR(100) NULL,
   is_active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -92,10 +93,12 @@ CREATE TABLE public.products (
   CONSTRAINT products_category_fk FOREIGN KEY (category_code) REFERENCES public.categories (code) ON DELETE RESTRICT,
   CONSTRAINT products_user_fk FOREIGN KEY (user_code) REFERENCES public.users (code) ON DELETE RESTRICT,
   CONSTRAINT products_sku_uq UNIQUE (sku),
-  CONSTRAINT products_price_check CHECK (price >= 0)
+  CONSTRAINT products_price_check CHECK (price >= 0),
+  CONSTRAINT products_cost_price_check CHECK (cost_price >= 0)
 );
 
 -- Drive files table (scope-aware: shared, personal)
+-- Soft-deleted via deleted_at timestamp (NULL = active, non-NULL = deleted)
 CREATE TABLE public.drive_files (
   code UUID NOT NULL DEFAULT gen_random_uuid(),
   scope VARCHAR(30) NOT NULL DEFAULT 'product_shared',
@@ -108,7 +111,7 @@ CREATE TABLE public.drive_files (
   storage_path TEXT NULL,
   mime_type VARCHAR(255) NULL,
   tag VARCHAR(10) NULL,
-  is_trashed BOOLEAN NOT NULL DEFAULT FALSE,
+  deleted_at TIMESTAMPTZ DEFAULT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT drive_files_pk PRIMARY KEY (code),
@@ -118,21 +121,20 @@ CREATE TABLE public.drive_files (
   CONSTRAINT drive_files_scope_check CHECK (scope IN ('product_shared', 'user_private'))
 );
 
--- Generic entity links for drive files (product-ready without hard FK dependency)
+-- Product media links (strict FK — only links to products)
 CREATE TABLE public.drive_links (
   code UUID NOT NULL DEFAULT gen_random_uuid(),
   file_code UUID NOT NULL,
-  entity_type VARCHAR(50) NOT NULL,
-  entity_code UUID NOT NULL,
+  product_code UUID NOT NULL,
   linked_by_user_code UUID NOT NULL,
   position SMALLINT NOT NULL DEFAULT 0,
   is_primary BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT drive_links_pk PRIMARY KEY (code),
   CONSTRAINT drive_links_file_fk FOREIGN KEY (file_code) REFERENCES public.drive_files (code) ON DELETE CASCADE,
+  CONSTRAINT drive_links_product_fk FOREIGN KEY (product_code) REFERENCES public.products (code) ON DELETE CASCADE,
   CONSTRAINT drive_links_user_fk FOREIGN KEY (linked_by_user_code) REFERENCES public.users (code) ON DELETE RESTRICT,
-  CONSTRAINT drive_links_entity_type_check CHECK (entity_type IN ('product')),
-  CONSTRAINT drive_links_entity_file_uq UNIQUE (entity_type, entity_code, file_code)
+  CONSTRAINT drive_links_product_file_uq UNIQUE (product_code, file_code)
 );
 
 -- Inventory balances per product and branch
@@ -171,54 +173,62 @@ CREATE TABLE public.inventory_customers (
   CONSTRAINT inventory_customers_full_name_check CHECK (char_length(trim(full_name)) > 0)
 );
 
--- Inventory purchases
-CREATE TABLE public.inventory_purchases (
+-- Purchases (header)
+CREATE TABLE public.purchases (
   code UUID NOT NULL DEFAULT gen_random_uuid(),
-  product_code UUID NOT NULL,
   branch_code UUID NOT NULL,
   user_code UUID NOT NULL,
   origin VARCHAR(30) NOT NULL,
   entry_type VARCHAR(20) NOT NULL DEFAULT 'restock',
   tracking_number VARCHAR(120) NULL,
-  quantity INTEGER NOT NULL,
   state VARCHAR(30) NOT NULL DEFAULT 'in_transit',
   ordered_at DATE NOT NULL DEFAULT CURRENT_DATE,
   received_at TIMESTAMPTZ NULL,
   refunded_at TIMESTAMPTZ NULL,
-  unit_cost NUMERIC(12,2) NULL,
   note TEXT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT inventory_purchases_pk PRIMARY KEY (code),
-  CONSTRAINT inventory_purchases_product_fk FOREIGN KEY (product_code) REFERENCES public.products (code) ON DELETE RESTRICT,
-  CONSTRAINT inventory_purchases_branch_fk FOREIGN KEY (branch_code) REFERENCES public.branches (code) ON DELETE RESTRICT,
-  CONSTRAINT inventory_purchases_user_fk FOREIGN KEY (user_code) REFERENCES public.users (code) ON DELETE RESTRICT,
-  CONSTRAINT inventory_purchases_origin_check CHECK (origin IN ('temu', 'aliexpress', 'lima')),
-  CONSTRAINT inventory_purchases_entry_type_check CHECK (entry_type IN ('initial', 'restock')),
-  CONSTRAINT inventory_purchases_tracking_required_check CHECK (
+  CONSTRAINT purchases_pk PRIMARY KEY (code),
+  CONSTRAINT purchases_branch_fk FOREIGN KEY (branch_code) REFERENCES public.branches (code) ON DELETE RESTRICT,
+  CONSTRAINT purchases_user_fk FOREIGN KEY (user_code) REFERENCES public.users (code) ON DELETE RESTRICT,
+  CONSTRAINT purchases_origin_check CHECK (origin IN ('temu', 'aliexpress', 'lima', 'other')),
+  CONSTRAINT purchases_entry_type_check CHECK (entry_type IN ('initial', 'restock')),
+  CONSTRAINT purchases_tracking_required_check CHECK (
     origin = 'lima'
     OR (tracking_number IS NOT NULL AND char_length(trim(tracking_number)) >= 5)
   ),
-  CONSTRAINT inventory_purchases_quantity_check CHECK (quantity > 0),
-  CONSTRAINT inventory_purchases_state_check CHECK (state IN ('in_transit', 'received', 'refunded')),
-  CONSTRAINT inventory_purchases_unit_cost_check CHECK (unit_cost IS NULL OR unit_cost >= 0),
-  CONSTRAINT inventory_purchases_state_timestamps_check CHECK (
+  CONSTRAINT purchases_state_check CHECK (state IN ('in_transit', 'received', 'refunded')),
+  CONSTRAINT purchases_state_timestamps_check CHECK (
     (state = 'in_transit' AND received_at IS NULL AND refunded_at IS NULL)
     OR (state = 'received' AND received_at IS NOT NULL AND refunded_at IS NULL)
     OR (state = 'refunded' AND refunded_at IS NOT NULL)
   )
 );
 
--- Inventory sales
-CREATE TABLE public.inventory_sales (
+-- Purchase items (lines)
+CREATE TABLE public.purchase_items (
   code UUID NOT NULL DEFAULT gen_random_uuid(),
+  purchase_code UUID NOT NULL,
   product_code UUID NOT NULL,
+  quantity INTEGER NOT NULL,
+  unit_cost NUMERIC(12,2) NULL,
+  total_amount NUMERIC(14,2) GENERATED ALWAYS AS ((quantity::numeric * COALESCE(unit_cost, 0::numeric))) STORED,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT purchase_items_pk PRIMARY KEY (code),
+  CONSTRAINT purchase_items_purchase_fk FOREIGN KEY (purchase_code) REFERENCES public.purchases (code) ON DELETE CASCADE,
+  CONSTRAINT purchase_items_product_fk FOREIGN KEY (product_code) REFERENCES public.products (code) ON DELETE RESTRICT,
+  CONSTRAINT purchase_items_quantity_check CHECK (quantity > 0),
+  CONSTRAINT purchase_items_unit_cost_check CHECK (unit_cost IS NULL OR unit_cost >= 0),
+  CONSTRAINT purchase_items_purchase_product_uq UNIQUE (purchase_code, product_code)
+);
+
+-- Sales (header)
+CREATE TABLE public.sales (
+  code UUID NOT NULL DEFAULT gen_random_uuid(),
   branch_code UUID NOT NULL,
   user_code UUID NOT NULL,
   customer_code UUID NULL,
-  quantity INTEGER NOT NULL,
-  unit_price NUMERIC(12,2) NOT NULL DEFAULT 0,
-  total_amount NUMERIC(12,2) GENERATED ALWAYS AS ((quantity::numeric * unit_price)) STORED,
   sale_channel VARCHAR(20) NOT NULL DEFAULT 'store',
   fulfillment_type VARCHAR(20) NOT NULL DEFAULT 'pickup',
   shipping_state VARCHAR(20) NOT NULL DEFAULT 'na',
@@ -233,18 +243,15 @@ CREATE TABLE public.inventory_sales (
   void_note TEXT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT inventory_sales_pk PRIMARY KEY (code),
-  CONSTRAINT inventory_sales_product_fk FOREIGN KEY (product_code) REFERENCES public.products (code) ON DELETE RESTRICT,
-  CONSTRAINT inventory_sales_branch_fk FOREIGN KEY (branch_code) REFERENCES public.branches (code) ON DELETE RESTRICT,
-  CONSTRAINT inventory_sales_user_fk FOREIGN KEY (user_code) REFERENCES public.users (code) ON DELETE RESTRICT,
-  CONSTRAINT inventory_sales_customer_fk FOREIGN KEY (customer_code) REFERENCES public.inventory_customers (code) ON DELETE SET NULL,
-  CONSTRAINT inventory_sales_voided_by_fk FOREIGN KEY (voided_by_user_code) REFERENCES public.users (code) ON DELETE RESTRICT,
-  CONSTRAINT inventory_sales_quantity_check CHECK (quantity > 0),
-  CONSTRAINT inventory_sales_unit_price_check CHECK (unit_price >= 0),
-  CONSTRAINT inventory_sales_channel_check CHECK (sale_channel IN ('store', 'web')),
-  CONSTRAINT inventory_sales_fulfillment_type_check CHECK (fulfillment_type IN ('pickup', 'delivery')),
-  CONSTRAINT inventory_sales_shipping_state_check CHECK (shipping_state IN ('na', 'pending', 'in_transit', 'delivered')),
-  CONSTRAINT inventory_sales_fulfillment_shipping_check CHECK (
+  CONSTRAINT sales_pk PRIMARY KEY (code),
+  CONSTRAINT sales_branch_fk FOREIGN KEY (branch_code) REFERENCES public.branches (code) ON DELETE RESTRICT,
+  CONSTRAINT sales_user_fk FOREIGN KEY (user_code) REFERENCES public.users (code) ON DELETE RESTRICT,
+  CONSTRAINT sales_customer_fk FOREIGN KEY (customer_code) REFERENCES public.inventory_customers (code) ON DELETE SET NULL,
+  CONSTRAINT sales_voided_by_fk FOREIGN KEY (voided_by_user_code) REFERENCES public.users (code) ON DELETE RESTRICT,
+  CONSTRAINT sales_channel_check CHECK (sale_channel IN ('store', 'web')),
+  CONSTRAINT sales_fulfillment_type_check CHECK (fulfillment_type IN ('pickup', 'delivery')),
+  CONSTRAINT sales_shipping_state_check CHECK (shipping_state IN ('na', 'pending', 'in_transit', 'delivered')),
+  CONSTRAINT sales_fulfillment_shipping_check CHECK (
     (
       fulfillment_type = 'pickup'
       AND shipping_state = 'na'
@@ -256,10 +263,31 @@ CREATE TABLE public.inventory_sales (
       AND delivery_address IS NOT NULL
     )
   ),
-  CONSTRAINT inventory_sales_void_state_check CHECK (
+  CONSTRAINT sales_void_state_check CHECK (
     (voided_at IS NULL AND voided_by_user_code IS NULL)
     OR (voided_at IS NOT NULL AND voided_by_user_code IS NOT NULL)
   )
+);
+
+-- Sale items (lines)
+-- unit_cost snapshots products.cost_price at sale time for O(1) historical profit.
+CREATE TABLE public.sale_items (
+  code UUID NOT NULL DEFAULT gen_random_uuid(),
+  sale_code UUID NOT NULL,
+  product_code UUID NOT NULL,
+  quantity INTEGER NOT NULL,
+  unit_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+  unit_cost NUMERIC(12,2) NOT NULL DEFAULT 0,
+  total_amount NUMERIC(14,2) GENERATED ALWAYS AS ((quantity::numeric * unit_price)) STORED,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT sale_items_pk PRIMARY KEY (code),
+  CONSTRAINT sale_items_sale_fk FOREIGN KEY (sale_code) REFERENCES public.sales (code) ON DELETE CASCADE,
+  CONSTRAINT sale_items_product_fk FOREIGN KEY (product_code) REFERENCES public.products (code) ON DELETE RESTRICT,
+  CONSTRAINT sale_items_quantity_check CHECK (quantity > 0),
+  CONSTRAINT sale_items_unit_price_check CHECK (unit_price >= 0),
+  CONSTRAINT sale_items_unit_cost_check CHECK (unit_cost >= 0),
+  CONSTRAINT sale_items_sale_product_uq UNIQUE (sale_code, product_code)
 );
 
 -- Inventory movements
@@ -281,8 +309,8 @@ CREATE TABLE public.inventory_movements (
   CONSTRAINT inventory_movements_product_fk FOREIGN KEY (product_code) REFERENCES public.products (code) ON DELETE RESTRICT,
   CONSTRAINT inventory_movements_branch_fk FOREIGN KEY (branch_code) REFERENCES public.branches (code) ON DELETE RESTRICT,
   CONSTRAINT inventory_movements_user_fk FOREIGN KEY (user_code) REFERENCES public.users (code) ON DELETE RESTRICT,
-  CONSTRAINT inventory_movements_purchase_fk FOREIGN KEY (purchase_code) REFERENCES public.inventory_purchases (code) ON DELETE SET NULL,
-  CONSTRAINT inventory_movements_sale_fk FOREIGN KEY (sale_code) REFERENCES public.inventory_sales (code) ON DELETE SET NULL,
+  CONSTRAINT inventory_movements_purchase_fk FOREIGN KEY (purchase_code) REFERENCES public.purchases (code) ON DELETE SET NULL,
+  CONSTRAINT inventory_movements_sale_fk FOREIGN KEY (sale_code) REFERENCES public.sales (code) ON DELETE SET NULL,
   CONSTRAINT inventory_movements_quantity_check CHECK (quantity > 0),
   CONSTRAINT inventory_movements_direction_check CHECK (direction IN ('in', 'out')),
   CONSTRAINT inventory_movements_reason_check CHECK (reason IN ('purchase', 'sale', 'purchase_refund', 'manual_adjustment')),

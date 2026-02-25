@@ -56,7 +56,8 @@
 		{ value: 'all', label: 'Todos los origenes' },
 		{ value: 'temu', label: 'Temu' },
 		{ value: 'aliexpress', label: 'AliExpress' },
-		{ value: 'lima', label: 'Lima' }
+		{ value: 'lima', label: 'Lima' },
+		{ value: 'other', label: 'Otros' }
 	];
 
 	const ENTRY_TYPE_OPTIONS: SelectOption[] = [
@@ -151,6 +152,7 @@
 	function purchaseOriginLabel(origin: InventoryPurchaseOrigin): string {
 		if (origin === 'aliexpress') return 'AliExpress';
 		if (origin === 'temu') return 'Temu';
+		if (origin === 'other') return 'Otros';
 		return 'Lima';
 	}
 
@@ -319,13 +321,13 @@
 							class="inventory-table inventory-table--purchases"
 						>
 							{#snippet thead()}
-								<th>Producto</th>
-								<th>Cantidad</th>
+								<th>Items</th>
+								<th>Unidades</th>
 								<th>Origen</th>
 								<th>Tracking</th>
 								<th>Tipo</th>
 								<th>Estado</th>
-								<th>Costo</th>
+								<th>Total</th>
 								<th>Fecha</th>
 								<th>Acciones</th>
 							{/snippet}
@@ -334,18 +336,13 @@
 								{@const purchase = row as unknown as InventoryPurchaseListItem}
 								<td>
 									<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
-										<a
-											href={resolve(`/products/${purchase.product_code}`)}
-											class="inventory-purchases__product-link"
-										>
-											{purchase.product_name}
-										</a>
-										<span class="lumi-text--xs lumi-text--muted"
-											>{purchase.product_sku || 'Sin SKU'}</span
-										>
+										<span class="lumi-font--medium">{purchase.products_summary || 'Sin items'}</span>
+										<span class="lumi-text--xs lumi-text--muted">
+											{purchase.item_count} {purchase.item_count === 1 ? 'item' : 'items'}
+										</span>
 									</div>
 								</td>
-								<td>{purchase.quantity}</td>
+								<td>{purchase.total_quantity}</td>
 								<td>{purchaseOriginLabel(purchase.origin)}</td>
 								<td>{purchase.tracking_number || '-'}</td>
 								<td>
@@ -358,7 +355,7 @@
 										{purchaseStateLabel(purchase.state)}
 									</Chip>
 								</td>
-								<td>{purchase.unit_cost ? formatProductPrice(purchase.unit_cost) : '-'}</td>
+								<td>{formatProductPrice(purchase.total_amount)}</td>
 								<td>{formatDate(purchase.ordered_at)}</td>
 								<td>
 									<div class="lumi-flex lumi-flex--gap-2xs inventory-purchases__actions">
@@ -535,9 +532,11 @@
 	{#if detailPurchase}
 		<div class="inventory-purchases__detail-grid">
 			<div class="inventory-purchases__detail-item">
-				<p class="inventory-purchases__detail-label">Producto</p>
-				<p class="inventory-purchases__detail-value">{detailPurchase.product_name}</p>
-				<p class="inventory-purchases__detail-meta">{detailPurchase.product_sku || 'Sin SKU'}</p>
+				<p class="inventory-purchases__detail-label">Resumen items</p>
+				<p class="inventory-purchases__detail-value">{detailPurchase.products_summary || 'Sin items'}</p>
+				<p class="inventory-purchases__detail-meta">
+					{detailPurchase.item_count} {detailPurchase.item_count === 1 ? 'item' : 'items'}
+				</p>
 			</div>
 			<div class="inventory-purchases__detail-item">
 				<p class="inventory-purchases__detail-label">Sede</p>
@@ -549,8 +548,8 @@
 				<p class="inventory-purchases__detail-meta">{purchaseOriginLabel(detailPurchase.origin)}</p>
 			</div>
 			<div class="inventory-purchases__detail-item">
-				<p class="inventory-purchases__detail-label">Cantidad / Tipo</p>
-				<p class="inventory-purchases__detail-value">{detailPurchase.quantity} unidades</p>
+				<p class="inventory-purchases__detail-label">Unidades / Tipo</p>
+				<p class="inventory-purchases__detail-value">{detailPurchase.total_quantity} unidades</p>
 				<p class="inventory-purchases__detail-meta">
 					{detailPurchase.entry_type === 'initial' ? 'Inicial' : 'Reposicion'}
 				</p>
@@ -560,6 +559,10 @@
 				<p class="inventory-purchases__detail-value">
 					{detailPurchase.tracking_number || 'Sin tracking'}
 				</p>
+			</div>
+			<div class="inventory-purchases__detail-item">
+				<p class="inventory-purchases__detail-label">Monto total</p>
+				<p class="inventory-purchases__detail-value">{formatProductPrice(detailPurchase.total_amount)}</p>
 			</div>
 			<div class="inventory-purchases__detail-item">
 				<p class="inventory-purchases__detail-label">Fechas</p>
@@ -578,20 +581,27 @@
 			</div>
 		</div>
 
-		{#if detailPurchase.unit_cost || detailPurchase.note}
+		{#if detailPurchase.items.length > 0}
 			<div class="inventory-purchases__detail-extra">
-				{#if detailPurchase.unit_cost}
-					<p class="lumi-margin--none">
-						<strong>Costo unitario:</strong>
-						{formatProductPrice(detailPurchase.unit_cost)}
-					</p>
-				{/if}
-				{#if detailPurchase.note}
-					<p class="lumi-margin--none">
-						<strong>Nota:</strong>
-						{detailPurchase.note}
-					</p>
-				{/if}
+				<p class="lumi-margin--none"><strong>Items</strong></p>
+				<div class="lumi-stack lumi-space--2xs">
+					{#each detailPurchase.items as line (line.code)}
+						<div class="inventory-purchases__line-item">
+							<span>{line.product_name}</span>
+							<span>{line.quantity} x {formatProductPrice(line.unit_cost || 0)}</span>
+							<span>{formatProductPrice(line.total_amount)}</span>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
+		{#if detailPurchase.note}
+			<div class="inventory-purchases__detail-extra">
+				<p class="lumi-margin--none">
+					<strong>Nota:</strong>
+					{detailPurchase.note}
+				</p>
 			</div>
 		{/if}
 	{/if}
@@ -619,16 +629,6 @@
 		justify-content: space-between;
 		gap: var(--lumi-space-sm);
 		flex-wrap: wrap;
-	}
-
-	.inventory-purchases__product-link {
-		color: var(--lumi-color-primary);
-		text-decoration: none;
-		font-weight: var(--lumi-font-weight-semibold);
-	}
-
-	.inventory-purchases__product-link:hover {
-		text-decoration: underline;
 	}
 
 	.inventory-purchases__actions {
@@ -683,6 +683,14 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--lumi-space-2xs);
+	}
+
+	.inventory-purchases__line-item {
+		display: grid;
+		grid-template-columns: 1fr auto auto;
+		gap: var(--lumi-space-sm);
+		font-size: var(--lumi-font-size-xs);
+		color: var(--lumi-color-text-muted);
 	}
 
 	:global(.inventory-table--purchases .lumi-table__content) {

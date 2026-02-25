@@ -14,7 +14,7 @@ const DRIVE_COLUMNS = [
 	'mime_type',
 	'parent_code',
 	'user_code',
-	'is_trashed',
+	'deleted_at',
 	'created_at',
 	'updated_at'
 ] as const;
@@ -55,7 +55,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			throw error(400, 'Código de archivo excluido inválido');
 		}
 
-		let foldersQuery = query.where('type', '=', 'dir').where('is_trashed', '=', false);
+		let foldersQuery = query.where('type', '=', 'dir').where('deleted_at', 'is', null);
 		if (excludeCode) {
 			foldersQuery = foldersQuery.where('code', '!=', excludeCode);
 		}
@@ -66,21 +66,21 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 	if (view === 'recent') {
 		query = query
-			.where('is_trashed', '=', false)
+			.where('deleted_at', 'is', null)
 			.where('type', '!=', 'dir')
 			.orderBy('updated_at', 'desc')
 			.limit(50);
 	} else if (view === 'heavy') {
 		query = query
-			.where('is_trashed', '=', false)
+			.where('deleted_at', 'is', null)
 			.where('type', '!=', 'dir')
 			.orderBy('size', 'desc')
 			.limit(50);
 	} else if (trashed) {
-		query = query.where('is_trashed', '=', true).orderBy('updated_at', 'desc');
+		query = query.where('deleted_at', 'is not', null).orderBy('deleted_at', 'desc');
 	} else if (search) {
 		query = query
-			.where('is_trashed', '=', false)
+			.where('deleted_at', 'is', null)
 			.where('name', 'ilike', `%${search}%`)
 			.orderBy('type', 'asc')
 			.orderBy('name', 'asc')
@@ -91,7 +91,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		}
 
 		query = query
-			.where('is_trashed', '=', false)
+			.where('deleted_at', 'is', null)
 			.where('tag', '=', tag.toLowerCase())
 			.orderBy('type', 'asc')
 			.orderBy('name', 'asc');
@@ -107,7 +107,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			)
 				.where('code', '=', parentCode)
 				.where('type', '=', 'dir')
-				.where('is_trashed', '=', false)
+				.where('deleted_at', 'is', null)
 				.executeTakeFirst();
 
 			if (!parent) {
@@ -119,7 +119,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			query = query.where('parent_code', 'is', null);
 		}
 
-		query = query.where('is_trashed', '=', false).orderBy('type', 'asc').orderBy('name', 'asc');
+		query = query.where('deleted_at', 'is', null).orderBy('type', 'asc').orderBy('name', 'asc');
 	}
 
 	const files = await query.execute();
@@ -164,7 +164,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		)
 			.where('code', '=', parentCode)
 			.where('type', '=', 'dir')
-			.where('is_trashed', '=', false)
+			.where('deleted_at', 'is', null)
 			.executeTakeFirst();
 
 		if (!parent) {

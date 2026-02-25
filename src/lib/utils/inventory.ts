@@ -1,4 +1,4 @@
-export const INVENTORY_PURCHASE_ORIGINS = ['temu', 'aliexpress', 'lima'] as const;
+export const INVENTORY_PURCHASE_ORIGINS = ['temu', 'aliexpress', 'lima', 'other'] as const;
 export type InventoryPurchaseOrigin = (typeof INVENTORY_PURCHASE_ORIGINS)[number];
 
 export const INVENTORY_PURCHASE_STATES = ['in_transit', 'received', 'refunded'] as const;

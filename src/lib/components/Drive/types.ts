@@ -10,7 +10,7 @@ export interface DriveFileItem {
 	mime_type: string | null;
 	parent_code: string | null;
 	user_code: string;
-	is_trashed: boolean;
+	deleted_at: string | null;
 	created_at: string;
 	updated_at: string;
 }

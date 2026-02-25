@@ -3,21 +3,29 @@ import type { RequestHandler } from './$types';
 import { isUuid } from '$lib/utils/validation';
 import { DriveRepository } from '$lib/server/repositories/drive.repository';
 
-type DriveEntityType = 'product';
-
 interface LinkBody {
 	file_code?: string;
-	entity_type?: string;
-	entity_code?: string;
+	product_code?: string;
 	position?: number;
 	is_primary?: boolean;
 }
 
-function isValidEntityType(value: string): value is DriveEntityType {
-	return value === 'product';
-}
+/**
+ * GET /api/drive/links?product_code=<uuid>&scope=product_shared
+ * List linked drive files for a product.
+ */
+export const GET: RequestHandler = async ({ url, locals }) => {
+	if (!(await locals.can('drive:read'))) {
+		throw error(403, 'No tienes permisos para ver enlaces de Drive');
+	}
 
-async function resolveEntityScope(locals: App.Locals, scope: string | null | undefined) {
+	const productCode = (url.searchParams.get('product_code') || '').trim();
+	const scope = url.searchParams.get('scope');
+
+	if (!isUuid(productCode)) {
+		throw error(400, 'Código de producto inválido');
+	}
+
 	const scopeContext = await DriveRepository.resolveScopeContext(locals.user, {
 		scope: (scope || 'product_shared').trim()
 	});
@@ -26,40 +34,14 @@ async function resolveEntityScope(locals: App.Locals, scope: string | null | und
 		throw error(400, 'Los productos solo pueden vincular archivos del Drive compartido');
 	}
 
-	return scopeContext;
-}
-
-/**
- * GET /api/drive/links?entity_type=product&entity_code=<uuid>&scope=product_shared
- * List linked drive files for an entity.
- */
-export const GET: RequestHandler = async ({ url, locals }) => {
-	if (!(await locals.can('drive:read'))) {
-		throw error(403, 'No tienes permisos para ver enlaces de Drive');
-	}
-
-	const entityType = (url.searchParams.get('entity_type') || '').trim();
-	const entityCode = (url.searchParams.get('entity_code') || '').trim();
-	const scope = url.searchParams.get('scope');
-
-	if (!isValidEntityType(entityType)) {
-		throw error(400, 'Tipo de entidad inválido');
-	}
-
-	if (!isUuid(entityCode)) {
-		throw error(400, 'Código de entidad inválido');
-	}
-
-	const scopeContext = await resolveEntityScope(locals, scope);
-	await assertEntityExists(locals.db, entityType, entityCode);
+	await assertProductExists(locals.db, productCode);
 
 	const links = await locals.db
 		.selectFrom('drive_links as dl')
 		.innerJoin('drive_files as df', 'df.code', 'dl.file_code')
 		.select([
 			'dl.code as link_code',
-			'dl.entity_type',
-			'dl.entity_code',
+			'dl.product_code',
 			'dl.position',
 			'dl.is_primary',
 			'dl.created_at as linked_at',
@@ -71,10 +53,9 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			'df.created_at as file_created_at',
 			'df.updated_at as file_updated_at'
 		])
-		.where('dl.entity_type', '=', entityType)
-		.where('dl.entity_code', '=', entityCode)
+		.where('dl.product_code', '=', productCode)
 		.where('df.scope', '=', scopeContext.scope)
-		.where('df.is_trashed', '=', false)
+		.where('df.deleted_at', 'is', null)
 		.orderBy('dl.is_primary', 'desc')
 		.orderBy('dl.position', 'asc')
 		.orderBy('dl.created_at', 'asc')
@@ -85,7 +66,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 /**
  * POST /api/drive/links
- * Body: { file_code, entity_type, entity_code, position?, is_primary? }
+ * Body: { file_code, product_code, position?, is_primary? }
  */
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!(await locals.can('drive:update'))) {
@@ -99,8 +80,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const body = (await request.json()) as LinkBody;
 
 	const fileCode = (body.file_code || '').trim();
-	const entityType = (body.entity_type || '').trim();
-	const entityCode = (body.entity_code || '').trim();
+	const productCode = (body.product_code || '').trim();
 	const position = Number.isFinite(body.position) ? Math.max(0, Math.floor(body.position ?? 0)) : 0;
 	const isPrimary = body.is_primary === true;
 
@@ -108,19 +88,15 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		throw error(400, 'Código de archivo inválido');
 	}
 
-	if (!isValidEntityType(entityType)) {
-		throw error(400, 'Tipo de entidad inválido');
+	if (!isUuid(productCode)) {
+		throw error(400, 'Código de producto inválido');
 	}
 
-	if (!isUuid(entityCode)) {
-		throw error(400, 'Código de entidad inválido');
-	}
-
-	await assertEntityExists(locals.db, entityType, entityCode);
+	await assertProductExists(locals.db, productCode);
 
 	const file = await locals.db
 		.selectFrom('drive_files')
-		.select(['code', 'scope', 'user_code', 'is_trashed', 'type'])
+		.select(['code', 'scope', 'user_code', 'deleted_at', 'type'])
 		.where('code', '=', fileCode)
 		.executeTakeFirst();
 
@@ -128,8 +104,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		throw error(404, 'Archivo no encontrado');
 	}
 
-	if (file.is_trashed) {
-		throw error(400, 'No se puede vincular un archivo en papelera');
+	if (file.deleted_at !== null) {
+		throw error(400, 'No se puede vincular un archivo eliminado');
 	}
 
 	if (file.scope !== 'product_shared') {
@@ -147,8 +123,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			await trx
 				.updateTable('drive_links')
 				.set({ is_primary: false })
-				.where('entity_type', '=', entityType)
-				.where('entity_code', '=', entityCode)
+				.where('product_code', '=', productCode)
 				.execute();
 		}
 
@@ -156,28 +131,19 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			.insertInto('drive_links')
 			.values({
 				file_code: fileCode,
-				entity_type: entityType,
-				entity_code: entityCode,
+				product_code: productCode,
 				position,
 				is_primary: isPrimary,
 				linked_by_user_code: locals.user!.code
 			})
 			.onConflict((oc) =>
-				oc.columns(['entity_type', 'entity_code', 'file_code']).doUpdateSet({
+				oc.columns(['product_code', 'file_code']).doUpdateSet({
 					position,
 					is_primary: isPrimary,
 					linked_by_user_code: locals.user!.code
 				})
 			)
-			.returning([
-				'code',
-				'file_code',
-				'entity_type',
-				'entity_code',
-				'position',
-				'is_primary',
-				'created_at'
-			])
+			.returning(['code', 'file_code', 'product_code', 'position', 'is_primary', 'created_at'])
 			.executeTakeFirstOrThrow();
 	});
 
@@ -186,7 +152,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 /**
  * DELETE /api/drive/links
- * Body: { file_code, entity_type, entity_code }
+ * Body: { file_code, product_code }
  */
 export const DELETE: RequestHandler = async ({ request, locals }) => {
 	if (!(await locals.can('drive:update'))) {
@@ -195,22 +161,17 @@ export const DELETE: RequestHandler = async ({ request, locals }) => {
 
 	const body = (await request.json()) as LinkBody;
 	const fileCode = (body.file_code || '').trim();
-	const entityType = (body.entity_type || '').trim();
-	const entityCode = (body.entity_code || '').trim();
+	const productCode = (body.product_code || '').trim();
 
 	if (!isUuid(fileCode)) {
 		throw error(400, 'Código de archivo inválido');
 	}
 
-	if (!isValidEntityType(entityType)) {
-		throw error(400, 'Tipo de entidad inválido');
+	if (!isUuid(productCode)) {
+		throw error(400, 'Código de producto inválido');
 	}
 
-	if (!isUuid(entityCode)) {
-		throw error(400, 'Código de entidad inválido');
-	}
-
-	await assertEntityExists(locals.db, entityType, entityCode);
+	await assertProductExists(locals.db, productCode);
 
 	const file = await locals.db
 		.selectFrom('drive_files')
@@ -231,8 +192,7 @@ export const DELETE: RequestHandler = async ({ request, locals }) => {
 	const result = await locals.db
 		.deleteFrom('drive_links')
 		.where('file_code', '=', fileCode)
-		.where('entity_type', '=', entityType)
-		.where('entity_code', '=', entityCode)
+		.where('product_code', '=', productCode)
 		.executeTakeFirst();
 
 	if (Number(result.numDeletedRows ?? 0) === 0) {
@@ -242,23 +202,14 @@ export const DELETE: RequestHandler = async ({ request, locals }) => {
 	return json({ success: true });
 };
 
-async function assertEntityExists(
-	db: App.Locals['db'],
-	entityType: DriveEntityType,
-	entityCode: string
-): Promise<void> {
-	switch (entityType) {
-		case 'product': {
-			const product = await db
-				.selectFrom('products')
-				.select(['code'])
-				.where('code', '=', entityCode)
-				.executeTakeFirst();
+async function assertProductExists(db: App.Locals['db'], productCode: string): Promise<void> {
+	const product = await db
+		.selectFrom('products')
+		.select(['code'])
+		.where('code', '=', productCode)
+		.executeTakeFirst();
 
-			if (!product) {
-				throw error(404, 'Entidad no encontrada');
-			}
-			return;
-		}
+	if (!product) {
+		throw error(404, 'Producto no encontrado');
 	}
 }

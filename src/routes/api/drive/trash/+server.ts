@@ -29,7 +29,7 @@ export const DELETE: RequestHandler = async ({ url, locals }) => {
 			SELECT code, parent_code, storage_path, scope, user_code
 			FROM drive_files
 			WHERE scope = ${scopeContext.scope}
-				AND is_trashed = TRUE
+				AND deleted_at IS NOT NULL
 				${scopedOwnerFilter}
 		),
 		trash_tree AS (
@@ -54,7 +54,7 @@ export const DELETE: RequestHandler = async ({ url, locals }) => {
 	let deleteQuery = locals.db
 		.deleteFrom('drive_files')
 		.where('scope', '=', scopeContext.scope)
-		.where('is_trashed', '=', true);
+		.where('deleted_at', 'is not', null);
 
 	if (scopeContext.scope === 'user_private' && scopeContext.ownerUserCode) {
 		deleteQuery = deleteQuery.where('user_code', '=', scopeContext.ownerUserCode);
@@ -90,7 +90,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		.selectFrom('drive_files')
 		.select((eb) => eb.fn.coalesce(eb.fn.sum('size'), eb.val(0)).as('total_size'))
 		.where('scope', '=', scopeContext.scope)
-		.where('is_trashed', '=', false);
+		.where('deleted_at', 'is', null);
 
 	if (scopeContext.scope === 'user_private' && scopeContext.ownerUserCode) {
 		usageQuery = usageQuery.where('user_code', '=', scopeContext.ownerUserCode);

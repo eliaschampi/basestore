@@ -6,8 +6,10 @@ import type {
 	InventoryOverviewItem,
 	InventoryOverviewSummary,
 	InventoryPagination,
+	InventoryPurchaseLineItem,
 	InventoryPurchaseListItem,
 	InventoryPurchaseRecord,
+	InventorySaleLineItem,
 	InventorySaleListItem,
 	InventorySaleRecord
 } from '$lib/types/inventory';
@@ -49,18 +51,22 @@ export interface InventoryOverviewFilters extends PaginationParams {
 	includeInactive?: boolean;
 }
 
-export interface CreateInventoryPurchaseInput {
+export interface CreateInventoryPurchaseItemInput {
 	productCode: string;
+	quantity: number;
+	unitCost: number | null;
+}
+
+export interface CreateInventoryPurchaseInput {
 	branchCode: string;
 	userCode: string;
 	origin: InventoryPurchaseOrigin;
 	entryType: InventoryPurchaseEntryType;
 	trackingNumber: string | null;
-	quantity: number;
 	state: InventoryPurchaseState;
 	orderedAt: Date | string;
-	unitCost: number | null;
 	note: string | null;
+	items: CreateInventoryPurchaseItemInput[];
 }
 
 export interface UpdateInventoryPurchaseStateInput {
@@ -70,12 +76,15 @@ export interface UpdateInventoryPurchaseStateInput {
 	note?: string | null;
 }
 
-export interface CreateInventorySaleInput {
+export interface CreateInventorySaleItemInput {
 	productCode: string;
-	branchCode: string;
-	userCode: string;
 	quantity: number;
 	unitPrice: number;
+}
+
+export interface CreateInventorySaleInput {
+	branchCode: string;
+	userCode: string;
 	saleChannel: InventorySaleChannel;
 	fulfillmentType: InventorySaleFulfillmentType;
 	shippingState: InventorySaleShippingState;
@@ -86,6 +95,7 @@ export interface CreateInventorySaleInput {
 	customerPhone?: string | null;
 	soldAt: Date | string;
 	note: string | null;
+	items: CreateInventorySaleItemInput[];
 }
 
 export interface UpdateInventorySaleShippingInput {
@@ -173,14 +183,81 @@ interface RowWithTotalCount {
 }
 
 interface InventoryOverviewListRow extends InventoryOverviewItem, RowWithTotalCount {}
-interface InventoryPurchaseListRow extends InventoryPurchaseListItem, RowWithTotalCount {}
-interface InventorySaleListRow extends InventorySaleListItem, RowWithTotalCount {}
+
+interface InventoryPurchaseFeedRow {
+	code: string;
+	branch_code: string;
+	user_code: string;
+	origin: string;
+	entry_type: string;
+	tracking_number: string | null;
+	state: string;
+	ordered_at: string | Date;
+	received_at: string | Date | null;
+	refunded_at: string | Date | null;
+	note: string | null;
+	created_at: string | Date;
+	updated_at: string | Date;
+	item_count: number | string;
+	total_quantity: number | string;
+	total_amount: number | string;
+	products_summary: string;
+	primary_product_code: string | null;
+	primary_product_name: string | null;
+	primary_product_sku: string | null;
+	items: unknown;
+	branch_name: string;
+	can_refund: boolean;
+}
+
+interface InventoryPurchaseListRow extends InventoryPurchaseFeedRow, RowWithTotalCount {}
+
+interface InventorySaleFeedRow {
+	code: string;
+	branch_code: string;
+	user_code: string;
+	customer_code: string | null;
+	sale_channel: string;
+	fulfillment_type: string;
+	shipping_state: string;
+	delivery_address: string | null;
+	order_reference: string | null;
+	customer_name: string;
+	customer_phone: string | null;
+	sold_at: string | Date;
+	note: string | null;
+	voided_at: string | Date | null;
+	voided_by_user_code: string | null;
+	void_note: string | null;
+	created_at: string | Date;
+	updated_at: string | Date;
+	item_count: number | string;
+	total_quantity: number | string;
+	total_amount: number | string;
+	profit_amount: number | string;
+	products_summary: string;
+	primary_product_code: string | null;
+	primary_product_name: string | null;
+	primary_product_sku: string | null;
+	items: unknown;
+	branch_name: string;
+	customer_full_name: string | null;
+	voided_by_name: string | null;
+}
+
+interface InventorySaleListRow extends InventorySaleFeedRow, RowWithTotalCount {}
 interface InventoryCustomerListRow extends InventoryCustomerRecord, RowWithTotalCount {}
 
 function toNumber(value: number | string | null | undefined): number {
 	if (value === null || value === undefined) return 0;
 	const parsed = typeof value === 'number' ? value : Number(value);
 	return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function toStringMoney(value: number | string | null | undefined): string {
+	if (value === null || value === undefined) return '0';
+	if (typeof value === 'string') return value;
+	return String(value);
 }
 
 function normalizePagination({
@@ -216,6 +293,123 @@ function toDateOnly(value: Date | string): string {
 	}
 
 	return String(value);
+}
+
+function parseJsonArray(value: unknown): Record<string, unknown>[] {
+	if (Array.isArray(value)) {
+		return value.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object');
+	}
+
+	if (typeof value === 'string') {
+		try {
+			const parsed = JSON.parse(value) as unknown;
+			if (Array.isArray(parsed)) {
+				return parsed.filter(
+					(item): item is Record<string, unknown> => !!item && typeof item === 'object'
+				);
+			}
+		} catch {
+			return [];
+		}
+	}
+
+	return [];
+}
+
+function toPurchaseLineItems(value: unknown): InventoryPurchaseLineItem[] {
+	return parseJsonArray(value).map((item) => ({
+		code: String(item.code ?? ''),
+		purchase_code: String(item.purchase_code ?? ''),
+		product_code: String(item.product_code ?? ''),
+		product_name: String(item.product_name ?? ''),
+		product_sku: item.product_sku === null || item.product_sku === undefined ? null : String(item.product_sku),
+		quantity: toNumber(item.quantity as number | string | null | undefined),
+		unit_cost:
+			item.unit_cost === null || item.unit_cost === undefined ? null : toStringMoney(item.unit_cost as number | string),
+		total_amount: toStringMoney(item.total_amount as number | string | null | undefined),
+		created_at: String(item.created_at ?? ''),
+		updated_at: String(item.updated_at ?? '')
+	}));
+}
+
+function toSaleLineItems(value: unknown): InventorySaleLineItem[] {
+	return parseJsonArray(value).map((item) => ({
+		code: String(item.code ?? ''),
+		sale_code: String(item.sale_code ?? ''),
+		product_code: String(item.product_code ?? ''),
+		product_name: String(item.product_name ?? ''),
+		product_sku: item.product_sku === null || item.product_sku === undefined ? null : String(item.product_sku),
+		quantity: toNumber(item.quantity as number | string | null | undefined),
+		unit_price: toStringMoney(item.unit_price as number | string | null | undefined),
+		unit_cost: toStringMoney(item.unit_cost as number | string | null | undefined),
+		total_amount: toStringMoney(item.total_amount as number | string | null | undefined),
+		profit_amount: toStringMoney(item.profit_amount as number | string | null | undefined),
+		created_at: String(item.created_at ?? ''),
+		updated_at: String(item.updated_at ?? '')
+	}));
+}
+
+function mapPurchaseFeedRow(row: InventoryPurchaseFeedRow): InventoryPurchaseRecord {
+	return {
+		code: row.code,
+		branch_code: row.branch_code,
+		user_code: row.user_code,
+		origin: row.origin as InventoryPurchaseOrigin,
+		entry_type: row.entry_type as InventoryPurchaseEntryType,
+		tracking_number: row.tracking_number,
+		state: row.state as InventoryPurchaseState,
+		ordered_at: row.ordered_at,
+		received_at: row.received_at,
+		refunded_at: row.refunded_at,
+		note: row.note,
+		created_at: row.created_at,
+		updated_at: row.updated_at,
+		item_count: toNumber(row.item_count),
+		total_quantity: toNumber(row.total_quantity),
+		total_amount: toStringMoney(row.total_amount),
+		products_summary: row.products_summary || '',
+		primary_product_code: row.primary_product_code,
+		primary_product_name: row.primary_product_name,
+		primary_product_sku: row.primary_product_sku,
+		items: toPurchaseLineItems(row.items),
+		branch_name: row.branch_name,
+		can_refund: row.can_refund === true
+	};
+}
+
+function mapSaleFeedRow(row: InventorySaleFeedRow): InventorySaleRecord {
+	return {
+		code: row.code,
+		branch_code: row.branch_code,
+		user_code: row.user_code,
+		customer_code: row.customer_code,
+		sale_channel: row.sale_channel as InventorySaleChannel,
+		fulfillment_type: row.fulfillment_type as InventorySaleFulfillmentType,
+		shipping_state: row.shipping_state as InventorySaleShippingState,
+		delivery_address: row.delivery_address,
+		order_reference: row.order_reference,
+		customer_name: row.customer_name,
+		customer_phone: row.customer_phone,
+		sold_at: row.sold_at,
+		note: row.note,
+		voided_at: row.voided_at,
+		voided_by_user_code: row.voided_by_user_code,
+		void_note: row.void_note,
+		created_at: row.created_at,
+		updated_at: row.updated_at,
+		item_count: toNumber(row.item_count),
+		total_quantity: toNumber(row.total_quantity),
+		total_amount: toStringMoney(row.total_amount),
+		profit_amount: toStringMoney(row.profit_amount),
+		products_summary: row.products_summary || '',
+		primary_product_code: row.primary_product_code,
+		primary_product_name: row.primary_product_name,
+		primary_product_sku: row.primary_product_sku,
+		items: toSaleLineItems(row.items),
+		branch_name: row.branch_name,
+		customer_full_name: row.customer_full_name,
+		voided_by_name: row.voided_by_name
+	};
 }
 
 function unpackPagedRows<T extends RowWithTotalCount>(
@@ -321,7 +515,7 @@ export class InventoryRepository {
 		const { items, total } = unpackPagedRows(rowsResult.rows);
 
 		return {
-			items: items as InventoryPurchaseListItem[],
+			items: (items as InventoryPurchaseFeedRow[]).map((row) => mapPurchaseFeedRow(row)),
 			pagination: toPagination(total, page, pageSize)
 		};
 	}
@@ -355,7 +549,7 @@ export class InventoryRepository {
 		const { items, total } = unpackPagedRows(rowsResult.rows);
 
 		return {
-			items: items as InventorySaleListItem[],
+			items: (items as InventorySaleFeedRow[]).map((row) => mapSaleFeedRow(row)),
 			pagination: toPagination(total, page, pageSize)
 		};
 	}
@@ -415,37 +609,53 @@ export class InventoryRepository {
 		input: CreateInventoryPurchaseInput
 	): Promise<InventoryPurchaseRecord> {
 		const orderedAt = toDateOnly(input.orderedAt);
-		const result = await sql<InventoryPurchaseRecord>`
-			SELECT *
+		const serializedItems = JSON.stringify(
+			input.items.map((item) => ({
+				product_code: item.productCode,
+				quantity: item.quantity,
+				unit_cost: item.unitCost
+			}))
+		);
+
+		const createdResult = await sql<{ code: string }>`
+			SELECT code
 			FROM public.inventory_create_purchase(
-				${input.productCode},
 				${input.branchCode},
 				${input.userCode},
 				${input.origin},
 				${input.entryType},
 				${input.trackingNumber},
-				${input.quantity},
 				${input.state},
 				${orderedAt},
-				${input.unitCost},
-				${input.note}
+				${input.note},
+				${serializedItems}::jsonb
 			)
 		`.execute(db);
 
-		const purchase = result.rows[0];
-		if (!purchase) {
+		const code = createdResult.rows[0]?.code;
+		if (!code) {
 			throw new Error('No se pudo crear la compra');
 		}
 
-		return purchase;
+		const purchaseRow = (await db
+			.selectFrom('inventory_purchase_feed')
+			.selectAll()
+			.where('code', '=', code)
+			.executeTakeFirst()) as unknown as InventoryPurchaseFeedRow | undefined;
+
+		if (!purchaseRow) {
+			throw new Error('No se pudo cargar la compra creada');
+		}
+
+		return mapPurchaseFeedRow(purchaseRow);
 	}
 
 	static async updatePurchaseState(
 		db: Database,
 		input: UpdateInventoryPurchaseStateInput
 	): Promise<InventoryPurchaseRecord | null> {
-		const result = await sql<InventoryPurchaseRecord>`
-			SELECT *
+		const updateResult = await sql<{ code: string }>`
+			SELECT code
 			FROM public.inventory_update_purchase_state(
 				${input.purchaseCode},
 				${input.userCode},
@@ -455,13 +665,21 @@ export class InventoryRepository {
 			)
 		`.execute(db);
 
-		return result.rows[0] ?? null;
+		const code = updateResult.rows[0]?.code;
+		if (!code) {
+			return null;
+		}
+
+		const purchaseRow = (await db
+			.selectFrom('inventory_purchase_feed')
+			.selectAll()
+			.where('code', '=', code)
+			.executeTakeFirst()) as unknown as InventoryPurchaseFeedRow | undefined;
+
+		return purchaseRow ? mapPurchaseFeedRow(purchaseRow) : null;
 	}
 
-	static async createSale(
-		db: Database,
-		input: CreateInventorySaleInput
-	): Promise<InventorySaleRecord> {
+	static async createSale(db: Database, input: CreateInventorySaleInput): Promise<InventorySaleRecord> {
 		const resolvedCustomer = await this.resolveSaleCustomer(db, {
 			customerCode: input.customerCode,
 			customerName: input.customerName,
@@ -475,41 +693,57 @@ export class InventoryRepository {
 			throw new Error('El nombre del cliente es obligatorio');
 		}
 
-		const result = await sql<InventorySaleRecord>`
-			SELECT *
+		const serializedItems = JSON.stringify(
+			input.items.map((item) => ({
+				product_code: item.productCode,
+				quantity: item.quantity,
+				unit_price: item.unitPrice
+			}))
+		);
+
+		const createdResult = await sql<{ code: string }>`
+			SELECT code
 			FROM public.inventory_create_sale(
-				${input.productCode},
 				${input.branchCode},
 				${input.userCode},
 				${resolvedCustomer.customer_code},
 				${customerName},
 				${customerPhone},
-				${input.quantity},
-				${input.unitPrice},
 				${input.saleChannel},
 				${input.fulfillmentType},
 				${input.shippingState},
 				${input.deliveryAddress},
 				${input.orderReference},
 				${input.soldAt},
-				${input.note}
+				${input.note},
+				${serializedItems}::jsonb
 			)
 		`.execute(db);
 
-		const sale = result.rows[0];
-		if (!sale) {
+		const code = createdResult.rows[0]?.code;
+		if (!code) {
 			throw new Error('No se pudo registrar la venta');
 		}
 
-		return sale;
+		const saleRow = (await db
+			.selectFrom('inventory_sale_feed')
+			.selectAll()
+			.where('code', '=', code)
+			.executeTakeFirst()) as unknown as InventorySaleFeedRow | undefined;
+
+		if (!saleRow) {
+			throw new Error('No se pudo cargar la venta creada');
+		}
+
+		return mapSaleFeedRow(saleRow);
 	}
 
 	static async updateSaleShippingState(
 		db: Database,
 		input: UpdateInventorySaleShippingInput
 	): Promise<InventorySaleRecord | null> {
-		const result = await sql<InventorySaleRecord>`
-			SELECT *
+		const updateResult = await sql<{ code: string }>`
+			SELECT code
 			FROM public.inventory_update_sale_shipping_state(
 				${input.saleCode},
 				${input.shippingState},
@@ -520,15 +754,26 @@ export class InventoryRepository {
 			)
 		`.execute(db);
 
-		return result.rows[0] ?? null;
+		const code = updateResult.rows[0]?.code;
+		if (!code) {
+			return null;
+		}
+
+		const saleRow = (await db
+			.selectFrom('inventory_sale_feed')
+			.selectAll()
+			.where('code', '=', code)
+			.executeTakeFirst()) as unknown as InventorySaleFeedRow | undefined;
+
+		return saleRow ? mapSaleFeedRow(saleRow) : null;
 	}
 
 	static async voidSale(
 		db: Database,
 		input: VoidInventorySaleInput
 	): Promise<InventorySaleRecord | null> {
-		const result = await sql<InventorySaleRecord>`
-			SELECT *
+		const updateResult = await sql<{ code: string }>`
+			SELECT code
 			FROM public.inventory_void_sale(
 				${input.saleCode},
 				${input.userCode},
@@ -536,7 +781,18 @@ export class InventoryRepository {
 			)
 		`.execute(db);
 
-		return result.rows[0] ?? null;
+		const code = updateResult.rows[0]?.code;
+		if (!code) {
+			return null;
+		}
+
+		const saleRow = (await db
+			.selectFrom('inventory_sale_feed')
+			.selectAll()
+			.where('code', '=', code)
+			.executeTakeFirst()) as unknown as InventorySaleFeedRow | undefined;
+
+		return saleRow ? mapSaleFeedRow(saleRow) : null;
 	}
 
 	static async createCustomer(
@@ -584,7 +840,7 @@ export class InventoryRepository {
 		return db.transaction().execute(async (trx) => {
 			const linkedSales = await sql<{ linked_sales_count: number | string }>`
 				SELECT COUNT(*)::int AS linked_sales_count
-				FROM public.inventory_sales
+				FROM public.sales
 				WHERE customer_code = ${customerCode}
 			`.execute(trx);
 

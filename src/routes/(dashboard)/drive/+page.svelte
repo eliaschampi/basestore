@@ -385,7 +385,7 @@
 				fetch(`/api/drive/${fileCode}`, {
 					method: 'PATCH',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ is_trashed: isTrashed })
+					body: JSON.stringify({ deleted_at: isTrashed })
 				})
 			)
 		);

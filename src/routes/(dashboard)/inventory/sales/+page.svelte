@@ -391,10 +391,11 @@
 							class="inventory-table inventory-table--sales"
 						>
 							{#snippet thead()}
-								<th>Producto</th>
+								<th>Items</th>
 								<th>Cliente</th>
-								<th>Cantidad</th>
+								<th>Unidades</th>
 								<th>Total</th>
+								<th>Utilidad</th>
 								<th>Canal</th>
 								<th>Envio</th>
 								<th>Estado</th>
@@ -406,15 +407,10 @@
 								{@const sale = row as unknown as InventorySaleListItem}
 								<td>
 									<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
-										<a
-											href={resolve(`/products/${sale.product_code}`)}
-											class="inventory-sales__product-link"
-										>
-											{sale.product_name}
-										</a>
-										<span class="lumi-text--xs lumi-text--muted"
-											>{sale.product_sku || 'Sin SKU'}</span
-										>
+										<span class="lumi-font--medium">{sale.products_summary || 'Sin items'}</span>
+										<span class="lumi-text--xs lumi-text--muted">
+											{sale.item_count} {sale.item_count === 1 ? 'item' : 'items'}
+										</span>
 									</div>
 								</td>
 								<td>
@@ -425,8 +421,9 @@
 										</span>
 									</div>
 								</td>
-								<td>{sale.quantity}</td>
+								<td>{sale.total_quantity}</td>
 								<td>{formatProductPrice(sale.total_amount)}</td>
+								<td>{formatProductPrice(sale.profit_amount)}</td>
 								<td>
 									<Chip size="sm" color={sale.sale_channel === 'store' ? 'primary' : 'info'}>
 										{saleChannelLabel(sale.sale_channel)}
@@ -600,9 +597,11 @@
 	{#if detailSale}
 		<div class="inventory-sales__detail-grid">
 			<div class="inventory-sales__detail-item">
-				<p class="inventory-sales__detail-label">Producto</p>
-				<p class="inventory-sales__detail-value">{detailSale.product_name}</p>
-				<p class="inventory-sales__detail-meta">{detailSale.product_sku || 'Sin SKU'}</p>
+				<p class="inventory-sales__detail-label">Resumen items</p>
+				<p class="inventory-sales__detail-value">{detailSale.products_summary || 'Sin items'}</p>
+				<p class="inventory-sales__detail-meta">
+					{detailSale.item_count} {detailSale.item_count === 1 ? 'item' : 'items'}
+				</p>
 			</div>
 			<div class="inventory-sales__detail-item">
 				<p class="inventory-sales__detail-label">Cliente</p>
@@ -632,11 +631,9 @@
 			</div>
 			<div class="inventory-sales__detail-item">
 				<p class="inventory-sales__detail-label">Monto</p>
-				<p class="inventory-sales__detail-value">
-					{detailSale.quantity} x {formatProductPrice(detailSale.unit_price)}
-				</p>
+				<p class="inventory-sales__detail-value">Total: {formatProductPrice(detailSale.total_amount)}</p>
 				<p class="inventory-sales__detail-meta">
-					Total: {formatProductPrice(detailSale.total_amount)}
+					Utilidad: {formatProductPrice(detailSale.profit_amount)}
 				</p>
 			</div>
 			<div class="inventory-sales__detail-item">
@@ -645,6 +642,21 @@
 				<p class="inventory-sales__detail-meta">{detailSale.branch_name}</p>
 			</div>
 		</div>
+
+		{#if detailSale.items.length > 0}
+			<div class="inventory-sales__detail-extra">
+				<p class="lumi-margin--none"><strong>Items</strong></p>
+				<div class="lumi-stack lumi-space--2xs">
+					{#each detailSale.items as line (line.code)}
+						<div class="inventory-sales__line-item">
+							<span>{line.product_name}</span>
+							<span>{line.quantity} x {formatProductPrice(line.unit_price)}</span>
+							<span>{formatProductPrice(line.total_amount)}</span>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
 
 		<div class="inventory-sales__detail-extra">
 			{#if detailSale.delivery_address}
@@ -676,7 +688,8 @@
 <Dialog bind:open={showVoidDialog} title="Confirmar anulacion" size="sm">
 	{#if voidSaleTarget}
 		<p class="lumi-margin--none">
-			Se anulara la venta de <strong>{voidSaleTarget.product_name}</strong>. El stock volvera a
+			Se anulara la venta de <strong>{voidSaleTarget.products_summary || 'items seleccionados'}</strong>.
+			El stock volvera a
 			inventario.
 		</p>
 		<Textarea
@@ -711,16 +724,6 @@
 		border-radius: var(--lumi-radius-lg);
 		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		background: color-mix(in srgb, var(--lumi-color-surface) 92%, transparent);
-	}
-
-	.inventory-sales__product-link {
-		color: var(--lumi-color-primary);
-		text-decoration: none;
-		font-weight: var(--lumi-font-weight-semibold);
-	}
-
-	.inventory-sales__product-link:hover {
-		text-decoration: underline;
 	}
 
 	.inventory-sales__actions {
@@ -775,6 +778,14 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--lumi-space-2xs);
+	}
+
+	.inventory-sales__line-item {
+		display: grid;
+		grid-template-columns: 1fr auto auto;
+		gap: var(--lumi-space-sm);
+		font-size: var(--lumi-font-size-xs);
+		color: var(--lumi-color-text-muted);
 	}
 
 	.inventory-sales__pagination {

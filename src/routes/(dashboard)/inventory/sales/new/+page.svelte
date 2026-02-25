@@ -7,16 +7,18 @@
 		Alert,
 		Button,
 		Card,
+		Chip,
 		Fieldset,
 		Input,
 		NumberInput,
 		PageHeader,
 		SegmentedControl,
 		Select,
+		Table,
 		Tabs,
 		Textarea
 	} from '$lib/components';
-	import type { SegmentedControlOption, SelectOption, Tab } from '$lib/components';
+	import type { SegmentedControlOption, SelectOption, Tab, TableRow } from '$lib/components';
 	import { showToast } from '$lib/stores/Toast';
 	import { formatProductPrice } from '$lib/utils/products';
 	import type { InventoryCustomerRecord } from '$lib/types/inventory';
@@ -41,6 +43,15 @@
 		category_code: string | null;
 		is_active: boolean;
 		price: string;
+		cost_price: string;
+	}
+
+	interface SaleDraftItem {
+		product_code: string;
+		product_name: string;
+		quantity: number;
+		unit_price: number;
+		unit_cost: number;
 	}
 
 	function todayLocalDate(): string {
@@ -52,7 +63,7 @@
 	const { data }: { data: PageData } = $props();
 
 	const SALE_FORM_TABS: Tab[] = [
-		{ value: 'sale', label: 'Venta', icon: 'creditCard' },
+		{ value: 'sale', label: 'Items', icon: 'creditCard' },
 		{ value: 'fulfillment', label: 'Entrega', icon: 'package' },
 		{ value: 'customer', label: 'Cliente', icon: 'user' },
 		{ value: 'review', label: 'Revision', icon: 'checkCircle' }
@@ -80,10 +91,7 @@
 
 	let customerSearchOptions = $state<InventoryCustomerRecord[]>([]);
 
-	let createProductCode = $state('');
 	let createBranchCode = $state('');
-	let createQuantity = $state(1);
-	let createUnitPrice = $state(0);
 	let createSaleChannel = $state<InventorySaleChannel>('store');
 	let createFulfillmentType = $state<InventorySaleFulfillmentType>('pickup');
 	let createShippingState = $state<InventorySaleShippingState>('na');
@@ -94,6 +102,11 @@
 	let createCustomerName = $state('');
 	let createCustomerPhone = $state('');
 	let createNote = $state('');
+
+	let draftProductCode = $state('');
+	let draftQuantity = $state(1);
+	let draftUnitPrice = $state(0);
+	let draftItems = $state<SaleDraftItem[]>([]);
 
 	onMount(() => {
 		if (!createBranchCode) {
@@ -127,7 +140,16 @@
 		}))
 	]);
 
-	const saleTotal = $derived(Math.max(0, createQuantity) * Math.max(0, createUnitPrice));
+	const itemRows = $derived(draftItems as unknown as TableRow[]);
+	const itemCount = $derived(draftItems.length);
+	const totalQuantity = $derived(draftItems.reduce((total, item) => total + item.quantity, 0));
+	const saleTotal = $derived(
+		draftItems.reduce((total, item) => total + item.quantity * item.unit_price, 0)
+	);
+	const estimatedCost = $derived(
+		draftItems.reduce((total, item) => total + item.quantity * item.unit_cost, 0)
+	);
+	const estimatedProfit = $derived(saleTotal - estimatedCost);
 
 	function changeTab(next: string | number): void {
 		if (next === 'sale' || next === 'fulfillment' || next === 'customer' || next === 'review') {
@@ -163,11 +185,92 @@
 		}
 	}
 
-	function deriveProductPrice(productCode: string): void {
+	function branchQuery(branchCode: string): string {
+		if (!branchCode) return '';
+		const params = new URLSearchParams({ branch_code: branchCode });
+		return `?${params.toString()}`;
+	}
+
+	function selectedDraftProduct(): ProductCatalogItem | null {
+		if (!draftProductCode) return null;
+		return products.find((product) => product.code === draftProductCode) ?? null;
+	}
+
+	function syncDraftPrice(productCode: string): void {
 		const product = products.find((item) => item.code === productCode);
 		if (product) {
-			createUnitPrice = Number(product.price);
+			draftUnitPrice = Number(product.price ?? '0') || 0;
 		}
+	}
+
+	function addDraftItem(): void {
+		const product = selectedDraftProduct();
+		const quantity = Number(draftQuantity);
+		const unitPrice = Number(draftUnitPrice);
+
+		if (!product) {
+			errorMessage = 'Selecciona un producto para agregar a la venta.';
+			return;
+		}
+
+		if (!Number.isInteger(quantity) || quantity <= 0) {
+			errorMessage = 'La cantidad del item debe ser un entero mayor a 0.';
+			return;
+		}
+
+		if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+			errorMessage = 'El precio unitario del item debe ser válido y mayor o igual a 0.';
+			return;
+		}
+
+		errorMessage = '';
+
+		const unitCost = Number(product.cost_price ?? '0') || 0;
+		const existing = draftItems.find((item) => item.product_code === product.code);
+		if (existing) {
+			draftItems = draftItems.map((item) =>
+				item.product_code === product.code
+					? {
+							...item,
+							quantity: item.quantity + quantity,
+							unit_price: unitPrice,
+							unit_cost: unitCost
+						}
+					: item
+			);
+		} else {
+			draftItems = [
+				...draftItems,
+				{
+					product_code: product.code,
+					product_name: product.name,
+					quantity,
+					unit_price: unitPrice,
+					unit_cost: unitCost
+				}
+			];
+		}
+
+		draftProductCode = '';
+		draftQuantity = 1;
+		draftUnitPrice = 0;
+	}
+
+	function removeDraftItem(productCode: string): void {
+		draftItems = draftItems.filter((item) => item.product_code !== productCode);
+	}
+
+	function adjustDraftItemQuantity(productCode: string, delta: number): void {
+		draftItems = draftItems
+			.map((item) =>
+				item.product_code === productCode
+					? {
+							...item,
+							quantity: item.quantity + delta
+						}
+					: item
+			)
+			.filter((item) => item.quantity > 0);
 	}
 
 	function handleFulfillmentChange(next: InventorySaleFulfillmentType): void {
@@ -183,12 +286,6 @@
 	function selectedCustomerOption(): InventoryCustomerRecord | null {
 		if (!createCustomerCode) return null;
 		return customerSearchOptions.find((customer) => customer.code === createCustomerCode) ?? null;
-	}
-
-	function branchQuery(branchCode: string): string {
-		if (!branchCode) return '';
-		const params = new URLSearchParams({ branch_code: branchCode });
-		return `?${params.toString()}`;
 	}
 
 	async function goToSalesList(): Promise<void> {
@@ -218,23 +315,20 @@
 	async function submitCreateSale(): Promise<void> {
 		if (submitting) return;
 
-		const quantity = Number(createQuantity);
-		const unitPrice = Number(createUnitPrice);
-
-		if (!createProductCode || !createBranchCode || !Number.isInteger(quantity) || quantity <= 0) {
-			errorMessage = 'Completa producto, sede y cantidad valida.';
+		if (!createBranchCode) {
+			errorMessage = 'Selecciona la sede de la venta.';
 			activeTab = 'sale';
 			return;
 		}
 
-		if (!Number.isFinite(unitPrice) || unitPrice < 0) {
-			errorMessage = 'El precio unitario es obligatorio.';
+		if (draftItems.length === 0) {
+			errorMessage = 'Agrega al menos un item antes de registrar la venta.';
 			activeTab = 'sale';
 			return;
 		}
 
 		if (createFulfillmentType === 'delivery' && !createDeliveryAddress.trim()) {
-			errorMessage = 'La direccion es obligatoria para delivery.';
+			errorMessage = 'La dirección es obligatoria para delivery.';
 			activeTab = 'fulfillment';
 			return;
 		}
@@ -266,10 +360,7 @@
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					product_code: createProductCode,
 					branch_code: createBranchCode,
-					quantity,
-					unit_price: unitPrice,
 					sale_channel: createSaleChannel,
 					fulfillment_type: createFulfillmentType,
 					shipping_state: createShippingState,
@@ -280,7 +371,12 @@
 					customer_name: customerNameForPayload,
 					customer_phone: customerPhoneForPayload || null,
 					sold_at: createSoldAt,
-					note: createNote.trim()
+					note: createNote.trim(),
+					items: draftItems.map((item) => ({
+						product_code: item.product_code,
+						quantity: item.quantity,
+						unit_price: item.unit_price
+					}))
 				})
 			});
 			const payload = await response.json();
@@ -301,7 +397,7 @@
 <div class="lumi-stack lumi-space--md">
 	<PageHeader
 		title="Nueva venta"
-		subtitle="Formulario por etapas para operar rapido sin saturar al usuario"
+		subtitle="Registra ventas con múltiples items y cálculo inmediato"
 		icon="creditCard"
 	>
 		{#snippet actions()}
@@ -333,69 +429,140 @@
 			onchange={(value) => changeTab(value)}
 		>
 			{#if activeTab === 'sale'}
-				<Fieldset legend="Producto y transaccion">
-					<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
-						<Select
-							label="Producto"
-							value={createProductCode}
-							options={productOptions}
-							placeholder="Selecciona producto"
-							onchange={(value) => {
-								createProductCode = typeof value === 'string' ? value : '';
-								deriveProductPrice(createProductCode);
-							}}
-						/>
-						<Select
-							label="Sede"
-							value={createBranchCode}
-							options={branchOptions}
-							placeholder="Selecciona sede"
-							onchange={(value) => {
-								createBranchCode = typeof value === 'string' ? value : '';
-							}}
-						/>
-						<NumberInput
-							label="Cantidad"
-							value={createQuantity}
-							min={1}
-							max={100000}
-							step={1}
-							onchange={(value) => {
-								createQuantity = value;
-							}}
-						/>
-						<NumberInput
-							label="Precio unitario"
-							value={createUnitPrice}
-							min={0}
-							max={1000000}
-							step={0.5}
-							onchange={(value) => {
-								createUnitPrice = value;
-							}}
-						/>
-						<Input
-							label="Fecha venta"
-							type="date"
-							value={createSoldAt}
-							oninput={(event) => (createSoldAt = (event.currentTarget as HTMLInputElement).value)}
-						/>
-						<Input
-							label="Referencia (opcional)"
-							value={createOrderReference}
-							oninput={(event) =>
-								(createOrderReference = (event.currentTarget as HTMLInputElement).value)}
-						/>
-					</div>
-					<p class="lumi-margin--none lumi-font--semibold">
-						Total estimado: {formatProductPrice(saleTotal)}
-					</p>
-				</Fieldset>
+				<div class="lumi-stack lumi-space--md">
+					<Fieldset legend="Agregar item">
+						<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+							<Select
+								label="Producto"
+								value={draftProductCode}
+								options={productOptions}
+								placeholder="Selecciona producto"
+								onchange={(value) => {
+									draftProductCode = typeof value === 'string' ? value : '';
+									syncDraftPrice(draftProductCode);
+								}}
+							/>
+							<NumberInput
+								label="Cantidad"
+								value={draftQuantity}
+								min={1}
+								max={100000}
+								step={1}
+								onchange={(value) => {
+									draftQuantity = value;
+								}}
+							/>
+							<NumberInput
+								label="Precio unitario"
+								value={draftUnitPrice}
+								min={0}
+								max={1000000}
+								step={0.5}
+								onchange={(value) => {
+									draftUnitPrice = value;
+								}}
+							/>
+						</div>
+						<div class="lumi-flex lumi-justify--end">
+							<Button type="flat" color="primary" icon="plus" onclick={addDraftItem}>
+								Agregar item
+							</Button>
+						</div>
+					</Fieldset>
+
+					<Fieldset legend="Items de la venta">
+						{#if draftItems.length === 0}
+							<Alert type="info" closable={false}>Aún no agregaste items.</Alert>
+						{:else}
+							<Table data={itemRows} pagination={false}>
+								{#snippet thead()}
+									<th>Producto</th>
+									<th>Cantidad</th>
+									<th>Precio unitario</th>
+									<th>Subtotal</th>
+									<th>Margen estimado</th>
+									<th>Acciones</th>
+								{/snippet}
+								{#snippet row({ row })}
+									{@const item = row as unknown as SaleDraftItem}
+									<td>{item.product_name}</td>
+									<td>
+										<div class="lumi-flex lumi-align-items--center lumi-flex--gap-2xs">
+											<Button
+												type="ghost"
+												size="sm"
+												icon="minus"
+												onclick={() => adjustDraftItemQuantity(item.product_code, -1)}
+											/>
+											<span>{item.quantity}</span>
+											<Button
+												type="ghost"
+												size="sm"
+												icon="plus"
+												onclick={() => adjustDraftItemQuantity(item.product_code, 1)}
+											/>
+										</div>
+									</td>
+									<td>{formatProductPrice(item.unit_price)}</td>
+									<td>{formatProductPrice(item.quantity * item.unit_price)}</td>
+									<td>
+										{formatProductPrice(item.quantity * (item.unit_price - item.unit_cost))}
+									</td>
+									<td>
+										<div class="lumi-flex lumi-flex--gap-2xs">
+											<Button
+												type="flat"
+												size="sm"
+												icon="plus"
+												color="info"
+												onclick={() => adjustDraftItemQuantity(item.product_code, 5)}
+											>
+												+5
+											</Button>
+											<Button
+												type="flat"
+												size="sm"
+												icon="trash"
+												color="danger"
+												onclick={() => removeDraftItem(item.product_code)}
+											>
+												Quitar
+											</Button>
+										</div>
+									</td>
+								{/snippet}
+							</Table>
+						{/if}
+					</Fieldset>
+				</div>
 			{/if}
 
 			{#if activeTab === 'fulfillment'}
 				<div class="lumi-stack lumi-space--md">
 					<Fieldset legend="Canal y entrega">
+						<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+							<Select
+								label="Sede"
+								value={createBranchCode}
+								options={branchOptions}
+								placeholder="Selecciona sede"
+								onchange={(value) => {
+									createBranchCode = typeof value === 'string' ? value : '';
+								}}
+							/>
+							<Input
+								label="Fecha venta"
+								type="date"
+								value={createSoldAt}
+								oninput={(event) => (createSoldAt = (event.currentTarget as HTMLInputElement).value)}
+							/>
+							<Input
+								label="Referencia (opcional)"
+								value={createOrderReference}
+								oninput={(event) =>
+									(createOrderReference = (event.currentTarget as HTMLInputElement).value)}
+							/>
+						</div>
 						<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
 							<div class="lumi-stack lumi-space--xs">
 								<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Canal</p>
@@ -423,10 +590,10 @@
 					</Fieldset>
 
 					{#if createFulfillmentType === 'delivery'}
-						<Fieldset legend="Envio">
+						<Fieldset legend="Envío">
 							<div class="lumi-stack lumi-space--sm">
 								<div class="lumi-stack lumi-space--xs">
-									<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Estado de envio</p>
+									<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Estado de envío</p>
 									<SegmentedControl
 										value={createShippingState}
 										options={DELIVERY_SHIPPING_SEGMENT_OPTIONS}
@@ -439,7 +606,7 @@
 									/>
 								</div>
 								<Input
-									label="Direccion delivery"
+									label="Dirección delivery"
 									value={createDeliveryAddress}
 									oninput={(event) =>
 										(createDeliveryAddress = (event.currentTarget as HTMLInputElement).value)}
@@ -480,7 +647,7 @@
 										(createCustomerName = (event.currentTarget as HTMLInputElement).value)}
 								/>
 								<Input
-									label="Telefono (opcional)"
+									label="Teléfono (opcional)"
 									value={createCustomerPhone}
 									oninput={(event) =>
 										(createCustomerPhone = (event.currentTarget as HTMLInputElement).value)}
@@ -496,17 +663,21 @@
 					<Fieldset legend="Resumen">
 						<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
 							<p class="lumi-margin--none">
-								<strong>Producto:</strong>
-								{createProductCode ? 'Seleccionado' : 'Pendiente'}
+								<strong>Items:</strong>
+								<Chip size="sm" color="info">{itemCount}</Chip>
 							</p>
+							<p class="lumi-margin--none"><strong>Unidades:</strong> {totalQuantity}</p>
 							<p class="lumi-margin--none">
-								<strong>Sede:</strong>
-								{createBranchCode ? 'Seleccionada' : 'Pendiente'}
-							</p>
-							<p class="lumi-margin--none"><strong>Cantidad:</strong> {createQuantity}</p>
-							<p class="lumi-margin--none">
-								<strong>Total:</strong>
+								<strong>Total venta:</strong>
 								{formatProductPrice(saleTotal)}
+							</p>
+							<p class="lumi-margin--none">
+								<strong>Costo estimado:</strong>
+								{formatProductPrice(estimatedCost)}
+							</p>
+							<p class="lumi-margin--none">
+								<strong>Utilidad estimada:</strong>
+								{formatProductPrice(estimatedProfit)}
 							</p>
 							<p class="lumi-margin--none">
 								<strong>Entrega:</strong>

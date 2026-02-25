@@ -47,60 +47,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Keep inbound quantities in sync with purchase state changes.
-CREATE OR REPLACE FUNCTION public.inventory_sync_inbound_from_purchase()
-RETURNS TRIGGER AS $$
-DECLARE
-  old_inbound INTEGER := 0;
-  new_inbound INTEGER := 0;
-BEGIN
-  IF TG_OP <> 'INSERT' THEN
-    old_inbound := CASE WHEN OLD.state = 'in_transit' THEN OLD.quantity ELSE 0 END;
-  END IF;
-
-  IF TG_OP <> 'DELETE' THEN
-    new_inbound := CASE WHEN NEW.state = 'in_transit' THEN NEW.quantity ELSE 0 END;
-    INSERT INTO public.inventory_balances (product_code, branch_code)
-    VALUES (NEW.product_code, NEW.branch_code)
-    ON CONFLICT (product_code, branch_code) DO NOTHING;
-  END IF;
-
-  IF TG_OP = 'INSERT' THEN
-    UPDATE public.inventory_balances
-    SET inbound = inbound + new_inbound,
-        updated_at = CURRENT_TIMESTAMP
-    WHERE product_code = NEW.product_code
-      AND branch_code = NEW.branch_code;
-  ELSIF TG_OP = 'DELETE' THEN
-    UPDATE public.inventory_balances
-    SET inbound = GREATEST(inbound - old_inbound, 0),
-        updated_at = CURRENT_TIMESTAMP
-    WHERE product_code = OLD.product_code
-      AND branch_code = OLD.branch_code;
-  ELSIF OLD.product_code IS DISTINCT FROM NEW.product_code OR OLD.branch_code IS DISTINCT FROM NEW.branch_code THEN
-    UPDATE public.inventory_balances
-    SET inbound = GREATEST(inbound - old_inbound, 0),
-        updated_at = CURRENT_TIMESTAMP
-    WHERE product_code = OLD.product_code
-      AND branch_code = OLD.branch_code;
-
-    UPDATE public.inventory_balances
-    SET inbound = inbound + new_inbound,
-        updated_at = CURRENT_TIMESTAMP
-    WHERE product_code = NEW.product_code
-      AND branch_code = NEW.branch_code;
-  ELSE
-    UPDATE public.inventory_balances
-    SET inbound = GREATEST(inbound - old_inbound + new_inbound, 0),
-        updated_at = CURRENT_TIMESTAMP
-    WHERE product_code = NEW.product_code
-      AND branch_code = NEW.branch_code;
-  END IF;
-
-  RETURN COALESCE(NEW, OLD);
-END;
-$$ LANGUAGE plpgsql;
-
 CREATE OR REPLACE FUNCTION public.inventory_seed_balances_for_new_product()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -242,88 +188,151 @@ AS $$
 $$;
 
 CREATE OR REPLACE FUNCTION public.inventory_create_purchase(
-  p_product_code UUID,
   p_branch_code UUID,
   p_user_code UUID,
   p_origin TEXT,
   p_entry_type TEXT,
   p_tracking_number TEXT,
-  p_quantity INTEGER,
   p_state TEXT,
   p_ordered_at DATE,
-  p_unit_cost NUMERIC,
-  p_note TEXT
+  p_note TEXT,
+  p_items JSONB
 )
-RETURNS public.inventory_purchases
+RETURNS public.purchases
 LANGUAGE plpgsql
 AS $$
 DECLARE
   v_now TIMESTAMPTZ := CURRENT_TIMESTAMP;
-  v_purchase public.inventory_purchases%ROWTYPE;
+  v_purchase public.purchases%ROWTYPE;
   v_received_at TIMESTAMPTZ := NULL;
   v_refunded_at TIMESTAMPTZ := NULL;
+  v_items_count INTEGER := 0;
+  v_item RECORD;
+  v_note TEXT := NULLIF(BTRIM(COALESCE(p_note, '')), '');
 BEGIN
+  IF p_items IS NULL OR jsonb_typeof(p_items) <> 'array' OR jsonb_array_length(p_items) = 0 THEN
+    RAISE EXCEPTION 'Debe incluir al menos un item de compra'
+      USING ERRCODE = '23514';
+  END IF;
+
   IF p_state = 'received' THEN
     v_received_at := v_now;
   ELSIF p_state = 'refunded' THEN
     v_refunded_at := v_now;
   END IF;
 
-  INSERT INTO public.inventory_purchases (
-    product_code,
+  INSERT INTO public.purchases (
     branch_code,
     user_code,
     origin,
     entry_type,
     tracking_number,
-    quantity,
     state,
     ordered_at,
     received_at,
     refunded_at,
-    unit_cost,
     note
   ) VALUES (
-    p_product_code,
     p_branch_code,
     p_user_code,
     p_origin,
     p_entry_type,
     NULLIF(BTRIM(COALESCE(p_tracking_number, '')), ''),
-    p_quantity,
     p_state,
     p_ordered_at,
     v_received_at,
     v_refunded_at,
-    p_unit_cost,
-    NULLIF(BTRIM(COALESCE(p_note, '')), '')
+    v_note
   )
   RETURNING * INTO v_purchase;
 
-  IF p_state = 'received' THEN
-    INSERT INTO public.inventory_movements (
-      product_code,
-      branch_code,
-      user_code,
-      quantity,
-      direction,
-      reason,
+  FOR v_item IN
+    SELECT
+      item.product_code,
+      item.quantity,
+      item.unit_cost
+    FROM jsonb_to_recordset(p_items) AS item(
+      product_code UUID,
+      quantity INTEGER,
+      unit_cost NUMERIC
+    )
+  LOOP
+    IF v_item.product_code IS NULL THEN
+      RAISE EXCEPTION 'Cada item debe incluir product_code'
+        USING ERRCODE = '23514';
+    END IF;
+
+    IF v_item.quantity IS NULL OR v_item.quantity <= 0 THEN
+      RAISE EXCEPTION 'La cantidad de cada item debe ser mayor a 0'
+        USING ERRCODE = '23514';
+    END IF;
+
+    IF v_item.unit_cost IS NOT NULL AND v_item.unit_cost < 0 THEN
+      RAISE EXCEPTION 'El costo unitario debe ser mayor o igual a 0'
+        USING ERRCODE = '23514';
+    END IF;
+
+    v_items_count := v_items_count + 1;
+
+    INSERT INTO public.purchase_items (
       purchase_code,
-      sale_code,
-      occurred_at,
-      note
+      product_code,
+      quantity,
+      unit_cost
     ) VALUES (
-      p_product_code,
-      p_branch_code,
-      p_user_code,
-      p_quantity,
-      'in',
-      'purchase',
       v_purchase.code,
-      NULL,
-      v_now,
-      NULLIF(BTRIM(COALESCE(p_note, '')), '')
+      v_item.product_code,
+      v_item.quantity,
+      v_item.unit_cost
     );
+
+    INSERT INTO public.inventory_balances (product_code, branch_code)
+    VALUES (v_item.product_code, v_purchase.branch_code)
+    ON CONFLICT (product_code, branch_code) DO NOTHING;
+
+    IF p_state = 'in_transit' THEN
+      UPDATE public.inventory_balances
+      SET inbound = inbound + v_item.quantity,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE product_code = v_item.product_code
+        AND branch_code = v_purchase.branch_code;
+    ELSIF p_state = 'received' THEN
+      INSERT INTO public.inventory_movements (
+        product_code,
+        branch_code,
+        user_code,
+        quantity,
+        direction,
+        reason,
+        purchase_code,
+        sale_code,
+        occurred_at,
+        note
+      ) VALUES (
+        v_item.product_code,
+        v_purchase.branch_code,
+        v_purchase.user_code,
+        v_item.quantity,
+        'in',
+        'purchase',
+        v_purchase.code,
+        NULL,
+        v_now,
+        v_note
+      );
+
+      IF v_item.unit_cost IS NOT NULL THEN
+        UPDATE public.products
+        SET cost_price = v_item.unit_cost,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE code = v_item.product_code;
+      END IF;
+    END IF;
+  END LOOP;
+
+  IF v_items_count = 0 THEN
+    RAISE EXCEPTION 'Debe incluir al menos un item de compra'
+      USING ERRCODE = '23514';
   END IF;
 
   RETURN v_purchase;
@@ -337,19 +346,20 @@ CREATE OR REPLACE FUNCTION public.inventory_update_purchase_state(
   p_note_provided BOOLEAN DEFAULT false,
   p_note TEXT DEFAULT NULL
 )
-RETURNS public.inventory_purchases
+RETURNS public.purchases
 LANGUAGE plpgsql
 AS $$
 DECLARE
   v_now TIMESTAMPTZ := CURRENT_TIMESTAMP;
-  v_purchase public.inventory_purchases%ROWTYPE;
+  v_purchase public.purchases%ROWTYPE;
   v_next_note TEXT;
   v_next_received_at TIMESTAMPTZ;
   v_next_refunded_at TIMESTAMPTZ;
+  v_item RECORD;
 BEGIN
   SELECT *
   INTO v_purchase
-  FROM public.inventory_purchases
+  FROM public.purchases
   WHERE code = p_purchase_code
   LIMIT 1
   FOR UPDATE;
@@ -362,7 +372,7 @@ BEGIN
     RAISE EXCEPTION 'Transicion de estado invalida para esta compra';
   END IF;
 
-  v_next_note := CASE WHEN p_note_provided THEN p_note ELSE v_purchase.note END;
+  v_next_note := CASE WHEN p_note_provided THEN NULLIF(BTRIM(COALESCE(p_note, '')), '') ELSE v_purchase.note END;
   v_next_received_at := v_purchase.received_at;
   v_next_refunded_at := v_purchase.refunded_at;
 
@@ -371,66 +381,111 @@ BEGIN
       v_next_received_at := v_now;
       v_next_refunded_at := NULL;
 
-      INSERT INTO public.inventory_movements (
-        product_code,
-        branch_code,
-        user_code,
-        quantity,
-        direction,
-        reason,
-        purchase_code,
-        sale_code,
-        occurred_at,
-        note
-      ) VALUES (
-        v_purchase.product_code,
-        v_purchase.branch_code,
-        p_user_code,
-        v_purchase.quantity,
-        'in',
-        'purchase',
-        v_purchase.code,
-        NULL,
-        v_now,
-        v_next_note
-      );
+      FOR v_item IN
+        SELECT product_code, quantity, unit_cost
+        FROM public.purchase_items
+        WHERE purchase_code = v_purchase.code
+      LOOP
+        INSERT INTO public.inventory_balances (product_code, branch_code)
+        VALUES (v_item.product_code, v_purchase.branch_code)
+        ON CONFLICT (product_code, branch_code) DO NOTHING;
+
+        UPDATE public.inventory_balances
+        SET inbound = GREATEST(inbound - v_item.quantity, 0),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE product_code = v_item.product_code
+          AND branch_code = v_purchase.branch_code;
+
+        INSERT INTO public.inventory_movements (
+          product_code,
+          branch_code,
+          user_code,
+          quantity,
+          direction,
+          reason,
+          purchase_code,
+          sale_code,
+          occurred_at,
+          note
+        ) VALUES (
+          v_item.product_code,
+          v_purchase.branch_code,
+          p_user_code,
+          v_item.quantity,
+          'in',
+          'purchase',
+          v_purchase.code,
+          NULL,
+          v_now,
+          v_next_note
+        );
+
+        IF v_item.unit_cost IS NOT NULL THEN
+          UPDATE public.products
+          SET cost_price = v_item.unit_cost,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE code = v_item.product_code;
+        END IF;
+      END LOOP;
     END IF;
 
     IF v_purchase.state = 'in_transit' AND p_state = 'refunded' THEN
       v_next_received_at := NULL;
       v_next_refunded_at := v_now;
+
+      FOR v_item IN
+        SELECT product_code, quantity
+        FROM public.purchase_items
+        WHERE purchase_code = v_purchase.code
+      LOOP
+        INSERT INTO public.inventory_balances (product_code, branch_code)
+        VALUES (v_item.product_code, v_purchase.branch_code)
+        ON CONFLICT (product_code, branch_code) DO NOTHING;
+
+        UPDATE public.inventory_balances
+        SET inbound = GREATEST(inbound - v_item.quantity, 0),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE product_code = v_item.product_code
+          AND branch_code = v_purchase.branch_code;
+      END LOOP;
     END IF;
 
     IF v_purchase.state = 'received' AND p_state = 'refunded' THEN
       v_next_refunded_at := v_now;
 
-      INSERT INTO public.inventory_movements (
-        product_code,
-        branch_code,
-        user_code,
-        quantity,
-        direction,
-        reason,
-        purchase_code,
-        sale_code,
-        occurred_at,
-        note
-      ) VALUES (
-        v_purchase.product_code,
-        v_purchase.branch_code,
-        p_user_code,
-        v_purchase.quantity,
-        'out',
-        'purchase_refund',
-        v_purchase.code,
-        NULL,
-        v_now,
-        v_next_note
-      );
+      FOR v_item IN
+        SELECT product_code, quantity
+        FROM public.purchase_items
+        WHERE purchase_code = v_purchase.code
+      LOOP
+        INSERT INTO public.inventory_movements (
+          product_code,
+          branch_code,
+          user_code,
+          quantity,
+          direction,
+          reason,
+          purchase_code,
+          sale_code,
+          occurred_at,
+          note
+        ) VALUES (
+          v_item.product_code,
+          v_purchase.branch_code,
+          p_user_code,
+          v_item.quantity,
+          'out',
+          'purchase_refund',
+          v_purchase.code,
+          NULL,
+          v_now,
+          v_next_note
+        );
+      END LOOP;
     END IF;
   END IF;
 
-  UPDATE public.inventory_purchases
+  UPDATE public.purchases
   SET
     state = p_state,
     received_at = v_next_received_at,
@@ -444,35 +499,38 @@ END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.inventory_create_sale(
-  p_product_code UUID,
   p_branch_code UUID,
   p_user_code UUID,
   p_customer_code UUID,
   p_customer_name TEXT,
   p_customer_phone TEXT,
-  p_quantity INTEGER,
-  p_unit_price NUMERIC,
   p_sale_channel TEXT,
   p_fulfillment_type TEXT,
   p_shipping_state TEXT,
   p_delivery_address TEXT,
   p_order_reference TEXT,
   p_sold_at TIMESTAMPTZ,
-  p_note TEXT
+  p_note TEXT,
+  p_items JSONB
 )
-RETURNS public.inventory_sales
+RETURNS public.sales
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  v_sale public.inventory_sales%ROWTYPE;
+  v_sale public.sales%ROWTYPE;
+  v_item RECORD;
+  v_items_count INTEGER := 0;
+  v_unit_cost NUMERIC(12,2);
 BEGIN
-  INSERT INTO public.inventory_sales (
-    product_code,
+  IF p_items IS NULL OR jsonb_typeof(p_items) <> 'array' OR jsonb_array_length(p_items) = 0 THEN
+    RAISE EXCEPTION 'Debe incluir al menos un item de venta'
+      USING ERRCODE = '23514';
+  END IF;
+
+  INSERT INTO public.sales (
     branch_code,
     user_code,
     customer_code,
-    quantity,
-    unit_price,
     sale_channel,
     fulfillment_type,
     shipping_state,
@@ -483,12 +541,9 @@ BEGIN
     sold_at,
     note
   ) VALUES (
-    p_product_code,
     p_branch_code,
     p_user_code,
     p_customer_code,
-    p_quantity,
-    p_unit_price,
     p_sale_channel,
     p_fulfillment_type,
     p_shipping_state,
@@ -501,29 +556,85 @@ BEGIN
   )
   RETURNING * INTO v_sale;
 
-  INSERT INTO public.inventory_movements (
-    product_code,
-    branch_code,
-    user_code,
-    quantity,
-    direction,
-    reason,
-    purchase_code,
-    sale_code,
-    occurred_at,
-    note
-  ) VALUES (
-    p_product_code,
-    p_branch_code,
-    p_user_code,
-    p_quantity,
-    'out',
-    'sale',
-    NULL,
-    v_sale.code,
-    p_sold_at,
-    p_note
-  );
+  FOR v_item IN
+    SELECT
+      item.product_code,
+      item.quantity,
+      item.unit_price
+    FROM jsonb_to_recordset(p_items) AS item(
+      product_code UUID,
+      quantity INTEGER,
+      unit_price NUMERIC
+    )
+  LOOP
+    IF v_item.product_code IS NULL THEN
+      RAISE EXCEPTION 'Cada item debe incluir product_code'
+        USING ERRCODE = '23514';
+    END IF;
+
+    IF v_item.quantity IS NULL OR v_item.quantity <= 0 THEN
+      RAISE EXCEPTION 'La cantidad de cada item debe ser mayor a 0'
+        USING ERRCODE = '23514';
+    END IF;
+
+    IF v_item.unit_price IS NULL OR v_item.unit_price < 0 THEN
+      RAISE EXCEPTION 'El precio unitario debe ser mayor o igual a 0'
+        USING ERRCODE = '23514';
+    END IF;
+
+    v_items_count := v_items_count + 1;
+
+    SELECT p.cost_price
+    INTO v_unit_cost
+    FROM public.products p
+    WHERE p.code = v_item.product_code
+    LIMIT 1;
+
+    v_unit_cost := COALESCE(v_unit_cost, 0);
+
+    INSERT INTO public.sale_items (
+      sale_code,
+      product_code,
+      quantity,
+      unit_price,
+      unit_cost
+    ) VALUES (
+      v_sale.code,
+      v_item.product_code,
+      v_item.quantity,
+      v_item.unit_price,
+      v_unit_cost
+    );
+
+    INSERT INTO public.inventory_movements (
+      product_code,
+      branch_code,
+      user_code,
+      quantity,
+      direction,
+      reason,
+      purchase_code,
+      sale_code,
+      occurred_at,
+      note
+    ) VALUES (
+      v_item.product_code,
+      v_sale.branch_code,
+      v_sale.user_code,
+      v_item.quantity,
+      'out',
+      'sale',
+      NULL,
+      v_sale.code,
+      v_sale.sold_at,
+      v_sale.note
+    );
+  END LOOP;
+
+  IF v_items_count = 0 THEN
+    RAISE EXCEPTION 'Debe incluir al menos un item de venta'
+      USING ERRCODE = '23514';
+  END IF;
 
   RETURN v_sale;
 END;
@@ -537,17 +648,17 @@ CREATE OR REPLACE FUNCTION public.inventory_update_sale_shipping_state(
   p_order_reference_provided BOOLEAN DEFAULT false,
   p_order_reference TEXT DEFAULT NULL
 )
-RETURNS public.inventory_sales
+RETURNS public.sales
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  v_sale public.inventory_sales%ROWTYPE;
+  v_sale public.sales%ROWTYPE;
   v_next_delivery_address TEXT;
   v_next_order_reference TEXT;
 BEGIN
   SELECT *
   INTO v_sale
-  FROM public.inventory_sales
+  FROM public.sales
   WHERE code = p_sale_code
   LIMIT 1
   FOR UPDATE;
@@ -577,7 +688,7 @@ BEGIN
     ELSE v_sale.order_reference
   END;
 
-  UPDATE public.inventory_sales
+  UPDATE public.sales
   SET
     shipping_state = p_shipping_state,
     delivery_address = v_next_delivery_address,
@@ -594,18 +705,19 @@ CREATE OR REPLACE FUNCTION public.inventory_void_sale(
   p_user_code UUID,
   p_note TEXT DEFAULT NULL
 )
-RETURNS public.inventory_sales
+RETURNS public.sales
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  v_sale public.inventory_sales%ROWTYPE;
+  v_sale public.sales%ROWTYPE;
   v_now TIMESTAMPTZ := CURRENT_TIMESTAMP;
   v_note TEXT := NULLIF(BTRIM(COALESCE(p_note, '')), '');
   v_movement_note TEXT;
+  v_item RECORD;
 BEGIN
   SELECT *
   INTO v_sale
-  FROM public.inventory_sales
+  FROM public.sales
   WHERE code = p_sale_code
   LIMIT 1
   FOR UPDATE;
@@ -623,31 +735,37 @@ BEGIN
     ELSE FORMAT('Anulacion de venta %s: %s', v_sale.code, v_note)
   END;
 
-  INSERT INTO public.inventory_movements (
-    product_code,
-    branch_code,
-    user_code,
-    quantity,
-    direction,
-    reason,
-    purchase_code,
-    sale_code,
-    occurred_at,
-    note
-  ) VALUES (
-    v_sale.product_code,
-    v_sale.branch_code,
-    p_user_code,
-    v_sale.quantity,
-    'in',
-    'manual_adjustment',
-    NULL,
-    v_sale.code,
-    v_now,
-    v_movement_note
-  );
+  FOR v_item IN
+    SELECT product_code, quantity
+    FROM public.sale_items
+    WHERE sale_code = v_sale.code
+  LOOP
+    INSERT INTO public.inventory_movements (
+      product_code,
+      branch_code,
+      user_code,
+      quantity,
+      direction,
+      reason,
+      purchase_code,
+      sale_code,
+      occurred_at,
+      note
+    ) VALUES (
+      v_item.product_code,
+      v_sale.branch_code,
+      p_user_code,
+      v_item.quantity,
+      'in',
+      'manual_adjustment',
+      NULL,
+      v_sale.code,
+      v_now,
+      v_movement_note
+    );
+  END LOOP;
 
-  UPDATE public.inventory_sales
+  UPDATE public.sales
   SET
     voided_at = v_now,
     voided_by_user_code = p_user_code,
@@ -669,6 +787,8 @@ RETURNS TABLE(
   product_code UUID,
   product_name TEXT,
   sku TEXT,
+  price NUMERIC(12,2),
+  cost_price NUMERIC(12,2),
   product_is_active BOOLEAN,
   category_code UUID,
   category_name TEXT,
@@ -706,6 +826,8 @@ BEGIN
     ib.product_code,
     p.name::TEXT AS product_name,
     p.sku::TEXT AS sku,
+    p.price::NUMERIC(12,2) AS price,
+    p.cost_price::NUMERIC(12,2) AS cost_price,
     p.is_active AS product_is_active,
     p.category_code,
     c.name::TEXT AS category_name,

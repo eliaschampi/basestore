@@ -44,6 +44,7 @@ export const actions: Actions = {
 		const brandCode = readFormField(formData, 'brand_code');
 		const categoryCode = readFormField(formData, 'category_code');
 		const priceStr = readFormField(formData, 'price');
+		const costPriceStr = readFormField(formData, 'cost_price');
 		const sku = readFormField(formData, 'sku');
 		const isActive = readFormCheckbox(formData, 'is_active');
 
@@ -64,6 +65,9 @@ export const actions: Actions = {
 			return fail(400, { error: 'El precio debe ser un número válido mayor o igual a 0' });
 		}
 
+		const costPrice = parseFloat(costPriceStr);
+		const validCostPrice = !isNaN(costPrice) && costPrice >= 0 ? costPrice : 0;
+
 		try {
 			await locals.db
 				.insertInto('products')
@@ -74,6 +78,7 @@ export const actions: Actions = {
 					category_code: categoryCode,
 					user_code: locals.user.code,
 					price,
+					cost_price: validCostPrice,
 					sku: sku || null,
 					is_active: isActive
 				})
@@ -101,6 +106,7 @@ export const actions: Actions = {
 		const brandCode = readFormField(formData, 'brand_code');
 		const categoryCode = readFormField(formData, 'category_code');
 		const priceStr = readFormField(formData, 'price');
+		const costPriceStr = readFormField(formData, 'cost_price');
 		const sku = readFormField(formData, 'sku');
 		const isActive = readFormCheckbox(formData, 'is_active');
 
@@ -125,6 +131,9 @@ export const actions: Actions = {
 			return fail(400, { error: 'El precio debe ser un número válido mayor o igual a 0' });
 		}
 
+		const costPrice = parseFloat(costPriceStr);
+		const validCostPrice = !isNaN(costPrice) && costPrice >= 0 ? costPrice : 0;
+
 		try {
 			const result = await locals.db
 				.updateTable('products')
@@ -134,6 +143,7 @@ export const actions: Actions = {
 					brand_code: brandCode,
 					category_code: categoryCode,
 					price,
+					cost_price: validCostPrice,
 					sku: sku || null,
 					is_active: isActive,
 					updated_at: new Date()
@@ -169,22 +179,13 @@ export const actions: Actions = {
 		}
 
 		try {
-			const deletedRows = await locals.db.transaction().execute(async (trx) => {
-				await trx
-					.deleteFrom('drive_links')
-					.where('entity_type', '=', 'product')
-					.where('entity_code', '=', productCode)
-					.execute();
+			// drive_links cascade-deletes automatically via FK ON DELETE CASCADE
+			const result = await locals.db
+				.deleteFrom('products')
+				.where('code', '=', productCode)
+				.executeTakeFirst();
 
-				const result = await trx
-					.deleteFrom('products')
-					.where('code', '=', productCode)
-					.executeTakeFirst();
-
-				return Number(result.numDeletedRows ?? 0);
-			});
-
-			if (deletedRows === 0) {
+			if (Number(result.numDeletedRows ?? 0) === 0) {
 				return fail(404, { error: 'Producto no encontrado' });
 			}
 
