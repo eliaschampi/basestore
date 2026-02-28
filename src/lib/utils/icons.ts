@@ -113,7 +113,8 @@ import {
 	House,
 	StarOff,
 	Store,
-	Globe
+	Globe,
+	Wallet
 } from '@lucide/svelte';
 
 // ─── Registry ──────────────────────────────────────────────────
@@ -217,7 +218,7 @@ const _registry = {
 	tag: Tag,
 	award: Award,
 	creditCard: CreditCard,
-
+	wallet: Wallet,
 	// Places & Environment
 	building: Building,
 	cloud: Cloud,

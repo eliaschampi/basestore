@@ -246,7 +246,7 @@
 				required
 			/>
 
-			<Switch bind:checked={formState} name="state" label="Sede activa" />
+			<Switch bind:checked={formState} name="state" color="info" label="Sede activa" />
 
 			<Fieldset legend="Usuarios asignados">
 				<div class="lumi-stack lumi-space--sm">
@@ -259,9 +259,7 @@
 								clearable
 							/>
 						</div>
-						<Button type="border" icon="plus" onclick={addUser} disabled={!selectedUserCode}>
-							Agregar
-						</Button>
+						<Button type="border" icon="plus" onclick={addUser} disabled={!selectedUserCode} />
 					</div>
 
 					<InfoItem

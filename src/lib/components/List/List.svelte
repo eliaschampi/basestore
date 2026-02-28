@@ -30,7 +30,21 @@
 <style>
 	.lumi-list {
 		--list-accent: var(--lumi-color-primary);
-		--list-hover-border: color-mix(in srgb, var(--list-accent) 20%, var(--lumi-color-border));
+		--list-hover-border: color-mix(
+			in srgb,
+			var(--list-accent) 20%,
+			var(--lumi-color-border-strong)
+		);
+		--list-border: color-mix(
+			in srgb,
+			var(--lumi-color-border) 72%,
+			var(--lumi-color-border-strong) 28%
+		);
+		--list-shell-bg: color-mix(
+			in srgb,
+			var(--lumi-color-surface) 62%,
+			var(--lumi-color-background-hover) 38%
+		);
 		--list-item-padding: var(--lumi-space-sm) var(--lumi-space-md);
 		--list-item-title-size: var(--lumi-font-size-sm);
 		--list-item-subtitle-size: var(--lumi-font-size-xs);
@@ -43,8 +57,8 @@
 		flex-direction: column;
 		gap: var(--lumi-space-2xs);
 		padding: var(--lumi-space-xs);
-		background: color-mix(in srgb, var(--lumi-color-surface) 96%, transparent);
-		border: 1px solid var(--lumi-color-border);
+		background: var(--list-shell-bg);
+		border: var(--lumi-border-width-thin) solid var(--list-border);
 		border-radius: var(--lumi-radius-2xl);
 		box-shadow: var(--lumi-shadow-sm);
 		transition:

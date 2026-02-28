@@ -221,7 +221,7 @@ body {
 	justify-content: flex-end;
 }
 
-.lumi-page-sidebar__mobile-trigger {
+.lumi-page-sidebar__header-actions .lumi-button.lumi-page-sidebar__mobile-trigger {
 	display: none;
 }
 
@@ -292,7 +292,7 @@ body {
 		justify-content: flex-start;
 	}
 
-	.lumi-page-sidebar__mobile-trigger {
+	.lumi-page-sidebar__header-actions .lumi-button.lumi-page-sidebar__mobile-trigger {
 		display: inline-flex;
 	}
 

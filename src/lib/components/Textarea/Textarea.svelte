@@ -14,12 +14,9 @@
 		rows = 3,
 		size = 'md',
 		color = 'primary',
-		resize = 'vertical',
 		required = false,
 		'aria-label': ariaLabel = '',
 		showCount = false,
-		autosize = false,
-		resizable = true,
 		class: className = '',
 		oninput,
 		onfocus,
@@ -57,12 +54,7 @@
 	const charCount = $derived(value?.length || 0);
 
 	function handleInput(event: Event): void {
-		const target = event.target as HTMLTextAreaElement;
-		value = target.value;
-		if (autosize) {
-			target.style.height = 'auto';
-			target.style.height = `${target.scrollHeight}px`;
-		}
+		value = (event.target as HTMLTextAreaElement).value;
 		oninput?.(event);
 	}
 
@@ -83,12 +75,6 @@
 	// Public methods (exposed via bind:this)
 	export const focus = () => textareaRef?.focus();
 	export const blur = () => textareaRef?.blur();
-
-	$effect(() => {
-		if (!autosize || !textareaRef) return;
-		textareaRef.style.height = 'auto';
-		textareaRef.style.height = `${textareaRef.scrollHeight}px`;
-	});
 </script>
 
 <div class={classes}>
@@ -117,7 +103,6 @@
 			aria-invalid={Boolean(error) || undefined}
 			aria-describedby={describedBy || undefined}
 			class="lumi-textarea__input"
-			style:resize={resizable ? resize : 'none'}
 			oninput={handleInput}
 			onfocus={handleFocus}
 			onblur={handleBlur}
@@ -186,8 +171,10 @@
 		font-size: var(--lumi-font-size-base);
 		line-height: var(--lumi-line-height-normal);
 		color: var(--lumi-color-text);
-		resize: vertical;
+		resize: none;
+		field-sizing: content;
 		min-height: calc(var(--lumi-space-3xl) + var(--lumi-space-sm));
+		overflow-y: hidden;
 		transition:
 			border-color 0.2s ease,
 			background-color 0.2s ease,

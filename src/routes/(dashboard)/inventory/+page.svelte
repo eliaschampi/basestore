@@ -337,16 +337,16 @@
 					aria-label="Abrir filtros de stock"
 				/>
 				<Button
-					type="border"
-					color="info"
+					type="flat"
+					color="primary"
 					icon="shoppingBag"
 					onclick={() => navigateWithBranch('/inventory/purchases')}
 				>
 					Compras
 				</Button>
 				<Button
-					type="filled"
-					color="primary"
+					type="flat"
+					color="success"
 					icon="creditCard"
 					onclick={() => navigateWithBranch('/inventory/sales')}
 				>
@@ -470,16 +470,6 @@
 								<td>
 									<div class="inventory-stock__actions">
 										<Button
-											type="border"
-											size="sm"
-											icon="eye"
-											color="primary"
-											disabled={!canRead}
-											onclick={() => void goto(resolve(`/products/${item.product_code}` as '/'))}
-										>
-											Detalle
-										</Button>
-										<Button
 											type="flat"
 											size="sm"
 											icon="slidersHorizontal"
@@ -594,7 +584,7 @@
 		<Slider
 			label="Punto de reposicion"
 			min={0}
-			max={300}
+			max={50}
 			step={1}
 			value={thresholdReorderPoint}
 			showValue
@@ -608,7 +598,7 @@
 		<Slider
 			label="Punto de emergencia"
 			min={0}
-			max={300}
+			max={20}
 			step={1}
 			value={thresholdEmergencyPoint}
 			showValue
@@ -671,13 +661,6 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--lumi-space-sm);
-		flex-wrap: wrap;
-	}
-
-	.inventory-stock__actions {
-		display: flex;
-		align-items: center;
-		gap: var(--lumi-space-2xs);
 		flex-wrap: wrap;
 	}
 

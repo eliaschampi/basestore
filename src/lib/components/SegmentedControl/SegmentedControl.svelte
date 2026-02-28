@@ -179,14 +179,24 @@
 		--seg-hover-bg: color-mix(in srgb, var(--seg-color) 4%, transparent);
 		--seg-active-bg: color-mix(in srgb, var(--seg-color) 8%, transparent);
 		--seg-lift: calc(var(--lumi-space-2xs) * -0.25);
+		--seg-shell-bg: color-mix(
+			in srgb,
+			var(--lumi-color-surface) 58%,
+			var(--lumi-color-background-hover) 42%
+		);
+		--seg-shell-border: color-mix(
+			in srgb,
+			var(--lumi-color-border) 72%,
+			var(--lumi-color-border-strong) 28%
+		);
 		background:
 			linear-gradient(
 				180deg,
 				color-mix(in srgb, var(--seg-color) 4%, transparent) 0%,
 				transparent 30%
 			),
-			var(--lumi-color-background-secondary);
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
+			var(--seg-shell-bg);
+		border: var(--lumi-border-width-thin) solid var(--seg-shell-border);
 		border-radius: var(--lumi-radius-xl);
 		padding: var(--lumi-space-2xs);
 		gap: var(--lumi-space-2xs);
@@ -201,7 +211,18 @@
 		scrollbar-color: var(--lumi-color-border-strong) transparent;
 		transition:
 			border-color 0.15s ease,
+			background-color 0.15s ease,
 			box-shadow 0.15s ease;
+	}
+
+	.lumi-segmented-control:hover:not(.lumi-segmented-control--disabled) {
+		border-color: var(--lumi-color-border-strong);
+	}
+
+	.lumi-segmented-control:focus-within {
+		border-color: color-mix(in srgb, var(--seg-color) 30%, var(--lumi-color-border-strong));
+		box-shadow: 0 0 0 var(--lumi-border-width-thick)
+			color-mix(in srgb, var(--seg-color) 16%, transparent);
 	}
 
 	.lumi-segmented-control::-webkit-scrollbar {
@@ -235,7 +256,7 @@
 			),
 			var(--seg-active-bg);
 		border: var(--lumi-border-width-thin) solid
-			color-mix(in srgb, var(--seg-color) 20%, var(--lumi-color-border-light));
+			color-mix(in srgb, var(--seg-color) 20%, var(--lumi-color-border));
 		border-radius: var(--lumi-radius-md);
 		box-shadow: var(--lumi-shadow-sm);
 		transition:

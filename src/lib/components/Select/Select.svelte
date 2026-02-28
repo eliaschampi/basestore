@@ -18,7 +18,7 @@
 	let {
 		value = $bindable(null),
 		options = [],
-		placeholder = 'Select an option',
+		placeholder = 'Selecciona una opción',
 		label = '',
 		name = '',
 		'aria-label': ariaLabel = '',
@@ -27,7 +27,7 @@
 		autocomplete = false,
 		error = false,
 		errorMessage = '',
-		noDataText = 'No options available',
+		noDataText = 'Sin opciones disponibles',
 		width = '100%',
 		valueKey = 'value',
 		labelKey = 'label',

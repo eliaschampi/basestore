@@ -14,7 +14,6 @@
 		NumberInput,
 		PageHeader,
 		Select,
-		Switch,
 		Table,
 		Textarea
 	} from '$lib/components';
@@ -25,6 +24,7 @@
 	import { getDriveServeUrl } from '$lib/utils/drive';
 	import { formatProductPrice } from '$lib/utils/products';
 	import type { PageData } from './$types';
+	import Checkbox from '$lib/components/Checkbox/Checkbox.svelte';
 
 	const { data }: { data: PageData } = $props();
 
@@ -280,7 +280,7 @@
 				/>
 
 				<div class="lumi-flex lumi-align-items--center lumi-flex--gap-sm">
-					<Switch bind:checked={formIsActive} label="Producto activo" color="success" />
+					<Checkbox bind:checked={formIsActive} label="Producto activo" color="success" />
 					<input type="hidden" name="is_active" value={formIsActive ? 'on' : ''} />
 				</div>
 			</div>

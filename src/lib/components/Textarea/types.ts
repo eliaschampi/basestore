@@ -31,18 +31,12 @@ export interface TextareaProps {
 	size?: TextareaSize;
 	/** Color variant for focus state */
 	color?: TextareaColor;
-	/** Resize behavior */
-	resize?: 'none' | 'vertical' | 'horizontal' | 'both';
 	/** Required field indicator */
 	required?: boolean;
 	/** Accessible label when visible label is not provided */
 	'aria-label'?: string;
 	/** Show character counter */
 	showCount?: boolean;
-	/** Auto-resize based on content */
-	autosize?: boolean;
-	/** Resizable */
-	resizable?: boolean;
 	/** Custom CSS class */
 	class?: string;
 	/** Input event handler */

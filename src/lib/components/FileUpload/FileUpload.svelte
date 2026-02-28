@@ -411,6 +411,7 @@
 		align-items: center;
 		gap: var(--lumi-space-md);
 		padding: var(--lumi-space-md);
+		min-height: calc(var(--lumi-space-xxl) + var(--lumi-space-lg));
 		background-color: var(--lumi-color-background);
 		border: var(--lumi-border-width-thin) solid var(--lumi-color-border);
 		border-radius: var(--lumi-radius-md);
@@ -418,6 +419,7 @@
 		position: relative;
 		overflow: hidden;
 		cursor: default;
+		flex: 0 0 auto;
 	}
 
 	.lumi-file-upload__file-item:hover {
@@ -537,6 +539,7 @@
 		cursor: pointer;
 		transition: var(--lumi-transition-all);
 		width: 100%;
+		flex: 0 0 auto;
 	}
 
 	.lumi-file-upload__add-more:hover:not(:disabled) {
