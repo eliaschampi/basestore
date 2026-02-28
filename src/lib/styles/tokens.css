@@ -38,8 +38,8 @@
 	--lumi-color-secondary-950: rgb(76, 5, 25);
 
 	/* Success palette (Fresh Green) - UNCHANGED */
-	--lumi-color-success: rgb(34, 197, 94);
-	--lumi-color-success-rgb: 34, 197, 94;
+	--lumi-color-success: rgb(74, 222, 128); /* green-400 */
+	--lumi-color-success-rgb: 74, 222, 128;
 	--lumi-color-success-50: rgb(240, 253, 244);
 	--lumi-color-success-100: rgb(220, 252, 231);
 	--lumi-color-success-200: rgb(187, 247, 208);
@@ -53,8 +53,8 @@
 	--lumi-color-success-950: rgb(5, 46, 22);
 
 	/* Warning palette (Vibrant Amber) - UNCHANGED */
-	--lumi-color-warning: rgb(245, 158, 11);
-	--lumi-color-warning-rgb: 245, 158, 11;
+	--lumi-color-warning: rgb(251, 191, 36); /* amber-400 */
+	--lumi-color-warning-rgb: 251, 191, 36;
 	--lumi-color-warning-50: rgb(255, 251, 235);
 	--lumi-color-warning-100: rgb(254, 243, 199);
 	--lumi-color-warning-200: rgb(253, 230, 138);
@@ -68,8 +68,8 @@
 	--lumi-color-warning-950: rgb(69, 26, 3);
 
 	/* Danger palette (Bold Red) - UNCHANGED */
-	--lumi-color-danger: rgb(239, 68, 68);
-	--lumi-color-danger-rgb: 239, 68, 68;
+	--lumi-color-danger: rgb(248, 113, 113); /* red-400 — 5.7:1 on zinc-900 */
+	--lumi-color-danger-rgb: 248, 113, 113;
 	--lumi-color-danger-50: rgb(254, 242, 242);
 	--lumi-color-danger-100: rgb(254, 226, 226);
 	--lumi-color-danger-200: rgb(254, 202, 202);
@@ -144,8 +144,8 @@
 	--lumi-color-warning-bg: rgb(255, 251, 235);
 	--lumi-color-danger-bg: rgb(254, 242, 242);
 	--lumi-color-info-bg: rgb(240, 249, 255); /* ← Updated to Sky-50 */
-	--lumi-color-primary-bg: rgb(238, 242, 255);
-
+	--lumi-color-primary-bg: rgb(239, 246, 255);
+	--lumi-color-secondary-bg: rgb(255, 241, 242);
 	/* ========================================================================== */
 	/* SPACING SYSTEM - 4px base unit */
 	/* ========================================================================== */
@@ -162,8 +162,8 @@
 	/* 24px */
 	--lumi-space-xl: 2rem;
 	/* 32px */
-	--lumi-space-xxl: 2.5rem;
-	--lumi-space-2xl: var(--lumi-space-xxl);
+	--lumi-space-2xl: 2.5rem; /* 40px */
+	--lumi-space-xxl: var(--lumi-space-2xl);
 	/* Alias for naming consistency */
 	/* 40px */
 	--lumi-space-3xl: 3rem;
@@ -216,6 +216,17 @@
 	--lumi-line-height-relaxed: 1.625;
 	--lumi-line-height-loose: 2;
 
+	--lumi-letter-spacing-tighter: -0.05em;
+	--lumi-letter-spacing-tight: -0.025em;
+	--lumi-letter-spacing-normal: 0em;
+	--lumi-letter-spacing-wide: 0.025em;
+	--lumi-letter-spacing-wider: 0.05em;
+	--lumi-letter-spacing-widest: 0.1em;
+
+	--lumi-opacity-muted: 0.4;
+	--lumi-opacity-disabled: 0.5;
+	--lumi-opacity-hover: 0.8;
+	--lumi-opacity-overlay: 0.95;
 	/* Font Family */
 	--lumi-font-family-sans:
 		'Quicksand', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
@@ -482,7 +493,7 @@
 	--lumi-color-danger-bg: rgba(69, 10, 10, 0.5);
 	--lumi-color-info-bg: rgba(8, 47, 73, 0.55); /* ← Updated */
 	--lumi-color-primary-bg: rgba(23, 37, 84, 0.4);
-
+	--lumi-color-secondary-bg: rgba(76, 5, 25, 0.5);
 	/* Enhanced shadows for dark mode */
 	--lumi-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
 	--lumi-shadow-md: 0 4px 20px 0 rgba(0, 0, 0, 0.4);

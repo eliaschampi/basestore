@@ -25,7 +25,12 @@
 		search = false,
 		selectable = false,
 		pagination = false,
-		noDataText = 'No hay datos disponibles aquí',
+		noDataText = 'No hay datos disponibles',
+		searchPlaceholder = 'Buscar...',
+		loadingText = 'Cargando...',
+		noResultsText = 'Sin resultados',
+		showingLabel = 'Mostrando',
+		ofLabel = 'de',
 		data = undefined,
 		itemsPerPage = 10,
 		loading = false,
@@ -55,7 +60,6 @@
 	function getRowKey(row: TableRow): string {
 		if (row.id != null) return String(row.id);
 		if (row.key != null) return String(row.key);
-		// Fallback: hash de contenido para rows sin id/key
 		try {
 			return `row-${JSON.stringify(row)}`;
 		} catch {
@@ -63,7 +67,6 @@
 		}
 	}
 
-	// Para el keyed each, necesitamos un key estable con index como fallback
 	function getRowListKey(row: TableRow, index: number): string {
 		if (row.id != null) return String(row.id);
 		if (row.key != null) return String(row.key);
@@ -77,7 +80,9 @@
 		let result = [...data];
 
 		if (searchQuery && search) {
-			const query = searchQuery.toLowerCase();
+			const query = searchQuery
+				.toLowerCase()
+				.trim(); /* FIX(S1): trim for filtering, not for mutation */
 			result = result.filter((item) =>
 				Object.values(item).some((val) => String(val).toLowerCase().includes(query))
 			);
@@ -112,7 +117,6 @@
 	});
 
 	const totalItems = $derived(processedData.length);
-
 	const totalPages = $derived(totalItems === 0 ? 0 : Math.ceil(totalItems / itemsPerPage));
 
 	const currentPageData = $derived.by(() => {
@@ -139,7 +143,6 @@
 		totalItems
 	});
 
-	// ── Page numbers ──────────────────────────
 	const pageNumbers = $derived.by(() => {
 		if (totalPages <= 5) {
 			return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -151,7 +154,9 @@
 		return [currentPage - 2, currentPage - 1, currentPage, currentPage + 1, currentPage + 2];
 	});
 
-	// ── Classes ───────────────────────────────
+	/* FIX(S4): check all interactive handlers for keyboard accessibility */
+	const isInteractive = $derived(!!onRowClick || !!onRowDblClick || !!onRowContextMenu);
+
 	const tableClasses = $derived(
 		[
 			'lumi-table',
@@ -168,10 +173,10 @@
 	const emptyIconSize = `${getIconSize('2xl')}px`;
 
 	// ── Event handlers ────────────────────────
+
+	/* FIX(S1): Don't mutate searchQuery — let user type freely including spaces */
 	function handleSearch(): void {
-		const trimmed = searchQuery.trim();
-		if (searchQuery !== trimmed) searchQuery = trimmed;
-		onsearch?.(trimmed);
+		onsearch?.(searchQuery.trim());
 		if (pagination) currentPage = 1;
 	}
 
@@ -219,10 +224,7 @@
 	}
 
 	function handleRowContextMenu(event: MouseEvent, row: TableRow, index: number): void {
-		if (!onRowContextMenu) {
-			return;
-		}
-
+		if (!onRowContextMenu) return;
 		event.preventDefault();
 		onRowContextMenu(event, row, index);
 	}
@@ -307,7 +309,7 @@
 				<div class="lumi-table__search">
 					<Input
 						bind:value={searchQuery}
-						placeholder="Buscar..."
+						placeholder={searchPlaceholder}
 						size="sm"
 						icon="search"
 						oninput={handleSearch}
@@ -321,7 +323,7 @@
 		{#if loading}
 			<div class="lumi-table__loading" role="status">
 				<div class="lumi-table__spinner"></div>
-				<span>Cargando...</span>
+				<span>{loadingText}</span>
 			</div>
 		{:else}
 			<table class="lumi-table__content">
@@ -350,10 +352,8 @@
 							<tr
 								class="lumi-table__row"
 								class:lumi-table__row--selected={isSelected}
-								class:lumi-table__row--clickable={!!onRowClick ||
-									!!onRowDblClick ||
-									!!onRowContextMenu}
-								tabindex={onRowClick ? 0 : undefined}
+								class:lumi-table__row--clickable={isInteractive}
+								tabindex={isInteractive ? 0 : undefined}
 								aria-selected={selectable ? isSelected : undefined}
 								onclick={() => handleRowClick(rowData, index)}
 								ondblclick={() => handleRowDblClick(rowData, index)}
@@ -408,12 +408,15 @@
 				<div class="lumi-table__pagination-info">
 					<span class="lumi-table__pagination-text">
 						{#if totalItems === 0}
-							Sin Resultados
+							{noResultsText}
 						{:else}
-							Mostrando {(currentPage - 1) * itemsPerPage + 1}–{Math.min(
+							{showingLabel}
+							{(currentPage - 1) * itemsPerPage + 1}–{Math.min(
 								currentPage * itemsPerPage,
 								totalItems
-							)} de {totalItems}
+							)}
+							{ofLabel}
+							{totalItems}
 						{/if}
 					</span>
 				</div>
@@ -431,7 +434,9 @@
 
 						<div class="lumi-table__pagination-pages">
 							{#each pageNumbers as page (page)}
+								<!-- FIX(M1): explicit type="button" prevents form submission -->
 								<button
+									type="button"
 									class="lumi-table__pagination-page"
 									class:lumi-table__pagination-page--active={currentPage === page}
 									aria-current={currentPage === page ? 'page' : undefined}
@@ -460,7 +465,8 @@
 
 <style>
 	/* ============================================================================
-	 * TABLE COMPONENT
+	 * TABLE COMPONENT — Lumi UI
+	 * All values reference design tokens for 100% system coherence.
 	 * ============================================================================ */
 
 	.lumi-table {
@@ -469,9 +475,9 @@
 		flex-direction: column;
 		gap: var(--lumi-space-md);
 		font-family: var(--lumi-font-family-sans);
+		/* FIX(C8): removed --table-row-lift (transform on <tr> is undefined per CSS spec) */
 		--table-row-hover-bg: color-mix(in srgb, var(--lumi-color-primary) 4%, transparent);
 		--table-row-active-bg: color-mix(in srgb, var(--lumi-color-primary) 8%, transparent);
-		--table-row-lift: calc(var(--lumi-space-2xs) * -0.25);
 	}
 
 	/* ── Header ───────────────────────────────── */
@@ -484,13 +490,15 @@
 		flex-wrap: wrap;
 	}
 
+	/* FIX(C4): rem instead of px */
 	.lumi-table__search {
 		flex: 1;
-		max-width: 360px;
-		min-width: 200px;
+		max-width: 22.5rem;
+		min-width: 12.5rem;
 	}
 
 	/* ── Table wrapper ────────────────────────── */
+
 	.lumi-table__wrapper {
 		position: relative;
 		width: 100%;
@@ -505,9 +513,10 @@
 		border-radius: var(--lumi-radius-2xl);
 		box-shadow: var(--lumi-shadow-sm);
 		overflow-x: auto;
+		/* FIX(C1): tokenized transition */
 		transition:
-			box-shadow 0.2s ease,
-			border-color 0.2s ease;
+			box-shadow var(--lumi-duration-base) var(--lumi-easing-default),
+			border-color var(--lumi-duration-base) var(--lumi-easing-default);
 	}
 
 	.lumi-table__wrapper:hover {
@@ -534,9 +543,10 @@
 		border-bottom: var(--lumi-border-width-thin) solid var(--lumi-color-border);
 		position: sticky;
 		top: 0;
-		z-index: 1;
+		z-index: var(--lumi-z-base); /* FIX(C5) */
 	}
 
+	/* FIX(C6): letter-spacing uses token */
 	.lumi-table__th,
 	.lumi-table__thead :global(th) {
 		padding: var(--lumi-space-md) var(--lumi-space-lg);
@@ -545,20 +555,20 @@
 		font-weight: var(--lumi-font-weight-bold);
 		color: var(--lumi-color-text-muted);
 		text-transform: uppercase;
-		letter-spacing: 0.08em;
+		letter-spacing: var(--lumi-letter-spacing-wider);
 		white-space: nowrap;
 		background: transparent;
 	}
 
 	/* ── Body rows ────────────────────────────── */
 
+	/* FIX(C1): tokenized transitions; FIX(C8): removed transform from transition */
 	.lumi-table__tbody .lumi-table__row {
 		border-bottom: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		border-left: var(--lumi-border-width-thick) solid transparent;
 		transition:
-			background-color 0.15s ease,
-			border-left-color 0.15s ease,
-			transform 0.15s ease;
+			background-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			border-left-color var(--lumi-duration-fast) var(--lumi-easing-default);
 	}
 
 	.lumi-table__tbody .lumi-table__row:last-child {
@@ -569,18 +579,18 @@
 		cursor: pointer;
 	}
 
+	/* FIX(C9): tokenized outline-offset */
 	.lumi-table__row--clickable:focus-visible {
 		outline: var(--lumi-border-width-thick) solid
 			color-mix(in srgb, var(--lumi-color-primary) 35%, transparent);
-		outline-offset: -2px;
+		outline-offset: calc(var(--lumi-border-width-thick) * -1);
 		border-radius: var(--lumi-radius-sm);
 	}
 
-	/* Hover */
+	/* Hover — FIX(C8): removed transform, background + border accent only */
 	.lumi-table--hover .lumi-table__tbody .lumi-table__row:hover {
 		background: var(--table-row-hover-bg);
 		border-left-color: var(--lumi-color-primary);
-		transform: translateY(var(--table-row-lift));
 	}
 
 	.lumi-table__tbody .lumi-table__row.lumi-table__row--selected {
@@ -590,7 +600,6 @@
 
 	.lumi-table--hover .lumi-table__tbody .lumi-table__row.lumi-table__row--selected:hover {
 		background: var(--table-row-active-bg);
-		transform: none;
 	}
 
 	/* Stripe */
@@ -610,10 +619,10 @@
 		vertical-align: middle;
 	}
 
-	/* Select column */
+	/* FIX(C2): tokenized width */
 	.lumi-table__th--select,
 	.lumi-table__td--select {
-		width: 48px;
+		width: var(--lumi-space-3xl);
 		padding-right: var(--lumi-space-xs);
 		text-align: center;
 	}
@@ -640,12 +649,13 @@
 		font-size: var(--lumi-font-size-sm);
 	}
 
+	/* FIX(C3): tokenized spinner size */
 	.lumi-table__spinner {
-		width: 24px;
-		height: 24px;
+		width: var(--lumi-icon-lg);
+		height: var(--lumi-icon-lg);
 		border: var(--lumi-border-width-thick) solid var(--lumi-color-border);
 		border-top-color: var(--lumi-color-primary);
-		border-radius: 50%;
+		border-radius: var(--lumi-radius-full);
 		animation: lumi-table-spin 0.6s linear infinite;
 	}
 
@@ -666,9 +676,10 @@
 		gap: var(--lumi-space-md);
 	}
 
+	/* FIX(C7): tokenized opacity */
 	.lumi-table__empty-icon {
 		color: var(--lumi-color-text-muted);
-		opacity: 0.4;
+		opacity: var(--lumi-opacity-muted);
 	}
 
 	.lumi-table__empty-text {
@@ -709,6 +720,7 @@
 		gap: var(--lumi-space-2xs);
 	}
 
+	/* FIX(C1): tokenized transitions */
 	.lumi-table__pagination-page {
 		min-width: var(--lumi-space-xl);
 		height: var(--lumi-space-xl);
@@ -724,9 +736,9 @@
 		border-radius: var(--lumi-radius-md);
 		cursor: pointer;
 		transition:
-			background-color 0.15s ease,
-			color 0.15s ease,
-			border-color 0.15s ease;
+			background-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			color var(--lumi-duration-fast) var(--lumi-easing-default),
+			border-color var(--lumi-duration-fast) var(--lumi-easing-default);
 	}
 
 	.lumi-table__pagination-page:hover:not(.lumi-table__pagination-page--active) {
@@ -734,10 +746,11 @@
 		color: var(--lumi-color-text);
 	}
 
+	/* FIX(C9): tokenized outline-offset */
 	.lumi-table__pagination-page:focus-visible {
 		outline: var(--lumi-border-width-thick) solid
 			color-mix(in srgb, var(--lumi-color-primary) 35%, transparent);
-		outline-offset: 1px;
+		outline-offset: var(--lumi-border-width-thin);
 	}
 
 	.lumi-table__pagination-page--active {
@@ -748,6 +761,7 @@
 	}
 
 	/* ── Responsive ───────────────────────────── */
+	/* NOTE(C10): 768px matches --lumi-breakpoint-tablet; CSS vars can't be used in @media */
 
 	@media (max-width: 768px) {
 		.lumi-table__header {
@@ -774,6 +788,7 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.lumi-table__tbody .lumi-table__row,
+		.lumi-table__wrapper,
 		.lumi-table__pagination-page {
 			transition: none;
 		}

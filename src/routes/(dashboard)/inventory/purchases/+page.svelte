@@ -368,9 +368,7 @@
 											color="info"
 											aria-label="Ver detalle de compra"
 											onclick={() => openPurchaseDetail(purchase)}
-										>
-											Detalle
-										</Button>
+										></Button>
 										{#if purchase.state === 'in_transit'}
 											<Button
 												type="flat"
@@ -635,10 +633,6 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--lumi-space-sm);
-		flex-wrap: wrap;
-	}
-
-	.inventory-purchases__actions {
 		flex-wrap: wrap;
 	}
 

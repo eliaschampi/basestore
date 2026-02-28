@@ -1,6 +1,5 @@
-// Lumi UI - Table Component Types
+// Lumi UI — Table Component Types
 
-// Generic table row type - can be extended for specific use cases
 export interface TableRow {
 	id?: string | number;
 	key?: string | number;
@@ -8,108 +7,80 @@ export interface TableRow {
 }
 
 export interface TableColumn {
-	/** Column key */
+	/** Column identifier — must match a key in TableRow */
 	key: string;
-
-	/** Column label */
+	/** Display label for column header */
 	label: string;
-
-	/** Whether column is sortable */
+	/** Whether this column supports sorting */
 	sortable?: boolean;
-
-	/** Column width */
+	/** CSS width value (e.g. '200px', '30%') */
 	width?: string;
 }
 
 export interface TableProps {
-	/** Whether table is compact */
+	/** Compact row/cell padding */
 	compact?: boolean;
-
-	/** Whether table has striped rows */
+	/** Alternate-row background striping */
 	stripe?: boolean;
-
-	/** Whether table has hover effects */
+	/** Enable row hover highlight */
 	hover?: boolean;
-
-	/** Whether table has search functionality */
+	/** Show search input in header */
 	search?: boolean;
-
-	/** Whether table has row selection */
+	/** Enable row checkbox selection */
 	selectable?: boolean;
-
-	/** Whether table has pagination */
+	/** Enable pagination controls */
 	pagination?: boolean;
 
-	/** Text to show when no data */
+	/* ── i18n text props (FIX: was hardcoded Spanish) ── */
+	/** Text shown when data is empty */
 	noDataText?: string;
+	/** Search input placeholder */
+	searchPlaceholder?: string;
+	/** Loading state text */
+	loadingText?: string;
+	/** Pagination: shown when filtered to zero */
+	noResultsText?: string;
+	/** Pagination: label before range (e.g. "Showing") */
+	showingLabel?: string;
+	/** Pagination: label between range and total (e.g. "of") */
+	ofLabel?: string;
 
-	/** Data array for table */
+	/** Data array */
 	data?: TableRow[];
-
-	/** Column definitions */
-	columns?: TableColumn[];
-
-	/** Items per page for pagination */
+	/** Items per page when pagination is enabled */
 	itemsPerPage?: number;
-
-	/** Loading state */
+	/** Show loading state */
 	loading?: boolean;
-
-	/** Sortable columns configuration */
+	/** Enable column sorting */
 	sortable?: boolean;
-
-	/** Selected items (bindable) */
+	/** Currently selected rows (bindable) */
 	selected?: TableRow[];
-
-	/** Custom class */
+	/** Additional CSS class */
 	class?: string;
 
-	/** Row click handler */
+	/* ── Event handlers ── */
 	'onrow-click'?: (row: TableRow, index: number) => void;
-
-	/** Row double click handler */
 	'onrow-dblclick'?: (row: TableRow, index: number) => void;
-
-	/** Row context menu handler */
 	'onrow-contextmenu'?: (event: MouseEvent, row: TableRow, index: number) => void;
-
-	/** Row select handler */
 	'onrow-select'?: (row: TableRow, selected: boolean) => void;
-
-	/** Search handler */
 	onsearch?: (query: string) => void;
-
-	/** Page change handler */
 	'onpage-change'?: (page: number) => void;
-
-	/** Sort handler */
 	onsort?: (column: string, direction: 'asc' | 'desc' | null) => void;
 }
 
 export interface TrProps {
-	/** Row data */
 	data?: TableRow;
-
-	/** Whether row is selectable */
 	selectable?: boolean;
-
-	/** Row index */
 	index?: number;
 }
 
 export interface ThProps {
-	/** Sort key for column */
 	sortKey?: string;
-
-	/** Whether column is sortable */
 	sortable?: boolean;
-
-	/** Column width */
 	width?: string;
 }
 
 export interface TdProps {
-	/** Cell data */
 	data?: unknown;
 }
 
@@ -126,6 +97,3 @@ export interface TableContext {
 	handleSort: (column: string) => void;
 	isRowSelected: (row: TableRow) => boolean;
 }
-
-export type TableSize = 'sm' | 'md';
-export type TableColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
