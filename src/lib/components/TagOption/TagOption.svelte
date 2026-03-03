@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Chip } from '$lib/components';
 	import type { DriveTagOption } from '$lib/utils/drive';
 
 	interface Props {
@@ -29,9 +28,6 @@
 >
 	<span class="lumi-tag-option__dot"></span>
 	<span class="lumi-tag-option__label">{tag.name}</span>
-	{#if active}
-		<Chip size="sm" color="primary">Activa</Chip>
-	{/if}
 </button>
 
 <style>
@@ -40,7 +36,7 @@
 		align-items: center;
 		gap: var(--lumi-space-sm);
 		width: 100%;
-		padding: var(--lumi-space-xs) var(--lumi-space-md);
+		padding: var(--lumi-space-md);
 		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-lg);
 		background: var(--lumi-color-surface);
