@@ -9,6 +9,7 @@
 		Card,
 		Chip,
 		Dialog,
+		InfoItem,
 		Input,
 		PageHeader,
 		PageSidebar,
@@ -36,6 +37,8 @@
 		name: string;
 		state: boolean;
 	}
+
+	type PurchaseDetailLine = InventoryPurchaseListItem['items'][number];
 
 	const { data }: { data: PageData } = $props();
 
@@ -88,6 +91,9 @@
 
 	let showDetailDialog = $state(false);
 	let detailPurchase = $state<InventoryPurchaseListItem | null>(null);
+	let showRefundDialog = $state(false);
+	let refundingPurchase = $state(false);
+	let refundPurchaseTarget = $state<InventoryPurchaseListItem | null>(null);
 
 	const branchOptions = $derived(
 		branches
@@ -96,6 +102,7 @@
 	);
 
 	const purchaseRows = $derived(purchases as unknown as TableRow[]);
+	const detailPurchaseItemRows = $derived((detailPurchase?.items ?? []) as unknown as TableRow[]);
 	const canGoPrev = $derived(pagination.page > 1);
 	const canGoNext = $derived(pagination.page < pagination.total_pages);
 	const activeBranchLabel = $derived.by(
@@ -162,6 +169,29 @@
 		return false;
 	}
 
+	function primaryPurchaseItemLabel(purchase: InventoryPurchaseListItem): string {
+		const primaryName = purchase.primary_product_name?.trim();
+		if (primaryName) return primaryName;
+
+		const firstLineName = purchase.items
+			.find((item) => item.product_name.trim())
+			?.product_name?.trim();
+		if (firstLineName) return firstLineName;
+
+		return 'Sin items';
+	}
+
+	function purchaseItemsMetaLabel(purchase: InventoryPurchaseListItem): string {
+		if (purchase.item_count <= 0) return 'Sin items';
+
+		const extraItems = Math.max(purchase.item_count - 1, 0);
+		if (extraItems > 0) {
+			return `+${extraItems} ${extraItems === 1 ? 'item' : 'items'}`;
+		}
+
+		return '1 item';
+	}
+
 	function handleSearchInput(value: string): void {
 		searchQuery = value;
 		if (searchTimeout) {
@@ -224,11 +254,24 @@
 		showDetailDialog = true;
 	}
 
+	function openRefundDialog(purchase: InventoryPurchaseListItem): void {
+		if (!canUpdate || !canRefundPurchase(purchase)) return;
+
+		refundPurchaseTarget = purchase;
+		showRefundDialog = true;
+	}
+
+	function closeRefundDialog(): void {
+		showRefundDialog = false;
+		refundPurchaseTarget = null;
+		refundingPurchase = false;
+	}
+
 	async function updatePurchaseState(
 		purchaseCode: string,
 		state: 'received' | 'refunded'
-	): Promise<void> {
-		if (!canUpdate) return;
+	): Promise<boolean> {
+		if (!canUpdate) return false;
 
 		try {
 			const response = await fetch(`/api/inventory/purchases/${purchaseCode}`, {
@@ -244,10 +287,25 @@
 
 			showToast('Estado de compra actualizado', 'success');
 			await loadPurchases(pagination.page);
+			return true;
 		} catch (caught) {
 			const message = caught instanceof Error ? caught.message : 'Error al actualizar compra';
 			showToast(message, 'error');
+			return false;
 		}
+	}
+
+	async function submitRefundPurchase(): Promise<void> {
+		if (!refundPurchaseTarget || refundingPurchase) return;
+
+		refundingPurchase = true;
+		const updated = await updatePurchaseState(refundPurchaseTarget.code, 'refunded');
+		if (updated) {
+			closeRefundDialog();
+			return;
+		}
+
+		refundingPurchase = false;
 	}
 </script>
 
@@ -336,11 +394,9 @@
 								{@const purchase = row as unknown as InventoryPurchaseListItem}
 								<td>
 									<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
-										<span class="lumi-font--medium">{purchase.products_summary || 'Sin items'}</span
-										>
+										<span class="lumi-font--medium">{primaryPurchaseItemLabel(purchase)}</span>
 										<span class="lumi-text--xs lumi-text--muted">
-											{purchase.item_count}
-											{purchase.item_count === 1 ? 'item' : 'items'}
+											{purchaseItemsMetaLabel(purchase)}
 										</span>
 									</div>
 								</td>
@@ -388,7 +444,7 @@
 												color="danger"
 												aria-label="Marcar compra como reembolsada"
 												disabled={!canUpdate}
-												onclick={() => void updatePurchaseState(purchase.code, 'refunded')}
+												onclick={() => openRefundDialog(purchase)}
 											>
 												Reembolsar
 											</Button>
@@ -400,7 +456,7 @@
 												color="danger"
 												aria-label="Marcar compra como reembolsada"
 												disabled={!canUpdate || !canRefundPurchase(purchase)}
-												onclick={() => void updatePurchaseState(purchase.code, 'refunded')}
+												onclick={() => openRefundDialog(purchase)}
 											>
 												{purchase.can_refund ? 'Reembolsar' : 'Sin stock'}
 											</Button>
@@ -528,91 +584,110 @@
 	</div>
 {/snippet}
 
-<Dialog bind:open={showDetailDialog} title="Detalle de compra" size="md">
+<Dialog bind:open={showDetailDialog} title="Detalle de compra" size="lg" scrollable>
 	{#if detailPurchase}
-		<div class="inventory-purchases__detail-grid">
-			<div class="inventory-purchases__detail-item">
-				<p class="inventory-purchases__detail-label">Resumen items</p>
-				<p class="inventory-purchases__detail-value">
-					{detailPurchase.products_summary || 'Sin items'}
-				</p>
-				<p class="inventory-purchases__detail-meta">
-					{detailPurchase.item_count}
-					{detailPurchase.item_count === 1 ? 'item' : 'items'}
-				</p>
-			</div>
-			<div class="inventory-purchases__detail-item">
-				<p class="inventory-purchases__detail-label">Sede</p>
-				<p class="inventory-purchases__detail-value">{detailPurchase.branch_name}</p>
-			</div>
-			<div class="inventory-purchases__detail-item">
-				<p class="inventory-purchases__detail-label">Estado</p>
-				<p class="inventory-purchases__detail-value">{purchaseStateLabel(detailPurchase.state)}</p>
-				<p class="inventory-purchases__detail-meta">{purchaseOriginLabel(detailPurchase.origin)}</p>
-			</div>
-			<div class="inventory-purchases__detail-item">
-				<p class="inventory-purchases__detail-label">Unidades / Tipo</p>
-				<p class="inventory-purchases__detail-value">{detailPurchase.total_quantity} unidades</p>
-				<p class="inventory-purchases__detail-meta">
-					{detailPurchase.entry_type === 'initial' ? 'Inicial' : 'Reposicion'}
-				</p>
-			</div>
-			<div class="inventory-purchases__detail-item">
-				<p class="inventory-purchases__detail-label">Tracking</p>
-				<p class="inventory-purchases__detail-value">
-					{detailPurchase.tracking_number || 'Sin tracking'}
-				</p>
-			</div>
-			<div class="inventory-purchases__detail-item">
-				<p class="inventory-purchases__detail-label">Monto total</p>
-				<p class="inventory-purchases__detail-value">
-					{formatProductPrice(detailPurchase.total_amount)}
-				</p>
-			</div>
-			<div class="inventory-purchases__detail-item">
-				<p class="inventory-purchases__detail-label">Fechas</p>
-				<p class="inventory-purchases__detail-value">
-					Pedido: {formatDate(detailPurchase.ordered_at)}
-				</p>
-				<p class="inventory-purchases__detail-meta">
-					{#if detailPurchase.received_at}
-						Recibido: {formatDate(detailPurchase.received_at)}
-					{:else if detailPurchase.refunded_at}
-						Reembolsado: {formatDate(detailPurchase.refunded_at)}
-					{:else}
-						Sin cierre
-					{/if}
-				</p>
+		<div class="lumi-stack lumi-space--sm">
+			<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
+				<InfoItem layout="vertical" label="Sede" value={detailPurchase.branch_name} />
+				<InfoItem
+					layout="vertical"
+					label="Estado / origen"
+					value={`${purchaseStateLabel(detailPurchase.state)} · ${purchaseOriginLabel(detailPurchase.origin)}`}
+				/>
+				<InfoItem
+					layout="vertical"
+					label="Items / unidades"
+					value={`${detailPurchase.item_count} ${detailPurchase.item_count === 1 ? 'item' : 'items'} · ${detailPurchase.total_quantity} unidades`}
+				/>
+				<InfoItem
+					layout="vertical"
+					label="Tipo"
+					value={detailPurchase.entry_type === 'initial' ? 'Inicial' : 'Reposicion'}
+				/>
+				<InfoItem
+					layout="vertical"
+					label="Tracking"
+					value={detailPurchase.tracking_number || 'Sin tracking'}
+				/>
+				<InfoItem
+					layout="vertical"
+					label="Monto total"
+					value={formatProductPrice(detailPurchase.total_amount)}
+				/>
+				<InfoItem
+					layout="vertical"
+					label="Fecha pedido"
+					value={formatDate(detailPurchase.ordered_at)}
+				/>
+				<InfoItem
+					layout="vertical"
+					label="Cierre"
+					value={detailPurchase.received_at
+						? `Recibido: ${formatDate(detailPurchase.received_at)}`
+						: detailPurchase.refunded_at
+							? `Reembolsado: ${formatDate(detailPurchase.refunded_at)}`
+							: 'Sin cierre'}
+				/>
 			</div>
 		</div>
 
-		{#if detailPurchase.items.length > 0}
-			<div class="inventory-purchases__detail-extra">
-				<p class="lumi-margin--none"><strong>Items</strong></p>
-				<div class="lumi-stack lumi-space--2xs">
-					{#each detailPurchase.items as line (line.code)}
-						<div class="inventory-purchases__line-item">
-							<span>{line.product_name}</span>
-							<span>{line.quantity} x {formatProductPrice(line.unit_cost || 0)}</span>
-							<span>{formatProductPrice(line.total_amount)}</span>
-						</div>
-					{/each}
-				</div>
-			</div>
-		{/if}
+		<div class="lumi-stack lumi-space--2xs">
+			<p class="lumi-margin--none"><strong>Items</strong></p>
+			{#if detailPurchase.items.length > 0}
+				<Table
+					data={detailPurchaseItemRows}
+					pagination={false}
+					class="inventory-table inventory-table--purchase-detail"
+				>
+					{#snippet thead()}
+						<th>Producto</th>
+						<th>SKU</th>
+						<th>Cantidad</th>
+						<th>Costo unitario</th>
+						<th>Subtotal</th>
+					{/snippet}
+					{#snippet row({ row })}
+						{@const line = row as unknown as PurchaseDetailLine}
+						<td>{line.product_name}</td>
+						<td>{line.product_sku || '-'}</td>
+						<td>{line.quantity}</td>
+						<td>{formatProductPrice(line.unit_cost || 0)}</td>
+						<td>{formatProductPrice(line.total_amount)}</td>
+					{/snippet}
+				</Table>
+			{:else}
+				<Alert type="info" closable={false}>No hay items para mostrar en esta compra.</Alert>
+			{/if}
+		</div>
 
 		{#if detailPurchase.note}
-			<div class="inventory-purchases__detail-extra">
-				<p class="lumi-margin--none">
-					<strong>Nota:</strong>
-					{detailPurchase.note}
-				</p>
-			</div>
+			<InfoItem layout="vertical" label="Nota" value={detailPurchase.note} />
 		{/if}
 	{/if}
 
 	{#snippet footer()}
 		<Button type="border" onclick={() => (showDetailDialog = false)}>Cerrar</Button>
+	{/snippet}
+</Dialog>
+
+<Dialog bind:open={showRefundDialog} title="Confirmar reembolso" size="sm">
+	{#if refundPurchaseTarget}
+		<p class="lumi-margin--none">
+			Se reembolsará la compra de <strong>{primaryPurchaseItemLabel(refundPurchaseTarget)}</strong>.
+		</p>
+	{/if}
+
+	{#snippet footer()}
+		<Button type="border" onclick={closeRefundDialog}>Cancelar</Button>
+		<Button
+			type="filled"
+			color="danger"
+			loading={refundingPurchase}
+			disabled={!canUpdate || !refundPurchaseTarget}
+			onclick={() => void submitRefundPurchase()}
+		>
+			Confirmar reembolso
+		</Button>
 	{/snippet}
 </Dialog>
 
@@ -636,71 +711,11 @@
 		flex-wrap: wrap;
 	}
 
-	.inventory-purchases__detail-grid {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: var(--lumi-space-sm);
-	}
-
-	.inventory-purchases__detail-item {
-		padding: var(--lumi-space-sm);
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
-		border-radius: var(--lumi-radius-md);
-		background: color-mix(in srgb, var(--lumi-color-surface) 94%, transparent);
-	}
-
-	.inventory-purchases__detail-label,
-	.inventory-purchases__detail-value,
-	.inventory-purchases__detail-meta {
-		margin: 0;
-	}
-
-	.inventory-purchases__detail-label {
-		font-size: var(--lumi-font-size-2xs);
-		font-weight: var(--lumi-font-weight-semibold);
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-		color: var(--lumi-color-text-muted);
-	}
-
-	.inventory-purchases__detail-value {
-		margin-top: var(--lumi-space-2xs);
-		font-size: var(--lumi-font-size-sm);
-		font-weight: var(--lumi-font-weight-semibold);
-		color: var(--lumi-color-text);
-	}
-
-	.inventory-purchases__detail-meta {
-		margin-top: var(--lumi-space-2xs);
-		font-size: var(--lumi-font-size-xs);
-		color: var(--lumi-color-text-muted);
-	}
-
-	.inventory-purchases__detail-extra {
-		margin-top: var(--lumi-space-sm);
-		padding: var(--lumi-space-sm);
-		border-radius: var(--lumi-radius-md);
-		background: color-mix(in srgb, var(--lumi-color-surface) 94%, transparent);
-		display: flex;
-		flex-direction: column;
-		gap: var(--lumi-space-2xs);
-	}
-
-	.inventory-purchases__line-item {
-		display: grid;
-		grid-template-columns: 1fr auto auto;
-		gap: var(--lumi-space-sm);
-		font-size: var(--lumi-font-size-xs);
-		color: var(--lumi-color-text-muted);
-	}
-
 	:global(.inventory-table--purchases .lumi-table__content) {
 		min-width: 74rem;
 	}
 
-	@media (max-width: 1024px) {
-		.inventory-purchases__detail-grid {
-			grid-template-columns: 1fr;
-		}
+	:global(.inventory-table--purchase-detail .lumi-table__content) {
+		min-width: 38rem;
 	}
 </style>

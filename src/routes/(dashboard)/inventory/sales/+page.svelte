@@ -9,6 +9,7 @@
 		Card,
 		Chip,
 		Dialog,
+		InfoItem,
 		Input,
 		PageHeader,
 		PageSidebar,
@@ -38,6 +39,8 @@
 		name: string;
 		state: boolean;
 	}
+
+	type SaleDetailLine = InventorySaleListItem['items'][number];
 
 	const { data }: { data: PageData } = $props();
 
@@ -97,6 +100,7 @@
 	let voidSaleTarget = $state<InventorySaleListItem | null>(null);
 
 	const saleRows = $derived(sales as unknown as TableRow[]);
+	const detailSaleItemRows = $derived((detailSale?.items ?? []) as unknown as TableRow[]);
 	const canGoPrev = $derived(pagination.page > 1);
 	const canGoNext = $derived(pagination.page < pagination.total_pages);
 	const activeBranchLabel = $derived.by(
@@ -193,6 +197,37 @@
 
 	function fulfillmentLabel(type: InventorySaleFulfillmentType): string {
 		return type === 'pickup' ? 'Recojo en tienda' : 'Delivery';
+	}
+
+	function primarySaleItemLabel(sale: InventorySaleListItem): string {
+		const primaryName = sale.primary_product_name?.trim();
+		if (primaryName) return primaryName;
+
+		const firstLineName = sale.items.find((item) => item.product_name.trim())?.product_name?.trim();
+		if (firstLineName) return firstLineName;
+
+		return 'Sin items';
+	}
+
+	function saleItemsMetaLabel(sale: InventorySaleListItem): string {
+		if (sale.item_count <= 0) return 'Sin items';
+
+		const extraItems = Math.max(sale.item_count - 1, 0);
+		if (extraItems > 0) {
+			return `+${extraItems} ${extraItems === 1 ? 'item' : 'items'}`;
+		}
+
+		return '1 item';
+	}
+
+	function salePreviewLabel(sale: InventorySaleListItem): string {
+		if (sale.item_count <= 0) return 'items seleccionados';
+
+		const primary = primarySaleItemLabel(sale);
+		const extraItems = Math.max(sale.item_count - 1, 0);
+		if (extraItems <= 0) return primary;
+
+		return `${primary} +${extraItems}`;
 	}
 
 	function handleSearchInput(value: string): void {
@@ -407,10 +442,9 @@
 								{@const sale = row as unknown as InventorySaleListItem}
 								<td>
 									<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
-										<span class="lumi-font--medium">{sale.products_summary || 'Sin items'}</span>
+										<span class="lumi-font--medium">{primarySaleItemLabel(sale)}</span>
 										<span class="lumi-text--xs lumi-text--muted">
-											{sale.item_count}
-											{sale.item_count === 1 ? 'item' : 'items'}
+											{saleItemsMetaLabel(sale)}
 										</span>
 									</div>
 								</td>
@@ -594,94 +628,97 @@
 	</div>
 {/snippet}
 
-<Dialog bind:open={showDetailDialog} title="Detalle de venta" size="md">
+<Dialog bind:open={showDetailDialog} title="Detalle de venta" size="lg" scrollable>
 	{#if detailSale}
-		<div class="inventory-sales__detail-grid">
-			<div class="inventory-sales__detail-item">
-				<p class="inventory-sales__detail-label">Resumen items</p>
-				<p class="inventory-sales__detail-value">{detailSale.products_summary || 'Sin items'}</p>
-				<p class="inventory-sales__detail-meta">
-					{detailSale.item_count}
-					{detailSale.item_count === 1 ? 'item' : 'items'}
-				</p>
-			</div>
-			<div class="inventory-sales__detail-item">
-				<p class="inventory-sales__detail-label">Cliente</p>
-				<p class="inventory-sales__detail-value">{detailSale.customer_name}</p>
-				<p class="inventory-sales__detail-meta">{detailSale.customer_phone || 'Sin telefono'}</p>
-			</div>
-			<div class="inventory-sales__detail-item">
-				<p class="inventory-sales__detail-label">Canal / Entrega</p>
-				<p class="inventory-sales__detail-value">{saleChannelLabel(detailSale.sale_channel)}</p>
-				<p class="inventory-sales__detail-meta">{fulfillmentLabel(detailSale.fulfillment_type)}</p>
-			</div>
-			<div class="inventory-sales__detail-item">
-				<p class="inventory-sales__detail-label">Envio</p>
-				<p class="inventory-sales__detail-value">{shippingStateLabel(detailSale.shipping_state)}</p>
-				<p class="inventory-sales__detail-meta">{detailSale.order_reference || 'Sin referencia'}</p>
-			</div>
-			<div class="inventory-sales__detail-item">
-				<p class="inventory-sales__detail-label">Estado venta</p>
-				<p class="inventory-sales__detail-value">{saleStatusLabel(detailSale)}</p>
-				<p class="inventory-sales__detail-meta">
-					{#if detailSale.voided_at}
-						Anulada: {formatDate(detailSale.voided_at)}
-					{:else}
-						Operativa
-					{/if}
-				</p>
-			</div>
-			<div class="inventory-sales__detail-item">
-				<p class="inventory-sales__detail-label">Monto</p>
-				<p class="inventory-sales__detail-value">
-					Total: {formatProductPrice(detailSale.total_amount)}
-				</p>
-				<p class="inventory-sales__detail-meta">
-					Utilidad: {formatProductPrice(detailSale.profit_amount)}
-				</p>
-			</div>
-			<div class="inventory-sales__detail-item">
-				<p class="inventory-sales__detail-label">Fecha / Sede</p>
-				<p class="inventory-sales__detail-value">{formatDate(detailSale.sold_at)}</p>
-				<p class="inventory-sales__detail-meta">{detailSale.branch_name}</p>
+		<div class="lumi-stack lumi-space--sm">
+			<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
+				<InfoItem
+					layout="vertical"
+					label="Cliente"
+					value={`${detailSale.customer_name} · ${detailSale.customer_phone || 'Sin telefono'}`}
+				/>
+				<InfoItem
+					layout="vertical"
+					label="Estado venta"
+					value={detailSale.voided_at
+						? `Anulada: ${formatDate(detailSale.voided_at)}`
+						: 'Operativa'}
+				/>
+				<InfoItem
+					layout="vertical"
+					label="Canal / entrega"
+					value={`${saleChannelLabel(detailSale.sale_channel)} · ${fulfillmentLabel(detailSale.fulfillment_type)}`}
+				/>
+				<InfoItem
+					layout="vertical"
+					label="Envio"
+					value={`${shippingStateLabel(detailSale.shipping_state)} · ${detailSale.order_reference || 'Sin referencia'}`}
+				/>
+				<InfoItem
+					layout="vertical"
+					label="Items / unidades"
+					value={`${detailSale.item_count} ${detailSale.item_count === 1 ? 'item' : 'items'} · ${detailSale.total_quantity} unidades`}
+				/>
+				<InfoItem
+					layout="vertical"
+					label="Item principal"
+					value={primarySaleItemLabel(detailSale)}
+				/>
+				<InfoItem
+					layout="vertical"
+					label="Monto"
+					value={`Total: ${formatProductPrice(detailSale.total_amount)} · Utilidad: ${formatProductPrice(detailSale.profit_amount)}`}
+				/>
+				<InfoItem
+					layout="vertical"
+					label="Fecha / sede"
+					value={`${formatDate(detailSale.sold_at)} · ${detailSale.branch_name}`}
+				/>
 			</div>
 		</div>
 
-		{#if detailSale.items.length > 0}
-			<div class="inventory-sales__detail-extra">
-				<p class="lumi-margin--none"><strong>Items</strong></p>
-				<div class="lumi-stack lumi-space--2xs">
-					{#each detailSale.items as line (line.code)}
-						<div class="inventory-sales__line-item">
-							<span>{line.product_name}</span>
-							<span>{line.quantity} x {formatProductPrice(line.unit_price)}</span>
-							<span>{formatProductPrice(line.total_amount)}</span>
-						</div>
-					{/each}
-				</div>
+		<div class="lumi-stack lumi-space--2xs">
+			<p class="lumi-margin--none"><strong>Items</strong></p>
+			{#if detailSale.items.length > 0}
+				<Table
+					data={detailSaleItemRows}
+					pagination={false}
+					class="inventory-table inventory-table--sale-detail"
+				>
+					{#snippet thead()}
+						<th>Producto</th>
+						<th>SKU</th>
+						<th>Cantidad</th>
+						<th>Precio unitario</th>
+						<th>Subtotal</th>
+					{/snippet}
+					{#snippet row({ row })}
+						{@const line = row as unknown as SaleDetailLine}
+						<td>{line.product_name}</td>
+						<td>{line.product_sku || '-'}</td>
+						<td>{line.quantity}</td>
+						<td>{formatProductPrice(line.unit_price)}</td>
+						<td>{formatProductPrice(line.total_amount)}</td>
+					{/snippet}
+				</Table>
+			{:else}
+				<Alert type="info" closable={false}>No hay items para mostrar en esta venta.</Alert>
+			{/if}
+		</div>
+
+		{#if detailSale.delivery_address || detailSale.note || detailSale.void_note}
+			<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
+				{#if detailSale.delivery_address}
+					<InfoItem layout="vertical" label="Direccion" value={detailSale.delivery_address} />
+				{/if}
+				{#if detailSale.note}
+					<InfoItem layout="vertical" label="Nota" value={detailSale.note} />
+				{/if}
+				{#if detailSale.void_note}
+					<InfoItem layout="vertical" label="Motivo anulacion" value={detailSale.void_note} />
+				{/if}
 			</div>
 		{/if}
-
-		<div class="inventory-sales__detail-extra">
-			{#if detailSale.delivery_address}
-				<p class="lumi-margin--none">
-					<strong>Direccion:</strong>
-					{detailSale.delivery_address}
-				</p>
-			{/if}
-			{#if detailSale.note}
-				<p class="lumi-margin--none">
-					<strong>Nota:</strong>
-					{detailSale.note}
-				</p>
-			{/if}
-			{#if detailSale.void_note}
-				<p class="lumi-margin--none">
-					<strong>Motivo anulacion:</strong>
-					{detailSale.void_note}
-				</p>
-			{/if}
-		</div>
 	{/if}
 
 	{#snippet footer()}
@@ -692,9 +729,8 @@
 <Dialog bind:open={showVoidDialog} title="Confirmar anulacion" size="sm">
 	{#if voidSaleTarget}
 		<p class="lumi-margin--none">
-			Se anulara la venta de <strong
-				>{voidSaleTarget.products_summary || 'items seleccionados'}</strong
-			>. El stock volvera a inventario.
+			Se anulara la venta de <strong>{salePreviewLabel(voidSaleTarget)}</strong>. El stock volvera a
+			inventario.
 		</p>
 		<Textarea
 			label="Motivo (opcional)"
@@ -734,64 +770,6 @@
 		flex-wrap: wrap;
 	}
 
-	.inventory-sales__detail-grid {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: var(--lumi-space-sm);
-	}
-
-	.inventory-sales__detail-item {
-		padding: var(--lumi-space-sm);
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
-		border-radius: var(--lumi-radius-md);
-		background: color-mix(in srgb, var(--lumi-color-surface) 94%, transparent);
-	}
-
-	.inventory-sales__detail-label,
-	.inventory-sales__detail-value,
-	.inventory-sales__detail-meta {
-		margin: 0;
-	}
-
-	.inventory-sales__detail-label {
-		font-size: var(--lumi-font-size-2xs);
-		font-weight: var(--lumi-font-weight-semibold);
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-		color: var(--lumi-color-text-muted);
-	}
-
-	.inventory-sales__detail-value {
-		margin-top: var(--lumi-space-2xs);
-		font-size: var(--lumi-font-size-sm);
-		font-weight: var(--lumi-font-weight-semibold);
-		color: var(--lumi-color-text);
-	}
-
-	.inventory-sales__detail-meta {
-		margin-top: var(--lumi-space-2xs);
-		font-size: var(--lumi-font-size-xs);
-		color: var(--lumi-color-text-muted);
-	}
-
-	.inventory-sales__detail-extra {
-		margin-top: var(--lumi-space-sm);
-		padding: var(--lumi-space-sm);
-		border-radius: var(--lumi-radius-md);
-		background: color-mix(in srgb, var(--lumi-color-surface) 94%, transparent);
-		display: flex;
-		flex-direction: column;
-		gap: var(--lumi-space-2xs);
-	}
-
-	.inventory-sales__line-item {
-		display: grid;
-		grid-template-columns: 1fr auto auto;
-		gap: var(--lumi-space-sm);
-		font-size: var(--lumi-font-size-xs);
-		color: var(--lumi-color-text-muted);
-	}
-
 	.inventory-sales__pagination {
 		display: flex;
 		align-items: center;
@@ -804,9 +782,7 @@
 		min-width: 72rem;
 	}
 
-	@media (max-width: 1024px) {
-		.inventory-sales__detail-grid {
-			grid-template-columns: 1fr;
-		}
+	:global(.inventory-table--sale-detail .lumi-table__content) {
+		min-width: 38rem;
 	}
 </style>

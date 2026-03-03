@@ -150,6 +150,17 @@
 		draftItems.reduce((total, item) => total + item.quantity * item.unit_cost, 0)
 	);
 	const estimatedProfit = $derived(saleTotal - estimatedCost);
+	const selectedBranchLabel = $derived(
+		branchOptions.find((option) => option.value === createBranchCode)?.label ?? 'Pendiente'
+	);
+	const selectedCustomerLabel = $derived.by(() => {
+		if (createCustomerCode) {
+			const selected = selectedCustomerOption();
+			return selected?.full_name || createCustomerName || 'Pendiente';
+		}
+
+		return createCustomerName.trim() || 'Pendiente';
+	});
 
 	function changeTab(next: string | number): void {
 		if (next === 'sale' || next === 'fulfillment' || next === 'customer' || next === 'review') {
@@ -260,17 +271,16 @@
 		draftItems = draftItems.filter((item) => item.product_code !== productCode);
 	}
 
-	function adjustDraftItemQuantity(productCode: string, delta: number): void {
-		draftItems = draftItems
-			.map((item) =>
-				item.product_code === productCode
-					? {
-							...item,
-							quantity: item.quantity + delta
-						}
-					: item
-			)
-			.filter((item) => item.quantity > 0);
+	function setDraftItemQuantity(productCode: string, quantity: number): void {
+		const normalizedQuantity = Math.max(1, Math.floor(quantity));
+		draftItems = draftItems.map((item) =>
+			item.product_code === productCode
+				? {
+						...item,
+						quantity: normalizedQuantity
+					}
+				: item
+		);
 	}
 
 	function handleFulfillmentChange(next: InventorySaleFulfillmentType): void {
@@ -421,6 +431,27 @@
 	{/if}
 
 	<Card spaced>
+		<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
+			<div>
+				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Sede</p>
+				<p class="lumi-margin--none lumi-font--semibold">{selectedBranchLabel}</p>
+			</div>
+			<div>
+				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Cliente</p>
+				<p class="lumi-margin--none lumi-font--semibold">{selectedCustomerLabel}</p>
+			</div>
+			<div>
+				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Items / unidades</p>
+				<p class="lumi-margin--none lumi-font--semibold">{itemCount} / {totalQuantity}</p>
+			</div>
+			<div>
+				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Total / utilidad</p>
+				<p class="lumi-margin--none lumi-font--semibold">
+					{formatProductPrice(saleTotal)} / {formatProductPrice(estimatedProfit)}
+				</p>
+			</div>
+		</div>
+
 		<Tabs
 			value={activeTab}
 			tabs={SALE_FORM_TABS}
@@ -431,43 +462,54 @@
 			{#if activeTab === 'sale'}
 				<div class="lumi-stack lumi-space--md">
 					<Fieldset legend="Agregar item">
-						<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
-							<Select
-								label="Producto"
-								value={draftProductCode}
-								options={productOptions}
-								placeholder="Selecciona producto"
-								onchange={(value) => {
-									draftProductCode = typeof value === 'string' ? value : '';
-									syncDraftPrice(draftProductCode);
-								}}
-							/>
-							<NumberInput
-								label="Cantidad"
-								value={draftQuantity}
-								min={1}
-								max={100000}
-								step={1}
-								onchange={(value) => {
-									draftQuantity = value;
-								}}
-							/>
-							<NumberInput
-								label="Precio unitario"
-								value={draftUnitPrice}
-								min={0}
-								max={1000000}
-								step={0.5}
-								onchange={(value) => {
-									draftUnitPrice = value;
-								}}
-							/>
-						</div>
-						<div class="lumi-flex lumi-justify--end">
-							<Button type="flat" color="primary" icon="plus" onclick={addDraftItem}>
-								Agregar item
-							</Button>
-						</div>
+						<form
+							class="lumi-stack lumi-space--sm"
+							onsubmit={(event) => {
+								event.preventDefault();
+								addDraftItem();
+							}}
+						>
+							<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+								<Select
+									label="Producto"
+									value={draftProductCode}
+									options={productOptions}
+									placeholder="Selecciona producto"
+									onchange={(value) => {
+										draftProductCode = typeof value === 'string' ? value : '';
+										syncDraftPrice(draftProductCode);
+									}}
+								/>
+								<NumberInput
+									label="Cantidad"
+									value={draftQuantity}
+									min={1}
+									max={100000}
+									step={1}
+									onchange={(value) => {
+										draftQuantity = value;
+									}}
+								/>
+								<NumberInput
+									label="Precio unitario"
+									value={draftUnitPrice}
+									min={0}
+									max={1000000}
+									step={0.5}
+									onchange={(value) => {
+										draftUnitPrice = value;
+									}}
+								/>
+							</div>
+							<div class="lumi-flex lumi-justify--between lumi-align-items--center lumi-flex--wrap">
+								<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
+									Presiona Enter para agregar rapidamente.
+								</p>
+								<Button type="flat" color="primary" icon="plus" button="submit">
+									Agregar item
+								</Button>
+							</div>
+						</form>
 					</Fieldset>
 
 					<Fieldset legend="Items de la venta">
@@ -487,21 +529,14 @@
 									{@const item = row as unknown as SaleDraftItem}
 									<td>{item.product_name}</td>
 									<td>
-										<div class="lumi-flex lumi-align-items--center lumi-flex--gap-2xs">
-											<Button
-												type="ghost"
-												size="sm"
-												icon="minus"
-												onclick={() => adjustDraftItemQuantity(item.product_code, -1)}
-											/>
-											<span>{item.quantity}</span>
-											<Button
-												type="ghost"
-												size="sm"
-												icon="plus"
-												onclick={() => adjustDraftItemQuantity(item.product_code, 1)}
-											/>
-										</div>
+										<NumberInput
+											size="sm"
+											value={item.quantity}
+											min={1}
+											max={100000}
+											step={1}
+											onchange={(value) => setDraftItemQuantity(item.product_code, value)}
+										/>
 									</td>
 									<td>{formatProductPrice(item.unit_price)}</td>
 									<td>{formatProductPrice(item.quantity * item.unit_price)}</td>
@@ -509,26 +544,15 @@
 										{formatProductPrice(item.quantity * (item.unit_price - item.unit_cost))}
 									</td>
 									<td>
-										<div class="lumi-flex lumi-flex--gap-2xs">
-											<Button
-												type="flat"
-												size="sm"
-												icon="plus"
-												color="info"
-												onclick={() => adjustDraftItemQuantity(item.product_code, 5)}
-											>
-												+5
-											</Button>
-											<Button
-												type="flat"
-												size="sm"
-												icon="trash"
-												color="danger"
-												onclick={() => removeDraftItem(item.product_code)}
-											>
-												Quitar
-											</Button>
-										</div>
+										<Button
+											type="flat"
+											size="sm"
+											icon="trash"
+											color="danger"
+											onclick={() => removeDraftItem(item.product_code)}
+										>
+											Quitar
+										</Button>
 									</td>
 								{/snippet}
 							</Table>

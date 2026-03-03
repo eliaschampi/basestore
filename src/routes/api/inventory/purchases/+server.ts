@@ -219,10 +219,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 	const entryType: InventoryPurchaseEntryType = entryTypeRaw;
 
-	if (origin !== 'lima' && trackingNumber.length < 5) {
-		throw error(400, 'El NRO de tracking es obligatorio para compras con envío');
-	}
-
 	if (origin === 'other' && originCustom.length < 2) {
 		throw error(400, 'Cuando el origen es "Otros", especifica el origen personalizado');
 	}

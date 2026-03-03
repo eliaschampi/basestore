@@ -143,6 +143,21 @@
 	const totalCost = $derived(
 		draftItems.reduce((total, item) => total + item.quantity * item.unit_cost, 0)
 	);
+	const selectedBranchLabel = $derived(
+		branchOptions.find((option) => option.value === createBranchCode)?.label ?? 'Pendiente'
+	);
+	const selectedOriginLabel = $derived.by(() => {
+		const selectedOption = PURCHASE_ORIGIN_OPTIONS.find(
+			(option) => option.value === createOriginOption
+		);
+		if (!selectedOption) return createOrigin;
+
+		if (selectedOption.apiOrigin !== 'other') {
+			return selectedOption.label;
+		}
+
+		return createOriginCustom.trim() || selectedOption.customLabel || 'Otros';
+	});
 
 	function changeTab(next: string | number): void {
 		if (next === 'product' || next === 'order' || next === 'review') {
@@ -242,6 +257,18 @@
 		draftItems = draftItems.filter((item) => item.product_code !== productCode);
 	}
 
+	function setDraftItemQuantity(productCode: string, quantity: number): void {
+		const normalizedQuantity = Math.max(1, Math.floor(quantity));
+		draftItems = draftItems.map((item) =>
+			item.product_code === productCode
+				? {
+						...item,
+						quantity: normalizedQuantity
+					}
+				: item
+		);
+	}
+
 	function applyOriginOption(value: string): void {
 		const option = PURCHASE_ORIGIN_OPTIONS.find((item) => item.value === value);
 		if (!option) return;
@@ -252,10 +279,6 @@
 			createOriginCustom = option.customLabel ?? createOriginCustom;
 		} else {
 			createOriginCustom = '';
-		}
-
-		if (createOrigin === 'lima') {
-			createTrackingNumber = '';
 		}
 	}
 
@@ -280,12 +303,6 @@
 			return;
 		}
 
-		if (createOrigin !== 'lima' && createTrackingNumber.trim().length < 5) {
-			errorMessage = 'El NRO tracking es obligatorio para compras con envío.';
-			activeTab = 'order';
-			return;
-		}
-
 		if (createOrigin === 'other' && createOriginCustom.trim().length < 2) {
 			errorMessage = 'Cuando eliges "Otros", indica el origen personalizado.';
 			activeTab = 'order';
@@ -302,7 +319,7 @@
 					branch_code: createBranchCode,
 					origin: createOrigin,
 					entry_type: createEntryType,
-					tracking_number: createTrackingNumber.trim(),
+					tracking_number: createTrackingNumber.trim() || null,
 					state: createState,
 					ordered_at: createOrderedAt,
 					origin_custom: createOrigin === 'other' ? createOriginCustom.trim() : null,
@@ -356,6 +373,25 @@
 	{/if}
 
 	<Card spaced>
+		<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
+			<div>
+				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Sede</p>
+				<p class="lumi-margin--none lumi-font--semibold">{selectedBranchLabel}</p>
+			</div>
+			<div>
+				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Items / unidades</p>
+				<p class="lumi-margin--none lumi-font--semibold">{itemCount} / {totalQuantity}</p>
+			</div>
+			<div>
+				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Total estimado</p>
+				<p class="lumi-margin--none lumi-font--semibold">{formatProductPrice(totalCost)}</p>
+			</div>
+			<div>
+				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Origen</p>
+				<p class="lumi-margin--none lumi-font--semibold">{selectedOriginLabel}</p>
+			</div>
+		</div>
+
 		<Tabs
 			value={activeTab}
 			tabs={PURCHASE_FORM_TABS}
@@ -366,43 +402,54 @@
 			{#if activeTab === 'product'}
 				<div class="lumi-stack lumi-space--md">
 					<Fieldset legend="Agregar item">
-						<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
-							<Select
-								label="Producto"
-								value={draftProductCode}
-								options={productOptions}
-								placeholder="Selecciona producto"
-								onchange={(value) => {
-									draftProductCode = typeof value === 'string' ? value : '';
-									syncDraftUnitCostFromProduct(draftProductCode);
-								}}
-							/>
-							<NumberInput
-								label="Cantidad"
-								value={draftQuantity}
-								min={1}
-								max={100000}
-								step={1}
-								onchange={(value) => {
-									draftQuantity = value;
-								}}
-							/>
-							<NumberInput
-								label="Costo unitario"
-								value={draftUnitCost}
-								min={0}
-								max={1000000}
-								step={0.5}
-								onchange={(value) => {
-									draftUnitCost = value;
-								}}
-							/>
-						</div>
-						<div class="lumi-flex lumi-justify--end">
-							<Button type="flat" color="primary" icon="plus" onclick={addDraftItem}>
-								Agregar item
-							</Button>
-						</div>
+						<form
+							class="lumi-stack lumi-space--sm"
+							onsubmit={(event) => {
+								event.preventDefault();
+								addDraftItem();
+							}}
+						>
+							<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+								<Select
+									label="Producto"
+									value={draftProductCode}
+									options={productOptions}
+									placeholder="Selecciona producto"
+									onchange={(value) => {
+										draftProductCode = typeof value === 'string' ? value : '';
+										syncDraftUnitCostFromProduct(draftProductCode);
+									}}
+								/>
+								<NumberInput
+									label="Cantidad"
+									value={draftQuantity}
+									min={1}
+									max={100000}
+									step={1}
+									onchange={(value) => {
+										draftQuantity = value;
+									}}
+								/>
+								<NumberInput
+									label="Costo unitario"
+									value={draftUnitCost}
+									min={0}
+									max={1000000}
+									step={0.5}
+									onchange={(value) => {
+										draftUnitCost = value;
+									}}
+								/>
+							</div>
+							<div class="lumi-flex lumi-justify--between lumi-align-items--center lumi-flex--wrap">
+								<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
+									Presiona Enter para agregar rapidamente.
+								</p>
+								<Button type="flat" color="primary" icon="plus" button="submit">
+									Agregar item
+								</Button>
+							</div>
+						</form>
 					</Fieldset>
 
 					<Fieldset legend="Items de la compra">
@@ -420,7 +467,16 @@
 								{#snippet row({ row })}
 									{@const item = row as unknown as PurchaseDraftItem}
 									<td>{item.product_name}</td>
-									<td>{item.quantity}</td>
+									<td>
+										<NumberInput
+											size="sm"
+											value={item.quantity}
+											min={1}
+											max={100000}
+											step={1}
+											onchange={(value) => setDraftItemQuantity(item.product_code, value)}
+										/>
+									</td>
 									<td>{formatProductPrice(item.unit_cost)}</td>
 									<td>{formatProductPrice(item.quantity * item.unit_cost)}</td>
 									<td>
@@ -514,12 +570,9 @@
 							/>
 						{/if}
 						<Input
-							label="NRO Tracking"
-							placeholder={createOrigin === 'lima'
-								? 'No requerido para Lima'
-								: 'Ej: LP009123456789'}
+							label="NRO Tracking (opcional)"
+							placeholder="Ej: LP009123456789"
 							value={createTrackingNumber}
-							disabled={createOrigin === 'lima'}
 							oninput={(event) =>
 								(createTrackingNumber = (event.currentTarget as HTMLInputElement).value)}
 						/>
@@ -546,7 +599,11 @@
 							</p>
 							<p class="lumi-margin--none">
 								<strong>Origen:</strong>
-								{createOrigin === 'other' ? createOriginCustom || 'Otros' : createOrigin}
+								{selectedOriginLabel}
+							</p>
+							<p class="lumi-margin--none">
+								<strong>Tracking:</strong>
+								{createTrackingNumber.trim() || 'Sin tracking'}
 							</p>
 						</div>
 					</Fieldset>
