@@ -8,6 +8,8 @@
 		Button,
 		Card,
 		Chip,
+		Context,
+		ContextItem,
 		Dialog,
 		InfoItem,
 		Input,
@@ -91,6 +93,12 @@
 
 	let showDetailDialog = $state(false);
 	let detailPurchase = $state<InventoryPurchaseListItem | null>(null);
+	let purchasesContextMenu:
+		| {
+				open: (event: MouseEvent, data?: unknown) => void;
+		  }
+		| undefined = $state();
+	let contextPurchase = $state<InventoryPurchaseListItem | null>(null);
 	let showRefundDialog = $state(false);
 	let refundingPurchase = $state(false);
 	let refundPurchaseTarget = $state<InventoryPurchaseListItem | null>(null);
@@ -254,6 +262,12 @@
 		showDetailDialog = true;
 	}
 
+	function openPurchaseContextMenu(event: MouseEvent, row: TableRow): void {
+		const purchase = row as unknown as InventoryPurchaseListItem;
+		contextPurchase = purchase;
+		purchasesContextMenu?.open(event, purchase);
+	}
+
 	function openRefundDialog(purchase: InventoryPurchaseListItem): void {
 		if (!canUpdate || !canRefundPurchase(purchase)) return;
 
@@ -367,6 +381,9 @@
 							<p class="lumi-margin--none lumi-font--semibold">
 								{activeBranchLabel} · {pagination.total} registros
 							</p>
+							<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
+								Click derecho sobre una fila para ver acciones.
+							</p>
 						</div>
 					</Card>
 
@@ -377,6 +394,8 @@
 							{loading}
 							pagination={false}
 							class="inventory-table inventory-table--purchases"
+							onrow-click={(row) => openPurchaseDetail(row as unknown as InventoryPurchaseListItem)}
+							onrow-contextmenu={openPurchaseContextMenu}
 						>
 							{#snippet thead()}
 								<th>Items</th>
@@ -387,7 +406,6 @@
 								<th>Estado</th>
 								<th>Total</th>
 								<th>Fecha</th>
-								<th>Acciones</th>
 							{/snippet}
 
 							{#snippet row({ row })}
@@ -415,54 +433,6 @@
 								</td>
 								<td>{formatProductPrice(purchase.total_amount)}</td>
 								<td>{formatDate(purchase.ordered_at)}</td>
-								<td>
-									<div class="lumi-flex lumi-flex--gap-2xs inventory-purchases__actions">
-										<Button
-											type="border"
-											size="sm"
-											icon="eye"
-											color="info"
-											aria-label="Ver detalle de compra"
-											onclick={() => openPurchaseDetail(purchase)}
-										></Button>
-										{#if purchase.state === 'in_transit'}
-											<Button
-												type="flat"
-												size="sm"
-												icon="checkCircle"
-												color="success"
-												aria-label="Marcar compra como recibida"
-												disabled={!canUpdate}
-												onclick={() => void updatePurchaseState(purchase.code, 'received')}
-											>
-												Recibir
-											</Button>
-											<Button
-												type="flat"
-												size="sm"
-												icon="xCircle"
-												color="danger"
-												aria-label="Marcar compra como reembolsada"
-												disabled={!canUpdate}
-												onclick={() => openRefundDialog(purchase)}
-											>
-												Reembolsar
-											</Button>
-										{:else if purchase.state === 'received'}
-											<Button
-												type="flat"
-												size="sm"
-												icon="undo"
-												color="danger"
-												aria-label="Marcar compra como reembolsada"
-												disabled={!canUpdate || !canRefundPurchase(purchase)}
-												onclick={() => openRefundDialog(purchase)}
-											>
-												{purchase.can_refund ? 'Reembolsar' : 'Sin stock'}
-											</Button>
-										{/if}
-									</div>
-								</td>
 							{/snippet}
 						</Table>
 					</Card>
@@ -583,6 +553,38 @@
 		</div>
 	</div>
 {/snippet}
+
+<Context bind:this={purchasesContextMenu} aria-label="Acciones de compra">
+	{#snippet children({ data })}
+		{@const purchase = (data as InventoryPurchaseListItem | null) ?? contextPurchase}
+		{#if purchase}
+			<ContextItem title="Ver detalle" icon="eye" onclick={() => openPurchaseDetail(purchase)} />
+			{#if purchase.state === 'in_transit'}
+				<ContextItem
+					title="Marcar recibida"
+					icon="checkCircle"
+					disabled={!canUpdate}
+					onclick={() => void updatePurchaseState(purchase.code, 'received')}
+				/>
+				<ContextItem
+					title="Reembolsar compra"
+					icon="xCircle"
+					danger
+					disabled={!canUpdate}
+					onclick={() => openRefundDialog(purchase)}
+				/>
+			{:else if purchase.state === 'received'}
+				<ContextItem
+					title={purchase.can_refund ? 'Reembolsar compra' : 'Reembolso no disponible'}
+					icon="undo"
+					danger
+					disabled={!canUpdate || !canRefundPurchase(purchase)}
+					onclick={() => openRefundDialog(purchase)}
+				/>
+			{/if}
+		{/if}
+	{/snippet}
+</Context>
 
 <Dialog bind:open={showDetailDialog} title="Detalle de compra" size="lg" scrollable>
 	{#if detailPurchase}

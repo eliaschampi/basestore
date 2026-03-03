@@ -8,6 +8,8 @@
 		Button,
 		Card,
 		Chip,
+		Context,
+		ContextItem,
 		Dialog,
 		InfoItem,
 		Input,
@@ -93,6 +95,12 @@
 
 	let showDetailDialog = $state(false);
 	let detailSale = $state<InventorySaleListItem | null>(null);
+	let salesContextMenu:
+		| {
+				open: (event: MouseEvent, data?: unknown) => void;
+		  }
+		| undefined = $state();
+	let contextSale = $state<InventorySaleListItem | null>(null);
 
 	let showVoidDialog = $state(false);
 	let submittingVoidSale = $state(false);
@@ -292,6 +300,12 @@
 		showDetailDialog = true;
 	}
 
+	function openSalesContextMenu(event: MouseEvent, row: TableRow): void {
+		const sale = row as unknown as InventorySaleListItem;
+		contextSale = sale;
+		salesContextMenu?.open(event, sale);
+	}
+
 	async function advanceShippingState(sale: InventorySaleListItem): Promise<void> {
 		if (!canUpdate || sale.fulfillment_type !== 'delivery' || isSaleVoided(sale)) return;
 		const nextState = nextShippingState(sale.shipping_state);
@@ -414,6 +428,9 @@
 							<p class="lumi-margin--none lumi-font--semibold">
 								{activeBranchLabel} · {activeStatusLabel} · {pagination.total} registros
 							</p>
+							<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
+								Click derecho sobre una fila para ver acciones.
+							</p>
 						</div>
 					</Card>
 
@@ -424,6 +441,8 @@
 							{loading}
 							pagination={false}
 							class="inventory-table inventory-table--sales"
+							onrow-click={(row) => openSaleDetail(row as unknown as InventorySaleListItem)}
+							onrow-contextmenu={openSalesContextMenu}
 						>
 							{#snippet thead()}
 								<th>Items</th>
@@ -435,7 +454,6 @@
 								<th>Envio</th>
 								<th>Estado</th>
 								<th>Fecha</th>
-								<th>Acciones</th>
 							{/snippet}
 
 							{#snippet row({ row })}
@@ -473,44 +491,6 @@
 									<Chip color={saleStatusColor(sale)} size="sm">{saleStatusLabel(sale)}</Chip>
 								</td>
 								<td>{formatDate(sale.sold_at)}</td>
-								<td>
-									<div class="lumi-flex lumi-flex--gap-2xs inventory-sales__actions">
-										<Button
-											type="border"
-											size="sm"
-											icon="eye"
-											color="info"
-											aria-label="Ver detalle de venta"
-											onclick={() => openSaleDetail(sale)}
-										>
-											Detalle
-										</Button>
-										{#if sale.fulfillment_type === 'delivery' && nextShippingState(sale.shipping_state) && !isSaleVoided(sale)}
-											<Button
-												type="flat"
-												size="sm"
-												icon="arrowRight"
-												color="info"
-												aria-label="Avanzar estado de envio"
-												disabled={!canUpdate}
-												onclick={() => void advanceShippingState(sale)}
-											>
-												{shippingActionLabel(sale.shipping_state)}
-											</Button>
-										{/if}
-										<Button
-											type="flat"
-											size="sm"
-											icon="xCircle"
-											color="danger"
-											aria-label="Anular venta"
-											disabled={!canUpdate || isSaleVoided(sale)}
-											onclick={() => openVoidDialog(sale)}
-										>
-											Anular
-										</Button>
-									</div>
-								</td>
 							{/snippet}
 						</Table>
 					</Card>
@@ -627,6 +607,30 @@
 		</div>
 	</div>
 {/snippet}
+
+<Context bind:this={salesContextMenu} aria-label="Acciones de venta">
+	{#snippet children({ data })}
+		{@const sale = (data as InventorySaleListItem | null) ?? contextSale}
+		{#if sale}
+			<ContextItem title="Ver detalle" icon="eye" onclick={() => openSaleDetail(sale)} />
+			{#if sale.fulfillment_type === 'delivery' && nextShippingState(sale.shipping_state) && !isSaleVoided(sale)}
+				<ContextItem
+					title={shippingActionLabel(sale.shipping_state)}
+					icon="arrowRight"
+					disabled={!canUpdate}
+					onclick={() => void advanceShippingState(sale)}
+				/>
+			{/if}
+			<ContextItem
+				title="Anular venta"
+				icon="xCircle"
+				danger
+				disabled={!canUpdate || isSaleVoided(sale)}
+				onclick={() => openVoidDialog(sale)}
+			/>
+		{/if}
+	{/snippet}
+</Context>
 
 <Dialog bind:open={showDetailDialog} title="Detalle de venta" size="lg" scrollable>
 	{#if detailSale}
@@ -764,10 +768,6 @@
 		border-radius: var(--lumi-radius-lg);
 		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		background: color-mix(in srgb, var(--lumi-color-surface) 92%, transparent);
-	}
-
-	.inventory-sales__actions {
-		flex-wrap: wrap;
 	}
 
 	.inventory-sales__pagination {

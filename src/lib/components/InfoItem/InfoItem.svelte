@@ -60,12 +60,36 @@
 
 <style>
 	.lumi-info-item {
+		--info-shell-bg: color-mix(
+			in srgb,
+			var(--lumi-color-surface) 60%,
+			var(--lumi-color-background-hover) 40%
+		);
+		--info-shell-border: color-mix(
+			in srgb,
+			var(--lumi-color-border) 74%,
+			var(--lumi-color-border-strong) 26%
+		);
+		--info-highlight: color-mix(in srgb, var(--_accent, var(--lumi-color-primary)) 8%, transparent);
 		display: flex;
 		align-items: center;
 		padding: var(--lumi-space-xs) var(--lumi-space-sm);
-		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--info-shell-border);
 		border-radius: var(--lumi-radius-md);
-		background: var(--lumi-color-surface);
+		background:
+			linear-gradient(180deg, var(--info-highlight) 0%, transparent 34%), var(--info-shell-bg);
+		box-shadow: var(--lumi-shadow-sm);
+		transition:
+			border-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			background-color var(--lumi-duration-fast) var(--lumi-easing-default);
+	}
+
+	.lumi-info-item:hover {
+		border-color: color-mix(
+			in srgb,
+			var(--_accent, var(--lumi-color-primary)) 22%,
+			var(--info-shell-border)
+		);
 	}
 
 	/* ── Horizontal ───────────────────────────── */
@@ -89,9 +113,13 @@
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		width: var(--lumi-icon-sm);
-		height: var(--lumi-icon-sm);
+		width: calc(var(--lumi-icon-sm) + var(--lumi-space-sm));
+		height: calc(var(--lumi-icon-sm) + var(--lumi-space-sm));
 		color: var(--_accent, var(--lumi-color-primary));
+		border-radius: var(--lumi-radius-sm);
+		border: var(--lumi-border-width-thin) solid
+			color-mix(in srgb, var(--_accent, var(--lumi-color-primary)) 24%, transparent);
+		background: color-mix(in srgb, var(--_accent, var(--lumi-color-primary)) 12%, transparent);
 	}
 
 	/* ── Label ────────────────────────────────── */

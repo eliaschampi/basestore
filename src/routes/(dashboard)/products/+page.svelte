@@ -7,6 +7,8 @@
 		Button,
 		Card,
 		Chip,
+		Context,
+		ContextItem,
 		Dialog,
 		IconBadge,
 		Image,
@@ -17,7 +19,7 @@
 		Table,
 		Textarea
 	} from '$lib/components';
-	import type { SelectOption } from '$lib/components';
+	import type { SelectOption, TableRow } from '$lib/components';
 	import type { ProductOverview } from '$lib/types/products';
 	import { showToast } from '$lib/stores/Toast';
 	import { can } from '$lib/stores/permissions';
@@ -52,6 +54,12 @@
 	let isEditing = $state(false);
 	let errorMessage = $state('');
 	let selectedProduct = $state<ProductOverview | null>(null);
+	let productContextMenu:
+		| {
+				open: (event: MouseEvent, data?: unknown) => void;
+		  }
+		| undefined = $state();
+	let contextProduct = $state<ProductOverview | null>(null);
 
 	let formName = $state('');
 	let formDescription = $state('');
@@ -129,6 +137,12 @@
 	function goToProductDetail(productCode: string): void {
 		void goto(resolve(`/products/${productCode}` as '/'));
 	}
+
+	function openProductContextMenu(event: MouseEvent, row: TableRow): void {
+		const product = row as unknown as ProductOverview;
+		contextProduct = product;
+		productContextMenu?.open(event, product);
+	}
 </script>
 
 <div class="lumi-stack lumi-space--lg">
@@ -150,7 +164,15 @@
 		{#if !canRead}
 			<Alert type="warning" closable>No tienes permisos para consultar productos.</Alert>
 		{:else}
-			<Table data={data.products} search pagination hover itemsPerPage={10}>
+			<Table
+				data={data.products}
+				search
+				pagination
+				hover
+				itemsPerPage={10}
+				onrow-click={(row) => goToProductDetail((row as unknown as ProductOverview).code)}
+				onrow-contextmenu={openProductContextMenu}
+			>
 				{#snippet thead()}
 					<th></th>
 					<th>Producto</th>
@@ -158,7 +180,6 @@
 					<th>Categoría</th>
 					<th>Precio</th>
 					<th>Estado</th>
-					<th>Acciones</th>
 				{/snippet}
 
 				{#snippet row({ row })}
@@ -198,38 +219,37 @@
 							{product.is_active ? 'Activo' : 'Inactivo'}
 						</Chip>
 					</td>
-					<td>
-						<div class="lumi-flex lumi-flex--gap-xs">
-							<Button
-								type="flat"
-								size="sm"
-								icon="hardDrive"
-								onclick={() => goToProductDetail(product.code)}
-								aria-label="Gestionar archivos"
-							/>
-							<Button
-								type="flat"
-								size="sm"
-								icon="edit"
-								color="success"
-								onclick={() => openEditModal(product)}
-								disabled={!canUpdate}
-							/>
-							<Button
-								type="flat"
-								size="sm"
-								icon="trash"
-								color="danger"
-								onclick={() => openDeleteModal(product)}
-								disabled={!canDelete}
-							/>
-						</div>
-					</td>
 				{/snippet}
 			</Table>
 		{/if}
 	</Card>
 </div>
+
+<Context bind:this={productContextMenu} aria-label="Acciones de producto">
+	{#snippet children({ data })}
+		{@const product = (data as ProductOverview | null) ?? contextProduct}
+		{#if product}
+			<ContextItem
+				title="Gestionar archivos"
+				icon="hardDrive"
+				onclick={() => goToProductDetail(product.code)}
+			/>
+			<ContextItem
+				title="Editar producto"
+				icon="edit"
+				disabled={!canUpdate}
+				onclick={() => openEditModal(product)}
+			/>
+			<ContextItem
+				title="Eliminar producto"
+				icon="trash"
+				danger
+				disabled={!canDelete}
+				onclick={() => openDeleteModal(product)}
+			/>
+		{/if}
+	{/snippet}
+</Context>
 
 <Dialog bind:open={showModal} title={isEditing ? 'Editar producto' : 'Nuevo producto'} size="lg">
 	<form

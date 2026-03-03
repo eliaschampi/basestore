@@ -8,6 +8,8 @@
 		Button,
 		Card,
 		Chip,
+		Context,
+		ContextItem,
 		Dialog,
 		Icon,
 		Input,
@@ -96,6 +98,7 @@
 	let filterCategoryCode = $state('all');
 	let filterStock = $state<'all' | 'critical' | 'low' | 'healthy'>('all');
 	let showMobileSidebar = $state(false);
+	let showMobileStats = $state(false);
 
 	let showThresholdDialog = $state(false);
 	let thresholdProductCode = $state('');
@@ -104,6 +107,12 @@
 	let thresholdReorderPoint = $state(0);
 	let thresholdEmergencyPoint = $state(0);
 	let submittingThreshold = $state(false);
+	let stockContextMenu:
+		| {
+				open: (event: MouseEvent, data?: unknown) => void;
+		  }
+		| undefined = $state();
+	let contextStockItem = $state<InventoryOverviewItem | null>(null);
 
 	const branchOptions = $derived(
 		branches
@@ -187,6 +196,16 @@
 		thresholdReorderPoint = Number(item.reorder_point);
 		thresholdEmergencyPoint = Number(item.emergency_point);
 		showThresholdDialog = true;
+	}
+
+	function goToProductDetail(productCode: string): void {
+		void goto(resolve(`/products/${productCode}` as '/'));
+	}
+
+	function openStockContextMenu(event: MouseEvent, row: TableRow): void {
+		const item = row as unknown as InventoryOverviewItem;
+		contextStockItem = item;
+		stockContextMenu?.open(event, item);
 	}
 
 	function handleSearchInput(value: string): void {
@@ -376,7 +395,29 @@
 
 		<section class="lumi-layout--content-right">
 			<div class="lumi-stack lumi-space--sm">
-				<div class="lumi-grid lumi-grid--columns-4 lumi-grid--gap-md inventory-stock__stats-grid">
+				<div class="inventory-stock__mobile-stats-toggle">
+					<Card spaced>
+						<div class="lumi-flex lumi-justify--between lumi-align-items--center">
+							<div>
+								<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Resumen de stock</p>
+								<p class="lumi-margin--none lumi-font--semibold">Métricas operativas</p>
+							</div>
+							<Button
+								type="ghost"
+								size="sm"
+								icon={showMobileStats ? 'chevronUp' : 'chevronDown'}
+								onclick={() => (showMobileStats = !showMobileStats)}
+							>
+								{showMobileStats ? 'Ocultar' : 'Ver'}
+							</Button>
+						</div>
+					</Card>
+				</div>
+
+				<div
+					class="lumi-grid lumi-grid--columns-4 lumi-grid--gap-md inventory-stock__stats-grid"
+					class:inventory-stock__stats-grid--mobile-hidden={!showMobileStats}
+				>
 					<StatCard
 						title="Disponibles"
 						value={summary.total_available}
@@ -420,6 +461,9 @@
 							<p class="lumi-margin--none lumi-font--semibold">
 								{activeBranchLabel} · {activeCategoryLabel} · {pagination.total} registros
 							</p>
+							<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
+								Click derecho sobre una fila para ver acciones.
+							</p>
 						</div>
 					</Card>
 
@@ -430,6 +474,9 @@
 							loading={loadingStock}
 							pagination={false}
 							class="inventory-table inventory-table--stock"
+							onrow-click={(row) =>
+								goToProductDetail((row as unknown as InventoryOverviewItem).product_code)}
+							onrow-contextmenu={openStockContextMenu}
 						>
 							{#snippet thead()}
 								<th>Producto</th>
@@ -439,20 +486,14 @@
 								<th>Precio</th>
 								<th>Valor costo</th>
 								<th>Estado</th>
-								<th>Ultimo movimiento</th>
-								<th>Acciones</th>
+								<th>Ultima vez</th>
 							{/snippet}
 
 							{#snippet row({ row })}
 								{@const item = row as unknown as InventoryOverviewItem}
 								<td>
 									<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
-										<a
-											href={resolve(`/products/${item.product_code}`)}
-											class="inventory-stock__product-link"
-										>
-											{item.product_name}
-										</a>
+										<b>{item.product_name}</b>
 										<span class="lumi-text--xs lumi-text--muted">{item.sku || 'Sin SKU'}</span>
 									</div>
 								</td>
@@ -467,18 +508,6 @@
 									</Chip>
 								</td>
 								<td>{item.last_movement_at ? formatDate(item.last_movement_at) : '-'}</td>
-								<td>
-									<div class="inventory-stock__actions">
-										<Button
-											type="flat"
-											size="sm"
-											icon="slidersHorizontal"
-											color="info"
-											disabled={!canUpdate}
-											onclick={() => openThresholdDialog(item)}
-										/>
-									</div>
-								</td>
 							{/snippet}
 						</Table>
 					</Card>
@@ -578,6 +607,25 @@
 	</div>
 {/snippet}
 
+<Context bind:this={stockContextMenu} aria-label="Acciones de stock">
+	{#snippet children({ data })}
+		{@const item = (data as InventoryOverviewItem | null) ?? contextStockItem}
+		{#if item}
+			<ContextItem
+				title="Ver producto"
+				icon="eye"
+				onclick={() => goToProductDetail(item.product_code)}
+			/>
+			<ContextItem
+				title="Ajustar umbrales"
+				icon="slidersHorizontal"
+				disabled={!canUpdate}
+				onclick={() => openThresholdDialog(item)}
+			/>
+		{/if}
+	{/snippet}
+</Context>
+
 <Dialog bind:open={showThresholdDialog} title="Ajustar umbrales" size="sm">
 	<div class="lumi-stack lumi-space--sm">
 		<p class="lumi-margin--none lumi-text--sm lumi-text--muted">{thresholdProductLabel}</p>
@@ -631,6 +679,10 @@
 		margin-bottom: var(--lumi-space-2xs);
 	}
 
+	.inventory-stock__mobile-stats-toggle {
+		display: none;
+	}
+
 	:global(.inventory-stock__category-list) {
 		max-height: var(--lumi-drive-sidebar-nav-max-height);
 	}
@@ -644,16 +696,6 @@
 		border-radius: var(--lumi-radius-lg);
 		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		background: color-mix(in srgb, var(--lumi-color-surface) 92%, transparent);
-	}
-
-	.inventory-stock__product-link {
-		color: var(--lumi-color-primary);
-		text-decoration: none;
-		font-weight: var(--lumi-font-weight-semibold);
-	}
-
-	.inventory-stock__product-link:hover {
-		text-decoration: underline;
 	}
 
 	.inventory-stock__pagination {
@@ -675,8 +717,16 @@
 	}
 
 	@media (max-width: 768px) {
+		.inventory-stock__mobile-stats-toggle {
+			display: block;
+		}
+
 		.inventory-stock__stats-grid {
 			grid-template-columns: 1fr;
+		}
+
+		.inventory-stock__stats-grid--mobile-hidden {
+			display: none;
 		}
 	}
 </style>

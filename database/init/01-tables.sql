@@ -193,10 +193,6 @@ CREATE TABLE public.purchases (
   CONSTRAINT purchases_user_fk FOREIGN KEY (user_code) REFERENCES public.users (code) ON DELETE RESTRICT,
   CONSTRAINT purchases_origin_check CHECK (origin IN ('temu', 'aliexpress', 'lima', 'other')),
   CONSTRAINT purchases_entry_type_check CHECK (entry_type IN ('initial', 'restock')),
-  CONSTRAINT purchases_tracking_required_check CHECK (
-    origin = 'lima'
-    OR (tracking_number IS NOT NULL AND char_length(trim(tracking_number)) >= 5)
-  ),
   CONSTRAINT purchases_state_check CHECK (state IN ('in_transit', 'received', 'refunded')),
   CONSTRAINT purchases_state_timestamps_check CHECK (
     (state = 'in_transit' AND received_at IS NULL AND refunded_at IS NULL)
