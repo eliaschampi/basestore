@@ -326,13 +326,13 @@
 			<div class="lumi-flex lumi-flex--gap-sm">
 				<Button type="border" icon="chevronLeft" onclick={goToTransfersList}>Volver</Button>
 				<Button
-					type="filled"
-					color="secondary"
+					type="flat"
+					color="success"
 					icon="checkCircle"
 					loading={submitting}
 					onclick={() => void submitCreateTransfer()}
 				>
-					Guardar
+					Registrar
 				</Button>
 			</div>
 		{/snippet}

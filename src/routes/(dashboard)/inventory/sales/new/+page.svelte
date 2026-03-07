@@ -350,13 +350,13 @@
 			<div class="lumi-flex lumi-flex--gap-sm">
 				<Button type="border" icon="chevronLeft" onclick={goToSalesList}>Volver</Button>
 				<Button
-					type="filled"
-					color="primary"
+					type="flat"
+					color="success"
 					icon="checkCircle"
 					loading={submitting}
 					onclick={() => void submitCreateSale()}
 				>
-					Registrar venta
+					Registrar
 				</Button>
 			</div>
 		{/snippet}
@@ -558,9 +558,7 @@
 						{formatProductPrice(saleTotal)} venta · {formatProductPrice(estimatedProfit)} utilidad
 					</p>
 				</div>
-				{#if draftItems.length === 0}
-					<Alert type="info" closable={false}>Aún no agregaste items.</Alert>
-				{:else}
+				{#if draftItems.length !== 0}
 					<Table data={itemRows} pagination={false}>
 						{#snippet thead()}
 							<th>Producto</th>
@@ -607,12 +605,9 @@
 			<div class="inventory-create-section">
 				<div class="lumi-stack lumi-space--2xs">
 					<p class="lumi-margin--none lumi-font--semibold">Nota</p>
-					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-						Contexto operativo opcional para el equipo.
-					</p>
 				</div>
 				<Textarea
-					label="Nota (opcional)"
+					label="Contexto operativo opcional para el equipo."
 					rows={3}
 					value={createNote}
 					oninput={(event) => (createNote = (event.currentTarget as HTMLTextAreaElement).value)}

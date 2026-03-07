@@ -209,7 +209,7 @@
 					{#snippet icon()}
 						<Icon icon="arrowLeftRight" size="20px" />
 					{/snippet}
-					Transferencias
+					Transferir
 				</SidebarItem>
 			{/if}
 

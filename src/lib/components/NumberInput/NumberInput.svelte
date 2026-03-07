@@ -91,6 +91,7 @@
 			onclick={decrement}
 			disabled={disabled || (min !== undefined && value <= min)}
 			aria-label="Decrease value"
+			tabindex="-1"
 		>
 			<Icon icon="minus" size={iconSize} />
 		</button>
@@ -116,6 +117,7 @@
 			onclick={increment}
 			disabled={disabled || (max !== undefined && value >= max)}
 			aria-label="Increase value"
+			tabindex="-1"
 		>
 			<Icon icon="plus" size={iconSize} />
 		</button>
