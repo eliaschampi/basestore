@@ -16,7 +16,7 @@
 		header
 	}: Props = $props();
 
-	const sidebarClasses = $derived(() => {
+	const sidebarClasses = $derived.by(() => {
 		return [
 			'lumi-sidebar',
 			collapsed && 'lumi-sidebar--collapsed',
@@ -27,13 +27,13 @@
 			.join(' ');
 	});
 
-	const sidebarStyleVars = $derived(() => {
+	const sidebarStyleVars = $derived.by(() => {
 		if (!headerImage) return undefined;
 		return `--lumi-sidebar-header-image: url('${headerImage}');`;
 	});
 </script>
 
-<aside class={sidebarClasses()} style={sidebarStyleVars()} role="navigation" aria-label="Sidebar">
+<aside class={sidebarClasses} style={sidebarStyleVars} role="navigation" aria-label="Sidebar">
 	{#if header}
 		<header class="lumi-sidebar__header">
 			<div class="lumi-sidebar__header-content">
@@ -63,7 +63,7 @@
 		height: calc(100dvh - (var(--lumi-layout-shell-padding) * 2));
 		margin: 0;
 		background: var(--lumi-color-surface-overlay);
-		border: 1px solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-layout-floating-radius);
 		box-shadow: var(--lumi-shadow-md);
 		backdrop-filter: blur(var(--lumi-blur-md));
@@ -176,7 +176,7 @@
 			width: var(--lumi-sidebar-mobile-width);
 			border-radius: var(--lumi-layout-floating-radius-tablet);
 			box-shadow: var(--lumi-shadow-lg);
-			border: 1px solid var(--lumi-color-border-light);
+			border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		}
 
 		.lumi-sidebar.lumi-sidebar--mobile-open {

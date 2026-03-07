@@ -273,7 +273,7 @@
 		cursor: default;
 		z-index: var(--lumi-z-modal);
 		box-shadow: var(--lumi-shadow-xl);
-		border: 1px solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		transition: var(--lumi-transition-all);
 		overflow: hidden;
 		backdrop-filter: blur(var(--lumi-blur-lg));
@@ -327,7 +327,7 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: var(--lumi-space-lg);
-		border-bottom: 1px solid var(--lumi-color-border-light);
+		border-bottom: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		background: linear-gradient(
 			180deg,
 			color-mix(in srgb, var(--lumi-color-surface) 92%, var(--lumi-color-primary-bg)),
@@ -359,7 +359,7 @@
 		height: var(--lumi-space-xl);
 		margin-left: var(--lumi-space-md);
 		background: transparent;
-		border: 1px solid transparent;
+		border: var(--lumi-border-width-thin) solid transparent;
 		border-radius: var(--lumi-radius-lg);
 		color: var(--lumi-color-text-muted);
 		cursor: pointer;
@@ -411,7 +411,7 @@
 		justify-content: flex-end;
 		gap: var(--lumi-space-md);
 		padding: var(--lumi-space-lg);
-		border-top: 1px solid var(--lumi-color-border-light);
+		border-top: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		flex-shrink: 0;
 		background: linear-gradient(
 			180deg,

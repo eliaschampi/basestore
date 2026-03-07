@@ -28,7 +28,7 @@
 		footer
 	}: Props = $props();
 
-	const cardClasses = $derived(() => {
+	const cardClasses = $derived.by(() => {
 		const classes = ['lumi-card'];
 		const isHoverable = hoverable ?? Boolean(clickable || image);
 
@@ -40,7 +40,7 @@
 		return classes.join(' ');
 	});
 
-	const cardStyles = $derived(() => {
+	const cardStyles = $derived.by(() => {
 		const imageHeightStyle = `--card-image-height: ${imageHeight}px;`;
 		return style ? `${imageHeightStyle} ${style}` : imageHeightStyle;
 	});
@@ -90,15 +90,15 @@
 {#if clickable}
 	<button
 		type="button"
-		class={cardClasses()}
-		style={cardStyles()}
+		class={cardClasses}
+		style={cardStyles}
 		onclick={handleClick}
 		aria-label={ariaLabel || title || 'Card'}
 	>
 		{@render cardContent()}
 	</button>
 {:else}
-	<div class={cardClasses()} style={cardStyles()}>
+	<div class={cardClasses} style={cardStyles}>
 		{@render cardContent()}
 	</div>
 {/if}
@@ -114,7 +114,7 @@
 				rgba(var(--lumi-color-primary-rgb), 0) 30%
 			),
 			var(--lumi-color-surface);
-		border: 1px solid var(--lumi-color-border);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border);
 		border-radius: var(--lumi-radius-2xl);
 		overflow: hidden;
 		display: flex;
@@ -170,7 +170,7 @@
 		overflow: hidden;
 		flex-shrink: 0;
 		position: relative;
-		border-bottom: 1px solid var(--lumi-color-border-light);
+		border-bottom: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 	}
 
 	.lumi-card__image img {
@@ -204,7 +204,7 @@
 
 	.lumi-card__footer {
 		padding-top: var(--lumi-space-md);
-		border-top: 1px solid var(--lumi-color-border-light);
+		border-top: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		background: var(--lumi-color-background-hover);
 	}
 

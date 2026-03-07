@@ -16,14 +16,14 @@
 		class: className = ''
 	}: StatCardProps = $props();
 
-	const cardClasses = $derived(() => {
+	const cardClasses = $derived.by(() => {
 		return ['lumi-stat-card', className].filter(Boolean).join(' ');
 	});
 </script>
 
 {#if href}
 	<a href={resolve(href as '/')} class="lumi-text-decoration--none">
-		<Card clickable {hoverable} class={cardClasses()}>
+		<Card clickable {hoverable} class={cardClasses}>
 			<div class="lumi-stat-card__container">
 				<div class="lumi-stat-card__header">
 					<Title {title} size="sm" {color} />
@@ -35,7 +35,7 @@
 		</Card>
 	</a>
 {:else}
-	<Card {hoverable} class={cardClasses()}>
+	<Card {hoverable} class={cardClasses}>
 		<div class="lumi-stat-card__container">
 			<div class="lumi-stat-card__header">
 				<Title {title} size="sm" {color} />

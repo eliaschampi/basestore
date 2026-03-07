@@ -195,6 +195,15 @@ body {
 	);
 }
 
+.lumi-page-sidebar__card--inventory-transfers {
+	--lumi-page-sidebar-gradient: linear-gradient(
+		150deg,
+		color-mix(in srgb, var(--lumi-color-secondary) 8%, transparent) 0%,
+		color-mix(in srgb, var(--lumi-color-info) 5%, transparent) 52%,
+		transparent 100%
+	);
+}
+
 .lumi-page-sidebar__content {
 	display: flex;
 	flex-direction: column;
@@ -277,6 +286,22 @@ body {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+}
+
+.inventory-create-form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--lumi-space-md);
+}
+
+.inventory-create-section {
+	display: flex;
+	flex-direction: column;
+	gap: var(--lumi-space-sm);
+	padding: var(--lumi-space-md);
+	border-radius: var(--lumi-radius-lg);
+	border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
+	background: color-mix(in srgb, var(--lumi-color-surface) 94%, transparent);
 }
 
 @media (max-width: 1024px) {
@@ -461,9 +486,7 @@ body {
 	flex: 0 0 auto;
 }
 
-.lumi-flex-item--none {
-	flex: 0 0 auto;
-}
+/* .lumi-flex-item--none removed: identical to .lumi-flex-item--auto */
 
 .lumi-flex-item--grow {
 	flex: 1 1 auto;
@@ -920,10 +943,7 @@ body {
 	display: flex;
 	flex-direction: column;
 	justify-content: flex-start;
-}
-
-.lumi-stack > * + * {
-	margin-top: var(--lumi-space-lg) !important;
+	gap: var(--lumi-space-lg);
 }
 
 /* Space variants */
@@ -1121,22 +1141,12 @@ body {
 /* ========================================================================== */
 /* ADDITIONAL UTILITIES */
 /* ========================================================================== */
-.lumi-flex-column {
-	display: flex;
-	flex-direction: column;
-}
-
-.lumi-spaced-vertical > :not(:last-child) {
-	margin-bottom: var(--lumi-space-sm);
-}
-
-.lumi-justify-center {
-	justify-content: center;
-}
-
-.lumi-align-center {
-	align-items: center;
-}
+/* Removed duplicate utilities:
+ * .lumi-flex-column    → use .lumi-flex + .lumi-flex--column
+ * .lumi-spaced-vertical → use .lumi-space--sm
+ * .lumi-justify-center  → use .lumi-justify--center
+ * .lumi-align-center    → use .lumi-align-items--center
+ */
 
 .lumi-opacity--10 {
 	opacity: 0.1;

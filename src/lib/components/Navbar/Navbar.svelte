@@ -81,7 +81,7 @@
 		margin: 0;
 		transition: var(--lumi-transition-all);
 		isolation: isolate;
-		border: 1px solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		box-shadow: var(--lumi-shadow-md);
 		backdrop-filter: blur(var(--lumi-blur-lg));
 		-webkit-backdrop-filter: blur(var(--lumi-blur-lg));

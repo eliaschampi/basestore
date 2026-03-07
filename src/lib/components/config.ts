@@ -71,19 +71,5 @@ export type LumiTransition = keyof typeof LUMI_CONFIG.transitions;
  * Helper function to get icon size in pixels
  */
 export function getIconSize(size: LumiSize): number {
-	return LUMI_CONFIG.iconSizes[size] || LUMI_CONFIG.iconSizes.md;
-}
-
-/**
- * Helper function to validate size
- */
-export function isValidSize(size: string): size is LumiSize {
-	return size in LUMI_CONFIG.sizes;
-}
-
-/**
- * Helper function to validate color
- */
-export function isValidColor(color: string): color is LumiColor {
-	return color in LUMI_CONFIG.colors;
+	return LUMI_CONFIG.iconSizes[size] ?? LUMI_CONFIG.iconSizes.md;
 }

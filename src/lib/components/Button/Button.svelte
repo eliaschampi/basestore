@@ -27,17 +27,16 @@
 	}: Props = $props();
 
 	const iconPixelSize = $derived.by(() => {
-		const iconSizeMap: Record<NonNullable<Props['size']>, number> = {
-			sm: 14,
-			md: 16,
-			lg: 18,
-			xl: 20
+		const sizeOffsets: Record<NonNullable<Props['size']>, number> = {
+			sm: -2,
+			md: -4,
+			lg: -2,
+			xl: -4
 		};
-
-		return iconSizeMap[size] ?? getIconSize('md');
+		return getIconSize(size as import('../config').LumiSize) + (sizeOffsets[size] ?? 0);
 	});
 
-	const buttonClasses = $derived(() => {
+	const buttonClasses = $derived.by(() => {
 		const classes = ['lumi-button', `lumi-button--${type}`, `lumi-button--${size}`];
 
 		if (radius) classes.push('lumi-button--radius');
@@ -49,7 +48,7 @@
 	});
 
 	// Map colors to CSS variables dynamically
-	const styleVars = $derived(() => {
+	const styleVars = $derived.by(() => {
 		const colorVar = `var(--lumi-color-${color})`;
 		const colorRgb = `var(--lumi-color-${color}-rgb)`;
 		return `--btn-color: ${colorVar}; --btn-color-rgb: ${colorRgb};`;
@@ -63,12 +62,12 @@
 </script>
 
 <button
-	class={buttonClasses()}
+	class={buttonClasses}
 	type={button}
 	disabled={disabled || loading}
 	aria-label={ariaLabel || (icon && !children ? icon : undefined)}
 	onclick={handleClick}
-	style={styleVars()}
+	style={styleVars}
 >
 	{#if loading}
 		<span class="lumi-button__spinner"></span>
