@@ -5,7 +5,8 @@ export type PageSidebarVariant =
 	| 'drive'
 	| 'inventory-stock'
 	| 'inventory-purchases'
-	| 'inventory-sales';
+	| 'inventory-sales'
+	| 'inventory-transfers';
 
 export interface PageSidebarProps {
 	/** Whether the mobile drawer is currently open */

@@ -133,6 +133,7 @@ export interface InventoryMovementFeed {
 	quantity: number | null;
 	reason: string | null;
 	sale_code: string | null;
+	transfer_code: string | null;
 	updated_at: Timestamp | null;
 	user_code: string | null;
 }
@@ -149,6 +150,7 @@ export interface InventoryMovements {
 	quantity: number;
 	reason: string;
 	sale_code: string | null;
+	transfer_code: string | null;
 	updated_at: Generated<Timestamp>;
 	user_code: string;
 }
@@ -176,6 +178,26 @@ export interface InventoryOverview {
 	stock_health_pct: number | null;
 	stock_state: string | null;
 	updated_at: Timestamp | null;
+}
+
+export interface InventoryProductTransferFeed {
+	code: string | null;
+	created_at: Timestamp | null;
+	destination_branch_code: string | null;
+	destination_branch_name: string | null;
+	item_count: number | null;
+	items: Json | null;
+	note: string | null;
+	primary_product_code: string | null;
+	primary_product_name: string | null;
+	primary_product_sku: string | null;
+	products_summary: string | null;
+	source_branch_code: string | null;
+	source_branch_name: string | null;
+	total_quantity: number | null;
+	transferred_at: Timestamp | null;
+	updated_at: Timestamp | null;
+	user_code: string | null;
 }
 
 export interface InventoryPurchaseFeed {
@@ -287,6 +309,26 @@ export interface ProductsOverview {
 	updated_at: Timestamp | null;
 }
 
+export interface ProductTransferItems {
+	code: Generated<string>;
+	created_at: Generated<Timestamp>;
+	product_code: string;
+	quantity: number;
+	transfer_code: string;
+	updated_at: Generated<Timestamp>;
+}
+
+export interface ProductTransfers {
+	code: Generated<string>;
+	created_at: Generated<Timestamp>;
+	destination_branch_code: string;
+	note: string | null;
+	source_branch_code: string;
+	transferred_at: Generated<Timestamp>;
+	updated_at: Generated<Timestamp>;
+	user_code: string;
+}
+
 export interface PurchaseItems {
 	code: Generated<string>;
 	created_at: Generated<Timestamp>;
@@ -373,10 +415,13 @@ export interface DB {
 	inventory_movement_feed: InventoryMovementFeed;
 	inventory_movements: InventoryMovements;
 	inventory_overview: InventoryOverview;
+	inventory_product_transfer_feed: InventoryProductTransferFeed;
 	inventory_purchase_feed: InventoryPurchaseFeed;
 	inventory_sale_feed: InventorySaleFeed;
 	migrations: Migrations;
 	permissions: Permissions;
+	product_transfer_items: ProductTransferItems;
+	product_transfers: ProductTransfers;
 	products: Products;
 	products_overview: ProductsOverview;
 	purchase_items: PurchaseItems;
