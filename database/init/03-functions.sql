@@ -777,6 +777,181 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.inventory_create_product_transfer(
+  p_source_branch_code UUID,
+  p_destination_branch_code UUID,
+  p_user_code UUID,
+  p_transferred_at TIMESTAMPTZ,
+  p_note TEXT,
+  p_items JSONB
+)
+RETURNS public.product_transfers
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_transfer public.product_transfers%ROWTYPE;
+  v_item RECORD;
+  v_items_count INTEGER := 0;
+  v_transferred_at TIMESTAMPTZ := COALESCE(p_transferred_at, CURRENT_TIMESTAMP);
+  v_note TEXT := NULLIF(BTRIM(COALESCE(p_note, '')), '');
+  v_source_branch_name TEXT;
+  v_destination_branch_name TEXT;
+  v_outbound_note TEXT;
+  v_inbound_note TEXT;
+BEGIN
+  IF p_source_branch_code IS NULL OR p_destination_branch_code IS NULL THEN
+    RAISE EXCEPTION 'Debes indicar sede origen y sede destino'
+      USING ERRCODE = '23514';
+  END IF;
+
+  IF p_source_branch_code = p_destination_branch_code THEN
+    RAISE EXCEPTION 'La sede origen y la sede destino deben ser distintas'
+      USING ERRCODE = '23514';
+  END IF;
+
+  IF p_items IS NULL OR jsonb_typeof(p_items) <> 'array' OR jsonb_array_length(p_items) = 0 THEN
+    RAISE EXCEPTION 'Debe incluir al menos un item de transferencia'
+      USING ERRCODE = '23514';
+  END IF;
+
+  SELECT b.name
+  INTO v_source_branch_name
+  FROM public.branches b
+  WHERE b.code = p_source_branch_code
+  LIMIT 1;
+
+  IF v_source_branch_name IS NULL THEN
+    RAISE EXCEPTION 'Sede origen no encontrada'
+      USING ERRCODE = '23503';
+  END IF;
+
+  SELECT b.name
+  INTO v_destination_branch_name
+  FROM public.branches b
+  WHERE b.code = p_destination_branch_code
+  LIMIT 1;
+
+  IF v_destination_branch_name IS NULL THEN
+    RAISE EXCEPTION 'Sede destino no encontrada'
+      USING ERRCODE = '23503';
+  END IF;
+
+  INSERT INTO public.product_transfers (
+    source_branch_code,
+    destination_branch_code,
+    user_code,
+    transferred_at,
+    note
+  ) VALUES (
+    p_source_branch_code,
+    p_destination_branch_code,
+    p_user_code,
+    v_transferred_at,
+    v_note
+  )
+  RETURNING * INTO v_transfer;
+
+  FOR v_item IN
+    SELECT
+      item.product_code,
+      item.quantity
+    FROM jsonb_to_recordset(p_items) AS item(
+      product_code UUID,
+      quantity INTEGER
+    )
+  LOOP
+    IF v_item.product_code IS NULL THEN
+      RAISE EXCEPTION 'Cada item debe incluir product_code'
+        USING ERRCODE = '23514';
+    END IF;
+
+    IF v_item.quantity IS NULL OR v_item.quantity <= 0 THEN
+      RAISE EXCEPTION 'La cantidad de cada item debe ser mayor a 0'
+        USING ERRCODE = '23514';
+    END IF;
+
+    v_items_count := v_items_count + 1;
+    v_outbound_note := CASE
+      WHEN v_note IS NULL THEN FORMAT('Transferencia a %s', v_destination_branch_name)
+      ELSE FORMAT('Transferencia a %s: %s', v_destination_branch_name, v_note)
+    END;
+    v_inbound_note := CASE
+      WHEN v_note IS NULL THEN FORMAT('Transferencia desde %s', v_source_branch_name)
+      ELSE FORMAT('Transferencia desde %s: %s', v_source_branch_name, v_note)
+    END;
+
+    INSERT INTO public.product_transfer_items (
+      transfer_code,
+      product_code,
+      quantity
+    ) VALUES (
+      v_transfer.code,
+      v_item.product_code,
+      v_item.quantity
+    );
+
+    INSERT INTO public.inventory_movements (
+      product_code,
+      branch_code,
+      user_code,
+      quantity,
+      direction,
+      reason,
+      purchase_code,
+      sale_code,
+      transfer_code,
+      occurred_at,
+      note
+    ) VALUES (
+      v_item.product_code,
+      v_transfer.source_branch_code,
+      v_transfer.user_code,
+      v_item.quantity,
+      'out',
+      'transfer',
+      NULL,
+      NULL,
+      v_transfer.code,
+      v_transferred_at,
+      v_outbound_note
+    );
+
+    INSERT INTO public.inventory_movements (
+      product_code,
+      branch_code,
+      user_code,
+      quantity,
+      direction,
+      reason,
+      purchase_code,
+      sale_code,
+      transfer_code,
+      occurred_at,
+      note
+    ) VALUES (
+      v_item.product_code,
+      v_transfer.destination_branch_code,
+      v_transfer.user_code,
+      v_item.quantity,
+      'in',
+      'transfer',
+      NULL,
+      NULL,
+      v_transfer.code,
+      v_transferred_at,
+      v_inbound_note
+    );
+  END LOOP;
+
+  IF v_items_count = 0 THEN
+    RAISE EXCEPTION 'Debe incluir al menos un item de transferencia'
+      USING ERRCODE = '23514';
+  END IF;
+
+  RETURN v_transfer;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.inventory_update_thresholds(
   p_product_code UUID,
   p_branch_code UUID,

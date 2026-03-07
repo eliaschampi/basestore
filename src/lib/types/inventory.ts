@@ -17,6 +17,18 @@ export interface InventoryPagination {
 	total_pages: number;
 }
 
+/** Lightweight branch representation used in inventory list page filters. */
+export interface BranchCatalogItem {
+	code: string;
+	name: string;
+	state: boolean;
+}
+
+/** Returns an empty pagination object for the given page size (default 20). */
+export function createEmptyPagination(pageSize = 20): InventoryPagination {
+	return { page: 1, page_size: pageSize, total: 0, total_pages: 1 };
+}
+
 export interface InventoryOverviewItem {
 	product_code: string;
 	product_name: string;
@@ -153,6 +165,39 @@ export interface InventorySaleRecord {
 
 export type InventorySaleListItem = InventorySaleRecord;
 
+export interface InventoryProductTransferLineItem {
+	code: string;
+	transfer_code: string;
+	product_code: string;
+	product_name: string;
+	product_sku: string | null;
+	quantity: number;
+	created_at: string | Date;
+	updated_at: string | Date;
+}
+
+export interface InventoryProductTransferRecord {
+	code: string;
+	source_branch_code: string;
+	destination_branch_code: string;
+	user_code: string;
+	transferred_at: string | Date;
+	note: string | null;
+	created_at: string | Date;
+	updated_at: string | Date;
+	item_count: number;
+	total_quantity: number;
+	products_summary: string;
+	primary_product_code: string | null;
+	primary_product_name: string | null;
+	primary_product_sku: string | null;
+	items: InventoryProductTransferLineItem[];
+	source_branch_name: string;
+	destination_branch_name: string;
+}
+
+export type InventoryProductTransferListItem = InventoryProductTransferRecord;
+
 export interface InventoryMovementListItem {
 	code: string;
 	product_code: string;
@@ -163,6 +208,7 @@ export interface InventoryMovementListItem {
 	reason: InventoryMovementReason;
 	purchase_code: string | null;
 	sale_code: string | null;
+	transfer_code: string | null;
 	occurred_at: string | Date;
 	note: string | null;
 	created_at: string | Date;

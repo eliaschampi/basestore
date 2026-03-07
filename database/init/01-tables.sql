@@ -286,6 +286,38 @@ CREATE TABLE public.sale_items (
   CONSTRAINT sale_items_sale_product_uq UNIQUE (sale_code, product_code)
 );
 
+-- Product transfers (header)
+CREATE TABLE public.product_transfers (
+  code UUID NOT NULL DEFAULT gen_random_uuid(),
+  source_branch_code UUID NOT NULL,
+  destination_branch_code UUID NOT NULL,
+  user_code UUID NOT NULL,
+  transferred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  note TEXT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT product_transfers_pk PRIMARY KEY (code),
+  CONSTRAINT product_transfers_source_branch_fk FOREIGN KEY (source_branch_code) REFERENCES public.branches (code) ON DELETE RESTRICT,
+  CONSTRAINT product_transfers_destination_branch_fk FOREIGN KEY (destination_branch_code) REFERENCES public.branches (code) ON DELETE RESTRICT,
+  CONSTRAINT product_transfers_user_fk FOREIGN KEY (user_code) REFERENCES public.users (code) ON DELETE RESTRICT,
+  CONSTRAINT product_transfers_distinct_branches_check CHECK (source_branch_code <> destination_branch_code)
+);
+
+-- Product transfer items (lines)
+CREATE TABLE public.product_transfer_items (
+  code UUID NOT NULL DEFAULT gen_random_uuid(),
+  transfer_code UUID NOT NULL,
+  product_code UUID NOT NULL,
+  quantity INTEGER NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT product_transfer_items_pk PRIMARY KEY (code),
+  CONSTRAINT product_transfer_items_transfer_fk FOREIGN KEY (transfer_code) REFERENCES public.product_transfers (code) ON DELETE CASCADE,
+  CONSTRAINT product_transfer_items_product_fk FOREIGN KEY (product_code) REFERENCES public.products (code) ON DELETE RESTRICT,
+  CONSTRAINT product_transfer_items_quantity_check CHECK (quantity > 0),
+  CONSTRAINT product_transfer_items_transfer_product_uq UNIQUE (transfer_code, product_code)
+);
+
 -- Inventory movements
 CREATE TABLE public.inventory_movements (
   code UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -297,6 +329,7 @@ CREATE TABLE public.inventory_movements (
   reason VARCHAR(30) NOT NULL,
   purchase_code UUID NULL,
   sale_code UUID NULL,
+  transfer_code UUID NULL,
   occurred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   note TEXT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -307,19 +340,22 @@ CREATE TABLE public.inventory_movements (
   CONSTRAINT inventory_movements_user_fk FOREIGN KEY (user_code) REFERENCES public.users (code) ON DELETE RESTRICT,
   CONSTRAINT inventory_movements_purchase_fk FOREIGN KEY (purchase_code) REFERENCES public.purchases (code) ON DELETE SET NULL,
   CONSTRAINT inventory_movements_sale_fk FOREIGN KEY (sale_code) REFERENCES public.sales (code) ON DELETE SET NULL,
+  CONSTRAINT inventory_movements_transfer_fk FOREIGN KEY (transfer_code) REFERENCES public.product_transfers (code) ON DELETE SET NULL,
   CONSTRAINT inventory_movements_quantity_check CHECK (quantity > 0),
   CONSTRAINT inventory_movements_direction_check CHECK (direction IN ('in', 'out')),
-  CONSTRAINT inventory_movements_reason_check CHECK (reason IN ('purchase', 'sale', 'purchase_refund', 'manual_adjustment')),
+  CONSTRAINT inventory_movements_reason_check CHECK (reason IN ('purchase', 'sale', 'purchase_refund', 'manual_adjustment', 'transfer')),
   CONSTRAINT inventory_movements_reason_direction_check CHECK (
     (reason = 'purchase' AND direction = 'in')
     OR (reason = 'sale' AND direction = 'out')
     OR (reason = 'purchase_refund' AND direction = 'out')
+    OR (reason = 'transfer')
     OR (reason = 'manual_adjustment')
   ),
   CONSTRAINT inventory_movements_reference_check CHECK (
     (reason = 'purchase' AND purchase_code IS NOT NULL)
     OR (reason = 'sale' AND sale_code IS NOT NULL)
     OR (reason = 'purchase_refund' AND purchase_code IS NOT NULL)
+    OR (reason = 'transfer' AND transfer_code IS NOT NULL)
     OR (reason = 'manual_adjustment')
   )
 );

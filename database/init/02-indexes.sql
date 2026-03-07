@@ -106,6 +106,20 @@ CREATE INDEX sale_items_product_idx
 CREATE INDEX sale_items_product_sale_idx
   ON public.sale_items (product_code, sale_code);
 
+-- Product transfers indexes (header + lines)
+CREATE INDEX product_transfers_source_branch_transferred_idx
+  ON public.product_transfers (source_branch_code, transferred_at DESC);
+CREATE INDEX product_transfers_destination_branch_transferred_idx
+  ON public.product_transfers (destination_branch_code, transferred_at DESC);
+CREATE INDEX product_transfers_transferred_at_idx
+  ON public.product_transfers (transferred_at DESC);
+CREATE INDEX product_transfer_items_transfer_idx
+  ON public.product_transfer_items (transfer_code);
+CREATE INDEX product_transfer_items_product_idx
+  ON public.product_transfer_items (product_code);
+CREATE INDEX product_transfer_items_product_transfer_idx
+  ON public.product_transfer_items (product_code, transfer_code);
+
 -- Inventory movements indexes
 CREATE INDEX inventory_movements_product_branch_idx
   ON public.inventory_movements (product_code, branch_code, occurred_at DESC);
@@ -117,3 +131,5 @@ CREATE INDEX inventory_movements_purchase_idx
   ON public.inventory_movements (purchase_code);
 CREATE INDEX inventory_movements_sale_idx
   ON public.inventory_movements (sale_code);
+CREATE INDEX inventory_movements_transfer_idx
+  ON public.inventory_movements (transfer_code);

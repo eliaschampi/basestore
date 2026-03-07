@@ -173,6 +173,30 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
 		category: 'Inventario',
 		description: 'Eliminar o revertir registros de inventario'
 	},
+	{
+		key: 'product_transfers:read',
+		label: 'Ver transferencias',
+		category: 'Inventario',
+		description: 'Ver historial de transferencias entre sedes'
+	},
+	{
+		key: 'product_transfers:create',
+		label: 'Crear transferencias',
+		category: 'Inventario',
+		description: 'Registrar transferencias de productos entre sedes'
+	},
+	{
+		key: 'product_transfers:update',
+		label: 'Actualizar transferencias',
+		category: 'Inventario',
+		description: 'Modificar transferencias de productos'
+	},
+	{
+		key: 'product_transfers:delete',
+		label: 'Eliminar transferencias',
+		category: 'Inventario',
+		description: 'Eliminar o revertir transferencias de productos'
+	},
 
 	// Drive
 	{

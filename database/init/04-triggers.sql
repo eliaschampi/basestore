@@ -35,6 +35,16 @@ CREATE TRIGGER sale_items_updated_at_tg
 BEFORE UPDATE ON public.sale_items
 FOR EACH ROW EXECUTE FUNCTION public.timestamp_updater();
 
+-- Product transfers timestamp trigger
+CREATE TRIGGER product_transfers_updated_at_tg
+BEFORE UPDATE ON public.product_transfers
+FOR EACH ROW EXECUTE FUNCTION public.timestamp_updater();
+
+-- Product transfer items timestamp trigger
+CREATE TRIGGER product_transfer_items_updated_at_tg
+BEFORE UPDATE ON public.product_transfer_items
+FOR EACH ROW EXECUTE FUNCTION public.timestamp_updater();
+
 -- Inventory movements timestamp trigger
 CREATE TRIGGER inventory_movements_updated_at_tg
 BEFORE UPDATE ON public.inventory_movements

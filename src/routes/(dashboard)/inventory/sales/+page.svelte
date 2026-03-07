@@ -26,8 +26,16 @@
 	import { showToast } from '$lib/stores/Toast';
 	import { formatDate } from '$lib/utils/formatDate';
 	import { formatProductPrice } from '$lib/utils/products';
-	import type { InventoryPagination, InventorySaleListItem } from '$lib/types/inventory';
+	import type {
+		InventoryPagination,
+		InventorySaleListItem,
+		BranchCatalogItem
+	} from '$lib/types/inventory';
+	import { createEmptyPagination } from '$lib/types/inventory';
 	import {
+		buildBranchQuery,
+		getItemsMetaLabel,
+		getPrimaryProductLabel,
 		resolveInventoryBranchCode,
 		type InventorySaleChannel,
 		type InventorySaleFulfillmentType,
@@ -36,22 +44,11 @@
 	} from '$lib/utils/inventory';
 	import type { PageData } from './$types';
 
-	interface BranchCatalogItem {
-		code: string;
-		name: string;
-		state: boolean;
-	}
-
 	type SaleDetailLine = InventorySaleListItem['items'][number];
 
 	const { data }: { data: PageData } = $props();
 
-	const EMPTY_PAGINATION: InventoryPagination = {
-		page: 1,
-		page_size: 20,
-		total: 0,
-		total_pages: 1
-	};
+	const EMPTY_PAGINATION: InventoryPagination = createEmptyPagination(20);
 
 	const SHIPPING_FILTER_OPTIONS: SelectOption[] = [
 		{ value: 'all', label: 'Todos los envios' },
@@ -125,14 +122,8 @@
 			.map((branch) => ({ value: branch.code, label: branch.name }) as SelectOption)
 	);
 
-	function branchQuery(branchCode: string): string {
-		if (!branchCode) return '';
-		const params = new URLSearchParams({ branch_code: branchCode });
-		return `?${params.toString()}`;
-	}
-
 	function navigateWithBranch(path: '/inventory' | '/inventory/sales/new'): void {
-		const destination = `${path}${branchQuery(filterBranchCode)}` as
+		const destination = `${path}${buildBranchQuery(filterBranchCode)}` as
 			| '/inventory'
 			| '/inventory/sales/new';
 		void goto(resolve(destination));
@@ -208,24 +199,11 @@
 	}
 
 	function primarySaleItemLabel(sale: InventorySaleListItem): string {
-		const primaryName = sale.primary_product_name?.trim();
-		if (primaryName) return primaryName;
-
-		const firstLineName = sale.items.find((item) => item.product_name.trim())?.product_name?.trim();
-		if (firstLineName) return firstLineName;
-
-		return 'Sin items';
+		return getPrimaryProductLabel(sale);
 	}
 
 	function saleItemsMetaLabel(sale: InventorySaleListItem): string {
-		if (sale.item_count <= 0) return 'Sin items';
-
-		const extraItems = Math.max(sale.item_count - 1, 0);
-		if (extraItems > 0) {
-			return `+${extraItems} ${extraItems === 1 ? 'item' : 'items'}`;
-		}
-
-		return '1 item';
+		return getItemsMetaLabel(sale.item_count);
 	}
 
 	function salePreviewLabel(sale: InventorySaleListItem): string {

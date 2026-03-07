@@ -73,6 +73,7 @@
 	const canReadDrive = $derived(can('drive:read'));
 	const canReadInventory = $derived(can('inventory:read'));
 	const canReadProducts = $derived(can('products:read'));
+	const canReadProductTransfers = $derived(can('product_transfers:read'));
 </script>
 
 <svelte:head>
@@ -198,6 +199,19 @@
 				{/snippet}
 				Ventas
 			</SidebarItem>
+
+			{#if canReadProductTransfers}
+				<SidebarItem
+					href="/inventory/transfers"
+					active={page.url.pathname.startsWith('/inventory/transfers')}
+					collapsed={sidebarCollapsed}
+				>
+					{#snippet icon()}
+						<Icon icon="arrowLeftRight" size="20px" />
+					{/snippet}
+					Transferencias
+				</SidebarItem>
+			{/if}
 
 			<SidebarItem
 				href="/inventory/customers"

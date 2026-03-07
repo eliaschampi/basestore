@@ -25,8 +25,16 @@
 	import { showToast } from '$lib/stores/Toast';
 	import { formatDate } from '$lib/utils/formatDate';
 	import { formatProductPrice } from '$lib/utils/products';
-	import type { InventoryPagination, InventoryPurchaseListItem } from '$lib/types/inventory';
+	import type {
+		InventoryPagination,
+		InventoryPurchaseListItem,
+		BranchCatalogItem
+	} from '$lib/types/inventory';
+	import { createEmptyPagination } from '$lib/types/inventory';
 	import {
+		buildBranchQuery,
+		getItemsMetaLabel,
+		getPrimaryProductLabel,
 		resolveInventoryBranchCode,
 		type InventoryPurchaseEntryType,
 		type InventoryPurchaseOrigin,
@@ -34,22 +42,11 @@
 	} from '$lib/utils/inventory';
 	import type { PageData } from './$types';
 
-	interface BranchCatalogItem {
-		code: string;
-		name: string;
-		state: boolean;
-	}
-
 	type PurchaseDetailLine = InventoryPurchaseListItem['items'][number];
 
 	const { data }: { data: PageData } = $props();
 
-	const EMPTY_PAGINATION: InventoryPagination = {
-		page: 1,
-		page_size: 20,
-		total: 0,
-		total_pages: 1
-	};
+	const EMPTY_PAGINATION: InventoryPagination = createEmptyPagination(20);
 
 	const PURCHASE_STATE_SEGMENT_OPTIONS = [
 		{ label: 'Camino', value: 'in_transit', icon: 'clock' },
@@ -118,14 +115,8 @@
 			branches.find((branch) => branch.code === filterBranchCode)?.name ?? 'Sin sede seleccionada'
 	);
 
-	function branchQuery(branchCode: string): string {
-		if (!branchCode) return '';
-		const params = new URLSearchParams({ branch_code: branchCode });
-		return `?${params.toString()}`;
-	}
-
 	function navigateWithBranch(path: '/inventory' | '/inventory/purchases/new'): void {
-		const destination = `${path}${branchQuery(filterBranchCode)}` as
+		const destination = `${path}${buildBranchQuery(filterBranchCode)}` as
 			| '/inventory'
 			| '/inventory/purchases/new';
 		void goto(resolve(destination));
@@ -178,26 +169,11 @@
 	}
 
 	function primaryPurchaseItemLabel(purchase: InventoryPurchaseListItem): string {
-		const primaryName = purchase.primary_product_name?.trim();
-		if (primaryName) return primaryName;
-
-		const firstLineName = purchase.items
-			.find((item) => item.product_name.trim())
-			?.product_name?.trim();
-		if (firstLineName) return firstLineName;
-
-		return 'Sin items';
+		return getPrimaryProductLabel(purchase);
 	}
 
 	function purchaseItemsMetaLabel(purchase: InventoryPurchaseListItem): string {
-		if (purchase.item_count <= 0) return 'Sin items';
-
-		const extraItems = Math.max(purchase.item_count - 1, 0);
-		if (extraItems > 0) {
-			return `+${extraItems} ${extraItems === 1 ? 'item' : 'items'}`;
-		}
-
-		return '1 item';
+		return getItemsMetaLabel(purchase.item_count);
 	}
 
 	function handleSearchInput(value: string): void {

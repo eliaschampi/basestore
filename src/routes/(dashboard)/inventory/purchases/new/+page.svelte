@@ -6,24 +6,19 @@
 		Alert,
 		Button,
 		Card,
-		Chip,
-		Fieldset,
 		Input,
 		NumberInput,
 		PageHeader,
 		SegmentedControl,
 		Select,
 		Table,
-		Tabs,
 		Textarea
 	} from '$lib/components';
-	import type { SegmentedControlOption, SelectOption, Tab, TableRow } from '$lib/components';
+	import type { SegmentedControlOption, SelectOption, TableRow } from '$lib/components';
 	import { showToast } from '$lib/stores/Toast';
 	import { formatProductPrice } from '$lib/utils/products';
 	import type { InventoryPurchaseEntryType, InventoryPurchaseOrigin } from '$lib/utils/inventory';
 	import type { PageData } from './$types';
-
-	type PurchaseFormTab = 'product' | 'order' | 'review';
 
 	interface BranchCatalogItem {
 		code: string;
@@ -62,12 +57,6 @@
 
 	const { data }: { data: PageData } = $props();
 
-	const PURCHASE_FORM_TABS: Tab[] = [
-		{ value: 'product', label: 'Items', icon: 'package' },
-		{ value: 'order', label: 'Pedido', icon: 'clock' },
-		{ value: 'review', label: 'Revision', icon: 'checkCircle' }
-	];
-
 	const PURCHASE_ORIGIN_OPTIONS: PurchaseOriginOption[] = [
 		{ value: 'aliexpress', label: 'AliExpress', apiOrigin: 'aliexpress' },
 		{ value: 'temu', label: 'Temu', apiOrigin: 'temu' },
@@ -93,7 +82,6 @@
 		{ label: 'Recibido', value: 'received', icon: 'checkCircle' }
 	];
 
-	let activeTab = $state<PurchaseFormTab>('product');
 	let submitting = $state(false);
 	let errorMessage = $state('');
 
@@ -143,47 +131,6 @@
 	const totalCost = $derived(
 		draftItems.reduce((total, item) => total + item.quantity * item.unit_cost, 0)
 	);
-	const selectedBranchLabel = $derived(
-		branchOptions.find((option) => option.value === createBranchCode)?.label ?? 'Pendiente'
-	);
-	const selectedOriginLabel = $derived.by(() => {
-		const selectedOption = PURCHASE_ORIGIN_OPTIONS.find(
-			(option) => option.value === createOriginOption
-		);
-		if (!selectedOption) return createOrigin;
-
-		if (selectedOption.apiOrigin !== 'other') {
-			return selectedOption.label;
-		}
-
-		return createOriginCustom.trim() || selectedOption.customLabel || 'Otros';
-	});
-
-	function changeTab(next: string | number): void {
-		if (next === 'product' || next === 'order' || next === 'review') {
-			activeTab = next;
-		}
-	}
-
-	function goNextTab(): void {
-		if (activeTab === 'product') {
-			activeTab = 'order';
-			return;
-		}
-		if (activeTab === 'order') {
-			activeTab = 'review';
-		}
-	}
-
-	function goPrevTab(): void {
-		if (activeTab === 'review') {
-			activeTab = 'order';
-			return;
-		}
-		if (activeTab === 'order') {
-			activeTab = 'product';
-		}
-	}
 
 	function branchQuery(branchCode: string): string {
 		if (!branchCode) return '';
@@ -293,19 +240,16 @@
 
 		if (!createBranchCode) {
 			errorMessage = 'Selecciona la sede destino.';
-			activeTab = 'order';
 			return;
 		}
 
 		if (draftItems.length === 0) {
 			errorMessage = 'Agrega al menos un item antes de registrar la compra.';
-			activeTab = 'product';
 			return;
 		}
 
 		if (createOrigin === 'other' && createOriginCustom.trim().length < 2) {
 			errorMessage = 'Cuando eliges "Otros", indica el origen personalizado.';
-			activeTab = 'order';
 			return;
 		}
 
@@ -349,7 +293,7 @@
 <div class="lumi-stack lumi-space--md">
 	<PageHeader
 		title="Nueva compra"
-		subtitle="Registra compras con múltiples items y control de costos"
+		subtitle="Registra items, costos y estado inicial en un solo flujo"
 		icon="shoppingBag"
 	>
 		{#snippet actions()}
@@ -373,259 +317,202 @@
 	{/if}
 
 	<Card spaced>
-		<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
-			<div>
-				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Sede</p>
-				<p class="lumi-margin--none lumi-font--semibold">{selectedBranchLabel}</p>
-			</div>
-			<div>
-				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Items / unidades</p>
-				<p class="lumi-margin--none lumi-font--semibold">{itemCount} / {totalQuantity}</p>
-			</div>
-			<div>
-				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Total estimado</p>
-				<p class="lumi-margin--none lumi-font--semibold">{formatProductPrice(totalCost)}</p>
-			</div>
-			<div>
-				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Origen</p>
-				<p class="lumi-margin--none lumi-font--semibold">{selectedOriginLabel}</p>
-			</div>
-		</div>
-
-		<Tabs
-			value={activeTab}
-			tabs={PURCHASE_FORM_TABS}
-			color="info"
-			aria-label="Formulario de compra"
-			onchange={(value) => changeTab(value)}
-		>
-			{#if activeTab === 'product'}
-				<div class="lumi-stack lumi-space--md">
-					<Fieldset legend="Agregar item">
-						<form
-							class="lumi-stack lumi-space--sm"
-							onsubmit={(event) => {
-								event.preventDefault();
-								addDraftItem();
+		<div class="inventory-create-form">
+			<div class="inventory-create-section">
+				<div class="lumi-stack lumi-space--2xs">
+					<p class="lumi-margin--none lumi-font--semibold">Compra</p>
+					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+						Define sede, origen, tracking y estado inicial.
+					</p>
+				</div>
+				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+					<Select
+						label="Sede destino"
+						value={createBranchCode}
+						options={branchOptions}
+						placeholder="Selecciona sede"
+						onchange={(value) => {
+							createBranchCode = typeof value === 'string' ? value : '';
+						}}
+					/>
+					<Input
+						label="Fecha pedido"
+						type="date"
+						value={createOrderedAt}
+						oninput={(event) => (createOrderedAt = (event.currentTarget as HTMLInputElement).value)}
+					/>
+					<Input
+						label="Tracking (opcional)"
+						placeholder="Ej: LP009123456789"
+						value={createTrackingNumber}
+						oninput={(event) =>
+							(createTrackingNumber = (event.currentTarget as HTMLInputElement).value)}
+					/>
+				</div>
+				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+					<Select
+						label="Origen"
+						value={createOriginOption}
+						options={originOptions}
+						clearable={false}
+						onchange={(value) => {
+							applyOriginOption(typeof value === 'string' ? value : 'aliexpress');
+						}}
+					/>
+					<div class="lumi-stack lumi-space--xs">
+						<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Tipo</p>
+						<SegmentedControl
+							value={createEntryType}
+							options={ENTRY_TYPE_SEGMENT_OPTIONS}
+							fullWidth
+							onchange={(value) => {
+								createEntryType = (
+									typeof value === 'string' ? value : 'restock'
+								) as InventoryPurchaseEntryType;
 							}}
-						>
-							<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
-								<Select
-									label="Producto"
-									value={draftProductCode}
-									options={productOptions}
-									placeholder="Selecciona producto"
-									onchange={(value) => {
-										draftProductCode = typeof value === 'string' ? value : '';
-										syncDraftUnitCostFromProduct(draftProductCode);
-									}}
-								/>
+						/>
+					</div>
+					<div class="lumi-stack lumi-space--xs">
+						<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Estado inicial</p>
+						<SegmentedControl
+							value={createState}
+							options={PURCHASE_STATE_SEGMENT_OPTIONS}
+							fullWidth
+							onchange={(value) => {
+								createState = (
+									typeof value === 'string' ? value : 'in_transit'
+								) as typeof createState;
+							}}
+						/>
+					</div>
+				</div>
+				{#if createOrigin === 'other'}
+					<Input
+						label="Origen personalizado"
+						placeholder="Ej: proveedor de Instagram, feria local..."
+						value={createOriginCustom}
+						oninput={(event) =>
+							(createOriginCustom = (event.currentTarget as HTMLInputElement).value)}
+					/>
+				{/if}
+			</div>
+
+			<div class="inventory-create-section">
+				<div class="lumi-stack lumi-space--2xs">
+					<p class="lumi-margin--none lumi-font--semibold">Items</p>
+					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+						Carga producto, cantidad y costo unitario en un solo bloque.
+					</p>
+				</div>
+				<form
+					class="lumi-stack lumi-space--sm"
+					onsubmit={(event) => {
+						event.preventDefault();
+						addDraftItem();
+					}}
+				>
+					<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+						<Select
+							label="Producto"
+							value={draftProductCode}
+							options={productOptions}
+							placeholder="Selecciona producto"
+							onchange={(value) => {
+								draftProductCode = typeof value === 'string' ? value : '';
+								syncDraftUnitCostFromProduct(draftProductCode);
+							}}
+						/>
+						<NumberInput
+							label="Cantidad"
+							value={draftQuantity}
+							min={1}
+							max={100000}
+							step={1}
+							onchange={(value) => {
+								draftQuantity = value;
+							}}
+						/>
+						<NumberInput
+							label="Costo unitario"
+							value={draftUnitCost}
+							min={0}
+							max={1000000}
+							step={0.5}
+							onchange={(value) => {
+								draftUnitCost = value;
+							}}
+						/>
+					</div>
+					<div class="lumi-flex lumi-justify--between lumi-align-items--center lumi-flex--wrap">
+						<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
+							Presiona Enter para agregar rapidamente.
+						</p>
+						<Button type="flat" color="primary" icon="plus" button="submit">Agregar item</Button>
+					</div>
+				</form>
+				<div class="lumi-stack lumi-space--2xs">
+					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+						{itemCount}
+						{itemCount === 1 ? 'item' : 'items'} · {totalQuantity} unidades ·
+						{formatProductPrice(totalCost)} estimado
+					</p>
+				</div>
+				{#if draftItems.length === 0}
+					<Alert type="info" closable={false}>Aún no agregaste items.</Alert>
+				{:else}
+					<Table data={itemRows} pagination={false}>
+						{#snippet thead()}
+							<th>Producto</th>
+							<th>Cantidad</th>
+							<th>Costo unitario</th>
+							<th>Subtotal</th>
+							<th>Acción</th>
+						{/snippet}
+						{#snippet row({ row })}
+							{@const item = row as unknown as PurchaseDraftItem}
+							<td>{item.product_name}</td>
+							<td>
 								<NumberInput
-									label="Cantidad"
-									value={draftQuantity}
+									size="sm"
+									value={item.quantity}
 									min={1}
 									max={100000}
 									step={1}
-									onchange={(value) => {
-										draftQuantity = value;
-									}}
+									onchange={(value) => setDraftItemQuantity(item.product_code, value)}
 								/>
-								<NumberInput
-									label="Costo unitario"
-									value={draftUnitCost}
-									min={0}
-									max={1000000}
-									step={0.5}
-									onchange={(value) => {
-										draftUnitCost = value;
-									}}
-								/>
-							</div>
-							<div class="lumi-flex lumi-justify--between lumi-align-items--center lumi-flex--wrap">
-								<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
-									Presiona Enter para agregar rapidamente.
-								</p>
-								<Button type="flat" color="primary" icon="plus" button="submit">
-									Agregar item
+							</td>
+							<td>{formatProductPrice(item.unit_cost)}</td>
+							<td>{formatProductPrice(item.quantity * item.unit_cost)}</td>
+							<td>
+								<Button
+									type="flat"
+									size="sm"
+									icon="trash"
+									color="danger"
+									onclick={() => removeDraftItem(item.product_code)}
+								>
+									Quitar
 								</Button>
-							</div>
-						</form>
-					</Fieldset>
-
-					<Fieldset legend="Items de la compra">
-						{#if draftItems.length === 0}
-							<Alert type="info" closable={false}>Aún no agregaste items.</Alert>
-						{:else}
-							<Table data={itemRows} pagination={false}>
-								{#snippet thead()}
-									<th>Producto</th>
-									<th>Cantidad</th>
-									<th>Costo unitario</th>
-									<th>Subtotal</th>
-									<th>Acción</th>
-								{/snippet}
-								{#snippet row({ row })}
-									{@const item = row as unknown as PurchaseDraftItem}
-									<td>{item.product_name}</td>
-									<td>
-										<NumberInput
-											size="sm"
-											value={item.quantity}
-											min={1}
-											max={100000}
-											step={1}
-											onchange={(value) => setDraftItemQuantity(item.product_code, value)}
-										/>
-									</td>
-									<td>{formatProductPrice(item.unit_cost)}</td>
-									<td>{formatProductPrice(item.quantity * item.unit_cost)}</td>
-									<td>
-										<Button
-											type="flat"
-											size="sm"
-											icon="trash"
-											color="danger"
-											onclick={() => removeDraftItem(item.product_code)}
-										>
-											Quitar
-										</Button>
-									</td>
-								{/snippet}
-							</Table>
-						{/if}
-					</Fieldset>
-				</div>
-			{/if}
-
-			{#if activeTab === 'order'}
-				<div class="lumi-stack lumi-space--md">
-					<Fieldset legend="Destino y clasificación">
-						<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
-							<Select
-								label="Sede destino"
-								value={createBranchCode}
-								options={branchOptions}
-								placeholder="Selecciona sede"
-								onchange={(value) => {
-									createBranchCode = typeof value === 'string' ? value : '';
-								}}
-							/>
-							<Input
-								label="Fecha pedido"
-								type="date"
-								value={createOrderedAt}
-								oninput={(event) =>
-									(createOrderedAt = (event.currentTarget as HTMLInputElement).value)}
-							/>
-						</div>
-					</Fieldset>
-
-					<Fieldset legend="Flujo de compra">
-						<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
-							<div class="lumi-stack lumi-space--xs">
-								<Select
-									label="Origen"
-									value={createOriginOption}
-									options={originOptions}
-									clearable={false}
-									onchange={(value) => {
-										applyOriginOption(typeof value === 'string' ? value : 'aliexpress');
-									}}
-								/>
-							</div>
-							<div class="lumi-stack lumi-space--xs">
-								<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Tipo</p>
-								<SegmentedControl
-									value={createEntryType}
-									options={ENTRY_TYPE_SEGMENT_OPTIONS}
-									fullWidth
-									onchange={(value) => {
-										createEntryType = (
-											typeof value === 'string' ? value : 'restock'
-										) as InventoryPurchaseEntryType;
-									}}
-								/>
-							</div>
-							<div class="lumi-stack lumi-space--xs">
-								<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Estado inicial</p>
-								<SegmentedControl
-									value={createState}
-									options={PURCHASE_STATE_SEGMENT_OPTIONS}
-									fullWidth
-									onchange={(value) => {
-										createState = (
-											typeof value === 'string' ? value : 'in_transit'
-										) as typeof createState;
-									}}
-								/>
-							</div>
-						</div>
-						{#if createOrigin === 'other'}
-							<Input
-								label="Origen personalizado"
-								placeholder="Ej: proveedor de Instagram, feria local..."
-								value={createOriginCustom}
-								oninput={(event) =>
-									(createOriginCustom = (event.currentTarget as HTMLInputElement).value)}
-							/>
-						{/if}
-						<Input
-							label="NRO Tracking (opcional)"
-							placeholder="Ej: LP009123456789"
-							value={createTrackingNumber}
-							oninput={(event) =>
-								(createTrackingNumber = (event.currentTarget as HTMLInputElement).value)}
-						/>
-					</Fieldset>
-				</div>
-			{/if}
-
-			{#if activeTab === 'review'}
-				<div class="lumi-stack lumi-space--md">
-					<Fieldset legend="Resumen">
-						<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
-							<p class="lumi-margin--none">
-								<strong>Items:</strong>
-								<Chip size="sm" color="info">{itemCount}</Chip>
-							</p>
-							<p class="lumi-margin--none"><strong>Unidades:</strong> {totalQuantity}</p>
-							<p class="lumi-margin--none">
-								<strong>Total estimado:</strong>
-								{formatProductPrice(totalCost)}
-							</p>
-							<p class="lumi-margin--none">
-								<strong>Sede:</strong>
-								{createBranchCode ? 'Seleccionada' : 'Pendiente'}
-							</p>
-							<p class="lumi-margin--none">
-								<strong>Origen:</strong>
-								{selectedOriginLabel}
-							</p>
-							<p class="lumi-margin--none">
-								<strong>Tracking:</strong>
-								{createTrackingNumber.trim() || 'Sin tracking'}
-							</p>
-						</div>
-					</Fieldset>
-					<Fieldset legend="Nota">
-						<Textarea
-							label="Nota (opcional)"
-							rows={3}
-							value={createNote}
-							oninput={(event) => (createNote = (event.currentTarget as HTMLTextAreaElement).value)}
-						/>
-					</Fieldset>
-				</div>
-			{/if}
-
-			<div class="lumi-flex lumi-justify--between lumi-align-items--center">
-				<Button type="border" disabled={activeTab === 'product'} onclick={goPrevTab}
-					>Anterior</Button
-				>
-				{#if activeTab !== 'review'}
-					<Button type="filled" color="info" onclick={goNextTab}>Siguiente</Button>
+							</td>
+						{/snippet}
+					</Table>
 				{/if}
 			</div>
-		</Tabs>
+
+			<div class="inventory-create-section">
+				<div class="lumi-stack lumi-space--2xs">
+					<p class="lumi-margin--none lumi-font--semibold">Nota</p>
+					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+						Contexto operativo opcional para el equipo.
+					</p>
+				</div>
+				<Textarea
+					label="Nota (opcional)"
+					rows={3}
+					value={createNote}
+					oninput={(event) => (createNote = (event.currentTarget as HTMLTextAreaElement).value)}
+				/>
+			</div>
+		</div>
 	</Card>
 </div>

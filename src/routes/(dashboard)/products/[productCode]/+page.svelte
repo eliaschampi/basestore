@@ -182,6 +182,7 @@
 		if (reason === 'purchase') return 'Compra';
 		if (reason === 'sale') return 'Venta';
 		if (reason === 'purchase_refund') return 'Reembolso compra';
+		if (reason === 'transfer') return 'Transferencia';
 		return 'Ajuste manual';
 	}
 

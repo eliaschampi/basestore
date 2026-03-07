@@ -6,6 +6,9 @@ import type {
 	InventoryOverviewItem,
 	InventoryOverviewSummary,
 	InventoryPagination,
+	InventoryProductTransferLineItem,
+	InventoryProductTransferListItem,
+	InventoryProductTransferRecord,
 	InventoryPurchaseLineItem,
 	InventoryPurchaseListItem,
 	InventoryPurchaseRecord,
@@ -98,6 +101,20 @@ export interface CreateInventorySaleInput {
 	items: CreateInventorySaleItemInput[];
 }
 
+export interface CreateInventoryProductTransferItemInput {
+	productCode: string;
+	quantity: number;
+}
+
+export interface CreateInventoryProductTransferInput {
+	sourceBranchCode: string;
+	destinationBranchCode: string;
+	userCode: string;
+	transferredAt: Date | string;
+	note: string | null;
+	items: CreateInventoryProductTransferItemInput[];
+}
+
 export interface UpdateInventorySaleShippingInput {
 	saleCode: string;
 	shippingState: InventorySaleShippingState;
@@ -134,6 +151,13 @@ export interface InventorySaleListFilters extends PaginationParams {
 	shippingState?: InventorySaleShippingState;
 	saleChannel?: InventorySaleChannel;
 	status?: InventorySaleStatusFilter;
+	search?: string;
+}
+
+export interface InventoryProductTransferListFilters extends PaginationParams {
+	sourceBranchCode?: string;
+	destinationBranchCode?: string;
+	productCode?: string;
 	search?: string;
 }
 
@@ -246,7 +270,34 @@ interface InventorySaleFeedRow {
 }
 
 interface InventorySaleListRow extends InventorySaleFeedRow, RowWithTotalCount {}
+interface InventoryProductTransferFeedRow {
+	code: string;
+	source_branch_code: string;
+	destination_branch_code: string;
+	user_code: string;
+	transferred_at: string | Date;
+	note: string | null;
+	created_at: string | Date;
+	updated_at: string | Date;
+	item_count: number | string;
+	total_quantity: number | string;
+	products_summary: string;
+	primary_product_code: string | null;
+	primary_product_name: string | null;
+	primary_product_sku: string | null;
+	items: unknown;
+	source_branch_name: string;
+	destination_branch_name: string;
+}
+
+interface InventoryProductTransferListRow
+	extends InventoryProductTransferFeedRow, RowWithTotalCount {}
 interface InventoryCustomerListRow extends InventoryCustomerRecord, RowWithTotalCount {}
+
+export interface InventoryBranchProductStock {
+	product_code: string;
+	available: number;
+}
 
 function toNumber(value: number | string | null | undefined): number {
 	if (value === null || value === undefined) return 0;
@@ -355,6 +406,20 @@ function toSaleLineItems(value: unknown): InventorySaleLineItem[] {
 	}));
 }
 
+function toProductTransferLineItems(value: unknown): InventoryProductTransferLineItem[] {
+	return parseJsonArray(value).map((item) => ({
+		code: String(item.code ?? ''),
+		transfer_code: String(item.transfer_code ?? ''),
+		product_code: String(item.product_code ?? ''),
+		product_name: String(item.product_name ?? ''),
+		product_sku:
+			item.product_sku === null || item.product_sku === undefined ? null : String(item.product_sku),
+		quantity: toNumber(item.quantity as number | string | null | undefined),
+		created_at: String(item.created_at ?? ''),
+		updated_at: String(item.updated_at ?? '')
+	}));
+}
+
 function mapPurchaseFeedRow(row: InventoryPurchaseFeedRow): InventoryPurchaseRecord {
 	return {
 		code: row.code,
@@ -415,6 +480,30 @@ function mapSaleFeedRow(row: InventorySaleFeedRow): InventorySaleRecord {
 		branch_name: row.branch_name,
 		customer_full_name: row.customer_full_name,
 		voided_by_name: row.voided_by_name
+	};
+}
+
+function mapProductTransferFeedRow(
+	row: InventoryProductTransferFeedRow
+): InventoryProductTransferRecord {
+	return {
+		code: row.code,
+		source_branch_code: row.source_branch_code,
+		destination_branch_code: row.destination_branch_code,
+		user_code: row.user_code,
+		transferred_at: row.transferred_at,
+		note: row.note,
+		created_at: row.created_at,
+		updated_at: row.updated_at,
+		item_count: toNumber(row.item_count),
+		total_quantity: toNumber(row.total_quantity),
+		products_summary: row.products_summary || '',
+		primary_product_code: row.primary_product_code,
+		primary_product_name: row.primary_product_name,
+		primary_product_sku: row.primary_product_sku,
+		items: toProductTransferLineItems(row.items),
+		source_branch_name: row.source_branch_name,
+		destination_branch_name: row.destination_branch_name
 	};
 }
 
@@ -556,6 +645,39 @@ export class InventoryRepository {
 
 		return {
 			items: (items as InventorySaleFeedRow[]).map((row) => mapSaleFeedRow(row)),
+			pagination: toPagination(total, page, pageSize)
+		};
+	}
+
+	static async listProductTransfers(
+		db: Database,
+		filters: InventoryProductTransferListFilters = {}
+	): Promise<PagedListResult<InventoryProductTransferListItem>> {
+		const { page, pageSize } = normalizePagination({
+			page: filters.page,
+			pageSize: filters.pageSize,
+			maxPageSize: 120
+		});
+		const search = filters.search?.trim() || null;
+
+		const rowsResult = await sql<InventoryProductTransferListRow>`
+			SELECT *
+			FROM public.inventory_list_product_transfers(
+				${filters.sourceBranchCode ?? null},
+				${filters.destinationBranchCode ?? null},
+				${filters.productCode ?? null},
+				${search},
+				${page},
+				${pageSize}
+			)
+		`.execute(db);
+
+		const { items, total } = unpackPagedRows(rowsResult.rows);
+
+		return {
+			items: (items as InventoryProductTransferFeedRow[]).map((row) =>
+				mapProductTransferFeedRow(row)
+			),
 			pagination: toPagination(total, page, pageSize)
 		};
 	}
@@ -747,6 +869,47 @@ export class InventoryRepository {
 		return mapSaleFeedRow(saleRow);
 	}
 
+	static async createProductTransfer(
+		db: Database,
+		input: CreateInventoryProductTransferInput
+	): Promise<InventoryProductTransferRecord> {
+		const serializedItems = JSON.stringify(
+			input.items.map((item) => ({
+				product_code: item.productCode,
+				quantity: item.quantity
+			}))
+		);
+
+		const createdResult = await sql<{ code: string }>`
+			SELECT code
+			FROM public.inventory_create_product_transfer(
+				${input.sourceBranchCode},
+				${input.destinationBranchCode},
+				${input.userCode},
+				${input.transferredAt},
+				${input.note},
+				${serializedItems}::jsonb
+			)
+		`.execute(db);
+
+		const code = createdResult.rows[0]?.code;
+		if (!code) {
+			throw new Error('No se pudo registrar la transferencia');
+		}
+
+		const transferRow = (await db
+			.selectFrom('inventory_product_transfer_feed')
+			.selectAll()
+			.where('code', '=', code)
+			.executeTakeFirst()) as unknown as InventoryProductTransferFeedRow | undefined;
+
+		if (!transferRow) {
+			throw new Error('No se pudo cargar la transferencia creada');
+		}
+
+		return mapProductTransferFeedRow(transferRow);
+	}
+
 	static async updateSaleShippingState(
 		db: Database,
 		input: UpdateInventorySaleShippingInput
@@ -885,6 +1048,27 @@ export class InventoryRepository {
 		`.execute(db);
 
 		return overview.rows[0] ?? null;
+	}
+
+	static async getBranchProductStock(
+		db: Database,
+		input: { branchCode: string; productCode: string }
+	): Promise<InventoryBranchProductStock | null> {
+		const row = await db
+			.selectFrom('inventory_overview')
+			.select(['product_code', 'branch_code', 'available'])
+			.where('branch_code', '=', input.branchCode)
+			.where('product_code', '=', input.productCode)
+			.executeTakeFirst();
+
+		if (!row?.product_code || !row.branch_code) {
+			return null;
+		}
+
+		return {
+			product_code: row.product_code,
+			available: toNumber(row.available)
+		};
 	}
 
 	private static async resolveSaleCustomer(

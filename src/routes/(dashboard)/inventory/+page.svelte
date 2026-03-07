@@ -29,18 +29,18 @@
 	import { formatDate } from '$lib/utils/formatDate';
 	import { formatProductPrice } from '$lib/utils/products';
 	import type {
+		BranchCatalogItem,
 		InventoryOverviewItem,
 		InventoryOverviewSummary,
 		InventoryPagination
 	} from '$lib/types/inventory';
-	import { resolveInventoryBranchCode, type InventoryListFilterState } from '$lib/utils/inventory';
+	import { createEmptyPagination } from '$lib/types/inventory';
+	import {
+		buildBranchQuery,
+		resolveInventoryBranchCode,
+		type InventoryListFilterState
+	} from '$lib/utils/inventory';
 	import type { PageData } from './$types';
-
-	interface BranchCatalogItem {
-		code: string;
-		name: string;
-		state: boolean;
-	}
 
 	interface CategoryCatalogItem {
 		code: string;
@@ -65,12 +65,7 @@
 		total_inbound: 0
 	};
 
-	const EMPTY_PAGINATION: InventoryPagination = {
-		page: 1,
-		page_size: 30,
-		total: 0,
-		total_pages: 1
-	};
+	const EMPTY_PAGINATION: InventoryPagination = createEmptyPagination(30);
 
 	const STOCK_FILTER_OPTIONS = [
 		{ label: 'Todo', value: 'all', icon: 'listChecks' },
@@ -81,6 +76,8 @@
 
 	const canRead = $derived(can('inventory:read'));
 	const canUpdate = $derived(can('inventory:update'));
+	const canReadProductTransfers = $derived(can('product_transfers:read'));
+	const canCreateProductTransfers = $derived(can('product_transfers:create'));
 
 	let branches = $state<BranchCatalogItem[]>([]);
 	let categories = $state<CategoryCatalogItem[]>([]);
@@ -328,12 +325,36 @@
 		}
 	}
 
-	function navigateWithBranch(path: '/inventory/purchases' | '/inventory/sales'): void {
-		const query = !filterBranchCode
-			? ''
-			: `?${new URLSearchParams({ branch_code: filterBranchCode }).toString()}`;
-		const destination = `${path}${query}` as '/inventory/purchases' | '/inventory/sales';
+	function navigateToInventoryRoute(
+		path: '/inventory/purchases' | '/inventory/sales' | '/inventory/transfers',
+		queryKey: 'branch_code' | 'source_branch_code' = 'branch_code'
+	): void {
+		const query =
+			!filterBranchCode || queryKey === 'branch_code'
+				? buildBranchQuery(filterBranchCode)
+				: `?${new URLSearchParams({ [queryKey]: filterBranchCode }).toString()}`;
+		const destination = `${path}${query}` as
+			| '/inventory/purchases'
+			| '/inventory/sales'
+			| '/inventory/transfers';
 		void goto(resolve(destination));
+	}
+
+	function goToTransferComposer(item?: InventoryOverviewItem): void {
+		const params = new SvelteURLSearchParams();
+
+		if (item?.branch_code) {
+			params.set('source_branch_code', item.branch_code);
+		} else if (filterBranchCode) {
+			params.set('source_branch_code', filterBranchCode);
+		}
+
+		if (item?.product_code) {
+			params.set('product_code', item.product_code);
+		}
+
+		const query = params.size > 0 ? `?${params.toString()}` : '';
+		void goto(resolve(`/inventory/transfers/new${query}` as '/'));
 	}
 </script>
 
@@ -359,7 +380,7 @@
 					type="flat"
 					color="primary"
 					icon="shoppingBag"
-					onclick={() => navigateWithBranch('/inventory/purchases')}
+					onclick={() => navigateToInventoryRoute('/inventory/purchases')}
 				>
 					Compras
 				</Button>
@@ -367,10 +388,20 @@
 					type="flat"
 					color="success"
 					icon="creditCard"
-					onclick={() => navigateWithBranch('/inventory/sales')}
+					onclick={() => navigateToInventoryRoute('/inventory/sales')}
 				>
 					Ventas
 				</Button>
+				{#if canReadProductTransfers}
+					<Button
+						type="flat"
+						color="secondary"
+						icon="arrowLeftRight"
+						onclick={() => navigateToInventoryRoute('/inventory/transfers', 'source_branch_code')}
+					>
+						Transferencias
+					</Button>
+				{/if}
 			</div>
 		{/snippet}
 	</PageHeader>
@@ -621,6 +652,12 @@
 				icon="slidersHorizontal"
 				disabled={!canUpdate}
 				onclick={() => openThresholdDialog(item)}
+			/>
+			<ContextItem
+				title="Transferir stock"
+				icon="arrowLeftRight"
+				disabled={!canCreateProductTransfers}
+				onclick={() => goToTransferComposer(item)}
 			/>
 		{/if}
 	{/snippet}

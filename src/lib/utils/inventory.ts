@@ -14,7 +14,8 @@ export const INVENTORY_MOVEMENT_REASONS = [
 	'purchase',
 	'sale',
 	'purchase_refund',
-	'manual_adjustment'
+	'manual_adjustment',
+	'transfer'
 ] as const;
 export type InventoryMovementReason = (typeof INVENTORY_MOVEMENT_REASONS)[number];
 
@@ -196,4 +197,45 @@ export function canTransitionSaleShippingState(
 	}
 
 	return false;
+}
+
+// ---------------------------------------------------------------------------
+// Shared UI helpers (used across inventory list pages)
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the display name for the first/primary product in a list item.
+ * Falls back through: primary_product_name → first non-empty item name → 'Sin items'.
+ */
+export function getPrimaryProductLabel(item: {
+	primary_product_name?: string | null;
+	items: { product_name: string }[];
+}): string {
+	const primaryName = item.primary_product_name?.trim();
+	if (primaryName) return primaryName;
+
+	const firstLineName = item.items.find((i) => i.product_name.trim())?.product_name?.trim();
+	if (firstLineName) return firstLineName;
+
+	return 'Sin items';
+}
+
+/**
+ * Returns a compact meta label for the number of extra items beyond the first.
+ * Example: "1 item", "+2 items", "Sin items".
+ */
+export function getItemsMetaLabel(itemCount: number): string {
+	if (itemCount <= 0) return 'Sin items';
+	const extraItems = Math.max(itemCount - 1, 0);
+	if (extraItems > 0) return `+${extraItems} ${extraItems === 1 ? 'item' : 'items'}`;
+	return '1 item';
+}
+
+/**
+ * Builds a query string that includes the branch_code parameter.
+ * Returns an empty string when branchCode is falsy.
+ */
+export function buildBranchQuery(branchCode: string): string {
+	if (!branchCode) return '';
+	return `?${new URLSearchParams({ branch_code: branchCode }).toString()}`;
 }

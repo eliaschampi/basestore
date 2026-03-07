@@ -7,18 +7,15 @@
 		Alert,
 		Button,
 		Card,
-		Chip,
-		Fieldset,
 		Input,
 		NumberInput,
 		PageHeader,
 		SegmentedControl,
 		Select,
 		Table,
-		Tabs,
 		Textarea
 	} from '$lib/components';
-	import type { SegmentedControlOption, SelectOption, Tab, TableRow } from '$lib/components';
+	import type { SegmentedControlOption, SelectOption, TableRow } from '$lib/components';
 	import { showToast } from '$lib/stores/Toast';
 	import { formatProductPrice } from '$lib/utils/products';
 	import type { InventoryCustomerRecord } from '$lib/types/inventory';
@@ -28,8 +25,6 @@
 		InventorySaleShippingState
 	} from '$lib/utils/inventory';
 	import type { PageData } from './$types';
-
-	type SaleFormTab = 'sale' | 'fulfillment' | 'customer' | 'review';
 
 	interface BranchCatalogItem {
 		code: string;
@@ -62,13 +57,6 @@
 
 	const { data }: { data: PageData } = $props();
 
-	const SALE_FORM_TABS: Tab[] = [
-		{ value: 'sale', label: 'Items', icon: 'creditCard' },
-		{ value: 'fulfillment', label: 'Entrega', icon: 'package' },
-		{ value: 'customer', label: 'Cliente', icon: 'user' },
-		{ value: 'review', label: 'Revision', icon: 'checkCircle' }
-	];
-
 	const CHANNEL_SEGMENT_OPTIONS: SegmentedControlOption[] = [
 		{ label: 'Tienda', value: 'store', icon: 'store' },
 		{ label: 'Web', value: 'web', icon: 'globe' }
@@ -85,10 +73,8 @@
 		{ label: 'Entregado', value: 'delivered', icon: 'checkCircle' }
 	];
 
-	let activeTab = $state<SaleFormTab>('sale');
 	let submitting = $state(false);
 	let errorMessage = $state('');
-
 	let customerSearchOptions = $state<InventoryCustomerRecord[]>([]);
 
 	let createBranchCode = $state('');
@@ -150,51 +136,6 @@
 		draftItems.reduce((total, item) => total + item.quantity * item.unit_cost, 0)
 	);
 	const estimatedProfit = $derived(saleTotal - estimatedCost);
-	const selectedBranchLabel = $derived(
-		branchOptions.find((option) => option.value === createBranchCode)?.label ?? 'Pendiente'
-	);
-	const selectedCustomerLabel = $derived.by(() => {
-		if (createCustomerCode) {
-			const selected = selectedCustomerOption();
-			return selected?.full_name || createCustomerName || 'Pendiente';
-		}
-
-		return createCustomerName.trim() || 'Pendiente';
-	});
-
-	function changeTab(next: string | number): void {
-		if (next === 'sale' || next === 'fulfillment' || next === 'customer' || next === 'review') {
-			activeTab = next;
-		}
-	}
-
-	function goNextTab(): void {
-		if (activeTab === 'sale') {
-			activeTab = 'fulfillment';
-			return;
-		}
-		if (activeTab === 'fulfillment') {
-			activeTab = 'customer';
-			return;
-		}
-		if (activeTab === 'customer') {
-			activeTab = 'review';
-		}
-	}
-
-	function goPrevTab(): void {
-		if (activeTab === 'review') {
-			activeTab = 'customer';
-			return;
-		}
-		if (activeTab === 'customer') {
-			activeTab = 'fulfillment';
-			return;
-		}
-		if (activeTab === 'fulfillment') {
-			activeTab = 'sale';
-		}
-	}
 
 	function branchQuery(branchCode: string): string {
 		if (!branchCode) return '';
@@ -327,25 +268,21 @@
 
 		if (!createBranchCode) {
 			errorMessage = 'Selecciona la sede de la venta.';
-			activeTab = 'sale';
 			return;
 		}
 
 		if (draftItems.length === 0) {
 			errorMessage = 'Agrega al menos un item antes de registrar la venta.';
-			activeTab = 'sale';
 			return;
 		}
 
 		if (createFulfillmentType === 'delivery' && !createDeliveryAddress.trim()) {
 			errorMessage = 'La dirección es obligatoria para delivery.';
-			activeTab = 'fulfillment';
 			return;
 		}
 
 		if (!createCustomerCode && !createCustomerName.trim()) {
 			errorMessage = 'Debes seleccionar o registrar cliente.';
-			activeTab = 'customer';
 			return;
 		}
 
@@ -359,7 +296,6 @@
 
 		if (!customerNameForPayload) {
 			errorMessage = 'El cliente seleccionado no tiene nombre válido.';
-			activeTab = 'customer';
 			return;
 		}
 
@@ -407,7 +343,7 @@
 <div class="lumi-stack lumi-space--md">
 	<PageHeader
 		title="Nueva venta"
-		subtitle="Registra ventas con múltiples items y cálculo inmediato"
+		subtitle="Configura la venta, el cliente y los ítems en un solo flujo"
 		icon="creditCard"
 	>
 		{#snippet actions()}
@@ -431,302 +367,257 @@
 	{/if}
 
 	<Card spaced>
-		<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
-			<div>
-				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Sede</p>
-				<p class="lumi-margin--none lumi-font--semibold">{selectedBranchLabel}</p>
-			</div>
-			<div>
-				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Cliente</p>
-				<p class="lumi-margin--none lumi-font--semibold">{selectedCustomerLabel}</p>
-			</div>
-			<div>
-				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Items / unidades</p>
-				<p class="lumi-margin--none lumi-font--semibold">{itemCount} / {totalQuantity}</p>
-			</div>
-			<div>
-				<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Total / utilidad</p>
-				<p class="lumi-margin--none lumi-font--semibold">
-					{formatProductPrice(saleTotal)} / {formatProductPrice(estimatedProfit)}
-				</p>
-			</div>
-		</div>
-
-		<Tabs
-			value={activeTab}
-			tabs={SALE_FORM_TABS}
-			color="primary"
-			aria-label="Formulario de venta"
-			onchange={(value) => changeTab(value)}
-		>
-			{#if activeTab === 'sale'}
-				<div class="lumi-stack lumi-space--md">
-					<Fieldset legend="Agregar item">
-						<form
-							class="lumi-stack lumi-space--sm"
-							onsubmit={(event) => {
-								event.preventDefault();
-								addDraftItem();
+		<div class="inventory-create-form">
+			<div class="inventory-create-section">
+				<div class="lumi-stack lumi-space--2xs">
+					<p class="lumi-margin--none lumi-font--semibold">Venta</p>
+					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+						Define sede, fecha, canal y forma de entrega.
+					</p>
+				</div>
+				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+					<Select
+						label="Sede"
+						value={createBranchCode}
+						options={branchOptions}
+						placeholder="Selecciona sede"
+						onchange={(value) => {
+							createBranchCode = typeof value === 'string' ? value : '';
+						}}
+					/>
+					<Input
+						label="Fecha venta"
+						type="date"
+						value={createSoldAt}
+						oninput={(event) => (createSoldAt = (event.currentTarget as HTMLInputElement).value)}
+					/>
+					<Input
+						label="Referencia (opcional)"
+						value={createOrderReference}
+						oninput={(event) =>
+							(createOrderReference = (event.currentTarget as HTMLInputElement).value)}
+					/>
+				</div>
+				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+					<div class="lumi-stack lumi-space--xs">
+						<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Canal</p>
+						<SegmentedControl
+							value={createSaleChannel}
+							options={CHANNEL_SEGMENT_OPTIONS}
+							fullWidth
+							onchange={(value) => {
+								createSaleChannel = (value as InventorySaleChannel) ?? 'store';
 							}}
-						>
-							<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
-								<Select
-									label="Producto"
-									value={draftProductCode}
-									options={productOptions}
-									placeholder="Selecciona producto"
-									onchange={(value) => {
-										draftProductCode = typeof value === 'string' ? value : '';
-										syncDraftPrice(draftProductCode);
-									}}
-								/>
+						/>
+					</div>
+					<div class="lumi-stack lumi-space--xs">
+						<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Entrega</p>
+						<SegmentedControl
+							value={createFulfillmentType}
+							options={FULFILLMENT_SEGMENT_OPTIONS}
+							fullWidth
+							onchange={(value) => {
+								handleFulfillmentChange((value as InventorySaleFulfillmentType) ?? 'pickup');
+							}}
+						/>
+					</div>
+				</div>
+			</div>
+
+			{#if createFulfillmentType === 'delivery'}
+				<div class="inventory-create-section">
+					<div class="lumi-stack lumi-space--2xs">
+						<p class="lumi-margin--none lumi-font--semibold">Delivery</p>
+						<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+							Completa el estado de envío y la dirección.
+						</p>
+					</div>
+					<div class="lumi-stack lumi-space--sm">
+						<div class="lumi-stack lumi-space--xs">
+							<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Estado de envío</p>
+							<SegmentedControl
+								value={createShippingState}
+								options={DELIVERY_SHIPPING_SEGMENT_OPTIONS}
+								fullWidth
+								onchange={(value) => {
+									createShippingState = (
+										typeof value === 'string' ? value : 'pending'
+									) as InventorySaleShippingState;
+								}}
+							/>
+						</div>
+						<Input
+							label="Dirección delivery"
+							value={createDeliveryAddress}
+							oninput={(event) =>
+								(createDeliveryAddress = (event.currentTarget as HTMLInputElement).value)}
+						/>
+					</div>
+				</div>
+			{/if}
+
+			<div class="inventory-create-section">
+				<div class="lumi-stack lumi-space--2xs">
+					<p class="lumi-margin--none lumi-font--semibold">Cliente</p>
+					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+						Selecciona uno registrado o ingrésalo manualmente.
+					</p>
+				</div>
+				<Select
+					label="Cliente registrado (opcional)"
+					value={createCustomerCode}
+					options={customerSelectOptions}
+					autocomplete
+					clearable={false}
+					noDataText="No hay clientes registrados"
+					onsearch={(query) => void loadCustomers(query)}
+					onchange={(value) => {
+						createCustomerCode = typeof value === 'string' ? value : '';
+						if (createCustomerCode) {
+							const selected = selectedCustomerOption();
+							createCustomerName = selected?.full_name ?? '';
+							createCustomerPhone = selected?.phone ?? '';
+						}
+					}}
+				/>
+				{#if !createCustomerCode}
+					<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+						<Input
+							label="Cliente"
+							value={createCustomerName}
+							oninput={(event) =>
+								(createCustomerName = (event.currentTarget as HTMLInputElement).value)}
+						/>
+						<Input
+							label="Teléfono (opcional)"
+							value={createCustomerPhone}
+							oninput={(event) =>
+								(createCustomerPhone = (event.currentTarget as HTMLInputElement).value)}
+						/>
+					</div>
+				{/if}
+			</div>
+
+			<div class="inventory-create-section">
+				<div class="lumi-stack lumi-space--2xs">
+					<p class="lumi-margin--none lumi-font--semibold">Items</p>
+					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+						Carga producto, cantidad y precio de venta en un solo bloque.
+					</p>
+				</div>
+				<form
+					class="lumi-stack lumi-space--sm"
+					onsubmit={(event) => {
+						event.preventDefault();
+						addDraftItem();
+					}}
+				>
+					<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+						<Select
+							label="Producto"
+							value={draftProductCode}
+							options={productOptions}
+							placeholder="Selecciona producto"
+							onchange={(value) => {
+								draftProductCode = typeof value === 'string' ? value : '';
+								syncDraftPrice(draftProductCode);
+							}}
+						/>
+						<NumberInput
+							label="Cantidad"
+							value={draftQuantity}
+							min={1}
+							max={100000}
+							step={1}
+							onchange={(value) => {
+								draftQuantity = value;
+							}}
+						/>
+						<NumberInput
+							label="Precio unitario"
+							value={draftUnitPrice}
+							min={0}
+							max={1000000}
+							step={0.5}
+							onchange={(value) => {
+								draftUnitPrice = value;
+							}}
+						/>
+					</div>
+					<div class="lumi-flex lumi-justify--between lumi-align-items--center lumi-flex--wrap">
+						<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
+							Presiona Enter para agregar rapidamente.
+						</p>
+						<Button type="flat" color="primary" icon="plus" button="submit">Agregar item</Button>
+					</div>
+				</form>
+				<div class="lumi-stack lumi-space--2xs">
+					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+						{itemCount}
+						{itemCount === 1 ? 'item' : 'items'} · {totalQuantity} unidades ·
+						{formatProductPrice(saleTotal)} venta · {formatProductPrice(estimatedProfit)} utilidad
+					</p>
+				</div>
+				{#if draftItems.length === 0}
+					<Alert type="info" closable={false}>Aún no agregaste items.</Alert>
+				{:else}
+					<Table data={itemRows} pagination={false}>
+						{#snippet thead()}
+							<th>Producto</th>
+							<th>Cantidad</th>
+							<th>Precio unitario</th>
+							<th>Subtotal</th>
+							<th>Margen estimado</th>
+							<th>Acciones</th>
+						{/snippet}
+						{#snippet row({ row })}
+							{@const item = row as unknown as SaleDraftItem}
+							<td>{item.product_name}</td>
+							<td>
 								<NumberInput
-									label="Cantidad"
-									value={draftQuantity}
+									size="sm"
+									value={item.quantity}
 									min={1}
 									max={100000}
 									step={1}
-									onchange={(value) => {
-										draftQuantity = value;
-									}}
+									onchange={(value) => setDraftItemQuantity(item.product_code, value)}
 								/>
-								<NumberInput
-									label="Precio unitario"
-									value={draftUnitPrice}
-									min={0}
-									max={1000000}
-									step={0.5}
-									onchange={(value) => {
-										draftUnitPrice = value;
-									}}
-								/>
-							</div>
-							<div class="lumi-flex lumi-justify--between lumi-align-items--center lumi-flex--wrap">
-								<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
-									Presiona Enter para agregar rapidamente.
-								</p>
-								<Button type="flat" color="primary" icon="plus" button="submit">
-									Agregar item
+							</td>
+							<td>{formatProductPrice(item.unit_price)}</td>
+							<td>{formatProductPrice(item.quantity * item.unit_price)}</td>
+							<td>
+								{formatProductPrice(item.quantity * (item.unit_price - item.unit_cost))}
+							</td>
+							<td>
+								<Button
+									type="flat"
+									size="sm"
+									icon="trash"
+									color="danger"
+									onclick={() => removeDraftItem(item.product_code)}
+								>
+									Quitar
 								</Button>
-							</div>
-						</form>
-					</Fieldset>
-
-					<Fieldset legend="Items de la venta">
-						{#if draftItems.length === 0}
-							<Alert type="info" closable={false}>Aún no agregaste items.</Alert>
-						{:else}
-							<Table data={itemRows} pagination={false}>
-								{#snippet thead()}
-									<th>Producto</th>
-									<th>Cantidad</th>
-									<th>Precio unitario</th>
-									<th>Subtotal</th>
-									<th>Margen estimado</th>
-									<th>Acciones</th>
-								{/snippet}
-								{#snippet row({ row })}
-									{@const item = row as unknown as SaleDraftItem}
-									<td>{item.product_name}</td>
-									<td>
-										<NumberInput
-											size="sm"
-											value={item.quantity}
-											min={1}
-											max={100000}
-											step={1}
-											onchange={(value) => setDraftItemQuantity(item.product_code, value)}
-										/>
-									</td>
-									<td>{formatProductPrice(item.unit_price)}</td>
-									<td>{formatProductPrice(item.quantity * item.unit_price)}</td>
-									<td>
-										{formatProductPrice(item.quantity * (item.unit_price - item.unit_cost))}
-									</td>
-									<td>
-										<Button
-											type="flat"
-											size="sm"
-											icon="trash"
-											color="danger"
-											onclick={() => removeDraftItem(item.product_code)}
-										>
-											Quitar
-										</Button>
-									</td>
-								{/snippet}
-							</Table>
-						{/if}
-					</Fieldset>
-				</div>
-			{/if}
-
-			{#if activeTab === 'fulfillment'}
-				<div class="lumi-stack lumi-space--md">
-					<Fieldset legend="Canal y entrega">
-						<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
-							<Select
-								label="Sede"
-								value={createBranchCode}
-								options={branchOptions}
-								placeholder="Selecciona sede"
-								onchange={(value) => {
-									createBranchCode = typeof value === 'string' ? value : '';
-								}}
-							/>
-							<Input
-								label="Fecha venta"
-								type="date"
-								value={createSoldAt}
-								oninput={(event) =>
-									(createSoldAt = (event.currentTarget as HTMLInputElement).value)}
-							/>
-							<Input
-								label="Referencia (opcional)"
-								value={createOrderReference}
-								oninput={(event) =>
-									(createOrderReference = (event.currentTarget as HTMLInputElement).value)}
-							/>
-						</div>
-						<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
-							<div class="lumi-stack lumi-space--xs">
-								<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Canal</p>
-								<SegmentedControl
-									value={createSaleChannel}
-									options={CHANNEL_SEGMENT_OPTIONS}
-									fullWidth
-									onchange={(value) => {
-										createSaleChannel = (value as InventorySaleChannel) ?? 'store';
-									}}
-								/>
-							</div>
-							<div class="lumi-stack lumi-space--xs">
-								<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Entrega</p>
-								<SegmentedControl
-									value={createFulfillmentType}
-									options={FULFILLMENT_SEGMENT_OPTIONS}
-									fullWidth
-									onchange={(value) => {
-										handleFulfillmentChange((value as InventorySaleFulfillmentType) ?? 'pickup');
-									}}
-								/>
-							</div>
-						</div>
-					</Fieldset>
-
-					{#if createFulfillmentType === 'delivery'}
-						<Fieldset legend="Envío">
-							<div class="lumi-stack lumi-space--sm">
-								<div class="lumi-stack lumi-space--xs">
-									<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Estado de envío</p>
-									<SegmentedControl
-										value={createShippingState}
-										options={DELIVERY_SHIPPING_SEGMENT_OPTIONS}
-										fullWidth
-										onchange={(value) => {
-											createShippingState = (
-												typeof value === 'string' ? value : 'pending'
-											) as InventorySaleShippingState;
-										}}
-									/>
-								</div>
-								<Input
-									label="Dirección delivery"
-									value={createDeliveryAddress}
-									oninput={(event) =>
-										(createDeliveryAddress = (event.currentTarget as HTMLInputElement).value)}
-								/>
-							</div>
-						</Fieldset>
-					{/if}
-				</div>
-			{/if}
-
-			{#if activeTab === 'customer'}
-				<Fieldset legend="Cliente">
-					<div class="lumi-stack lumi-space--sm">
-						<Select
-							label="Cliente registrado (opcional)"
-							value={createCustomerCode}
-							options={customerSelectOptions}
-							autocomplete
-							clearable={false}
-							noDataText="No hay clientes registrados"
-							onsearch={(query) => void loadCustomers(query)}
-							onchange={(value) => {
-								createCustomerCode = typeof value === 'string' ? value : '';
-								if (createCustomerCode) {
-									const selected = selectedCustomerOption();
-									createCustomerName = selected?.full_name ?? '';
-									createCustomerPhone = selected?.phone ?? '';
-								}
-							}}
-						/>
-
-						{#if !createCustomerCode}
-							<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
-								<Input
-									label="Cliente"
-									value={createCustomerName}
-									oninput={(event) =>
-										(createCustomerName = (event.currentTarget as HTMLInputElement).value)}
-								/>
-								<Input
-									label="Teléfono (opcional)"
-									value={createCustomerPhone}
-									oninput={(event) =>
-										(createCustomerPhone = (event.currentTarget as HTMLInputElement).value)}
-								/>
-							</div>
-						{/if}
-					</div>
-				</Fieldset>
-			{/if}
-
-			{#if activeTab === 'review'}
-				<div class="lumi-stack lumi-space--md">
-					<Fieldset legend="Resumen">
-						<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
-							<p class="lumi-margin--none">
-								<strong>Items:</strong>
-								<Chip size="sm" color="info">{itemCount}</Chip>
-							</p>
-							<p class="lumi-margin--none"><strong>Unidades:</strong> {totalQuantity}</p>
-							<p class="lumi-margin--none">
-								<strong>Total venta:</strong>
-								{formatProductPrice(saleTotal)}
-							</p>
-							<p class="lumi-margin--none">
-								<strong>Costo estimado:</strong>
-								{formatProductPrice(estimatedCost)}
-							</p>
-							<p class="lumi-margin--none">
-								<strong>Utilidad estimada:</strong>
-								{formatProductPrice(estimatedProfit)}
-							</p>
-							<p class="lumi-margin--none">
-								<strong>Entrega:</strong>
-								{createFulfillmentType === 'pickup' ? 'Recojo' : 'Delivery'}
-							</p>
-						</div>
-					</Fieldset>
-					<Fieldset legend="Nota">
-						<Textarea
-							label="Nota (opcional)"
-							rows={3}
-							value={createNote}
-							oninput={(event) => (createNote = (event.currentTarget as HTMLTextAreaElement).value)}
-						/>
-					</Fieldset>
-				</div>
-			{/if}
-
-			<div class="lumi-flex lumi-justify--between lumi-align-items--center">
-				<Button type="border" disabled={activeTab === 'sale'} onclick={goPrevTab}>Anterior</Button>
-				{#if activeTab !== 'review'}
-					<Button type="filled" color="info" onclick={goNextTab}>Siguiente</Button>
+							</td>
+						{/snippet}
+					</Table>
 				{/if}
 			</div>
-		</Tabs>
+
+			<div class="inventory-create-section">
+				<div class="lumi-stack lumi-space--2xs">
+					<p class="lumi-margin--none lumi-font--semibold">Nota</p>
+					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+						Contexto operativo opcional para el equipo.
+					</p>
+				</div>
+				<Textarea
+					label="Nota (opcional)"
+					rows={3}
+					value={createNote}
+					oninput={(event) => (createNote = (event.currentTarget as HTMLTextAreaElement).value)}
+				/>
+			</div>
+		</div>
 	</Card>
 </div>

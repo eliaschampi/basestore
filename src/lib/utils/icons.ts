@@ -24,6 +24,7 @@ export type IconComponent = Component;
 import {
 	Activity,
 	ArrowDown,
+	ArrowLeftRight,
 	ArrowRight,
 	ArrowUp,
 	Award,
@@ -133,6 +134,7 @@ const _registry = {
 	arrowRight: ArrowRight,
 	arrowDown: ArrowDown,
 	arrowUp: ArrowUp,
+	arrowLeftRight: ArrowLeftRight,
 
 	// Actions
 	search: Search,

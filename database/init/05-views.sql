@@ -52,12 +52,6 @@ LEFT JOIN LATERAL (
     WHERE dl.product_code = p.code
 ) AS media ON TRUE;
 
--- Create index on products columns used by products_overview for better performance
-CREATE INDEX IF NOT EXISTS idx_products_overview_name ON products (name);
-CREATE INDEX IF NOT EXISTS idx_products_overview_active ON products (is_active);
-CREATE INDEX IF NOT EXISTS idx_products_overview_brand ON products (brand_code);
-CREATE INDEX IF NOT EXISTS idx_products_overview_category ON products (category_code);
-
 -- Inventory overview with stock-health metadata.
 CREATE OR REPLACE VIEW public.inventory_overview AS
 SELECT
@@ -247,6 +241,54 @@ LEFT JOIN LATERAL (
   WHERE si.sale_code = s.code
 ) AS items ON TRUE;
 
+CREATE OR REPLACE VIEW public.inventory_product_transfer_feed AS
+SELECT
+  pt.code,
+  pt.source_branch_code,
+  pt.destination_branch_code,
+  pt.user_code,
+  pt.transferred_at,
+  pt.note,
+  pt.created_at,
+  pt.updated_at,
+  COALESCE(items.item_count, 0) AS item_count,
+  COALESCE(items.total_quantity, 0) AS total_quantity,
+  COALESCE(items.products_summary, '') AS products_summary,
+  items.primary_product_code,
+  items.primary_product_name,
+  items.primary_product_sku,
+  COALESCE(items.items, '[]'::jsonb) AS items,
+  source_branch.name AS source_branch_name,
+  destination_branch.name AS destination_branch_name
+FROM public.product_transfers pt
+INNER JOIN public.branches source_branch ON source_branch.code = pt.source_branch_code
+INNER JOIN public.branches destination_branch ON destination_branch.code = pt.destination_branch_code
+LEFT JOIN LATERAL (
+  SELECT
+    COUNT(*)::int AS item_count,
+    COALESCE(SUM(pti.quantity), 0)::int AS total_quantity,
+    STRING_AGG(DISTINCT p.name, ', ' ORDER BY p.name) AS products_summary,
+    (ARRAY_AGG(p.code ORDER BY p.name ASC, pti.created_at ASC))[1] AS primary_product_code,
+    (ARRAY_AGG(p.name ORDER BY p.name ASC, pti.created_at ASC))[1] AS primary_product_name,
+    (ARRAY_AGG(p.sku ORDER BY p.name ASC, pti.created_at ASC))[1] AS primary_product_sku,
+    jsonb_agg(
+      jsonb_build_object(
+        'code', pti.code,
+        'transfer_code', pti.transfer_code,
+        'product_code', pti.product_code,
+        'product_name', p.name,
+        'product_sku', p.sku,
+        'quantity', pti.quantity,
+        'created_at', pti.created_at,
+        'updated_at', pti.updated_at
+      )
+      ORDER BY p.name ASC, pti.created_at ASC
+    ) AS items
+  FROM public.product_transfer_items pti
+  INNER JOIN public.products p ON p.code = pti.product_code
+  WHERE pti.transfer_code = pt.code
+) AS items ON TRUE;
+
 CREATE OR REPLACE VIEW public.inventory_movement_feed AS
 SELECT
   m.code,
@@ -264,7 +306,8 @@ SELECT
   m.updated_at,
   p.name AS product_name,
   p.sku AS product_sku,
-  b.name AS branch_name
+  b.name AS branch_name,
+  m.transfer_code
 FROM public.inventory_movements m
 INNER JOIN public.products p ON p.code = m.product_code
 INNER JOIN public.branches b ON b.code = m.branch_code;
@@ -656,6 +699,97 @@ SELECT
 FROM ranked;
 $$;
 
+CREATE OR REPLACE FUNCTION public.inventory_list_product_transfers(
+  p_source_branch_code UUID DEFAULT NULL,
+  p_destination_branch_code UUID DEFAULT NULL,
+  p_product_code UUID DEFAULT NULL,
+  p_search TEXT DEFAULT NULL,
+  p_page INTEGER DEFAULT 1,
+  p_page_size INTEGER DEFAULT 20
+)
+RETURNS TABLE(
+  code UUID,
+  source_branch_code UUID,
+  destination_branch_code UUID,
+  user_code UUID,
+  transferred_at TIMESTAMPTZ,
+  note TEXT,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ,
+  item_count INTEGER,
+  total_quantity INTEGER,
+  products_summary TEXT,
+  primary_product_code UUID,
+  primary_product_name TEXT,
+  primary_product_sku TEXT,
+  items JSONB,
+  source_branch_name TEXT,
+  destination_branch_name TEXT,
+  total_count INTEGER
+)
+LANGUAGE sql
+STABLE
+AS $$
+WITH filtered AS (
+  SELECT iptf.*
+  FROM public.inventory_product_transfer_feed iptf
+  WHERE (p_source_branch_code IS NULL OR iptf.source_branch_code = p_source_branch_code)
+    AND (p_destination_branch_code IS NULL OR iptf.destination_branch_code = p_destination_branch_code)
+    AND (
+      p_product_code IS NULL
+      OR EXISTS (
+        SELECT 1
+        FROM public.product_transfer_items pti
+        WHERE pti.transfer_code = iptf.code
+          AND pti.product_code = p_product_code
+      )
+    )
+    AND (
+      NULLIF(BTRIM(COALESCE(p_search, '')), '') IS NULL
+      OR iptf.products_summary ILIKE '%' || BTRIM(p_search) || '%'
+      OR COALESCE(iptf.note, '') ILIKE '%' || BTRIM(p_search) || '%'
+      OR iptf.source_branch_name ILIKE '%' || BTRIM(p_search) || '%'
+      OR iptf.destination_branch_name ILIKE '%' || BTRIM(p_search) || '%'
+      OR EXISTS (
+        SELECT 1
+        FROM public.product_transfer_items pti
+        INNER JOIN public.products p ON p.code = pti.product_code
+        WHERE pti.transfer_code = iptf.code
+          AND COALESCE(p.sku, '') ILIKE '%' || BTRIM(p_search) || '%'
+      )
+    )
+),
+ranked AS (
+  SELECT
+    filtered.*,
+    COUNT(*) OVER ()::int AS total_count
+  FROM filtered
+  ORDER BY filtered.transferred_at DESC, filtered.created_at DESC
+  LIMIT GREATEST(COALESCE(p_page_size, 20), 1)
+  OFFSET (GREATEST(COALESCE(p_page, 1), 1) - 1) * GREATEST(COALESCE(p_page_size, 20), 1)
+)
+SELECT
+  ranked.code,
+  ranked.source_branch_code,
+  ranked.destination_branch_code,
+  ranked.user_code,
+  ranked.transferred_at,
+  ranked.note,
+  ranked.created_at,
+  ranked.updated_at,
+  ranked.item_count,
+  ranked.total_quantity,
+  ranked.products_summary,
+  ranked.primary_product_code,
+  ranked.primary_product_name,
+  ranked.primary_product_sku,
+  ranked.items,
+  ranked.source_branch_name,
+  ranked.destination_branch_name,
+  ranked.total_count
+FROM ranked;
+$$;
+
 CREATE OR REPLACE FUNCTION public.inventory_list_customers(
   p_search TEXT DEFAULT NULL,
   p_page INTEGER DEFAULT 1,
@@ -725,7 +859,8 @@ RETURNS TABLE(
   updated_at TIMESTAMPTZ,
   product_name TEXT,
   product_sku TEXT,
-  branch_name TEXT
+  branch_name TEXT,
+  transfer_code UUID
 )
 LANGUAGE sql
 STABLE
@@ -746,7 +881,8 @@ SELECT
   imf.updated_at,
   imf.product_name,
   imf.product_sku,
-  imf.branch_name
+  imf.branch_name,
+  imf.transfer_code
 FROM public.inventory_movement_feed imf
 WHERE (p_branch_code IS NULL OR imf.branch_code = p_branch_code)
   AND (p_product_code IS NULL OR imf.product_code = p_product_code)
