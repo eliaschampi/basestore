@@ -332,7 +332,7 @@
 					loading={submitting}
 					onclick={() => void submitCreateTransfer()}
 				>
-					Registrar transferencia
+					Guardar
 				</Button>
 			</div>
 		{/snippet}
@@ -449,9 +449,7 @@
 						{itemCount === 1 ? 'item' : 'items'} · {totalQuantity} unidades
 					</p>
 				</div>
-				{#if draftItems.length === 0}
-					<Alert type="info" closable={false}>Aún no agregaste items.</Alert>
-				{:else}
+				{#if draftItems.length !== 0}
 					<Table data={itemRows} pagination={false} class="transfer-create__items-table">
 						{#snippet thead()}
 							<th>Producto</th>

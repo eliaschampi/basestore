@@ -230,7 +230,7 @@
 					onclick={navigateToCreateTransfer}
 					disabled={!canCreate}
 				>
-					Nueva transferencia
+					Agregar
 				</Button>
 			</div>
 		{/snippet}

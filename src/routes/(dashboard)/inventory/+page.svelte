@@ -398,9 +398,7 @@
 						color="secondary"
 						icon="arrowLeftRight"
 						onclick={() => navigateToInventoryRoute('/inventory/transfers', 'source_branch_code')}
-					>
-						Transferencias
-					</Button>
+					></Button>
 				{/if}
 			</div>
 		{/snippet}
