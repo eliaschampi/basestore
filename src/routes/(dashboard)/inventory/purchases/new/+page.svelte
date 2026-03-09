@@ -6,6 +6,7 @@
 		Alert,
 		Button,
 		Card,
+		Fieldset,
 		Input,
 		NumberInput,
 		PageHeader,
@@ -61,8 +62,6 @@
 		{ value: 'aliexpress', label: 'AliExpress', apiOrigin: 'aliexpress' },
 		{ value: 'temu', label: 'Temu', apiOrigin: 'temu' },
 		{ value: 'lima', label: 'Lima', apiOrigin: 'lima' },
-		{ value: 'amazon', label: 'Amazon', apiOrigin: 'other', customLabel: 'Amazon' },
-		{ value: 'ebay', label: 'eBay', apiOrigin: 'other', customLabel: 'eBay' },
 		{
 			value: 'local_supplier',
 			label: 'Proveedor local',
@@ -290,7 +289,7 @@
 	}
 </script>
 
-<div class="lumi-stack lumi-space--md">
+<div class="lumi-stack lumi-stack--md">
 	<PageHeader
 		title="Nueva compra"
 		subtitle="Registra items, costos y estado inicial en un solo flujo"
@@ -317,14 +316,11 @@
 	{/if}
 
 	<Card spaced>
-		<div class="inventory-create-form">
-			<div class="inventory-create-section">
-				<div class="lumi-stack lumi-space--2xs">
-					<p class="lumi-margin--none lumi-font--semibold">Compra</p>
-					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-						Define sede, origen, tracking y estado inicial.
-					</p>
-				</div>
+		<div class="lumi-stack lumi-stack--md">
+			<Fieldset legend="Compra">
+				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+					Define sede, origen, tracking y estado inicial.
+				</p>
 				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
 					<Select
 						label="Sede destino"
@@ -359,7 +355,7 @@
 							applyOriginOption(typeof value === 'string' ? value : 'aliexpress');
 						}}
 					/>
-					<div class="lumi-stack lumi-space--xs">
+					<div class="lumi-stack lumi-stack--xs">
 						<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Tipo</p>
 						<SegmentedControl
 							value={createEntryType}
@@ -372,7 +368,7 @@
 							}}
 						/>
 					</div>
-					<div class="lumi-stack lumi-space--xs">
+					<div class="lumi-stack lumi-stack--xs">
 						<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Estado inicial</p>
 						<SegmentedControl
 							value={createState}
@@ -395,17 +391,14 @@
 							(createOriginCustom = (event.currentTarget as HTMLInputElement).value)}
 					/>
 				{/if}
-			</div>
+			</Fieldset>
 
-			<div class="inventory-create-section">
-				<div class="lumi-stack lumi-space--2xs">
-					<p class="lumi-margin--none lumi-font--semibold">Items</p>
-					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-						Carga producto, cantidad y costo unitario en un solo bloque.
-					</p>
-				</div>
+			<Fieldset legend="Items">
+				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+					Carga producto, cantidad y costo unitario en un solo bloque.
+				</p>
 				<form
-					class="lumi-stack lumi-space--sm"
+					class="lumi-stack lumi-stack--sm"
 					onsubmit={(event) => {
 						event.preventDefault();
 						addDraftItem();
@@ -450,13 +443,11 @@
 						<Button type="flat" color="primary" icon="plus" button="submit">Agregar item</Button>
 					</div>
 				</form>
-				<div class="lumi-stack lumi-space--2xs">
-					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-						{itemCount}
-						{itemCount === 1 ? 'item' : 'items'} · {totalQuantity} unidades ·
-						{formatProductPrice(totalCost)} estimado
-					</p>
-				</div>
+				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+					{itemCount}
+					{itemCount === 1 ? 'item' : 'items'} · {totalQuantity} unidades ·
+					{formatProductPrice(totalCost)} estimado
+				</p>
 				{#if draftItems.length !== 0}
 					<Table data={itemRows} pagination={false}>
 						{#snippet thead()}
@@ -495,19 +486,16 @@
 						{/snippet}
 					</Table>
 				{/if}
-			</div>
+			</Fieldset>
 
-			<div class="inventory-create-section">
-				<div class="lumi-stack lumi-space--2xs">
-					<p class="lumi-margin--none lumi-font--semibold">Nota</p>
-				</div>
+			<Fieldset legend="Nota">
 				<Textarea
 					label="Contexto operativo opcional para el equipo."
 					rows={3}
 					value={createNote}
 					oninput={(event) => (createNote = (event.currentTarget as HTMLTextAreaElement).value)}
 				/>
-			</div>
+			</Fieldset>
 		</div>
 	</Card>
 </div>

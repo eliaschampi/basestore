@@ -7,6 +7,7 @@
 		Alert,
 		Button,
 		Card,
+		Fieldset,
 		Input,
 		NumberInput,
 		PageHeader,
@@ -316,7 +317,7 @@
 	}
 </script>
 
-<div class="lumi-stack lumi-space--md">
+<div class="lumi-stack lumi-stack--md">
 	<PageHeader
 		title="Nueva transferencia"
 		subtitle="Mueve stock entre sedes con validación inmediata"
@@ -343,14 +344,11 @@
 	{/if}
 
 	<Card spaced>
-		<div class="inventory-create-form">
-			<div class="inventory-create-section">
-				<div class="lumi-stack lumi-space--2xs">
-					<p class="lumi-margin--none lumi-font--semibold">Transferencia</p>
-					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-						Selecciona origen, destino y fecha del movimiento.
-					</p>
-				</div>
+		<div class="lumi-stack lumi-stack--md">
+			<Fieldset legend="Transferencia">
+				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+					Selecciona origen, destino y fecha del movimiento.
+				</p>
 				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
 					<Select
 						label="Sede origen"
@@ -380,17 +378,14 @@
 					La transferencia descuenta stock de la sede origen y lo acredita de inmediato en la sede
 					destino dentro de una sola transaccion.
 				</Alert>
-			</div>
+			</Fieldset>
 
-			<div class="inventory-create-section">
-				<div class="lumi-stack lumi-space--2xs">
-					<p class="lumi-margin--none lumi-font--semibold">Items</p>
-					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-						Agrega productos validando disponibilidad en la sede origen.
-					</p>
-				</div>
+			<Fieldset legend="Items">
+				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+					Agrega productos validando disponibilidad en la sede origen.
+				</p>
 				<form
-					class="lumi-stack lumi-space--sm"
+					class="lumi-stack lumi-stack--sm"
 					onsubmit={(event) => {
 						event.preventDefault();
 						addDraftItem();
@@ -443,12 +438,10 @@
 						{/if}
 					</div>
 				{/if}
-				<div class="lumi-stack lumi-space--2xs">
-					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-						{itemCount}
-						{itemCount === 1 ? 'item' : 'items'} · {totalQuantity} unidades
-					</p>
-				</div>
+				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+					{itemCount}
+					{itemCount === 1 ? 'item' : 'items'} · {totalQuantity} unidades
+				</p>
 				{#if draftItems.length !== 0}
 					<Table data={itemRows} pagination={false} class="transfer-create__items-table">
 						{#snippet thead()}
@@ -483,22 +476,16 @@
 						{/snippet}
 					</Table>
 				{/if}
-			</div>
+			</Fieldset>
 
-			<div class="inventory-create-section">
-				<div class="lumi-stack lumi-space--2xs">
-					<p class="lumi-margin--none lumi-font--semibold">Nota</p>
-					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-						Contexto operativo opcional para el equipo.
-					</p>
-				</div>
+			<Fieldset legend="Nota">
 				<Textarea
-					label="Nota (opcional)"
+					label="Contexto operativo opcional para el equipo."
 					rows={3}
 					value={createNote}
 					oninput={(event) => (createNote = (event.currentTarget as HTMLTextAreaElement).value)}
 				/>
-			</div>
+			</Fieldset>
 		</div>
 	</Card>
 </div>

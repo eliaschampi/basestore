@@ -175,7 +175,7 @@
 	.lumi-segmented-control {
 		position: relative;
 		display: inline-flex;
-		align-items: center;
+		align-items: stretch;
 		--seg-hover-bg: color-mix(in srgb, var(--seg-color) 4%, transparent);
 		--seg-active-bg: color-mix(in srgb, var(--seg-color) 8%, transparent);
 		--seg-lift: calc(var(--lumi-space-2xs) * -0.25);
@@ -271,8 +271,14 @@
 		position: relative;
 		z-index: 2;
 		cursor: pointer;
-		flex: 1;
+		display: flex;
+		min-width: max-content;
 		text-align: center;
+	}
+
+	.lumi-segmented-control--full .lumi-segmented-control__option {
+		flex: 1 1 0;
+		min-width: 0;
 	}
 
 	.lumi-segmented-control__option--disabled {
@@ -302,6 +308,11 @@
 			background-color 0.15s ease,
 			transform 0.15s ease;
 		border-radius: var(--lumi-radius-md);
+		min-width: 0;
+	}
+
+	.lumi-segmented-control--full .lumi-segmented-control__content {
+		flex: 1 1 auto;
 	}
 
 	.lumi-segmented-control__label {
@@ -344,9 +355,11 @@
 
 		.lumi-segmented-control--full .lumi-segmented-control__option {
 			flex: 0 0 auto;
+			min-width: max-content;
 		}
 
 		.lumi-segmented-control--full .lumi-segmented-control__content {
+			flex: 0 0 auto;
 			padding: var(--lumi-space-xs) var(--lumi-space-sm);
 		}
 	}

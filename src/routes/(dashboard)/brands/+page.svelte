@@ -87,7 +87,7 @@
 	}
 </script>
 
-<div class="lumi-stack lumi-space--lg">
+<div class="lumi-stack lumi-stack--lg">
 	<PageHeader title="Marcas" subtitle="Gestiona las marcas del sistema" icon="award">
 		{#snippet actions()}
 			<Button
@@ -181,7 +181,7 @@
 			</Alert>
 		{/if}
 
-		<div class="lumi-stack lumi-space--md">
+		<div class="lumi-stack lumi-stack--md">
 			<Input
 				bind:value={formName}
 				name="name"

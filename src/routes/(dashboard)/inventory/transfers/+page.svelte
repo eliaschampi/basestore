@@ -205,7 +205,7 @@
 	}
 </script>
 
-<div class="lumi-stack lumi-space--md">
+<div class="lumi-stack lumi-stack--md">
 	<PageHeader
 		title="Transferencias"
 		subtitle="Historial operativo entre sedes con filtro cruzado por origen y destino"
@@ -225,13 +225,11 @@
 				/>
 				<Button
 					type="filled"
-					color="secondary"
+					color="primary"
 					icon="plus"
 					onclick={navigateToCreateTransfer}
 					disabled={!canCreate}
-				>
-					Agregar
-				</Button>
+				></Button>
 			</div>
 		{/snippet}
 	</PageHeader>
@@ -249,7 +247,7 @@
 		</PageSidebar>
 
 		<section class="lumi-layout--content-right">
-			<div class="lumi-stack lumi-space--sm">
+			<div class="lumi-stack lumi-stack--sm">
 				{#if !canRead}
 					<Alert type="warning" closable>No tienes permisos para consultar transferencias.</Alert>
 				{:else}
@@ -349,7 +347,7 @@
 </div>
 
 {#snippet transfersSidebar()}
-	<div class="lumi-stack lumi-space--sm">
+	<div class="lumi-stack lumi-stack--sm">
 		<div class="lumi-page-sidebar__section">
 			<p class="lumi-page-sidebar__label">Filtros</p>
 			<Select
@@ -383,7 +381,7 @@
 
 <Dialog bind:open={showDetailDialog} title="Detalle de transferencia" size="lg" scrollable>
 	{#if detailTransfer}
-		<div class="lumi-stack lumi-space--sm">
+		<div class="lumi-stack lumi-stack--sm">
 			<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
 				<InfoItem
 					layout="vertical"
@@ -402,7 +400,7 @@
 				/>
 			</div>
 
-			<div class="lumi-stack lumi-space--2xs">
+			<div class="lumi-stack lumi-stack--2xs">
 				<p class="lumi-margin--none"><strong>Items</strong></p>
 				<Table
 					data={detailTransferItemRows}

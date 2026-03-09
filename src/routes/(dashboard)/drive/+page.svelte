@@ -674,7 +674,7 @@
 	}
 </script>
 
-<div class="lumi-stack lumi-space--lg">
+<div class="lumi-stack lumi-stack--lg">
 	<PageHeader
 		title={pageTitle}
 		subtitle={`Alcance actual: ${currentScopeLabel ?? 'Drive'}`}
@@ -757,7 +757,7 @@
 		</PageSidebar>
 
 		<section class="lumi-layout--content-right">
-			<div class="lumi-stack lumi-space--sm">
+			<div class="lumi-stack lumi-stack--sm">
 				<div class="drive-page__toolbar-shell">
 					<Card spaced>
 						<div class="lumi-flex lumi-flex--gap-sm lumi-align-items--center drive-page__toolbar">
@@ -883,7 +883,7 @@
 </div>
 
 <Dialog bind:open={showCreateDir} title="Nueva carpeta" size="sm">
-	<div class="lumi-stack lumi-space--md">
+	<div class="lumi-stack lumi-stack--md">
 		<Input
 			bind:value={newDirName}
 			name="dir-name"
@@ -909,7 +909,7 @@
 </Dialog>
 
 <Dialog bind:open={showRename} title="Renombrar archivo" size="sm">
-	<div class="lumi-stack lumi-space--md">
+	<div class="lumi-stack lumi-stack--md">
 		<Input
 			bind:value={renameName}
 			name="rename"
@@ -935,8 +935,8 @@
 </Dialog>
 
 <Dialog bind:open={showMoveDialog} title="Mover archivo" size="sm">
-	<div class="lumi-stack lumi-space--md">
-		<div class="lumi-stack lumi-space--xs">
+	<div class="lumi-stack lumi-stack--md">
+		<div class="lumi-stack lumi-stack--xs">
 			<span class="lumi-text--sm lumi-font--medium">Espacio destino</span>
 			<div class="drive-page__move-scope-options">
 				{#each DRIVE_SCOPE_OPTIONS as scopeOption (scopeOption.value)}
@@ -982,7 +982,7 @@
 </Dialog>
 
 <Dialog bind:open={showTagDialog} title="Etiquetas" size="sm">
-	<div class="lumi-stack lumi-space--sm">
+	<div class="lumi-stack lumi-stack--sm">
 		<button
 			type="button"
 			class="drive-page__tag-none"

@@ -141,7 +141,7 @@
 	}
 </script>
 
-<div class="lumi-stack lumi-space--lg">
+<div class="lumi-stack lumi-stack--lg">
 	<PageHeader title="Sedes" subtitle="Gestiona las sedes del sistema" icon="building">
 		{#snippet actions()}
 			<Button
@@ -237,7 +237,7 @@
 			</Alert>
 		{/if}
 
-		<div class="lumi-stack lumi-space--md">
+		<div class="lumi-stack lumi-stack--md">
 			<Input
 				bind:value={formName}
 				name="name"
@@ -249,7 +249,7 @@
 			<Switch bind:checked={formState} name="state" color="info" label="Sede activa" />
 
 			<Fieldset legend="Usuarios asignados">
-				<div class="lumi-stack lumi-space--sm">
+				<div class="lumi-stack lumi-stack--sm">
 					<div class="lumi-flex lumi-flex--gap-sm lumi-flex--mobile-column">
 						<div class="lumi-flex-item--grow">
 							<Select

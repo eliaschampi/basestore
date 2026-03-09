@@ -160,7 +160,7 @@
 			<Loading text="Cargando permisos..." />
 		</div>
 	{:else}
-		<div class="lumi-stack lumi-space--md">
+		<div class="lumi-stack lumi-stack--md">
 			{#if error}
 				<div>
 					<Alert type="danger" closable onclose={() => (error = '')}>
@@ -197,7 +197,7 @@
 			</Fieldset>
 
 			<Fieldset legend={`Permisos actuales (${userPermissions.length})`}>
-				<div class="lumi-stack lumi-space--sm">
+				<div class="lumi-stack lumi-stack--sm">
 					<InfoItem icon="shieldCheck" label="Estado" value={permissionSummary} />
 					{#if userPermissions.length === 0}
 						<div class="lumi-text--center lumi-padding--xl lumi-text--muted">

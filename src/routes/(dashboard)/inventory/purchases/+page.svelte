@@ -299,7 +299,7 @@
 	}
 </script>
 
-<div class="lumi-stack lumi-space--md">
+<div class="lumi-stack lumi-stack--md">
 	<PageHeader
 		title="Compras"
 		subtitle="Flujo de entradas con filtros laterales y control claro de reembolsos"
@@ -323,9 +323,7 @@
 					icon="plus"
 					onclick={() => navigateWithBranch('/inventory/purchases/new')}
 					disabled={!canCreate}
-				>
-					Nueva compra
-				</Button>
+				></Button>
 			</div>
 		{/snippet}
 	</PageHeader>
@@ -343,7 +341,7 @@
 		</PageSidebar>
 
 		<section class="lumi-layout--content-right">
-			<div class="lumi-stack lumi-space--sm">
+			<div class="lumi-stack lumi-stack--sm">
 				{#if !canRead}
 					<Alert type="warning" closable>No tienes permisos para consultar compras.</Alert>
 				{:else}
@@ -448,7 +446,7 @@
 </div>
 
 {#snippet purchasesSidebar()}
-	<div class="lumi-stack lumi-space--sm">
+	<div class="lumi-stack lumi-stack--sm">
 		<div class="lumi-page-sidebar__section">
 			<p class="lumi-page-sidebar__label">Filtros</p>
 			<div>
@@ -564,7 +562,7 @@
 
 <Dialog bind:open={showDetailDialog} title="Detalle de compra" size="lg" scrollable>
 	{#if detailPurchase}
-		<div class="lumi-stack lumi-space--sm">
+		<div class="lumi-stack lumi-stack--sm">
 			<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
 				<InfoItem layout="vertical" label="Sede" value={detailPurchase.branch_name} />
 				<InfoItem
@@ -609,7 +607,7 @@
 			</div>
 		</div>
 
-		<div class="lumi-stack lumi-space--2xs">
+		<div class="lumi-stack lumi-stack--2xs">
 			<p class="lumi-margin--none"><strong>Items</strong></p>
 			{#if detailPurchase.items.length > 0}
 				<Table

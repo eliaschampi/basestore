@@ -358,7 +358,7 @@
 	}
 </script>
 
-<div class="lumi-stack lumi-space--md">
+<div class="lumi-stack lumi-stack--md">
 	<PageHeader
 		title="Stock"
 		subtitle="Vista operativa con sidebar de filtros estilo Drive"
@@ -423,7 +423,7 @@
 		</PageSidebar>
 
 		<section class="lumi-layout--content-right">
-			<div class="lumi-stack lumi-space--sm">
+			<div class="lumi-stack lumi-stack--sm">
 				<div class="inventory-stock__mobile-stats-toggle">
 					<Card spaced>
 						<div class="lumi-flex lumi-justify--between lumi-align-items--center">
@@ -576,7 +576,7 @@
 </div>
 
 {#snippet stockSidebar()}
-	<div class="lumi-stack lumi-space--sm">
+	<div class="lumi-stack lumi-stack--sm">
 		<div class="lumi-page-sidebar__section">
 			<p class="lumi-page-sidebar__label">Vista</p>
 			<div class="lumi-margin--bottom-sm">
@@ -662,7 +662,7 @@
 </Context>
 
 <Dialog bind:open={showThresholdDialog} title="Ajustar umbrales" size="sm">
-	<div class="lumi-stack lumi-space--sm">
+	<div class="lumi-stack lumi-stack--sm">
 		<p class="lumi-margin--none lumi-text--sm lumi-text--muted">{thresholdProductLabel}</p>
 		<Slider
 			label="Punto de reposicion"

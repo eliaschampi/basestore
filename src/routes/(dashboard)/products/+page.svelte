@@ -145,7 +145,7 @@
 	}
 </script>
 
-<div class="lumi-stack lumi-space--lg">
+<div class="lumi-stack lumi-stack--lg">
 	<PageHeader title="Productos" subtitle="Gestiona el catálogo de productos" icon="package">
 		{#snippet actions()}
 			<Button
@@ -154,9 +154,7 @@
 				icon="plus"
 				onclick={openCreateModal}
 				disabled={!canCreate}
-			>
-				Nuevo producto
-			</Button>
+			></Button>
 		{/snippet}
 	</PageHeader>
 
@@ -281,7 +279,7 @@
 		{/if}
 
 		<div class="lumi-grid lumi-grid--columns-2 lumi-grid--gap-lg">
-			<div class="lumi-stack lumi-space--md">
+			<div class="lumi-stack lumi-stack--md">
 				<Input
 					bind:value={formName}
 					name="name"
@@ -305,7 +303,7 @@
 				</div>
 			</div>
 
-			<div class="lumi-stack lumi-space--md">
+			<div class="lumi-stack lumi-stack--md">
 				<Select
 					bind:value={formBrandCode}
 					options={brandOptions}

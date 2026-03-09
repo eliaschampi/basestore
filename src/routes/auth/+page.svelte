@@ -54,7 +54,7 @@
 							isLoading = false;
 						};
 					}}
-					class="lumi-stack lumi-space--lg"
+					class="lumi-stack lumi-stack--lg"
 				>
 					<Input
 						bind:value={email}

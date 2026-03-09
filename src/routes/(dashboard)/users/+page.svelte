@@ -143,7 +143,7 @@
 	}
 </script>
 
-<div class="lumi-stack lumi-space--lg">
+<div class="lumi-stack lumi-stack--lg">
 	<PageHeader title="Usuarios" subtitle="Gestiona los usuarios del sistema" icon="users">
 		{#snippet actions()}
 			<Button
@@ -262,7 +262,7 @@
 			</Alert>
 		{/if}
 
-		<div class="lumi-stack lumi-space--md">
+		<div class="lumi-stack lumi-stack--md">
 			<Input
 				bind:value={formName}
 				name="name"
@@ -376,7 +376,7 @@
 			</p>
 		{/if}
 
-		<div class="lumi-stack lumi-space--md">
+		<div class="lumi-stack lumi-stack--md">
 			{#if passwordMessage}
 				<Alert type="danger" closable onclose={() => (passwordMessage = '')}>
 					{passwordMessage}

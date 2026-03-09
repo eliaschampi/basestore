@@ -96,7 +96,7 @@
 	}
 </script>
 
-<div class="lumi-stack lumi-space--lg">
+<div class="lumi-stack lumi-stack--lg">
 	<PageHeader
 		title="Clientes"
 		subtitle="Gestion centralizada de clientes para ventas y seguimiento"
@@ -109,9 +109,7 @@
 				icon="userPlus"
 				onclick={openCreateDialog}
 				disabled={!canCreate}
-			>
-				Nuevo cliente
-			</Button>
+			></Button>
 		{/snippet}
 	</PageHeader>
 
@@ -206,7 +204,7 @@
 			</Alert>
 		{/if}
 
-		<div class="lumi-stack lumi-space--md">
+		<div class="lumi-stack lumi-stack--md">
 			<Input
 				bind:value={formName}
 				name="full_name"
@@ -263,7 +261,7 @@
 	>
 		{#if selectedCustomer}
 			<input type="hidden" name="code" value={selectedCustomer.code} />
-			<div class="lumi-stack lumi-space--sm">
+			<div class="lumi-stack lumi-stack--sm">
 				<p class="lumi-margin--none">
 					Se eliminara el cliente <strong>{selectedCustomer.full_name}</strong>. Esta accion no se
 					puede deshacer.

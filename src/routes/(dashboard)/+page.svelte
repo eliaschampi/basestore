@@ -91,7 +91,7 @@
 	];
 </script>
 
-<div class="lumi-stack lumi-space--xl">
+<div class="lumi-stack lumi-stack--xl">
 	<PageHeader title="Dashboard" subtitle="Bienvenido a Faztore" size="xl" icon="house" />
 
 	<div class="lumi-grid lumi-grid--auto-fit lumi-grid--gap-lg">

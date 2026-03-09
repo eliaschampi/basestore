@@ -128,7 +128,7 @@
 </script>
 
 <Dialog bind:open title="Subir archivos" size="md" persistent={uploading}>
-	<div class="lumi-stack lumi-space--md">
+	<div class="lumi-stack lumi-stack--md">
 		{#if errorMessage}
 			<Alert type="warning" closable onclose={() => (errorMessage = '')}>{errorMessage}</Alert>
 		{/if}

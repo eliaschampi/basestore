@@ -437,7 +437,7 @@
 	}
 </script>
 
-<div class="lumi-stack lumi-space--lg">
+<div class="lumi-stack lumi-stack--lg">
 	<PageHeader
 		title={data.product.name}
 		subtitle="Producto, stock por sede e historial en una sola vista"
@@ -531,7 +531,7 @@
 					No tienes permisos para consultar stock e historial de inventario.
 				</Alert>
 			{:else}
-				<div class="lumi-stack lumi-space--sm">
+				<div class="lumi-stack lumi-stack--sm">
 					<div class="lumi-grid lumi-grid--columns-4 lumi-grid--gap-md product-detail__stock-stats">
 						<StatCard
 							title="Disponibles"
@@ -767,7 +767,7 @@
 						{/snippet}
 					</Table>
 				{:else}
-					<div class="lumi-stack lumi-space--sm">
+					<div class="lumi-stack lumi-stack--sm">
 						<DriveFileGrid
 							files={linkedDriveItems}
 							selectedFiles={selectedGridCodes}
@@ -802,7 +802,7 @@
 </Context>
 
 <Dialog bind:open={showAttachDialog} title="Buscar archivos en Drive" size="lg" scrollable>
-	<div class="lumi-stack lumi-space--md">
+	<div class="lumi-stack lumi-stack--md">
 		<form onsubmit={handleSearchSubmit}>
 			<div class="lumi-flex lumi-align-items--center lumi-flex--gap-sm lumi-flex--wrap">
 				<div class="lumi-flex-item--grow">

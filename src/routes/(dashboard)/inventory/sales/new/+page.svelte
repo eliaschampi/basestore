@@ -7,6 +7,7 @@
 		Alert,
 		Button,
 		Card,
+		Fieldset,
 		Input,
 		NumberInput,
 		PageHeader,
@@ -340,7 +341,7 @@
 	}
 </script>
 
-<div class="lumi-stack lumi-space--md">
+<div class="lumi-stack lumi-stack--md">
 	<PageHeader
 		title="Nueva venta"
 		subtitle="Configura la venta, el cliente y los ítems en un solo flujo"
@@ -367,14 +368,11 @@
 	{/if}
 
 	<Card spaced>
-		<div class="inventory-create-form">
-			<div class="inventory-create-section">
-				<div class="lumi-stack lumi-space--2xs">
-					<p class="lumi-margin--none lumi-font--semibold">Venta</p>
-					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-						Define sede, fecha, canal y forma de entrega.
-					</p>
-				</div>
+		<div class="lumi-stack lumi-stack--md">
+			<Fieldset legend="Venta">
+				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+					Define sede, fecha, canal y forma de entrega.
+				</p>
 				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
 					<Select
 						label="Sede"
@@ -399,7 +397,7 @@
 					/>
 				</div>
 				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
-					<div class="lumi-stack lumi-space--xs">
+					<div class="lumi-stack lumi-stack--xs">
 						<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Canal</p>
 						<SegmentedControl
 							value={createSaleChannel}
@@ -410,7 +408,7 @@
 							}}
 						/>
 					</div>
-					<div class="lumi-stack lumi-space--xs">
+					<div class="lumi-stack lumi-stack--xs">
 						<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Entrega</p>
 						<SegmentedControl
 							value={createFulfillmentType}
@@ -422,18 +420,15 @@
 						/>
 					</div>
 				</div>
-			</div>
+			</Fieldset>
 
 			{#if createFulfillmentType === 'delivery'}
-				<div class="inventory-create-section">
-					<div class="lumi-stack lumi-space--2xs">
-						<p class="lumi-margin--none lumi-font--semibold">Delivery</p>
-						<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-							Completa el estado de envío y la dirección.
-						</p>
-					</div>
-					<div class="lumi-stack lumi-space--sm">
-						<div class="lumi-stack lumi-space--xs">
+				<Fieldset legend="Delivery">
+					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+						Completa el estado de envío y la dirección.
+					</p>
+					<div class="lumi-stack lumi-stack--sm">
+						<div class="lumi-stack lumi-stack--xs">
 							<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Estado de envío</p>
 							<SegmentedControl
 								value={createShippingState}
@@ -453,16 +448,13 @@
 								(createDeliveryAddress = (event.currentTarget as HTMLInputElement).value)}
 						/>
 					</div>
-				</div>
+				</Fieldset>
 			{/if}
 
-			<div class="inventory-create-section">
-				<div class="lumi-stack lumi-space--2xs">
-					<p class="lumi-margin--none lumi-font--semibold">Cliente</p>
-					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-						Selecciona uno registrado o ingrésalo manualmente.
-					</p>
-				</div>
+			<Fieldset legend="Cliente">
+				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+					Selecciona uno registrado o ingrésalo manualmente.
+				</p>
 				<Select
 					label="Cliente registrado (opcional)"
 					value={createCustomerCode}
@@ -496,17 +488,14 @@
 						/>
 					</div>
 				{/if}
-			</div>
+			</Fieldset>
 
-			<div class="inventory-create-section">
-				<div class="lumi-stack lumi-space--2xs">
-					<p class="lumi-margin--none lumi-font--semibold">Items</p>
-					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-						Carga producto, cantidad y precio de venta en un solo bloque.
-					</p>
-				</div>
+			<Fieldset legend="Items">
+				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+					Carga producto, cantidad y precio de venta en un solo bloque.
+				</p>
 				<form
-					class="lumi-stack lumi-space--sm"
+					class="lumi-stack lumi-stack--sm"
 					onsubmit={(event) => {
 						event.preventDefault();
 						addDraftItem();
@@ -551,13 +540,11 @@
 						<Button type="flat" color="primary" icon="plus" button="submit">Agregar item</Button>
 					</div>
 				</form>
-				<div class="lumi-stack lumi-space--2xs">
-					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-						{itemCount}
-						{itemCount === 1 ? 'item' : 'items'} · {totalQuantity} unidades ·
-						{formatProductPrice(saleTotal)} venta · {formatProductPrice(estimatedProfit)} utilidad
-					</p>
-				</div>
+				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+					{itemCount}
+					{itemCount === 1 ? 'item' : 'items'} · {totalQuantity} unidades ·
+					{formatProductPrice(saleTotal)} venta · {formatProductPrice(estimatedProfit)} utilidad
+				</p>
 				{#if draftItems.length !== 0}
 					<Table data={itemRows} pagination={false}>
 						{#snippet thead()}
@@ -600,19 +587,16 @@
 						{/snippet}
 					</Table>
 				{/if}
-			</div>
+			</Fieldset>
 
-			<div class="inventory-create-section">
-				<div class="lumi-stack lumi-space--2xs">
-					<p class="lumi-margin--none lumi-font--semibold">Nota</p>
-				</div>
+			<Fieldset legend="Nota">
 				<Textarea
 					label="Contexto operativo opcional para el equipo."
 					rows={3}
 					value={createNote}
 					oninput={(event) => (createNote = (event.currentTarget as HTMLTextAreaElement).value)}
 				/>
-			</div>
+			</Fieldset>
 		</div>
 	</Card>
 </div>

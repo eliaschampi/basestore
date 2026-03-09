@@ -348,7 +348,7 @@
 	}
 </script>
 
-<div class="lumi-stack lumi-space--md">
+<div class="lumi-stack lumi-stack--md">
 	<PageHeader
 		title="Ventas"
 		subtitle="Panel lateral unificado para filtros y operación rápida"
@@ -372,9 +372,7 @@
 					icon="plus"
 					onclick={() => navigateWithBranch('/inventory/sales/new')}
 					disabled={!canCreate}
-				>
-					Nueva venta
-				</Button>
+				></Button>
 			</div>
 		{/snippet}
 	</PageHeader>
@@ -392,7 +390,7 @@
 		</PageSidebar>
 
 		<section class="lumi-layout--content-right">
-			<div class="lumi-stack lumi-space--sm">
+			<div class="lumi-stack lumi-stack--sm">
 				{#if !canRead}
 					<Alert type="warning" closable>No tienes permisos para consultar ventas.</Alert>
 				{:else}
@@ -508,7 +506,7 @@
 </div>
 
 {#snippet salesSidebar()}
-	<div class="lumi-stack lumi-space--sm">
+	<div class="lumi-stack lumi-stack--sm">
 		<div class="lumi-page-sidebar__section">
 			<p class="lumi-page-sidebar__label">Filtros</p>
 			<div>
@@ -612,7 +610,7 @@
 
 <Dialog bind:open={showDetailDialog} title="Detalle de venta" size="lg" scrollable>
 	{#if detailSale}
-		<div class="lumi-stack lumi-space--sm">
+		<div class="lumi-stack lumi-stack--sm">
 			<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-sm">
 				<InfoItem
 					layout="vertical"
@@ -659,7 +657,7 @@
 			</div>
 		</div>
 
-		<div class="lumi-stack lumi-space--2xs">
+		<div class="lumi-stack lumi-stack--2xs">
 			<p class="lumi-margin--none"><strong>Items</strong></p>
 			{#if detailSale.items.length > 0}
 				<Table
