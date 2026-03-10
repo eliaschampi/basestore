@@ -343,13 +343,7 @@
 
 			{#if isEditing && selectedProduct}
 				<Fieldset legend="Identificación">
-					<Input
-						value={selectedProduct.sku ?? ''}
-						name="sku"
-						label="SKU"
-						icon="tag"
-						disabled
-					/>
+					<Input value={selectedProduct.sku ?? ''} name="sku" label="SKU" icon="tag" disabled />
 				</Fieldset>
 			{/if}
 		</div>
