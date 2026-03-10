@@ -10,6 +10,7 @@
 		Context,
 		ContextItem,
 		Dialog,
+		Fieldset,
 		IconBadge,
 		Image,
 		Input,
@@ -67,7 +68,6 @@
 	let formCategoryCode = $state('');
 	let formPrice = $state(0);
 	let formCostPrice = $state(0);
-	let formSku = $state('');
 	let formIsActive = $state(true);
 
 	function submitForm(formId: string): void {
@@ -90,7 +90,6 @@
 		formCategoryCode = '';
 		formPrice = 0;
 		formCostPrice = 0;
-		formSku = '';
 		formIsActive = true;
 		errorMessage = '';
 		showModal = true;
@@ -109,7 +108,6 @@
 		formCategoryCode = product.category_code || '';
 		formPrice = parseFloat(product.price ?? '0') || 0;
 		formCostPrice = parseFloat(product.cost_price ?? '0') || 0;
-		formSku = product.sku || '';
 		formIsActive = product.is_active !== false;
 		errorMessage = '';
 		showModal = true;
@@ -278,8 +276,8 @@
 			<Alert type="danger" closable onclose={() => (errorMessage = '')}>{errorMessage}</Alert>
 		{/if}
 
-		<div class="lumi-grid lumi-grid--columns-2 lumi-grid--gap-lg">
-			<div class="lumi-stack lumi-stack--md">
+		<div class="lumi-stack lumi-stack--md">
+			<Fieldset legend="Información general">
 				<Input
 					bind:value={formName}
 					name="name"
@@ -288,7 +286,6 @@
 					icon="package"
 					required
 				/>
-
 				<Textarea
 					bind:value={formDescription}
 					name="description"
@@ -296,53 +293,69 @@
 					placeholder="Describe las características del producto..."
 					rows={3}
 				/>
-
 				<div class="lumi-flex lumi-align-items--center lumi-flex--gap-sm">
 					<Checkbox bind:checked={formIsActive} label="Producto activo" color="success" />
 					<input type="hidden" name="is_active" value={formIsActive ? 'on' : ''} />
 				</div>
-			</div>
+			</Fieldset>
 
-			<div class="lumi-stack lumi-stack--md">
-				<Select
-					bind:value={formBrandCode}
-					options={brandOptions}
-					label="Marca"
-					name="brand_code"
-					placeholder="Seleccionar marca"
-					autocomplete
-				/>
-				<Select
-					bind:value={formCategoryCode}
-					options={categoryOptions}
-					label="Categoría"
-					name="category_code"
-					placeholder="Seleccionar categoría"
-					autocomplete
-				/>
+			<Fieldset legend="Clasificación">
+				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+					<Select
+						bind:value={formBrandCode}
+						options={brandOptions}
+						label="Marca"
+						name="brand_code"
+						placeholder="Seleccionar marca"
+						autocomplete
+					/>
+					<Select
+						bind:value={formCategoryCode}
+						options={categoryOptions}
+						label="Categoría"
+						name="category_code"
+						placeholder="Seleccionar categoría"
+						autocomplete
+					/>
+				</div>
+			</Fieldset>
 
-				<NumberInput
-					bind:value={formPrice}
-					label="Precio de venta"
-					placeholder="0.00"
-					min={0}
-					step={0.01}
-					color="primary"
-				/>
-				<NumberInput
-					bind:value={formCostPrice}
-					label="Costo de compra"
-					placeholder="0.00"
-					min={0}
-					step={0.01}
-					color="warning"
-				/>
-				<Input bind:value={formSku} name="sku" label="SKU" placeholder="Ej: PC00012" icon="tag" />
-			</div>
+			<Fieldset legend="Precios">
+				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+					<NumberInput
+						bind:value={formPrice}
+						label="Precio de venta"
+						placeholder="0.00"
+						min={0}
+						step={0.01}
+						color="primary"
+					/>
+					<NumberInput
+						bind:value={formCostPrice}
+						label="Costo de compra"
+						placeholder="0.00"
+						min={0}
+						step={0.01}
+						color="warning"
+					/>
+				</div>
+			</Fieldset>
 
-			<input type="hidden" name="price" value={formPrice} />
-			<input type="hidden" name="cost_price" value={formCostPrice} />
+			{#if isEditing && selectedProduct}
+				<Fieldset legend="Identificación">
+					<Input
+						value={selectedProduct.sku ?? ''}
+						name="sku"
+						label="SKU"
+						icon="tag"
+						disabled
+					/>
+				</Fieldset>
+			{/if}
 		</div>
+
+		<input type="hidden" name="price" value={formPrice} />
+		<input type="hidden" name="cost_price" value={formCostPrice} />
 	</form>
 
 	{#snippet footer()}

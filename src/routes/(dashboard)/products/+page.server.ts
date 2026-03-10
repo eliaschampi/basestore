@@ -1,6 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { readFormCheckbox, readFormField } from '$lib/utils/formData';
+import { generateProductSku } from '$lib/utils/products';
 import { isUuid } from '$lib/utils/validation';
 
 export const load: PageServerLoad = async ({ locals, depends }) => {
@@ -45,7 +46,6 @@ export const actions: Actions = {
 		const categoryCode = readFormField(formData, 'category_code');
 		const priceStr = readFormField(formData, 'price');
 		const costPriceStr = readFormField(formData, 'cost_price');
-		const sku = readFormField(formData, 'sku');
 		const isActive = readFormCheckbox(formData, 'is_active');
 
 		if (!name) {
@@ -69,6 +69,8 @@ export const actions: Actions = {
 		const validCostPrice = !isNaN(costPrice) && costPrice >= 0 ? costPrice : 0;
 
 		try {
+			const sku = await generateProductSku(locals.db);
+
 			await locals.db
 				.insertInto('products')
 				.values({
@@ -79,7 +81,7 @@ export const actions: Actions = {
 					user_code: locals.user.code,
 					price,
 					cost_price: validCostPrice,
-					sku: sku || null,
+					sku,
 					is_active: isActive
 				})
 				.execute();
