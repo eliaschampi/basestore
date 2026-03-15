@@ -515,7 +515,6 @@
 								<th>Precio</th>
 								<th>Valor costo</th>
 								<th>Estado</th>
-								<th>Ultima vez</th>
 							{/snippet}
 
 							{#snippet row({ row })}
@@ -526,7 +525,14 @@
 										<span class="lumi-text--xs lumi-text--muted">{item.sku || 'Sin SKU'}</span>
 									</div>
 								</td>
-								<td>{item.available}</td>
+								<td>
+									<div class="lumi-flex lumi-flex--column lumi-flex--gap-2xs">
+										<b>{item.available}</b>
+										<span class="lumi-text--xs lumi-text--muted">
+											{item.last_movement_at ? formatDate(item.last_movement_at) : '-'}
+										</span>
+									</div>
+								</td>
 								<td>{item.inbound}</td>
 								<td>{formatProductPrice(item.cost_price)}</td>
 								<td>{formatProductPrice(item.price)}</td>
@@ -536,7 +542,6 @@
 										{stockLabel(item.stock_state)}
 									</Chip>
 								</td>
-								<td>{item.last_movement_at ? formatDate(item.last_movement_at) : '-'}</td>
 							{/snippet}
 						</Table>
 					</Card>
@@ -643,6 +648,7 @@
 			<ContextItem
 				title="Ver producto"
 				icon="eye"
+				color="success"
 				onclick={() => goToProductDetail(item.product_code)}
 			/>
 			<ContextItem
@@ -695,8 +701,8 @@
 	{#snippet footer()}
 		<Button type="border" onclick={() => (showThresholdDialog = false)}>Cancelar</Button>
 		<Button
-			type="filled"
-			color="info"
+			type="gradient"
+			color="success"
 			loading={submittingThreshold}
 			onclick={() => void submitThresholds()}
 		>

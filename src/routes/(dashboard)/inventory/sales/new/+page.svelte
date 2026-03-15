@@ -431,7 +431,7 @@
 	<Card spaced>
 		<div class="lumi-stack lumi-stack--md">
 			<Fieldset legend="Venta">
-			<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
 					<Select
 						label="Sede"
 						value={createBranchCode}

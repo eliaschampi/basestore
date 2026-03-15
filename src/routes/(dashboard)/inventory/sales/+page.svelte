@@ -600,7 +600,7 @@
 			<ContextItem
 				title="Anular venta"
 				icon="xCircle"
-				danger
+				color="danger"
 				disabled={!canUpdate || isSaleVoided(sale)}
 				onclick={() => openVoidDialog(sale)}
 			/>

@@ -794,7 +794,7 @@
 		<ContextItem
 			title="Quitar vínculo"
 			icon="trash"
-			danger
+			color="danger"
 			disabled={!canDriveUpdate}
 			onclick={() => void unlinkFile(contextFile)}
 		/>

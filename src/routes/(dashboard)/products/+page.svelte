@@ -231,7 +231,7 @@
 			<ContextItem
 				title="Eliminar producto"
 				icon="trash"
-				danger
+				color="danger"
 				disabled={!canDelete}
 				onclick={() => openDeleteModal(product)}
 			/>
@@ -239,7 +239,12 @@
 	{/snippet}
 </Context>
 
-<Dialog bind:open={showModal} title={isEditing ? 'Editar producto' : 'Nuevo producto'} size="lg" scrollable>
+<Dialog
+	bind:open={showModal}
+	title={isEditing ? 'Editar producto' : 'Nuevo producto'}
+	size="lg"
+	scrollable
+>
 	<form
 		id="product-form"
 		method="POST"

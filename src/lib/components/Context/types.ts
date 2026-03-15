@@ -47,8 +47,8 @@ export interface ContextItemProps {
 	/** Whether item is disabled */
 	disabled?: boolean;
 
-	/** Whether item is dangerous (red color) */
-	danger?: boolean;
+	/** Item color variant */
+	color?: 'danger' | 'success' | 'warning' | 'info';
 
 	/** Custom class */
 	class?: string;

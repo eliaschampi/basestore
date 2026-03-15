@@ -543,7 +543,7 @@
 				<ContextItem
 					title="Reembolsar compra"
 					icon="xCircle"
-					danger
+					color="danger"
 					disabled={!canUpdate}
 					onclick={() => openRefundDialog(purchase)}
 				/>
@@ -551,7 +551,7 @@
 				<ContextItem
 					title={purchase.can_refund ? 'Reembolsar compra' : 'Reembolso no disponible'}
 					icon="undo"
-					danger
+					color="danger"
 					disabled={!canUpdate || !canRefundPurchase(purchase)}
 					onclick={() => openRefundDialog(purchase)}
 				/>

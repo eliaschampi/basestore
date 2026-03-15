@@ -7,21 +7,22 @@
 		icon = '',
 		shortcut = '',
 		disabled = false,
-		danger = false,
+		color,
 		class: className = '',
 		onclick
 	}: ContextItemProps = $props();
 
-	const itemClasses = $derived(() => {
-		return [
-			'lumi-context-item',
-			disabled && 'lumi-context-item--disabled',
-			danger && 'lumi-context-item--danger',
-			className
-		]
+	const itemClasses = $derived.by(() =>
+		['lumi-context-item', disabled && 'lumi-context-item--disabled', className]
 			.filter(Boolean)
-			.join(' ');
-	});
+			.join(' ')
+	);
+
+	const colorStyle = $derived(
+		color
+			? `--_accent: var(--lumi-color-${color}); --_accent-bg: var(--lumi-color-${color}-bg)`
+			: undefined
+	);
 
 	function handleClick(event: MouseEvent): void {
 		if (!disabled) {
@@ -38,7 +39,8 @@
 </script>
 
 <div
-	class={itemClasses()}
+	class={itemClasses}
+	style={colorStyle}
 	tabindex={disabled ? -1 : 0}
 	role="menuitem"
 	onclick={handleClick}
@@ -82,7 +84,7 @@
 	}
 
 	.lumi-context-item:hover:not(.lumi-context-item--disabled) {
-		background: var(--context-item-hover-bg);
+		background: var(--_accent-bg, var(--context-item-hover-bg));
 		color: var(--lumi-color-text);
 		transform: translateY(var(--context-item-lift));
 	}
@@ -100,7 +102,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--lumi-color-text-muted);
+		color: var(--_accent, var(--lumi-color-text-muted));
 		flex-shrink: 0;
 		width: 16px;
 		height: 16px;
@@ -128,19 +130,5 @@
 	.lumi-context-item--disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
-	}
-
-	.lumi-context-item--danger {
-		color: var(--lumi-color-danger);
-	}
-
-	.lumi-context-item--danger .lumi-context-item__icon {
-		color: var(--lumi-color-danger);
-	}
-
-	.lumi-context-item--danger:hover:not(.lumi-context-item--disabled) {
-		background: var(--lumi-color-danger-bg);
-		color: var(--lumi-color-danger);
-		transform: translateY(var(--context-item-lift));
 	}
 </style>

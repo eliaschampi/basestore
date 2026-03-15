@@ -1066,7 +1066,7 @@
 					<ContextItem
 						title="Mover a papelera"
 						icon="trash"
-						danger
+						color="danger"
 						onclick={() => {
 							void trashFile(menuFile);
 							fileContextMenu?.close();
@@ -1085,7 +1085,7 @@
 				<ContextItem
 					title="Eliminar permanente"
 					icon="trash"
-					danger
+					color="danger"
 					onclick={() => {
 						void deleteFile(menuFile);
 						fileContextMenu?.close();
