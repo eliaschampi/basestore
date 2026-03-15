@@ -35,9 +35,8 @@
 			.join(' ')
 	);
 
-	const styleVars = $derived.by(
-		() =>
-			`--seg-color: var(--lumi-color-${color}); --seg-transition-duration: ${transitionDuration};`
+	const styleVars = $derived(
+		`--seg-color: var(--lumi-color-${color}); --seg-transition-duration: ${transitionDuration};`
 	);
 
 	function scrollActiveOptionIntoView(behavior: 'auto' | 'smooth' = 'auto'): void {
@@ -119,9 +118,7 @@
 	});
 
 	onDestroy(() => {
-		if (resizeObserver) {
-			resizeObserver.disconnect();
-		}
+		resizeObserver?.disconnect();
 		if (typeof window !== 'undefined') {
 			window.removeEventListener('resize', updateGlider);
 		}
@@ -159,13 +156,15 @@
 				checked={value === option.value}
 				disabled={disabled || option.disabled}
 				onchange={() => handleChange(option.value)}
-				aria-label={option.label}
+				aria-label={option.label ?? option.icon ?? String(option.value)}
 			/>
 			<span class="lumi-segmented-control__content">
 				{#if option.icon}
 					<Icon icon={option.icon} size="sm" />
 				{/if}
-				<span class="lumi-segmented-control__label">{option.label}</span>
+				{#if option.label}
+					<span class="lumi-segmented-control__label">{option.label}</span>
+				{/if}
 			</span>
 		</label>
 	{/each}
@@ -310,7 +309,7 @@
 		border-radius: var(--lumi-radius-md);
 		min-width: 0;
 	}
-
+	
 	.lumi-segmented-control--full .lumi-segmented-control__content {
 		flex: 1 1 auto;
 	}

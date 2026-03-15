@@ -4,8 +4,8 @@ export interface SegmentedControlOption {
 	/** Unique value */
 	value: string | number;
 
-	/** Visible label */
-	label: string;
+	/** Visible label — omit for icon-only options */
+	label?: string;
 
 	/** Optional icon name */
 	icon?: string;

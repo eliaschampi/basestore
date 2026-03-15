@@ -68,7 +68,7 @@
 	const EMPTY_PAGINATION: InventoryPagination = createEmptyPagination(30);
 
 	const STOCK_FILTER_OPTIONS = [
-		{ label: 'Todo', value: 'all', icon: 'listChecks' },
+		{ value: 'all', icon: 'listChecks' },
 		{ label: 'Critico', value: 'critical', icon: 'alertTriangle' },
 		{ label: 'Bajo', value: 'low', icon: 'activity' },
 		{ label: 'Saludable', value: 'healthy', icon: 'checkCircle' }

@@ -49,6 +49,7 @@
 
 <style>
 	.lumi-stat-card__container {
+		container-type: inline-size;
 		padding: var(--lumi-space-md);
 		display: flex;
 		flex-direction: column;
@@ -63,10 +64,12 @@
 	}
 
 	.lumi-stat-card__value {
-		font-size: var(--lumi-font-size-4xl);
+		font-size: clamp(var(--lumi-font-size-xl), 10cqi, var(--lumi-font-size-4xl));
 		font-weight: var(--lumi-font-weight-bold);
+		line-height: var(--lumi-line-height-tight);
 		margin-bottom: var(--lumi-space-xs);
 		color: var(--lumi-color-text);
+		overflow-wrap: break-word;
 	}
 
 	.lumi-stat-card__subtitle {
