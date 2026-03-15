@@ -72,7 +72,7 @@
 
 	const ENTRY_TYPE_SEGMENT_OPTIONS: SegmentedControlOption[] = [
 		{ label: 'Inicial', value: 'initial' },
-		{ label: 'Reposicion', value: 'restock' }
+		{ label: 'Reposición', value: 'restock' }
 	];
 
 	const PURCHASE_STATE_SEGMENT_OPTIONS: SegmentedControlOption[] = [
@@ -309,9 +309,6 @@
 	<Card spaced>
 		<div class="lumi-stack lumi-stack--md">
 			<Fieldset legend="Compra">
-				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-					Define sede, origen, tracking y estado inicial.
-				</p>
 				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
 					<Select
 						label="Sede destino"
@@ -385,9 +382,6 @@
 			</Fieldset>
 
 			<Fieldset legend="Items">
-				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-					Carga producto, cantidad y costo unitario en un solo bloque.
-				</p>
 				<form
 					class="lumi-stack lumi-stack--sm"
 					onsubmit={(event) => {
@@ -481,7 +475,7 @@
 
 			<Fieldset legend="Nota">
 				<Textarea
-					label="Contexto operativo opcional para el equipo."
+					placeholder="Contexto operativo opcional para el equipo..."
 					rows={3}
 					value={createNote}
 					oninput={(event) => (createNote = (event.currentTarget as HTMLTextAreaElement).value)}

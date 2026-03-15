@@ -239,7 +239,7 @@
 	{/snippet}
 </Context>
 
-<Dialog bind:open={showModal} title={isEditing ? 'Editar producto' : 'Nuevo producto'} size="lg">
+<Dialog bind:open={showModal} title={isEditing ? 'Editar producto' : 'Nuevo producto'} size="lg" scrollable>
 	<form
 		id="product-form"
 		method="POST"
@@ -264,77 +264,66 @@
 			<input type="hidden" name="code" value={selectedProduct.code} />
 		{/if}
 
-		<div class="lumi-stack lumi-stack--md">
-			<Fieldset legend="Información general">
-				<Input
-					bind:value={formName}
-					name="name"
-					label="Nombre del producto"
-					placeholder="Ej: Laptop Dell XPS 15"
-					icon="package"
-					required
+		<Fieldset legend="Producto">
+			<Input
+				bind:value={formName}
+				name="name"
+				label="Nombre"
+				placeholder="Ej: Laptop Dell XPS 15"
+				icon="package"
+				required
+			/>
+			<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+				<Select
+					bind:value={formBrandCode}
+					options={brandOptions}
+					label="Marca"
+					name="brand_code"
+					placeholder="Seleccionar marca"
+					autocomplete
 				/>
-				<Textarea
-					bind:value={formDescription}
-					name="description"
-					label="Descripción"
-					placeholder="Describe las características del producto..."
-					rows={3}
+				<Select
+					bind:value={formCategoryCode}
+					options={categoryOptions}
+					label="Categoría"
+					name="category_code"
+					placeholder="Seleccionar categoría"
+					autocomplete
 				/>
-				<div class="lumi-flex lumi-align-items--center lumi-flex--gap-sm">
-					<Checkbox bind:checked={formIsActive} label="Producto activo" color="success" />
-					<input type="hidden" name="is_active" value={formIsActive ? 'on' : ''} />
-				</div>
-			</Fieldset>
-
-			<Fieldset legend="Clasificación">
-				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
-					<Select
-						bind:value={formBrandCode}
-						options={brandOptions}
-						label="Marca"
-						name="brand_code"
-						placeholder="Seleccionar marca"
-						autocomplete
-					/>
-					<Select
-						bind:value={formCategoryCode}
-						options={categoryOptions}
-						label="Categoría"
-						name="category_code"
-						placeholder="Seleccionar categoría"
-						autocomplete
-					/>
-				</div>
-			</Fieldset>
-
-			<Fieldset legend="Precios">
-				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
-					<NumberInput
-						bind:value={formPrice}
-						label="Precio de venta"
-						placeholder="0.00"
-						min={0}
-						step={0.01}
-						color="primary"
-					/>
-					<NumberInput
-						bind:value={formCostPrice}
-						label="Costo de compra"
-						placeholder="0.00"
-						min={0}
-						step={0.01}
-						color="warning"
-					/>
-				</div>
-			</Fieldset>
-
+			</div>
+			<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+				<NumberInput
+					bind:value={formPrice}
+					label="Precio de venta"
+					placeholder="0.00"
+					min={0}
+					step={0.01}
+					color="primary"
+				/>
+				<NumberInput
+					bind:value={formCostPrice}
+					label="Costo de compra"
+					placeholder="0.00"
+					min={0}
+					step={0.01}
+					color="warning"
+				/>
+			</div>
 			{#if isEditing && selectedProduct}
-				<Fieldset legend="Identificación">
-					<Input value={selectedProduct.sku ?? ''} name="sku" label="SKU" icon="tag" disabled />
-				</Fieldset>
+				<Input value={selectedProduct.sku ?? ''} name="sku" label="SKU" icon="tag" disabled />
 			{/if}
-		</div>
+			<Textarea
+				bind:value={formDescription}
+				name="description"
+				label="Descripción"
+				placeholder="Describe las características del producto..."
+				rows={2}
+			/>
+			<div class="lumi-flex lumi-align-items--center lumi-flex--gap-sm">
+				<Checkbox bind:checked={formIsActive} label="Producto activo" color="success" />
+				<input type="hidden" name="is_active" value={formIsActive ? 'on' : ''} />
+			</div>
+		</Fieldset>
 
 		<input type="hidden" name="price" value={formPrice} />
 		<input type="hidden" name="cost_price" value={formCostPrice} />

@@ -431,10 +431,7 @@
 	<Card spaced>
 		<div class="lumi-stack lumi-stack--md">
 			<Fieldset legend="Venta">
-				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-					Define sede, fecha, canal y forma de entrega.
-				</p>
-				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+			<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
 					<Select
 						label="Sede"
 						value={createBranchCode}
@@ -487,9 +484,6 @@
 
 			{#if createFulfillmentType === 'delivery'}
 				<Fieldset legend="Delivery">
-					<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-						Completa el estado de envío y la dirección.
-					</p>
 					<div class="lumi-stack lumi-stack--sm">
 						<div class="lumi-stack lumi-stack--xs">
 							<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Estado de envío</p>
@@ -554,9 +548,6 @@
 			</Fieldset>
 
 			<Fieldset legend="Items">
-				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-					Carga producto, cantidad y precio de venta en un solo bloque.
-				</p>
 				<form
 					class="lumi-stack lumi-stack--sm"
 					onsubmit={(event) => {
@@ -672,7 +663,7 @@
 
 			<Fieldset legend="Nota">
 				<Textarea
-					label="Contexto operativo opcional para el equipo."
+					placeholder="Contexto operativo opcional para el equipo..."
 					rows={3}
 					value={createNote}
 					oninput={(event) => (createNote = (event.currentTarget as HTMLTextAreaElement).value)}

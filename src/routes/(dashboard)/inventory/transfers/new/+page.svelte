@@ -344,9 +344,6 @@
 	<Card spaced>
 		<div class="lumi-stack lumi-stack--md">
 			<Fieldset legend="Transferencia">
-				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-					Selecciona origen, destino y fecha del movimiento.
-				</p>
 				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
 					<Select
 						label="Sede origen"
@@ -374,14 +371,11 @@
 				</div>
 				<Alert type="info" closable={false}>
 					La transferencia descuenta stock de la sede origen y lo acredita de inmediato en la sede
-					destino dentro de una sola transaccion.
+					destino dentro de una sola transacción.
 				</Alert>
 			</Fieldset>
 
 			<Fieldset legend="Items">
-				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-					Agrega productos validando disponibilidad en la sede origen.
-				</p>
 				<form
 					class="lumi-stack lumi-stack--sm"
 					onsubmit={(event) => {
@@ -415,7 +409,7 @@
 						<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
 							El stock se valida siempre contra la sede origen seleccionada.
 						</p>
-						<Button type="flat" color="secondary" icon="plus" button="submit">Agregar item</Button>
+						<Button type="flat" color="primary" icon="plus" button="submit">Agregar item</Button>
 					</div>
 				</form>
 				{#if !createSourceBranchCode}
@@ -477,7 +471,7 @@
 
 			<Fieldset legend="Nota">
 				<Textarea
-					label="Contexto operativo opcional para el equipo."
+					placeholder="Contexto operativo opcional para el equipo..."
 					rows={3}
 					value={createNote}
 					oninput={(event) => (createNote = (event.currentTarget as HTMLTextAreaElement).value)}
