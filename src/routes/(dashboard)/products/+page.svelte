@@ -53,7 +53,6 @@
 	let showModal = $state(false);
 	let showDeleteModal = $state(false);
 	let isEditing = $state(false);
-	let errorMessage = $state('');
 	let selectedProduct = $state<ProductOverview | null>(null);
 	let productContextMenu:
 		| {
@@ -78,9 +77,7 @@
 	}
 
 	function openCreateModal(): void {
-		if (!canCreate) {
-			return;
-		}
+		if (!canCreate) return;
 
 		isEditing = false;
 		selectedProduct = null;
@@ -91,14 +88,11 @@
 		formPrice = 0;
 		formCostPrice = 0;
 		formIsActive = true;
-		errorMessage = '';
 		showModal = true;
 	}
 
 	function openEditModal(product: ProductOverview): void {
-		if (!canUpdate) {
-			return;
-		}
+		if (!canUpdate) return;
 
 		isEditing = true;
 		selectedProduct = product;
@@ -109,7 +103,6 @@
 		formPrice = parseFloat(product.price ?? '0') || 0;
 		formCostPrice = parseFloat(product.cost_price ?? '0') || 0;
 		formIsActive = product.is_active !== false;
-		errorMessage = '';
 		showModal = true;
 	}
 
@@ -124,7 +117,6 @@
 
 	function closeModal(): void {
 		showModal = false;
-		errorMessage = '';
 	}
 
 	function closeDeleteModal(): void {
@@ -263,17 +255,13 @@
 					closeModal();
 				} else if (result.type === 'failure') {
 					const error = result.data?.error;
-					errorMessage = (typeof error === 'string' ? error : null) || 'Ocurrió un error';
+					showToast((typeof error === 'string' ? error : null) || 'Ocurrió un error', 'error');
 				}
 			};
 		}}
 	>
 		{#if isEditing && selectedProduct}
 			<input type="hidden" name="code" value={selectedProduct.code} />
-		{/if}
-
-		{#if errorMessage}
-			<Alert type="danger" closable onclose={() => (errorMessage = '')}>{errorMessage}</Alert>
 		{/if}
 
 		<div class="lumi-stack lumi-stack--md">

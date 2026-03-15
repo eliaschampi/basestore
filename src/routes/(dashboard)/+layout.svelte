@@ -1,15 +1,19 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { fly } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 	import Navbar from '$lib/components/Navbar/Navbar.svelte';
 	import Sidebar from '$lib/components/Sidebar/Sidebar.svelte';
 	import SidebarItem from '$lib/components/Sidebar/SidebarItem.svelte';
 	import { Icon, Divider, Button } from '$lib/components';
+	import Notification from '$lib/components/Notification/Notification.svelte';
 	import Avatar from '$lib/components/Avatar/Avatar.svelte';
 	import Dropdown from '$lib/components/Dropdown/Dropdown.svelte';
 	import DropdownItem from '$lib/components/Dropdown/DropdownItem.svelte';
 	import { can, initializePermissions } from '$lib/stores/permissions';
 	import { hasSuperUserAccess } from '$lib/permissions/super-user';
 	import { theme } from '$lib/stores/theme';
+	import { toasts, removeToast } from '$lib/stores/Toast';
 	import { page } from '$app/state';
 
 	initializePermissions(page.data.userPermissions || [], hasSuperUserAccess(page.data.user));
@@ -310,6 +314,23 @@
 	</main>
 </div>
 
+<!-- Toast Portal -->
+<div class="lumi-toast-portal">
+	{#each $toasts as toast (toast.id)}
+		<div
+			in:fly={{ x: 20, duration: 200, easing: cubicOut }}
+			out:fly={{ x: 20, duration: 200, easing: cubicOut }}
+		>
+			<Notification
+				type={toast.type}
+				title={toast.title}
+				closable
+				onclose={() => removeToast(toast.id)}
+			/>
+		</div>
+	{/each}
+</div>
+
 <style>
 	.lumi-sidebar-profile {
 		display: flex;
@@ -356,5 +377,22 @@
 
 	.lumi-navbar-user-dropdown {
 		max-width: 220px;
+	}
+
+	.lumi-toast-portal {
+		position: fixed;
+		top: var(--lumi-space-lg);
+		right: var(--lumi-space-lg);
+		z-index: 9999;
+		display: flex;
+		flex-direction: column;
+		gap: var(--lumi-space-sm);
+		pointer-events: none;
+		max-width: 380px;
+		width: calc(100vw - 2 * var(--lumi-space-lg));
+	}
+
+	.lumi-toast-portal > :global(*) {
+		pointer-events: auto;
 	}
 </style>

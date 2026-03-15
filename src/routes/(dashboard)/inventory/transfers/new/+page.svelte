@@ -54,7 +54,6 @@
 	const { data }: { data: PageData } = $props();
 
 	let submitting = $state(false);
-	let errorMessage = $state('');
 	let draftStockLoading = $state(false);
 
 	let createSourceBranchCode = $state('');
@@ -123,7 +122,6 @@
 		draftItems = [];
 		draftProductStock = null;
 		draftQuantity = 1;
-		errorMessage = '';
 	}
 
 	async function handleSourceBranchChange(value: string | number | object | null): Promise<void> {
@@ -169,8 +167,10 @@
 		} catch (caught) {
 			if (requestId === stockRequestId) {
 				draftProductStock = null;
-				errorMessage =
-					caught instanceof Error ? caught.message : 'Error al consultar stock del producto';
+				showToast(
+					caught instanceof Error ? caught.message : 'Error al consultar stock del producto',
+					'error'
+				);
 			}
 		} finally {
 			if (requestId === stockRequestId) {
@@ -184,22 +184,22 @@
 		const quantity = Number(draftQuantity);
 
 		if (!createSourceBranchCode) {
-			errorMessage = 'Selecciona primero la sede origen.';
+			showToast('Selecciona primero la sede origen.', 'error');
 			return;
 		}
 
 		if (!product) {
-			errorMessage = 'Selecciona un producto para agregar a la transferencia.';
+			showToast('Selecciona un producto para agregar a la transferencia.', 'error');
 			return;
 		}
 
 		if (!Number.isInteger(quantity) || quantity <= 0) {
-			errorMessage = 'La cantidad del item debe ser un entero mayor a 0.';
+			showToast('La cantidad del item debe ser un entero mayor a 0.', 'error');
 			return;
 		}
 
 		if (!draftProductStock || draftProductStock.product_code !== product.code) {
-			errorMessage = 'Espera a que se cargue el stock del producto seleccionado.';
+			showToast('Espera a que se cargue el stock del producto seleccionado.', 'error');
 			return;
 		}
 
@@ -207,16 +207,17 @@
 			draftItems.find((item) => item.product_code === product.code)?.quantity ?? 0;
 		const remainingAvailable = draftProductStock.available - currentQuantity;
 		if (remainingAvailable <= 0) {
-			errorMessage = 'No hay stock disponible en la sede origen para este producto.';
+			showToast('No hay stock disponible en la sede origen para este producto.', 'error');
 			return;
 		}
 
 		if (quantity > remainingAvailable) {
-			errorMessage = `Solo puedes mover ${remainingAvailable} unidades adicionales de este producto.`;
+			showToast(
+				`Solo puedes mover ${remainingAvailable} unidades adicionales de este producto.`,
+				'error'
+			);
 			return;
 		}
-
-		errorMessage = '';
 
 		const existing = draftItems.find((item) => item.product_code === product.code);
 		if (existing) {
@@ -265,27 +266,26 @@
 		if (submitting) return;
 
 		if (!createSourceBranchCode) {
-			errorMessage = 'Selecciona la sede origen.';
+			showToast('Selecciona la sede origen.', 'error');
 			return;
 		}
 
 		if (!createDestinationBranchCode) {
-			errorMessage = 'Selecciona la sede destino.';
+			showToast('Selecciona la sede destino.', 'error');
 			return;
 		}
 
 		if (createSourceBranchCode === createDestinationBranchCode) {
-			errorMessage = 'La sede origen y la sede destino deben ser distintas.';
+			showToast('La sede origen y la sede destino deben ser distintas.', 'error');
 			return;
 		}
 
 		if (draftItems.length === 0) {
-			errorMessage = 'Agrega al menos un item antes de registrar la transferencia.';
+			showToast('Agrega al menos un item antes de registrar la transferencia.', 'error');
 			return;
 		}
 
 		submitting = true;
-		errorMessage = '';
 		try {
 			const response = await fetch('/api/inventory/transfers', {
 				method: 'POST',
@@ -309,8 +309,10 @@
 			showToast('Transferencia registrada', 'success');
 			await goToTransfersList();
 		} catch (caught) {
-			errorMessage =
-				caught instanceof Error ? caught.message : 'Error al registrar la transferencia';
+			showToast(
+				caught instanceof Error ? caught.message : 'Error al registrar la transferencia',
+				'error'
+			);
 		} finally {
 			submitting = false;
 		}
@@ -338,10 +340,6 @@
 			</div>
 		{/snippet}
 	</PageHeader>
-
-	{#if errorMessage}
-		<Alert type="danger" closable onclose={() => (errorMessage = '')}>{errorMessage}</Alert>
-	{/if}
 
 	<Card spaced>
 		<div class="lumi-stack lumi-stack--md">
@@ -399,7 +397,6 @@
 							placeholder="Selecciona producto"
 							onchange={async (value) => {
 								draftProductCode = typeof value === 'string' ? value : '';
-								errorMessage = '';
 								await loadDraftProductStock(draftProductCode);
 							}}
 						/>

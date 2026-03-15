@@ -4,7 +4,6 @@
 	import { onMount } from 'svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import {
-		Alert,
 		Button,
 		Card,
 		Fieldset,
@@ -50,6 +49,11 @@
 		unit_cost: number;
 	}
 
+	interface SaleStockSnapshot {
+		product_code: string;
+		available: number;
+	}
+
 	function todayLocalDate(): string {
 		const now = new Date();
 		const offsetMilliseconds = now.getTimezoneOffset() * 60_000;
@@ -75,7 +79,9 @@
 	];
 
 	let submitting = $state(false);
-	let errorMessage = $state('');
+	let draftStockLoading = $state(false);
+	let draftProductStock = $state<SaleStockSnapshot | null>(null);
+	let stockRequestId = 0;
 	let customerSearchOptions = $state<InventoryCustomerRecord[]>([]);
 
 	let createBranchCode = $state('');
@@ -102,6 +108,10 @@
 
 		if (customerSearchOptions.length === 0) {
 			customerSearchOptions = (data.customers ?? []) as InventoryCustomerRecord[];
+		}
+
+		if (createBranchCode && draftProductCode) {
+			void loadDraftProductStock(draftProductCode);
 		}
 	});
 
@@ -137,6 +147,50 @@
 		draftItems.reduce((total, item) => total + item.quantity * item.unit_cost, 0)
 	);
 	const estimatedProfit = $derived(saleTotal - estimatedCost);
+	const selectedProductLabel = $derived.by(() => {
+		const product = products.find((item) => item.code === draftProductCode);
+		return product?.name ?? 'Selecciona un producto';
+	});
+
+	async function loadDraftProductStock(productCode = draftProductCode): Promise<void> {
+		if (!createBranchCode || !productCode) {
+			draftProductStock = null;
+			return;
+		}
+
+		const requestId = ++stockRequestId;
+		draftStockLoading = true;
+		try {
+			const params = new SvelteURLSearchParams({
+				branch_code: createBranchCode,
+				product_code: productCode
+			});
+
+			const response = await fetch(`/api/inventory/sales/stock?${params.toString()}`);
+			const payload = await response.json();
+
+			if (requestId !== stockRequestId) return;
+			if (!response.ok) {
+				throw new Error(
+					(payload?.message as string) || 'No se pudo consultar el stock del producto'
+				);
+			}
+
+			draftProductStock = payload.stock as SaleStockSnapshot;
+		} catch (caught) {
+			if (requestId === stockRequestId) {
+				draftProductStock = null;
+				showToast(
+					caught instanceof Error ? caught.message : 'Error al consultar stock del producto',
+					'error'
+				);
+			}
+		} finally {
+			if (requestId === stockRequestId) {
+				draftStockLoading = false;
+			}
+		}
+	}
 
 	function branchQuery(branchCode: string): string {
 		if (!branchCode) return '';
@@ -162,21 +216,33 @@
 		const unitPrice = Number(draftUnitPrice);
 
 		if (!product) {
-			errorMessage = 'Selecciona un producto para agregar a la venta.';
+			showToast('Selecciona un producto para agregar a la venta.', 'error');
 			return;
 		}
 
 		if (!Number.isInteger(quantity) || quantity <= 0) {
-			errorMessage = 'La cantidad del item debe ser un entero mayor a 0.';
+			showToast('La cantidad del item debe ser un entero mayor a 0.', 'error');
 			return;
 		}
 
 		if (!Number.isFinite(unitPrice) || unitPrice < 0) {
-			errorMessage = 'El precio unitario del item debe ser válido y mayor o igual a 0.';
+			showToast('El precio unitario del item debe ser válido y mayor o igual a 0.', 'error');
 			return;
 		}
 
-		errorMessage = '';
+		if (draftProductStock && draftProductStock.product_code === product.code) {
+			const currentQuantity =
+				draftItems.find((item) => item.product_code === product.code)?.quantity ?? 0;
+			const remainingAvailable = draftProductStock.available - currentQuantity;
+			if (remainingAvailable <= 0) {
+				showToast('No hay stock disponible en la sede para este producto.', 'error');
+				return;
+			}
+			if (quantity > remainingAvailable) {
+				showToast(`Solo hay ${remainingAvailable} unidades disponibles de este producto.`, 'error');
+				return;
+			}
+		}
 
 		const unitCost = Number(product.cost_price ?? '0') || 0;
 		const existing = draftItems.find((item) => item.product_code === product.code);
@@ -268,22 +334,22 @@
 		if (submitting) return;
 
 		if (!createBranchCode) {
-			errorMessage = 'Selecciona la sede de la venta.';
+			showToast('Selecciona la sede de la venta.', 'error');
 			return;
 		}
 
 		if (draftItems.length === 0) {
-			errorMessage = 'Agrega al menos un item antes de registrar la venta.';
+			showToast('Agrega al menos un item antes de registrar la venta.', 'error');
 			return;
 		}
 
 		if (createFulfillmentType === 'delivery' && !createDeliveryAddress.trim()) {
-			errorMessage = 'La dirección es obligatoria para delivery.';
+			showToast('La dirección es obligatoria para delivery.', 'error');
 			return;
 		}
 
 		if (!createCustomerCode && !createCustomerName.trim()) {
-			errorMessage = 'Debes seleccionar o registrar cliente.';
+			showToast('Debes seleccionar o registrar cliente.', 'error');
 			return;
 		}
 
@@ -296,12 +362,11 @@
 		).trim();
 
 		if (!customerNameForPayload) {
-			errorMessage = 'El cliente seleccionado no tiene nombre válido.';
+			showToast('El cliente seleccionado no tiene nombre válido.', 'error');
 			return;
 		}
 
 		submitting = true;
-		errorMessage = '';
 		try {
 			const response = await fetch('/api/inventory/sales', {
 				method: 'POST',
@@ -334,7 +399,7 @@
 			showToast('Venta registrada', 'success');
 			await goToSalesList();
 		} catch (caught) {
-			errorMessage = caught instanceof Error ? caught.message : 'Error al registrar venta';
+			showToast(caught instanceof Error ? caught.message : 'Error al registrar venta', 'error');
 		} finally {
 			submitting = false;
 		}
@@ -363,10 +428,6 @@
 		{/snippet}
 	</PageHeader>
 
-	{#if errorMessage}
-		<Alert type="danger" closable onclose={() => (errorMessage = '')}>{errorMessage}</Alert>
-	{/if}
-
 	<Card spaced>
 		<div class="lumi-stack lumi-stack--md">
 			<Fieldset legend="Venta">
@@ -379,8 +440,10 @@
 						value={createBranchCode}
 						options={branchOptions}
 						placeholder="Selecciona sede"
-						onchange={(value) => {
+						onchange={async (value) => {
 							createBranchCode = typeof value === 'string' ? value : '';
+							draftProductStock = null;
+							if (draftProductCode) await loadDraftProductStock(draftProductCode);
 						}}
 					/>
 					<Input
@@ -507,9 +570,10 @@
 							value={draftProductCode}
 							options={productOptions}
 							placeholder="Selecciona producto"
-							onchange={(value) => {
+							onchange={async (value) => {
 								draftProductCode = typeof value === 'string' ? value : '';
 								syncDraftPrice(draftProductCode);
+								await loadDraftProductStock(draftProductCode);
 							}}
 						/>
 						<NumberInput
@@ -540,6 +604,23 @@
 						<Button type="flat" color="primary" icon="plus" button="submit">Agregar item</Button>
 					</div>
 				</form>
+				{#if draftProductCode}
+					<div class="sale-create__stock-preview">
+						{#if !createBranchCode}
+							<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
+								Selecciona una sede para ver el stock disponible.
+							</p>
+						{:else if draftStockLoading}
+							<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+								Consultando stock de {selectedProductLabel}...
+							</p>
+						{:else if draftProductStock}
+							<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Stock disponible</p>
+							<p class="lumi-margin--none lumi-font--semibold">{selectedProductLabel}</p>
+							<p class="lumi-margin--none lumi-text--sm">{draftProductStock.available} unidades</p>
+						{/if}
+					</div>
+				{/if}
 				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
 					{itemCount}
 					{itemCount === 1 ? 'item' : 'items'} · {totalQuantity} unidades ·
@@ -600,3 +681,12 @@
 		</div>
 	</Card>
 </div>
+
+<style>
+	.sale-create__stock-preview {
+		padding: var(--lumi-space-md);
+		border-radius: var(--lumi-radius-lg);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
+		background: color-mix(in srgb, var(--lumi-color-surface) 92%, transparent);
+	}
+</style>

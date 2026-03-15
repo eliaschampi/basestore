@@ -3,7 +3,6 @@
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import {
-		Alert,
 		Button,
 		Card,
 		Fieldset,
@@ -82,7 +81,6 @@
 	];
 
 	let submitting = $state(false);
-	let errorMessage = $state('');
 
 	let createBranchCode = $state('');
 	let createOrigin = $state<InventoryPurchaseOrigin>('aliexpress');
@@ -155,21 +153,19 @@
 		const unitCost = Number(draftUnitCost);
 
 		if (!product) {
-			errorMessage = 'Selecciona un producto para agregar a la compra.';
+			showToast('Selecciona un producto para agregar a la compra.', 'error');
 			return;
 		}
 
 		if (!Number.isInteger(quantity) || quantity <= 0) {
-			errorMessage = 'La cantidad del item debe ser un entero mayor a 0.';
+			showToast('La cantidad del item debe ser un entero mayor a 0.', 'error');
 			return;
 		}
 
 		if (!Number.isFinite(unitCost) || unitCost < 0) {
-			errorMessage = 'El costo unitario debe ser válido y mayor o igual a 0.';
+			showToast('El costo unitario debe ser válido y mayor o igual a 0.', 'error');
 			return;
 		}
-
-		errorMessage = '';
 
 		const existing = draftItems.find((item) => item.product_code === product.code);
 		if (existing) {
@@ -238,22 +234,21 @@
 		if (submitting) return;
 
 		if (!createBranchCode) {
-			errorMessage = 'Selecciona la sede destino.';
+			showToast('Selecciona la sede destino.', 'error');
 			return;
 		}
 
 		if (draftItems.length === 0) {
-			errorMessage = 'Agrega al menos un item antes de registrar la compra.';
+			showToast('Agrega al menos un item antes de registrar la compra.', 'error');
 			return;
 		}
 
 		if (createOrigin === 'other' && createOriginCustom.trim().length < 2) {
-			errorMessage = 'Cuando eliges "Otros", indica el origen personalizado.';
+			showToast('Cuando eliges "Otros", indica el origen personalizado.', 'error');
 			return;
 		}
 
 		submitting = true;
-		errorMessage = '';
 		try {
 			const response = await fetch('/api/inventory/purchases', {
 				method: 'POST',
@@ -282,7 +277,7 @@
 			showToast('Compra registrada', 'success');
 			await goToPurchasesList();
 		} catch (caught) {
-			errorMessage = caught instanceof Error ? caught.message : 'Error al registrar compra';
+			showToast(caught instanceof Error ? caught.message : 'Error al registrar compra', 'error');
 		} finally {
 			submitting = false;
 		}
@@ -310,10 +305,6 @@
 			</div>
 		{/snippet}
 	</PageHeader>
-
-	{#if errorMessage}
-		<Alert type="danger" closable onclose={() => (errorMessage = '')}>{errorMessage}</Alert>
-	{/if}
 
 	<Card spaced>
 		<div class="lumi-stack lumi-stack--md">
