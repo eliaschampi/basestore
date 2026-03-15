@@ -189,7 +189,7 @@
 										</DropdownItem>
 									{/if}
 									{#if canDelete && !mySelf(user.code)}
-										<DropdownItem icon="trash" danger onclick={() => openDeleteModal(user)}>
+										<DropdownItem icon="trash" color="danger" onclick={() => openDeleteModal(user)}>
 											Eliminar
 										</DropdownItem>
 									{/if}

@@ -8,8 +8,7 @@
 		children?: Snippet;
 		icon?: string;
 		href?: string;
-		color?: 'danger';
-		danger?: boolean;
+		color?: 'danger' | 'success' | 'warning' | 'info';
 		disabled?: boolean;
 		submit?: boolean;
 		class?: string;
@@ -21,7 +20,6 @@
 		icon,
 		href,
 		color,
-		danger = false,
 		disabled = false,
 		submit = false,
 		class: className = '',
@@ -30,18 +28,15 @@
 
 	const closeDropdown = getContext<() => void>('dropdownClose');
 
-	const isDanger = $derived(danger || color === 'danger');
-
-	const itemClasses = $derived(() => {
-		return [
-			'lumi-dropdown-item',
-			disabled && 'lumi-dropdown-item--disabled',
-			isDanger && 'lumi-dropdown-item--danger',
-			className
-		]
+	const itemClasses = $derived.by(() =>
+		['lumi-dropdown-item', disabled && 'lumi-dropdown-item--disabled', className]
 			.filter(Boolean)
-			.join(' ');
-	});
+			.join(' ')
+	);
+
+	const colorStyle = $derived(
+		color ? `--_accent: var(--lumi-color-${color}); --_accent-bg: var(--lumi-color-${color}-bg)` : undefined
+	);
 
 	function handleClick(): void {
 		if (disabled) return;
@@ -54,7 +49,8 @@
 	<a
 		href={resolve(href as `/`)}
 		data-sveltekit-noscroll
-		class={itemClasses()}
+		class={itemClasses}
+		style={colorStyle}
 		role="menuitem"
 		tabindex={disabled ? -1 : 0}
 		onclick={handleClick}
@@ -80,7 +76,8 @@
 {:else}
 	<button
 		type={submit ? 'submit' : 'button'}
-		class={itemClasses()}
+		class={itemClasses}
+		style={colorStyle}
 		role="menuitem"
 		tabindex={disabled ? -1 : 0}
 		onclick={handleClick}
@@ -133,7 +130,7 @@
 	}
 
 	.lumi-dropdown-item:hover:not(.lumi-dropdown-item--disabled) {
-		background: var(--dropdown-item-hover-bg);
+		background: var(--_accent-bg, var(--dropdown-item-hover-bg));
 		color: var(--lumi-color-text);
 		transform: translateY(var(--dropdown-item-lift));
 	}
@@ -152,7 +149,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--lumi-color-text-muted);
+		color: var(--_accent, var(--lumi-color-text-muted));
 		flex-shrink: 0;
 		width: 16px;
 		height: 16px;
@@ -173,20 +170,6 @@
 	.lumi-dropdown-item--disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
-	}
-
-	.lumi-dropdown-item--danger {
-		color: var(--lumi-color-danger);
-	}
-
-	.lumi-dropdown-item--danger .lumi-dropdown-item__icon {
-		color: var(--lumi-color-danger);
-	}
-
-	.lumi-dropdown-item--danger:hover:not(.lumi-dropdown-item--disabled) {
-		background: var(--lumi-color-danger-bg);
-		color: var(--lumi-color-danger);
-		transform: translateY(var(--dropdown-item-lift));
 	}
 
 	/* Link styles */
