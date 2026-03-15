@@ -202,6 +202,10 @@
 		padding-bottom: var(--lumi-space-lg);
 	}
 
+	.lumi-card__content:first-child {
+		padding-top: var(--lumi-space-lg);
+	}
+
 	.lumi-card__footer {
 		padding-top: var(--lumi-space-md);
 		border-top: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);

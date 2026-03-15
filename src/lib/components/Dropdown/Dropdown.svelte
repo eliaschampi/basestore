@@ -77,9 +77,9 @@
 	// Provide close function to child components
 	setContext('dropdownClose', closeDropdown);
 
-	const dropdownClasses = $derived(() => {
-		return ['lumi-dropdown', open && 'lumi-dropdown--open', className].filter(Boolean).join(' ');
-	});
+	const dropdownClasses = $derived.by(() =>
+		['lumi-dropdown', open && 'lumi-dropdown--open', className].filter(Boolean).join(' ')
+	);
 
 	const styleVars = `--dropdown-transition-duration: ${transitionDuration}ms;`;
 
@@ -167,7 +167,7 @@
 
 <div
 	bind:this={dropdownRef}
-	class={dropdownClasses()}
+	class={dropdownClasses}
 	style={styleVars}
 	onmouseenter={handleMouseEnter}
 	onmouseleave={handleMouseLeave}
@@ -250,7 +250,7 @@
 				rgba(var(--lumi-color-primary-rgb), 0) 22%
 			),
 			var(--lumi-color-surface-overlay);
-		border: 1px solid var(--lumi-color-border);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border);
 		border-radius: var(--lumi-radius-2xl);
 		box-shadow: var(--lumi-shadow-md);
 		padding: var(--lumi-space-xs);

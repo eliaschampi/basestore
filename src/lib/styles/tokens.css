@@ -259,10 +259,10 @@
 	/* ========================================================================== */
 	/* SHADOW SYSTEM - Refined for minimal aesthetic */
 	/* ========================================================================== */
-	--lumi-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-	--lumi-shadow-md: 0 4px 20px 0 rgba(0, 0, 0, 0.03);
-	--lumi-shadow-lg: 0 10px 25px 0 rgba(0, 0, 0, 0.1);
-	--lumi-shadow-xl: 0 20px 40px 0 rgba(0, 0, 0, 0.15);
+	--lumi-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+	--lumi-shadow-md: 0 4px 16px 0 rgba(0, 0, 0, 0.06), 0 2px 4px 0 rgba(0, 0, 0, 0.04);
+	--lumi-shadow-lg: 0 8px 24px 0 rgba(0, 0, 0, 0.08), 0 4px 8px 0 rgba(0, 0, 0, 0.04);
+	--lumi-shadow-xl: 0 16px 48px 0 rgba(0, 0, 0, 0.1), 0 4px 16px 0 rgba(0, 0, 0, 0.06);
 
 	/* ========================================================================== */
 	/* ICON SIZE SYSTEM */
@@ -297,14 +297,15 @@
 	/* ========================================================================== */
 	/* TRANSITION SYSTEM */
 	/* ========================================================================== */
-	--lumi-transition-all: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-	--lumi-transition-base: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	--lumi-transition-all: all var(--lumi-duration-base) var(--lumi-easing-default);
+	--lumi-transition-base: var(--lumi-duration-base) var(--lumi-easing-default);
 	--lumi-transition-colors:
-		color 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-		border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-	--lumi-transition-opacity: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-	--lumi-transition-shadow: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-	--lumi-transition-transform: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		color var(--lumi-duration-base) var(--lumi-easing-default),
+		background-color var(--lumi-duration-base) var(--lumi-easing-default),
+		border-color var(--lumi-duration-base) var(--lumi-easing-default);
+	--lumi-transition-opacity: opacity var(--lumi-duration-base) var(--lumi-easing-default);
+	--lumi-transition-shadow: box-shadow var(--lumi-duration-base) var(--lumi-easing-default);
+	--lumi-transition-transform: transform var(--lumi-duration-base) var(--lumi-easing-default);
 
 	/* ========================================================================== */
 	/* Z-INDEX SYSTEM */
@@ -496,9 +497,12 @@
 	--lumi-color-info-bg: rgba(8, 47, 73, 0.55); /* ← Updated */
 	--lumi-color-primary-bg: rgba(23, 37, 84, 0.4);
 	--lumi-color-secondary-bg: rgba(76, 5, 25, 0.5);
+	/* Backgrounds */
+	--lumi-color-background-secondary: rgb(24, 24, 27);
+
 	/* Enhanced shadows for dark mode */
 	--lumi-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-	--lumi-shadow-md: 0 4px 20px 0 rgba(0, 0, 0, 0.4);
-	--lumi-shadow-lg: 0 10px 25px 0 rgba(0, 0, 0, 0.5);
-	--lumi-shadow-xl: 0 20px 40px 0 rgba(0, 0, 0, 0.6);
+	--lumi-shadow-md: 0 4px 12px 0 rgba(0, 0, 0, 0.4), 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+	--lumi-shadow-lg: 0 10px 24px 0 rgba(0, 0, 0, 0.5), 0 4px 8px 0 rgba(0, 0, 0, 0.3);
+	--lumi-shadow-xl: 0 20px 40px 0 rgba(0, 0, 0, 0.6), 0 8px 16px 0 rgba(0, 0, 0, 0.4);
 }

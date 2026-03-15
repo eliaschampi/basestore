@@ -8,12 +8,10 @@
 
 	const { legend = '', class: className = '', children }: Props = $props();
 
-	const classes = $derived(() => {
-		return ['lumi-fieldset', className].filter(Boolean).join(' ');
-	});
+	const classes = $derived.by(() => ['lumi-fieldset', className].filter(Boolean).join(' '));
 </script>
 
-<fieldset class={classes()}>
+<fieldset class={classes}>
 	{#if legend}
 		<legend class="lumi-fieldset__legend">{legend}</legend>
 	{/if}
@@ -26,7 +24,7 @@
 
 <style>
 	.lumi-fieldset {
-		border: 1px solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		border-radius: var(--lumi-radius-2xl);
 		padding: var(--lumi-space-md);
 		margin: 0;
@@ -39,7 +37,9 @@
 			rgba(var(--lumi-color-background-rgb), 0.3);
 		position: relative;
 		box-shadow: var(--lumi-shadow-sm);
-		transition: var(--lumi-transition-all);
+		transition:
+			box-shadow var(--lumi-duration-fast) var(--lumi-easing-default),
+			border-color var(--lumi-duration-fast) var(--lumi-easing-default);
 	}
 
 	.lumi-fieldset__legend {

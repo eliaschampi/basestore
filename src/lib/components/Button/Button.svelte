@@ -121,7 +121,12 @@
 		overflow: hidden;
 		outline: none;
 
-		transition: var(--lumi-transition-all);
+		transition:
+			background-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			border-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			color var(--lumi-duration-fast) var(--lumi-easing-default),
+			box-shadow var(--lumi-duration-fast) var(--lumi-easing-default),
+			transform var(--lumi-duration-fast) var(--lumi-easing-default);
 	}
 
 	/* Focus visible - Modern ring with glow */
