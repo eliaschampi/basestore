@@ -18,6 +18,7 @@
 		InfoItem,
 		Input,
 		PageHeader,
+		ProductSearchDialog,
 		SegmentedControl,
 		StatCard,
 		Table,
@@ -67,6 +68,7 @@
 	const hasInventoryReadPermission = $derived(data.canReadInventory);
 
 	let activeTab = $state<'overview' | 'stock' | 'media'>('overview');
+	let showProductSearch = $state(false);
 
 	let linkedFiles = $derived<ProductDriveLink[]>(data.linkedFiles);
 	let linkedLoading = $state(false);
@@ -444,9 +446,14 @@
 		icon="package"
 	>
 		{#snippet actions()}
-			<Button type="border" icon="chevronLeft" onclick={() => goto(resolve('/products/' as '/'))}>
-				Productos
-			</Button>
+			<div class="lumi-flex lumi-flex--gap-sm">
+				<Button type="border" icon="search" onclick={() => (showProductSearch = true)}>
+					Buscar
+				</Button>
+				<Button type="border" icon="chevronLeft" onclick={() => goto(resolve('/products/' as '/'))}>
+					Productos
+				</Button>
+			</div>
 		{/snippet}
 	</PageHeader>
 
@@ -895,6 +902,8 @@
 </Dialog>
 
 <DriveFilePreview bind:open={showPreview} file={previewFile} ondownload={handleDownload} />
+
+<ProductSearchDialog bind:open={showProductSearch} />
 
 <style>
 	.product-detail__stock-stats {

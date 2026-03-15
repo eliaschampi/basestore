@@ -112,6 +112,8 @@ export { UserInfo } from './UserInfo';
 export type { TooltipColor, TooltipPosition, TooltipProps } from './Tooltip';
 export { Tooltip } from './Tooltip';
 export { default as PermissionsModal } from './PermissionsModal';
+export type { ProductSearchDialogProps, ProductSearchResult } from './ProductSearchDialog';
+export { ProductSearchDialog } from './ProductSearchDialog';
 
 // ============================================================================
 // DASHBOARD COMPONENTS
