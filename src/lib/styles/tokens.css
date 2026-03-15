@@ -3,6 +3,8 @@
 /* Professional, Beautiful, High-Performance - 2026 Standards */
 
 :root {
+	color-scheme: light;
+
 	/* ========================================================================== */
 	/* COLOR SYSTEM - Material Design 3 principles */
 	/* ========================================================================== */
@@ -430,6 +432,8 @@
 /* DARK THEME */
 /* ========================================================================== */
 [data-theme='dark'] {
+	color-scheme: dark;
+
 	/* Primary - UNCHANGED */
 	--lumi-color-primary: rgb(96, 165, 250);
 	--lumi-color-primary-rgb: 96, 165, 250;

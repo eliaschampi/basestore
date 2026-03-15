@@ -35,7 +35,9 @@
 	);
 
 	const colorStyle = $derived(
-		color ? `--_accent: var(--lumi-color-${color}); --_accent-bg: var(--lumi-color-${color}-bg)` : undefined
+		color
+			? `--_accent: var(--lumi-color-${color}); --_accent-bg: var(--lumi-color-${color}-bg)`
+			: undefined
 	);
 
 	function handleClick(): void {

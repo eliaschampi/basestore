@@ -13,9 +13,10 @@
 		SegmentedControl,
 		Select,
 		Table,
+		Tabs,
 		Textarea
 	} from '$lib/components';
-	import type { SegmentedControlOption, SelectOption, TableRow } from '$lib/components';
+	import type { SegmentedControlOption, SelectOption, Tab, TableRow } from '$lib/components';
 	import { showToast } from '$lib/stores/Toast';
 	import { formatProductPrice } from '$lib/utils/products';
 	import type { InventoryCustomerRecord } from '$lib/types/inventory';
@@ -62,6 +63,12 @@
 
 	const { data }: { data: PageData } = $props();
 
+	const SALE_TABS: Tab[] = [
+		{ value: 'info', label: 'Venta', icon: 'creditCard' },
+		{ value: 'customer', label: 'Cliente', icon: 'user' },
+		{ value: 'items', label: 'Items', icon: 'shoppingCart' }
+	];
+
 	const CHANNEL_SEGMENT_OPTIONS: SegmentedControlOption[] = [
 		{ label: 'Tienda', value: 'store', icon: 'store' },
 		{ label: 'Web', value: 'web', icon: 'globe' }
@@ -78,6 +85,7 @@
 		{ label: 'Entregado', value: 'delivered', icon: 'checkCircle' }
 	];
 
+	let activeTab = $state<'info' | 'customer' | 'items'>('info');
 	let submitting = $state(false);
 	let draftStockLoading = $state(false);
 	let draftProductStock = $state<SaleStockSnapshot | null>(null);
@@ -430,236 +438,249 @@
 
 	<Card spaced>
 		<div class="lumi-stack lumi-stack--md">
-			<Fieldset legend="Venta">
-				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
-					<Select
-						label="Sede"
-						value={createBranchCode}
-						options={branchOptions}
-						placeholder="Selecciona sede"
-						onchange={async (value) => {
-							createBranchCode = typeof value === 'string' ? value : '';
-							draftProductStock = null;
-							if (draftProductCode) await loadDraftProductStock(draftProductCode);
-						}}
-					/>
-					<Input
-						label="Fecha venta"
-						type="date"
-						value={createSoldAt}
-						oninput={(event) => (createSoldAt = (event.currentTarget as HTMLInputElement).value)}
-					/>
-					<Input
-						label="Referencia (opcional)"
-						value={createOrderReference}
-						oninput={(event) =>
-							(createOrderReference = (event.currentTarget as HTMLInputElement).value)}
-					/>
-				</div>
-				<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
-					<div class="lumi-stack lumi-stack--xs">
-						<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Canal</p>
-						<SegmentedControl
-							value={createSaleChannel}
-							options={CHANNEL_SEGMENT_OPTIONS}
-							fullWidth
-							onchange={(value) => {
-								createSaleChannel = (value as InventorySaleChannel) ?? 'store';
-							}}
-						/>
-					</div>
-					<div class="lumi-stack lumi-stack--xs">
-						<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Entrega</p>
-						<SegmentedControl
-							value={createFulfillmentType}
-							options={FULFILLMENT_SEGMENT_OPTIONS}
-							fullWidth
-							onchange={(value) => {
-								handleFulfillmentChange((value as InventorySaleFulfillmentType) ?? 'pickup');
-							}}
-						/>
-					</div>
-				</div>
-			</Fieldset>
-
-			{#if createFulfillmentType === 'delivery'}
-				<Fieldset legend="Delivery">
-					<div class="lumi-stack lumi-stack--sm">
-						<div class="lumi-stack lumi-stack--xs">
-							<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Estado de envío</p>
-							<SegmentedControl
-								value={createShippingState}
-								options={DELIVERY_SHIPPING_SEGMENT_OPTIONS}
-								fullWidth
-								onchange={(value) => {
-									createShippingState = (
-										typeof value === 'string' ? value : 'pending'
-									) as InventorySaleShippingState;
+			<Tabs
+				value={activeTab}
+				tabs={SALE_TABS}
+				onchange={(value) => (activeTab = value as typeof activeTab)}
+			>
+				{#if activeTab === 'info'}
+					<div class="lumi-stack lumi-stack--md">
+						<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+							<Select
+								label="Sede"
+								value={createBranchCode}
+								options={branchOptions}
+								placeholder="Selecciona sede"
+								onchange={async (value) => {
+									createBranchCode = typeof value === 'string' ? value : '';
+									draftProductStock = null;
+									if (draftProductCode) await loadDraftProductStock(draftProductCode);
 								}}
 							/>
+							<Input
+								label="Fecha venta"
+								type="date"
+								value={createSoldAt}
+								oninput={(event) =>
+									(createSoldAt = (event.currentTarget as HTMLInputElement).value)}
+							/>
+							<Input
+								label="Referencia (opcional)"
+								value={createOrderReference}
+								oninput={(event) =>
+									(createOrderReference = (event.currentTarget as HTMLInputElement).value)}
+							/>
 						</div>
-						<Input
-							label="Dirección delivery"
-							value={createDeliveryAddress}
-							oninput={(event) =>
-								(createDeliveryAddress = (event.currentTarget as HTMLInputElement).value)}
-						/>
-					</div>
-				</Fieldset>
-			{/if}
-
-			<Fieldset legend="Cliente">
-				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-					Selecciona uno registrado o ingrésalo manualmente.
-				</p>
-				<Select
-					label="Cliente registrado (opcional)"
-					value={createCustomerCode}
-					options={customerSelectOptions}
-					autocomplete
-					clearable={false}
-					noDataText="No hay clientes registrados"
-					onsearch={(query) => void loadCustomers(query)}
-					onchange={(value) => {
-						createCustomerCode = typeof value === 'string' ? value : '';
-						if (createCustomerCode) {
-							const selected = selectedCustomerOption();
-							createCustomerName = selected?.full_name ?? '';
-							createCustomerPhone = selected?.phone ?? '';
-						}
-					}}
-				/>
-				{#if !createCustomerCode}
-					<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
-						<Input
-							label="Cliente"
-							value={createCustomerName}
-							oninput={(event) =>
-								(createCustomerName = (event.currentTarget as HTMLInputElement).value)}
-						/>
-						<Input
-							label="Teléfono (opcional)"
-							value={createCustomerPhone}
-							oninput={(event) =>
-								(createCustomerPhone = (event.currentTarget as HTMLInputElement).value)}
-						/>
-					</div>
-				{/if}
-			</Fieldset>
-
-			<Fieldset legend="Items">
-				<form
-					class="lumi-stack lumi-stack--sm"
-					onsubmit={(event) => {
-						event.preventDefault();
-						addDraftItem();
-					}}
-				>
-					<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
-						<Select
-							label="Producto"
-							value={draftProductCode}
-							options={productOptions}
-							placeholder="Selecciona producto"
-							onchange={async (value) => {
-								draftProductCode = typeof value === 'string' ? value : '';
-								syncDraftPrice(draftProductCode);
-								await loadDraftProductStock(draftProductCode);
-							}}
-						/>
-						<NumberInput
-							label="Cantidad"
-							value={draftQuantity}
-							min={1}
-							max={100000}
-							step={1}
-							onchange={(value) => {
-								draftQuantity = value;
-							}}
-						/>
-						<NumberInput
-							label="Precio unitario"
-							value={draftUnitPrice}
-							min={0}
-							max={1000000}
-							step={0.5}
-							onchange={(value) => {
-								draftUnitPrice = value;
-							}}
-						/>
-					</div>
-					<div class="lumi-flex lumi-justify--between lumi-align-items--center lumi-flex--wrap">
-						<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
-							Presiona Enter para agregar rapidamente.
-						</p>
-						<Button type="flat" color="primary" icon="plus" button="submit">Agregar item</Button>
-					</div>
-				</form>
-				{#if draftProductCode}
-					<div class="sale-create__stock-preview">
-						{#if !createBranchCode}
-							<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
-								Selecciona una sede para ver el stock disponible.
-							</p>
-						{:else if draftStockLoading}
-							<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-								Consultando stock de {selectedProductLabel}...
-							</p>
-						{:else if draftProductStock}
-							<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Stock disponible</p>
-							<p class="lumi-margin--none lumi-font--semibold">{selectedProductLabel}</p>
-							<p class="lumi-margin--none lumi-text--sm">{draftProductStock.available} unidades</p>
+						<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+							<div class="lumi-stack lumi-stack--xs">
+								<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Canal</p>
+								<SegmentedControl
+									value={createSaleChannel}
+									options={CHANNEL_SEGMENT_OPTIONS}
+									fullWidth
+									onchange={(value) => {
+										createSaleChannel = (value as InventorySaleChannel) ?? 'store';
+									}}
+								/>
+							</div>
+							<div class="lumi-stack lumi-stack--xs">
+								<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Entrega</p>
+								<SegmentedControl
+									value={createFulfillmentType}
+									options={FULFILLMENT_SEGMENT_OPTIONS}
+									fullWidth
+									onchange={(value) => {
+										handleFulfillmentChange((value as InventorySaleFulfillmentType) ?? 'pickup');
+									}}
+								/>
+							</div>
+						</div>
+						{#if createFulfillmentType === 'delivery'}
+							<Fieldset legend="Delivery">
+								<div class="lumi-stack lumi-stack--xs">
+									<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Estado de envío</p>
+									<SegmentedControl
+										value={createShippingState}
+										options={DELIVERY_SHIPPING_SEGMENT_OPTIONS}
+										fullWidth
+										onchange={(value) => {
+											createShippingState = (
+												typeof value === 'string' ? value : 'pending'
+											) as InventorySaleShippingState;
+										}}
+									/>
+								</div>
+								<Input
+									label="Dirección delivery"
+									value={createDeliveryAddress}
+									oninput={(event) =>
+										(createDeliveryAddress = (event.currentTarget as HTMLInputElement).value)}
+								/>
+							</Fieldset>
 						{/if}
 					</div>
 				{/if}
-				<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
-					{itemCount}
-					{itemCount === 1 ? 'item' : 'items'} · {totalQuantity} unidades ·
-					{formatProductPrice(saleTotal)} venta · {formatProductPrice(estimatedProfit)} utilidad
-				</p>
-				{#if draftItems.length !== 0}
-					<Table data={itemRows} pagination={false}>
-						{#snippet thead()}
-							<th>Producto</th>
-							<th>Cantidad</th>
-							<th>Precio unitario</th>
-							<th>Subtotal</th>
-							<th>Margen estimado</th>
-							<th>Acciones</th>
-						{/snippet}
-						{#snippet row({ row })}
-							{@const item = row as unknown as SaleDraftItem}
-							<td>{item.product_name}</td>
-							<td>
+
+				{#if activeTab === 'customer'}
+					<div class="lumi-stack lumi-stack--md">
+						<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+							Selecciona uno registrado o ingrésalo manualmente.
+						</p>
+						<Select
+							label="Cliente registrado (opcional)"
+							value={createCustomerCode}
+							options={customerSelectOptions}
+							autocomplete
+							clearable={false}
+							noDataText="No hay clientes registrados"
+							onsearch={(query) => void loadCustomers(query)}
+							onchange={(value) => {
+								createCustomerCode = typeof value === 'string' ? value : '';
+								if (createCustomerCode) {
+									const selected = selectedCustomerOption();
+									createCustomerName = selected?.full_name ?? '';
+									createCustomerPhone = selected?.phone ?? '';
+								}
+							}}
+						/>
+						{#if !createCustomerCode}
+							<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+								<Input
+									label="Cliente"
+									value={createCustomerName}
+									oninput={(event) =>
+										(createCustomerName = (event.currentTarget as HTMLInputElement).value)}
+								/>
+								<Input
+									label="Teléfono (opcional)"
+									value={createCustomerPhone}
+									oninput={(event) =>
+										(createCustomerPhone = (event.currentTarget as HTMLInputElement).value)}
+								/>
+							</div>
+						{/if}
+					</div>
+				{/if}
+
+				{#if activeTab === 'items'}
+					<div class="lumi-stack lumi-stack--md">
+						<form
+							class="lumi-stack lumi-stack--sm"
+							onsubmit={(event) => {
+								event.preventDefault();
+								addDraftItem();
+							}}
+						>
+							<div class="lumi-grid lumi-grid--responsive lumi-grid--gap-md">
+								<Select
+									label="Producto"
+									value={draftProductCode}
+									options={productOptions}
+									placeholder="Selecciona producto"
+									onchange={async (value) => {
+										draftProductCode = typeof value === 'string' ? value : '';
+										syncDraftPrice(draftProductCode);
+										await loadDraftProductStock(draftProductCode);
+									}}
+								/>
 								<NumberInput
-									size="sm"
-									value={item.quantity}
+									label="Cantidad"
+									value={draftQuantity}
 									min={1}
 									max={100000}
 									step={1}
-									onchange={(value) => setDraftItemQuantity(item.product_code, value)}
+									onchange={(value) => {
+										draftQuantity = value;
+									}}
 								/>
-							</td>
-							<td>{formatProductPrice(item.unit_price)}</td>
-							<td>{formatProductPrice(item.quantity * item.unit_price)}</td>
-							<td>
-								{formatProductPrice(item.quantity * (item.unit_price - item.unit_cost))}
-							</td>
-							<td>
-								<Button
-									type="flat"
-									size="sm"
-									icon="trash"
-									color="danger"
-									onclick={() => removeDraftItem(item.product_code)}
+								<NumberInput
+									label="Precio unitario"
+									value={draftUnitPrice}
+									min={0}
+									max={1000000}
+									step={0.5}
+									onchange={(value) => {
+										draftUnitPrice = value;
+									}}
+								/>
+							</div>
+							<div class="lumi-flex lumi-justify--between lumi-align-items--center lumi-flex--wrap">
+								<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
+									Presiona Enter para agregar rapidamente.
+								</p>
+								<Button type="flat" color="primary" icon="plus" button="submit">Agregar item</Button
 								>
-									Quitar
-								</Button>
-							</td>
-						{/snippet}
-					</Table>
+							</div>
+						</form>
+						{#if draftProductCode}
+							<div class="sale-create__stock-preview">
+								{#if !createBranchCode}
+									<p class="lumi-margin--none lumi-text--xs lumi-text--muted">
+										Selecciona una sede para ver el stock disponible.
+									</p>
+								{:else if draftStockLoading}
+									<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+										Consultando stock de {selectedProductLabel}...
+									</p>
+								{:else if draftProductStock}
+									<p class="lumi-margin--none lumi-text--xs lumi-text--muted">Stock disponible</p>
+									<p class="lumi-margin--none lumi-font--semibold">{selectedProductLabel}</p>
+									<p class="lumi-margin--none lumi-text--sm">
+										{draftProductStock.available} unidades
+									</p>
+								{/if}
+							</div>
+						{/if}
+						<p class="lumi-margin--none lumi-text--sm lumi-text--muted">
+							{itemCount}
+							{itemCount === 1 ? 'item' : 'items'} · {totalQuantity} unidades ·
+							{formatProductPrice(saleTotal)} venta · {formatProductPrice(estimatedProfit)} utilidad
+						</p>
+						{#if draftItems.length !== 0}
+							<Table data={itemRows} pagination={false}>
+								{#snippet thead()}
+									<th>Producto</th>
+									<th>Cantidad</th>
+									<th>Precio unitario</th>
+									<th>Subtotal</th>
+									<th>Margen estimado</th>
+									<th>Acciones</th>
+								{/snippet}
+								{#snippet row({ row })}
+									{@const item = row as unknown as SaleDraftItem}
+									<td>{item.product_name}</td>
+									<td>
+										<NumberInput
+											size="sm"
+											value={item.quantity}
+											min={1}
+											max={100000}
+											step={1}
+											onchange={(value) => setDraftItemQuantity(item.product_code, value)}
+										/>
+									</td>
+									<td>{formatProductPrice(item.unit_price)}</td>
+									<td>{formatProductPrice(item.quantity * item.unit_price)}</td>
+									<td>
+										{formatProductPrice(item.quantity * (item.unit_price - item.unit_cost))}
+									</td>
+									<td>
+										<Button
+											type="flat"
+											size="sm"
+											icon="trash"
+											color="danger"
+											onclick={() => removeDraftItem(item.product_code)}
+										>
+											Quitar
+										</Button>
+									</td>
+								{/snippet}
+							</Table>
+						{/if}
+					</div>
 				{/if}
-			</Fieldset>
+			</Tabs>
 
 			<Fieldset legend="Nota">
 				<Textarea
