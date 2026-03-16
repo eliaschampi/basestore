@@ -309,7 +309,7 @@
 		border-radius: var(--lumi-radius-md);
 		min-width: 0;
 	}
-	
+
 	.lumi-segmented-control--full .lumi-segmented-control__content {
 		flex: 1 1 auto;
 	}

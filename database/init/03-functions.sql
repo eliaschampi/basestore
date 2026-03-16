@@ -987,14 +987,14 @@ AS $$
 BEGIN
   INSERT INTO public.inventory_balances (product_code, branch_code)
   VALUES (p_product_code, p_branch_code)
-  ON CONFLICT (product_code, branch_code) DO NOTHING;
+  ON CONFLICT ON CONSTRAINT inventory_balances_pk DO NOTHING;
 
   UPDATE public.inventory_balances
   SET
     reorder_point = p_reorder_point,
     emergency_point = p_emergency_point
-  WHERE product_code = p_product_code
-    AND branch_code = p_branch_code;
+  WHERE inventory_balances.product_code = p_product_code
+    AND inventory_balances.branch_code = p_branch_code;
 
   RETURN QUERY
   SELECT
