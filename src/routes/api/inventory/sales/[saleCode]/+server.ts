@@ -8,8 +8,8 @@ interface VoidSaleBody {
 }
 
 export const PATCH: RequestHandler = async ({ request, params, locals }) => {
-	if (!(await locals.can('inventory:update'))) {
-		throw error(403, 'No tienes permisos para actualizar ventas');
+	if (!(await locals.can('inventory:delete'))) {
+		throw error(403, 'No tienes permisos para anular ventas');
 	}
 
 	if (!locals.user) {

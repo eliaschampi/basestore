@@ -7,15 +7,14 @@ import { isUuid } from '$lib/utils/validation';
 export const load: PageServerLoad = async ({ locals, depends }) => {
 	depends('products:load');
 
-	// Load brands and categories for form selects (always needed for the form)
+	if (!(await locals.can('products:read'))) {
+		return { products: [], brands: [], categories: [], title: 'Productos' };
+	}
+
 	const [brands, categories] = await Promise.all([
 		locals.db.selectFrom('brands').select(['code', 'name']).orderBy('name', 'asc').execute(),
 		locals.db.selectFrom('categories').select(['code', 'name']).orderBy('name', 'asc').execute()
 	]);
-
-	if (!(await locals.can('products:read'))) {
-		return { products: [], brands, categories, title: 'Productos' };
-	}
 
 	try {
 		const products = await locals.db

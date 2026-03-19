@@ -22,7 +22,7 @@
 		Textarea
 	} from '$lib/components';
 	import type { SelectOption, TableRow } from '$lib/components';
-	import { can } from '$lib/stores/permissions';
+	import { can, canAll } from '$lib/stores/permissions';
 	import { showToast } from '$lib/stores/Toast';
 	import { formatDate } from '$lib/utils/formatDate';
 	import { formatProductPrice } from '$lib/utils/products';
@@ -71,8 +71,9 @@
 	type SalesStatusFilter = Exclude<InventorySaleStatusFilter, 'all'>;
 
 	const canRead = $derived(can('inventory:read'));
-	const canCreate = $derived(can('inventory:create'));
 	const canUpdate = $derived(can('inventory:update'));
+	const canDelete = $derived(can('inventory:delete'));
+	const canOpenCreate = $derived(canAll('inventory:create', 'products:read'));
 
 	let sales = $state<InventorySaleListItem[]>([]);
 	let pagination = $state<InventoryPagination>(EMPTY_PAGINATION);
@@ -309,7 +310,7 @@
 	}
 
 	function openVoidDialog(sale: InventorySaleListItem): void {
-		if (!canUpdate || isSaleVoided(sale)) return;
+		if (!canDelete || isSaleVoided(sale)) return;
 		voidSaleTarget = sale;
 		voidNote = '';
 		showVoidDialog = true;
@@ -322,7 +323,7 @@
 	}
 
 	async function submitVoidSale(): Promise<void> {
-		if (submittingVoidSale || !voidSaleTarget || !canUpdate) return;
+		if (submittingVoidSale || !voidSaleTarget || !canDelete) return;
 
 		submittingVoidSale = true;
 		try {
@@ -371,7 +372,7 @@
 					color="primary"
 					icon="plus"
 					onclick={() => navigateWithBranch('/inventory/sales/new')}
-					disabled={!canCreate}
+					disabled={!canOpenCreate}
 				></Button>
 			</div>
 		{/snippet}
@@ -601,7 +602,7 @@
 				title="Anular venta"
 				icon="xCircle"
 				color="danger"
-				disabled={!canUpdate || isSaleVoided(sale)}
+				disabled={!canDelete || isSaleVoided(sale)}
 				onclick={() => openVoidDialog(sale)}
 			/>
 		{/if}

@@ -99,7 +99,12 @@
 	<p class="lumi-page-sidebar__label">Etiquetas</p>
 	<div class="drive-sidebar__tags">
 		{#each TAG_OPTIONS as tag (tag.hash)}
-			<TagOption {tag} active={selectedTag?.hash === tag.hash} onclick={() => ontagselect?.(tag)} />
+			<TagOption
+				label={tag.name}
+				color={tag.color}
+				active={selectedTag?.hash === tag.hash}
+				onclick={() => ontagselect?.(tag)}
+			/>
 		{/each}
 	</div>
 </div>

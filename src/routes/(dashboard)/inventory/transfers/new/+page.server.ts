@@ -1,10 +1,18 @@
 import { error } from '@sveltejs/kit';
+import { checkAllPermissions } from '$lib/permissions/server';
 import type { PageServerLoad } from './$types';
 import { readOptionalUuidSearchParam } from '$lib/server/inventory/api-query';
 import { resolveInventoryBranchCode } from '$lib/utils/inventory';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-	if (!(await locals.can('product_transfers:create'))) {
+	if (
+		!(await checkAllPermissions(
+			locals.can,
+			'product_transfers:create',
+			'inventory:read',
+			'products:read'
+		))
+	) {
 		throw error(403, 'No tienes permisos para registrar transferencias');
 	}
 

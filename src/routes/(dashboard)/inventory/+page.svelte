@@ -24,7 +24,7 @@
 		Table
 	} from '$lib/components';
 	import type { SelectOption, TableRow } from '$lib/components';
-	import { can } from '$lib/stores/permissions';
+	import { can, canAll } from '$lib/stores/permissions';
 	import { showToast } from '$lib/stores/Toast';
 	import { formatDate } from '$lib/utils/formatDate';
 	import { formatProductPrice } from '$lib/utils/products';
@@ -76,8 +76,11 @@
 
 	const canRead = $derived(can('inventory:read'));
 	const canUpdate = $derived(can('inventory:update'));
+	const canReadProducts = $derived(can('products:read'));
 	const canReadProductTransfers = $derived(can('product_transfers:read'));
-	const canCreateProductTransfers = $derived(can('product_transfers:create'));
+	const canOpenTransferComposer = $derived(
+		canAll('inventory:read', 'products:read', 'product_transfers:create')
+	);
 
 	let branches = $state<BranchCatalogItem[]>([]);
 	let categories = $state<CategoryCatalogItem[]>([]);
@@ -196,6 +199,7 @@
 	}
 
 	function goToProductDetail(productCode: string): void {
+		if (!canReadProducts) return;
 		void goto(resolve(`/products/${productCode}` as '/'));
 	}
 
@@ -341,6 +345,8 @@
 	}
 
 	function goToTransferComposer(item?: InventoryOverviewItem): void {
+		if (!canOpenTransferComposer) return;
+
 		const params = new SvelteURLSearchParams();
 
 		if (item?.branch_code) {
@@ -649,6 +655,7 @@
 				title="Ver producto"
 				icon="eye"
 				color="success"
+				disabled={!canReadProducts}
 				onclick={() => goToProductDetail(item.product_code)}
 			/>
 			<ContextItem
@@ -660,7 +667,7 @@
 			<ContextItem
 				title="Transferir stock"
 				icon="arrowLeftRight"
-				disabled={!canCreateProductTransfers}
+				disabled={!canOpenTransferComposer}
 				onclick={() => goToTransferComposer(item)}
 			/>
 		{/if}

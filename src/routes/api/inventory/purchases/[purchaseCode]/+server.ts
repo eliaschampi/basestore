@@ -14,8 +14,23 @@ interface UpdatePurchaseBody {
 }
 
 export const PATCH: RequestHandler = async ({ request, params, locals }) => {
-	if (!(await locals.can('inventory:update'))) {
-		throw error(403, 'No tienes permisos para actualizar compras');
+	const body = (await request.json()) as UpdatePurchaseBody;
+	const stateRaw = normalizeInventoryPurchaseState(body.state);
+	const note = body.note === undefined ? undefined : body.note.trim();
+
+	if (!isValidInventoryPurchaseState(stateRaw)) {
+		throw error(400, 'Estado inválido. Usa: in_transit, received o refunded');
+	}
+	const state: InventoryPurchaseState = stateRaw;
+
+	const requiredPermission = state === 'refunded' ? 'inventory:delete' : 'inventory:update';
+	if (!(await locals.can(requiredPermission))) {
+		throw error(
+			403,
+			state === 'refunded'
+				? 'No tienes permisos para reembolsar compras'
+				: 'No tienes permisos para actualizar compras'
+		);
 	}
 
 	if (!locals.user) {
@@ -26,15 +41,6 @@ export const PATCH: RequestHandler = async ({ request, params, locals }) => {
 	if (!isUuid(purchaseCode)) {
 		throw error(400, 'Compra inválida');
 	}
-
-	const body = (await request.json()) as UpdatePurchaseBody;
-	const stateRaw = normalizeInventoryPurchaseState(body.state);
-	const note = body.note === undefined ? undefined : body.note.trim();
-
-	if (!isValidInventoryPurchaseState(stateRaw)) {
-		throw error(400, 'Estado inválido. Usa: in_transit, received o refunded');
-	}
-	const state: InventoryPurchaseState = stateRaw;
 
 	try {
 		const purchase = await InventoryRepository.updatePurchaseState(locals.db, {

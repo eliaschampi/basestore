@@ -1,10 +1,13 @@
 import { error } from '@sveltejs/kit';
+import { checkAllPermissions } from '$lib/permissions/server';
 import type { PageServerLoad } from './$types';
 import { resolveInventoryBranchCode } from '$lib/utils/inventory';
 import { InventoryRepository } from '$lib/server/repositories/inventory.repository';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-	if (!(await locals.can('inventory:create'))) {
+	if (
+		!(await checkAllPermissions(locals.can, 'inventory:create', 'inventory:read', 'products:read'))
+	) {
 		throw error(403, 'No tienes permisos para registrar ventas');
 	}
 

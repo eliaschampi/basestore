@@ -23,7 +23,7 @@
 	import type { SelectOption, TableRow } from '$lib/components';
 	import type { ProductOverview } from '$lib/types/products';
 	import { showToast } from '$lib/stores/Toast';
-	import { can } from '$lib/stores/permissions';
+	import { can, canAll } from '$lib/stores/permissions';
 	import { getDriveServeUrl } from '$lib/utils/drive';
 	import { formatProductPrice } from '$lib/utils/products';
 	import type { PageData } from './$types';
@@ -32,9 +32,9 @@
 	const { data }: { data: PageData } = $props();
 
 	const canRead = $derived(can('products:read'));
-	const canCreate = $derived(can('products:create'));
-	const canUpdate = $derived(can('products:update'));
-	const canDelete = $derived(can('products:delete'));
+	const canCreate = $derived(canAll('products:read', 'products:create'));
+	const canUpdate = $derived(canAll('products:read', 'products:update'));
+	const canDelete = $derived(canAll('products:read', 'products:delete'));
 
 	const brandOptions: SelectOption[] = $derived(
 		((data.brands ?? []) as { code: string; name: string }[]).map((brand) => ({

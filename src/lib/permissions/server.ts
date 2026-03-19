@@ -2,6 +2,8 @@ import type { Database } from '$lib/database';
 import type { PermissionKey } from '$lib/stores/permissions.ts';
 import { hasSuperUserAccess, type SuperUserCandidate } from './super-user';
 
+export type PermissionChecker = (permissionKey: PermissionKey) => boolean | Promise<boolean>;
+
 /**
  * Get user permissions from database
  */
@@ -54,4 +56,18 @@ export function hasAllPermissions(
 ): boolean {
 	if (hasSuperUserAccess(user)) return true;
 	return permissionKeys.every((key) => permissions.includes(key));
+}
+
+/**
+ * Evaluate multiple permission checks through a generic checker such as locals.can.
+ */
+export async function checkAllPermissions(
+	checkPermission: PermissionChecker,
+	...permissionKeys: PermissionKey[]
+): Promise<boolean> {
+	const results = await Promise.all(
+		permissionKeys.map((permissionKey) => Promise.resolve(checkPermission(permissionKey)))
+	);
+
+	return results.every(Boolean);
 }

@@ -22,7 +22,7 @@ export type DriveTagTone = 'favorite' | 'highlight' | 'work' | 'personal';
 
 export interface DriveTagOption {
 	tone: DriveTagTone;
-	color: string;
+	color: 'secondary' | 'success' | 'warning' | 'info';
 	hash: string;
 	name: string;
 }
@@ -255,30 +255,10 @@ export function getDriveServeUrl(fileCode: string, options: DriveServeUrlOptions
  * `hash` is what gets stored in DB, `color` comes from Lumi tokens.
  */
 export const TAG_OPTIONS: DriveTagOption[] = [
-	{
-		tone: 'favorite',
-		color: 'var(--lumi-color-secondary)',
-		hash: 'fb7185',
-		name: 'Favoritos'
-	},
-	{
-		tone: 'highlight',
-		color: 'var(--lumi-color-success)',
-		hash: '47b57c',
-		name: 'Destacados'
-	},
-	{
-		tone: 'work',
-		color: 'var(--lumi-color-warning)',
-		hash: 'faa75f',
-		name: 'Trabajo'
-	},
-	{
-		tone: 'personal',
-		color: 'var(--lumi-color-info)',
-		hash: '42a5f5',
-		name: 'Personal'
-	}
+	{ tone: 'favorite', color: 'secondary', hash: 'fb7185', name: 'Favoritos' },
+	{ tone: 'highlight', color: 'success', hash: '47b57c', name: 'Destacados' },
+	{ tone: 'work', color: 'warning', hash: 'faa75f', name: 'Trabajo' },
+	{ tone: 'personal', color: 'info', hash: '42a5f5', name: 'Personal' }
 ];
 
 export function getDriveTagByHash(hash: string | null | undefined): DriveTagOption | null {

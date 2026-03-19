@@ -21,7 +21,7 @@
 		Table
 	} from '$lib/components';
 	import type { SelectOption, TableRow } from '$lib/components';
-	import { can } from '$lib/stores/permissions';
+	import { can, canAll } from '$lib/stores/permissions';
 	import { showToast } from '$lib/stores/Toast';
 	import { formatDate } from '$lib/utils/formatDate';
 	import { formatProductPrice } from '$lib/utils/products';
@@ -69,8 +69,9 @@
 	];
 
 	const canRead = $derived(can('inventory:read'));
-	const canCreate = $derived(can('inventory:create'));
 	const canUpdate = $derived(can('inventory:update'));
+	const canDelete = $derived(can('inventory:delete'));
+	const canOpenCreate = $derived(canAll('inventory:create', 'products:read'));
 
 	let purchases = $state<InventoryPurchaseListItem[]>([]);
 	let pagination = $state<InventoryPagination>(EMPTY_PAGINATION);
@@ -245,7 +246,7 @@
 	}
 
 	function openRefundDialog(purchase: InventoryPurchaseListItem): void {
-		if (!canUpdate || !canRefundPurchase(purchase)) return;
+		if (!canDelete || !canRefundPurchase(purchase)) return;
 
 		refundPurchaseTarget = purchase;
 		showRefundDialog = true;
@@ -261,7 +262,8 @@
 		purchaseCode: string,
 		state: 'received' | 'refunded'
 	): Promise<boolean> {
-		if (!canUpdate) return false;
+		if (state === 'received' && !canUpdate) return false;
+		if (state === 'refunded' && !canDelete) return false;
 
 		try {
 			const response = await fetch(`/api/inventory/purchases/${purchaseCode}`, {
@@ -322,7 +324,7 @@
 					color="primary"
 					icon="plus"
 					onclick={() => navigateWithBranch('/inventory/purchases/new')}
-					disabled={!canCreate}
+					disabled={!canOpenCreate}
 				></Button>
 			</div>
 		{/snippet}
@@ -544,7 +546,7 @@
 					title="Reembolsar compra"
 					icon="xCircle"
 					color="danger"
-					disabled={!canUpdate}
+					disabled={!canDelete}
 					onclick={() => openRefundDialog(purchase)}
 				/>
 			{:else if purchase.state === 'received'}
@@ -552,7 +554,7 @@
 					title={purchase.can_refund ? 'Reembolsar compra' : 'Reembolso no disponible'}
 					icon="undo"
 					color="danger"
-					disabled={!canUpdate || !canRefundPurchase(purchase)}
+					disabled={!canDelete || !canRefundPurchase(purchase)}
 					onclick={() => openRefundDialog(purchase)}
 				/>
 			{/if}

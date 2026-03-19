@@ -995,7 +995,8 @@
 
 		{#each TAG_OPTIONS as tag (tag.hash)}
 			<TagOption
-				{tag}
+				label={tag.name}
+				color={tag.color}
 				active={selectedTagHash === tag.hash}
 				onclick={() => (selectedTagHash = tag.hash)}
 			/>

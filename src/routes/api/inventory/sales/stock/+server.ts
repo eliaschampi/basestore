@@ -1,10 +1,11 @@
 import { error, json } from '@sveltejs/kit';
+import { checkAllPermissions } from '$lib/permissions/server';
 import type { RequestHandler } from './$types';
 import { InventoryRepository } from '$lib/server/repositories/inventory.repository';
 import { readRequiredUuidSearchParam } from '$lib/server/inventory/api-query';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
-	if (!(await locals.can('inventory:create'))) {
+	if (!(await checkAllPermissions(locals.can, 'inventory:create', 'inventory:read'))) {
 		throw error(403, 'No tienes permisos para consultar stock');
 	}
 

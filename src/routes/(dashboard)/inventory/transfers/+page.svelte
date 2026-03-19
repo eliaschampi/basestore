@@ -16,7 +16,7 @@
 		Table
 	} from '$lib/components';
 	import type { SelectOption, TableRow } from '$lib/components';
-	import { can } from '$lib/stores/permissions';
+	import { can, canAll } from '$lib/stores/permissions';
 	import { formatDate } from '$lib/utils/formatDate';
 	import type { InventoryPagination, InventoryProductTransferListItem } from '$lib/types/inventory';
 	import type { PageData } from './$types';
@@ -39,7 +39,9 @@
 	};
 
 	const canRead = $derived(can('product_transfers:read'));
-	const canCreate = $derived(can('product_transfers:create'));
+	const canOpenCreate = $derived(
+		canAll('inventory:read', 'products:read', 'product_transfers:create')
+	);
 
 	let transfers = $state<InventoryProductTransferListItem[]>([]);
 	let pagination = $state<InventoryPagination>(EMPTY_PAGINATION);
@@ -94,6 +96,8 @@
 	});
 
 	function navigateToCreateTransfer(): void {
+		if (!canOpenCreate) return;
+
 		const params = new SvelteURLSearchParams();
 		if (filterSourceBranchCode !== 'all') {
 			params.set('source_branch_code', filterSourceBranchCode);
@@ -228,7 +232,7 @@
 					color="primary"
 					icon="plus"
 					onclick={navigateToCreateTransfer}
-					disabled={!canCreate}
+					disabled={!canOpenCreate}
 				></Button>
 			</div>
 		{/snippet}

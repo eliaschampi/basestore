@@ -139,4 +139,5 @@ export {
 // ============================================================================
 // TAG OPTION COMPONENT
 // ============================================================================
+export type { TagOptionColor, TagOptionProps } from './TagOption';
 export { TagOption } from './TagOption';
