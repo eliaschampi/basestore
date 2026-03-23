@@ -103,9 +103,7 @@
 
 	// ── Axes ────────────────────────────────────────────────────────────────
 
-	const yTicks = $derived(
-		Array.from({ length: Y_TICKS + 1 }, (_, i) => (niceMax / Y_TICKS) * i)
-	);
+	const yTicks = $derived(Array.from({ length: Y_TICKS + 1 }, (_, i) => (niceMax / Y_TICKS) * i));
 
 	const xLabels = $derived(computeXLabels());
 
@@ -202,7 +200,7 @@
 			</defs>
 
 			<!-- Grid lines -->
-			{#each yTicks as tick}
+			{#each yTicks as tick (tick)}
 				<line
 					x1={PADDING.left}
 					y1={scaleY(tick)}
@@ -213,7 +211,7 @@
 			{/each}
 
 			<!-- Y axis labels -->
-			{#each yTicks as tick}
+			{#each yTicks as tick (tick)}
 				<text
 					x={PADDING.left - 8}
 					y={scaleY(tick) + 3}
@@ -225,13 +223,8 @@
 			{/each}
 
 			<!-- X axis labels -->
-			{#each xLabels as xl}
-				<text
-					x={xl.x}
-					y={chartH - 6}
-					text-anchor="middle"
-					class="lumi-line-chart__label"
-				>
+			{#each xLabels as xl (xl.label)}
+				<text x={xl.x} y={chartH - 6} text-anchor="middle" class="lumi-line-chart__label">
 					{xl.label}
 				</text>
 			{/each}
@@ -281,7 +274,8 @@
 	>
 		<span class="lumi-line-chart__tooltip-dot" style:background={strokeColor}></span>
 		<div class="lumi-line-chart__tooltip-body">
-			<span class="lumi-text--xs lumi-font--semibold">{formatTooltipValue(hoveredPoint.value)}</span>
+			<span class="lumi-text--xs lumi-font--semibold">{formatTooltipValue(hoveredPoint.value)}</span
+			>
 			<span class="lumi-text--xs lumi-text--muted">{hoveredPoint.label}</span>
 		</div>
 	</div>
