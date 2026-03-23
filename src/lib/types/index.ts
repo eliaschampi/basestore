@@ -157,3 +157,20 @@ export interface ToastState {
 	type: ToastType;
 	duration?: number;
 }
+
+export type {
+	DashboardActivityItem,
+	DashboardCatalogPanel,
+	DashboardColor,
+	DashboardDrivePanel,
+	DashboardHomeData,
+	DashboardInventoryPanel,
+	DashboardInventorySummary,
+	DashboardMetric,
+	DashboardPanels,
+	DashboardQuickAction,
+	DashboardRangeDays,
+	DashboardSeriesPoint,
+	DashboardStats,
+	DashboardTrendSeries
+} from './dashboard';

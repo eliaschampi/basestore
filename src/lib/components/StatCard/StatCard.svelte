@@ -22,8 +22,8 @@
 </script>
 
 {#if href}
-	<a href={resolve(href as '/')} class="lumi-text-decoration--none">
-		<Card clickable {hoverable} class={cardClasses}>
+	<a href={resolve(href as '/')} class="lumi-block lumi-text-decoration--none">
+		<Card {hoverable} class={cardClasses}>
 			<div class="lumi-stat-card__container">
 				<div class="lumi-stat-card__header">
 					<Title {title} size="sm" {color} />

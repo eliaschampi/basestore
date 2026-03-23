@@ -5,5 +5,15 @@ export default defineConfig({
 	plugins: [sveltekit()],
 	server: {
 		host: true
+	},
+	ssr: {
+		noExternal: [
+			'layerchart',
+			'layercake',
+			'@layerstack/svelte-actions',
+			'@layerstack/svelte-stores',
+			'@layerstack/tailwind',
+			'@layerstack/utils'
+		]
 	}
 });

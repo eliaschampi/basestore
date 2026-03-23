@@ -20,8 +20,8 @@
 	});
 </script>
 
-<a href={resolve(href as '/')} class="lumi-text-decoration--none">
-	<Card clickable {hoverable} class={cardClasses()}>
+<a href={resolve(href as '/')} class="lumi-block lumi-text-decoration--none">
+	<Card {hoverable} class={cardClasses()}>
 		<div class="lumi-quick-access-card__container">
 			<IconBadge {icon} {color} size="lg" />
 			<Title {title} size="md" {color} />
