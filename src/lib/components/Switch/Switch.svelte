@@ -120,8 +120,8 @@
 			color-mix(in srgb, var(--lumi-color-border) 60%, transparent);
 		border-radius: var(--lumi-radius-full);
 		transition:
-			background-color 0.2s ease,
-			box-shadow 0.2s ease;
+			background-color var(--lumi-duration-base) var(--lumi-easing-default),
+			box-shadow var(--lumi-duration-base) var(--lumi-easing-default);
 		flex-shrink: 0;
 	}
 
@@ -134,8 +134,8 @@
 		box-shadow: var(--lumi-shadow-sm);
 		flex-shrink: 0;
 		transition:
-			transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-			width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+			transform var(--lumi-duration-base) var(--lumi-easing-default),
+			width var(--lumi-duration-base) var(--lumi-easing-default);
 	}
 
 	/* ── Label ────────────────────────────────── */

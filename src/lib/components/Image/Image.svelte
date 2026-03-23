@@ -160,7 +160,7 @@
 
 	.lumi-image--zoomed:hover .lumi-image__img {
 		transform: scale(1.1);
-		transition: transform 0.3s ease;
+		transition: transform var(--lumi-duration-slow) var(--lumi-easing-default);
 	}
 
 	.lumi-image__zoomed-wrapper {
@@ -178,7 +178,7 @@
 		height: 100%;
 		object-fit: cover;
 		opacity: 0;
-		transition: opacity 0.3s ease;
+		transition: opacity var(--lumi-duration-slow) var(--lumi-easing-default);
 	}
 
 	.lumi-image--zoomed:hover .lumi-image__zoomed {

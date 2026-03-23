@@ -55,7 +55,7 @@
 		height: var(--lumi-space-4xl);
 		border-radius: var(--lumi-radius-full);
 		overflow: hidden;
-		border: 2px solid var(--lumi-color-border);
+		border: var(--lumi-border-width-thick) solid var(--lumi-color-border);
 		transition: var(--lumi-transition-all);
 		transform: scale(1);
 		display: flex;
@@ -69,7 +69,7 @@
 	}
 
 	.lumi-avatar-picker__image--selected {
-		border-width: 3px;
+		border-width: var(--lumi-border-width-thick);
 		border-color: var(--lumi-color-primary);
 		transform: scale(1.1);
 	}

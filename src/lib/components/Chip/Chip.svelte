@@ -87,11 +87,14 @@
 		border-radius: var(--lumi-radius-full);
 		font-weight: var(--lumi-font-weight-medium);
 		line-height: var(--lumi-line-height-normal);
-		transition: all var(--lumi-transition-base);
+		transition:
+			background-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			color var(--lumi-duration-fast) var(--lumi-easing-default),
+			opacity var(--lumi-duration-fast) var(--lumi-easing-default),
+			border-color var(--lumi-duration-fast) var(--lumi-easing-default);
 		white-space: nowrap;
 		cursor: default;
 		user-select: none;
-		border: none;
 	}
 
 	/* Size variants */
@@ -109,31 +112,43 @@
 	.lumi-chip--primary {
 		background-color: color-mix(in srgb, var(--lumi-color-primary) 15%, transparent);
 		color: var(--lumi-color-primary);
+		border: var(--lumi-border-width-thin) solid
+			color-mix(in srgb, var(--lumi-color-primary) 20%, transparent);
 	}
 
 	.lumi-chip--secondary {
 		background-color: color-mix(in srgb, var(--lumi-color-secondary) 15%, transparent);
 		color: var(--lumi-color-secondary);
+		border: var(--lumi-border-width-thin) solid
+			color-mix(in srgb, var(--lumi-color-secondary) 20%, transparent);
 	}
 
 	.lumi-chip--success {
 		background-color: color-mix(in srgb, var(--lumi-color-success) 15%, transparent);
 		color: var(--lumi-color-success);
+		border: var(--lumi-border-width-thin) solid
+			color-mix(in srgb, var(--lumi-color-success) 20%, transparent);
 	}
 
 	.lumi-chip--warning {
 		background-color: color-mix(in srgb, var(--lumi-color-warning) 15%, transparent);
 		color: var(--lumi-color-warning);
+		border: var(--lumi-border-width-thin) solid
+			color-mix(in srgb, var(--lumi-color-warning) 20%, transparent);
 	}
 
 	.lumi-chip--danger {
 		background-color: color-mix(in srgb, var(--lumi-color-danger) 15%, transparent);
 		color: var(--lumi-color-danger);
+		border: var(--lumi-border-width-thin) solid
+			color-mix(in srgb, var(--lumi-color-danger) 20%, transparent);
 	}
 
 	.lumi-chip--info {
 		background-color: color-mix(in srgb, var(--lumi-color-info) 15%, transparent);
 		color: var(--lumi-color-info);
+		border: var(--lumi-border-width-thin) solid
+			color-mix(in srgb, var(--lumi-color-info) 20%, transparent);
 	}
 
 	/* Icon styling */
@@ -168,7 +183,10 @@
 		border-radius: var(--lumi-radius-full);
 		color: currentColor;
 		cursor: pointer;
-		transition: all var(--lumi-transition-base);
+		transition:
+			opacity var(--lumi-duration-fast) var(--lumi-easing-default),
+			background-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			transform var(--lumi-duration-fast) var(--lumi-easing-default);
 		flex-shrink: 0;
 		opacity: 0.7;
 	}
@@ -180,19 +198,19 @@
 	}
 
 	.lumi-chip__close:focus-visible {
-		outline: 2px solid currentColor;
-		outline-offset: var(--lumi-space-xs);
+		outline: var(--lumi-border-width-thick) solid currentColor;
+		outline-offset: var(--lumi-space-2xs);
 	}
 
 	/* Hover effects */
 	.lumi-chip:hover {
-		opacity: 0.85;
+		opacity: var(--lumi-opacity-hover);
 	}
 
 	/* Focus styles */
 	.lumi-chip:focus-visible {
-		outline: 2px solid currentColor;
-		outline-offset: var(--lumi-space-xs);
+		outline: var(--lumi-border-width-thick) solid currentColor;
+		outline-offset: var(--lumi-space-2xs);
 	}
 
 	/* Accessibility */

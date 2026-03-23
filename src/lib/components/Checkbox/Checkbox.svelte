@@ -199,7 +199,7 @@
 	/* Disabled state */
 	.lumi-checkbox--disabled {
 		cursor: not-allowed;
-		opacity: 0.6;
+		opacity: var(--lumi-opacity-disabled);
 	}
 
 	.lumi-checkbox--disabled .lumi-checkbox__visual {

@@ -312,7 +312,7 @@ body {
 		z-index: var(--lumi-z-modal);
 		background: var(--lumi-color-overlay);
 		backdrop-filter: blur(var(--lumi-blur-sm));
-		animation: lumi-fade-in 0.2s ease;
+		animation: lumi-fade-in var(--lumi-duration-base) var(--lumi-easing-default);
 	}
 
 	.lumi-page-sidebar__drawer {
@@ -325,7 +325,7 @@ body {
 		z-index: calc(var(--lumi-z-modal) + 1);
 		padding: var(--lumi-space-sm);
 		overflow-y: auto;
-		animation: lumi-page-sidebar-slide 0.25s cubic-bezier(0.2, 0, 0.13, 1.5);
+		animation: lumi-page-sidebar-slide var(--lumi-duration-slow) var(--lumi-easing-bounce);
 	}
 }
 
@@ -882,11 +882,11 @@ body {
 }
 
 .lumi-animate-fade-in {
-	animation: lumi-fade-in 0.3s ease;
+	animation: lumi-fade-in var(--lumi-duration-slow) var(--lumi-easing-default);
 }
 
 .lumi-animate-slide-up {
-	animation: lumi-slide-up 0.3s ease;
+	animation: lumi-slide-up var(--lumi-duration-slow) var(--lumi-easing-default);
 }
 
 /* ========================================================================== */

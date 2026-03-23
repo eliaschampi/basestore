@@ -115,7 +115,9 @@ import {
 	StarOff,
 	Store,
 	Globe,
-	Wallet
+	Wallet,
+	ChartPie,
+	ShoppingCart
 } from '@lucide/svelte';
 
 // ─── Registry ──────────────────────────────────────────────────
@@ -156,7 +158,8 @@ const _registry = {
 	refreshCw: RefreshCw,
 	rotateCcw: RotateCcw,
 	undo: Undo2,
-
+	pieChart: ChartPie,
+	shoppingCart: ShoppingCart,
 	// Status & Feedback
 	checkCircle: CircleCheck,
 	xCircle: CircleX,

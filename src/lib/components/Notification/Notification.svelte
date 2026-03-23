@@ -191,7 +191,8 @@
 		border-radius: var(--lumi-radius-full);
 		color: var(--notification-color);
 		background-color: color-mix(in srgb, var(--notification-bg) 90%, var(--lumi-color-surface));
-		border: 1px solid color-mix(in srgb, var(--notification-color) 16%, transparent);
+		border: var(--lumi-border-width-thin) solid
+			color-mix(in srgb, var(--notification-color) 16%, transparent);
 		position: relative;
 		z-index: var(--lumi-z-base);
 	}
@@ -230,7 +231,7 @@
 		height: var(--lumi-space-lg);
 		padding: 0;
 		background: transparent;
-		border: 1px solid transparent;
+		border: var(--lumi-border-width-thin) solid transparent;
 		border-radius: var(--lumi-radius-md);
 		color: var(--lumi-color-text-muted);
 		cursor: pointer;

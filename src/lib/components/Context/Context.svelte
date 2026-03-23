@@ -192,7 +192,7 @@
 				rgba(var(--lumi-color-primary-rgb), 0) 22%
 			),
 			var(--lumi-color-surface-overlay);
-		border: 1px solid var(--lumi-color-border);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border);
 		border-radius: var(--lumi-radius-2xl);
 		padding: var(--lumi-space-xs);
 		min-width: calc(var(--lumi-space-5xl) * 2);

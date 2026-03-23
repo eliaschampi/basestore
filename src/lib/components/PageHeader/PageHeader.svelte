@@ -45,7 +45,7 @@
 		gap: var(--lumi-space-md);
 		padding: var(--lumi-space-lg);
 		border-radius: var(--lumi-radius-2xl);
-		border: 1px solid var(--lumi-color-border-light);
+		border: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		background: var(--lumi-color-surface-overlay);
 		box-shadow: var(--lumi-shadow-md);
 		backdrop-filter: blur(var(--lumi-blur-md));

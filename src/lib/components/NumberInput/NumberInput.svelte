@@ -264,7 +264,7 @@
 	}
 
 	.lumi-number-input--disabled {
-		opacity: 0.6;
+		opacity: var(--lumi-opacity-disabled);
 		pointer-events: none;
 	}
 

@@ -209,9 +209,9 @@
 		scrollbar-width: thin;
 		scrollbar-color: var(--lumi-color-border-strong) transparent;
 		transition:
-			border-color 0.15s ease,
-			background-color 0.15s ease,
-			box-shadow 0.15s ease;
+			border-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			background-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			box-shadow var(--lumi-duration-fast) var(--lumi-easing-default);
 	}
 
 	.lumi-segmented-control:hover:not(.lumi-segmented-control--disabled) {
@@ -281,7 +281,7 @@
 	}
 
 	.lumi-segmented-control__option--disabled {
-		opacity: 0.5;
+		opacity: var(--lumi-opacity-disabled);
 		cursor: not-allowed;
 	}
 
@@ -303,9 +303,9 @@
 		font-size: var(--lumi-font-size-sm);
 		white-space: nowrap;
 		transition:
-			color 0.15s ease,
-			background-color 0.15s ease,
-			transform 0.15s ease;
+			color var(--lumi-duration-fast) var(--lumi-easing-default),
+			background-color var(--lumi-duration-fast) var(--lumi-easing-default),
+			transform var(--lumi-duration-fast) var(--lumi-easing-default);
 		border-radius: var(--lumi-radius-md);
 		min-width: 0;
 	}
@@ -342,7 +342,7 @@
 	}
 
 	.lumi-segmented-control--disabled {
-		opacity: 0.6;
+		opacity: var(--lumi-opacity-disabled);
 		cursor: not-allowed;
 		pointer-events: none;
 	}

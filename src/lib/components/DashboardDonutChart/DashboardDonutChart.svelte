@@ -165,7 +165,7 @@
 
 	.lumi-donut-chart__segment {
 		cursor: pointer;
-		transition: opacity 0.12s ease;
+		transition: opacity var(--lumi-duration-fast) var(--lumi-easing-default);
 	}
 
 	.lumi-donut-chart__segment:hover {

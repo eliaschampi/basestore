@@ -203,8 +203,8 @@
 
 	/* Focus styles */
 	.lumi-empty-state:focus-visible {
-		outline: 2px solid var(--lumi-color-primary);
-		outline-offset: 2px;
+		outline: var(--lumi-border-width-thick) solid var(--lumi-color-primary);
+		outline-offset: var(--lumi-space-2xs);
 		border-radius: var(--lumi-radius-lg);
 	}
 

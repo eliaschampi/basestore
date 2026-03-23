@@ -48,7 +48,7 @@
 		--list-item-padding: var(--lumi-space-sm) var(--lumi-space-md);
 		--list-item-title-size: var(--lumi-font-size-sm);
 		--list-item-subtitle-size: var(--lumi-font-size-xs);
-		--list-icon-size: 16px;
+		--list-icon-size: var(--lumi-icon-sm);
 		--list-scroll-track: var(--lumi-color-background);
 		--list-scroll-thumb: var(--lumi-color-border-strong);
 		width: 100%;
@@ -81,14 +81,14 @@
 		--list-item-padding: var(--lumi-space-xs) var(--lumi-space-sm);
 		--list-item-title-size: var(--lumi-font-size-sm);
 		--list-item-subtitle-size: var(--lumi-font-size-xs);
-		--list-icon-size: 14px;
+		--list-icon-size: var(--lumi-icon-xs);
 	}
 
 	.lumi-list--md {
 		--list-item-padding: var(--lumi-space-sm) var(--lumi-space-md);
 		--list-item-title-size: var(--lumi-font-size-sm);
 		--list-item-subtitle-size: var(--lumi-font-size-xs);
-		--list-icon-size: 16px;
+		--list-icon-size: var(--lumi-icon-sm);
 	}
 
 	.lumi-list--primary {
@@ -135,7 +135,7 @@
 
 	/* Disabled state */
 	.lumi-list--disabled {
-		opacity: 0.65;
+		opacity: var(--lumi-opacity-disabled);
 		filter: saturate(0.8);
 		pointer-events: none;
 	}

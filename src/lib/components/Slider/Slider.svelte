@@ -220,7 +220,7 @@
 		color: var(--slider-accent);
 		background: color-mix(in srgb, var(--slider-accent) 12%, transparent);
 		border-radius: var(--lumi-radius-base);
-		padding: 1px 7px;
+		padding: var(--lumi-space-2xs) var(--lumi-space-xs);
 	}
 
 	.lumi-slider__container {
@@ -247,7 +247,7 @@
 
 	.lumi-slider__rail {
 		background: color-mix(in srgb, var(--lumi-color-border-strong) 68%, var(--lumi-color-surface));
-		box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+		box-shadow: inset 0 var(--lumi-border-width-thin) 3px rgba(0, 0, 0, 0.1);
 	}
 
 	.lumi-slider__fill {
@@ -266,11 +266,11 @@
 		width: var(--_thumb-size);
 		height: var(--_thumb-size);
 		background: var(--lumi-color-surface);
-		border: 3.5px solid var(--slider-accent);
+		border: var(--lumi-border-width-thick) solid var(--slider-accent);
 		border-radius: var(--lumi-radius-full);
 		box-shadow:
 			var(--lumi-shadow-md),
-			0 0 0 6px color-mix(in srgb, var(--slider-accent) 18%, transparent);
+			0 0 0 var(--lumi-space-2xs) color-mix(in srgb, var(--slider-accent) 18%, transparent);
 		transition:
 			transform var(--lumi-duration-base) var(--lumi-easing-bounce),
 			box-shadow var(--lumi-duration-base) var(--lumi-easing-default);
@@ -312,11 +312,12 @@
 		position: absolute;
 		bottom: 100%;
 		left: 50%;
-		transform: translateX(-50%) translateY(10px);
-		padding: 4px 11px;
+		transform: translateX(-50%) translateY(var(--lumi-space-xs));
+		padding: var(--lumi-space-2xs) var(--lumi-space-sm);
 		background: var(--lumi-color-surface-overlay);
 		backdrop-filter: blur(var(--lumi-blur-md));
-		border: 1px solid color-mix(in srgb, var(--slider-accent) 35%, transparent);
+		border: var(--lumi-border-width-thin) solid
+			color-mix(in srgb, var(--slider-accent) 35%, transparent);
 		box-shadow: var(--lumi-shadow-lg);
 		color: var(--lumi-color-text);
 		font-family: var(--lumi-font-family-mono);
@@ -326,7 +327,9 @@
 		white-space: nowrap;
 		opacity: 0;
 		pointer-events: none;
-		transition: all var(--lumi-duration-base) var(--lumi-easing-bounce);
+		transition:
+			opacity var(--lumi-duration-base) var(--lumi-easing-bounce),
+			transform var(--lumi-duration-base) var(--lumi-easing-bounce);
 	}
 
 	.lumi-slider__track:hover .lumi-slider__tooltip,
@@ -345,7 +348,7 @@
 	}
 
 	.lumi-slider--disabled {
-		opacity: 0.48;
+		opacity: var(--lumi-opacity-disabled);
 		pointer-events: none;
 	}
 

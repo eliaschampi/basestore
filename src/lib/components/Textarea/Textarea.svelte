@@ -132,8 +132,8 @@
 		--textarea-color: var(--lumi-color-primary);
 		--textarea-bg: color-mix(
 			in srgb,
-			var(--lumi-color-background-hover) 70%,
-			var(--lumi-color-surface) 30%
+			var(--lumi-color-background-hover) 60%,
+			var(--lumi-color-surface) 40%
 		);
 		--textarea-bg-focus: color-mix(
 			in srgb,
@@ -147,7 +147,7 @@
 		font-weight: var(--lumi-font-weight-medium);
 		color: var(--lumi-color-text);
 		cursor: pointer;
-		transition: color 0.2s ease;
+		transition: color var(--lumi-duration-base) var(--lumi-easing-default);
 	}
 
 	.lumi-textarea__required {
@@ -176,9 +176,9 @@
 		min-height: calc(var(--lumi-space-3xl) + var(--lumi-space-sm));
 		overflow-y: hidden;
 		transition:
-			border-color 0.2s ease,
-			background-color 0.2s ease,
-			box-shadow 0.2s ease;
+			border-color var(--lumi-duration-base) var(--lumi-easing-default),
+			background-color var(--lumi-duration-base) var(--lumi-easing-default),
+			box-shadow var(--lumi-duration-base) var(--lumi-easing-default);
 	}
 
 	.lumi-textarea__input::placeholder {
@@ -199,7 +199,7 @@
 	}
 
 	.lumi-textarea__input:disabled {
-		opacity: 0.6;
+		opacity: var(--lumi-opacity-disabled);
 		cursor: not-allowed;
 		background: var(--lumi-color-background-secondary);
 		border-color: var(--lumi-color-border);
@@ -304,7 +304,7 @@
 	}
 
 	.lumi-textarea--disabled .lumi-textarea__input {
-		opacity: 0.6;
+		opacity: var(--lumi-opacity-disabled);
 		cursor: not-allowed;
 		background: var(--lumi-color-background-secondary);
 		border-color: var(--lumi-color-border);

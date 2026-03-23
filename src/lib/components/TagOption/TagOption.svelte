@@ -85,7 +85,7 @@
 	}
 
 	.lumi-tag-option--disabled {
-		opacity: 0.4;
+		opacity: var(--lumi-opacity-disabled);
 		cursor: not-allowed;
 		pointer-events: none;
 	}

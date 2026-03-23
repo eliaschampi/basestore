@@ -51,7 +51,7 @@
 		gap: var(--lumi-space-sm);
 		padding: var(--lumi-space-xs) var(--lumi-space-sm);
 		color: var(--list-header-color);
-		border-bottom: 1px solid var(--lumi-color-border-light);
+		border-bottom: var(--lumi-border-width-thin) solid var(--lumi-color-border-light);
 		margin-bottom: var(--lumi-space-2xs);
 	}
 

@@ -100,7 +100,7 @@
 		gap: var(--lumi-space-sm);
 		padding: var(--lumi-space-md);
 		border-radius: var(--lumi-radius-2xl);
-		border-left: 5px solid transparent;
+		border-left: var(--lumi-space-2xs) solid transparent;
 		background: var(--lumi-color-surface);
 		transition: var(--lumi-transition-all);
 		box-shadow: var(--lumi-shadow-sm);
@@ -179,8 +179,8 @@
 	}
 
 	.lumi-alert__close:focus-visible {
-		outline: 2px solid var(--lumi-color-primary);
-		outline-offset: var(--lumi-space-xs);
+		outline: var(--lumi-border-width-thick) solid var(--lumi-color-primary);
+		outline-offset: var(--lumi-space-2xs);
 	}
 
 	/* Color variants */

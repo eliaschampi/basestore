@@ -157,8 +157,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: var(--list-icon-size, 16px);
-		height: var(--list-icon-size, 16px);
+		width: var(--list-icon-size, var(--lumi-icon-sm));
+		height: var(--list-icon-size, var(--lumi-icon-sm));
 		flex-shrink: 0;
 		color: var(--lumi-color-text-muted);
 		transition: color var(--lumi-duration-fast) var(--lumi-easing-default);

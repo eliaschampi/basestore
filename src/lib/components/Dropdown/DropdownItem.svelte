@@ -3,6 +3,7 @@
 	import { getContext } from 'svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '../Icon/Icon.svelte';
+	import { getIconSize } from '../config';
 
 	interface Props {
 		children?: Snippet;
@@ -27,6 +28,7 @@
 	}: Props = $props();
 
 	const closeDropdown = getContext<() => void>('dropdownClose');
+	const iconSizePx = `${getIconSize('sm')}px`;
 
 	const itemClasses = $derived.by(() =>
 		['lumi-dropdown-item', disabled && 'lumi-dropdown-item--disabled', className]
@@ -65,7 +67,7 @@
 	>
 		{#if icon}
 			<div class="lumi-dropdown-item__icon">
-				<Icon {icon} size="16px" />
+				<Icon {icon} size={iconSizePx} />
 			</div>
 		{/if}
 
@@ -92,7 +94,7 @@
 	>
 		{#if icon}
 			<div class="lumi-dropdown-item__icon">
-				<Icon {icon} size="16px" />
+				<Icon {icon} size={iconSizePx} />
 			</div>
 		{/if}
 
@@ -126,7 +128,7 @@
 		gap: var(--lumi-space-md);
 		background: transparent;
 		border: none;
-		border-radius: var(--lumi-radius-sm);
+		border-radius: var(--lumi-radius-md);
 		text-align: left;
 		text-decoration: none;
 	}
@@ -153,8 +155,8 @@
 		justify-content: center;
 		color: var(--_accent, var(--lumi-color-text-muted));
 		flex-shrink: 0;
-		width: 16px;
-		height: 16px;
+		width: var(--lumi-icon-sm);
+		height: var(--lumi-icon-sm);
 	}
 
 	.lumi-dropdown-item:hover .lumi-dropdown-item__icon {

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '../Icon/Icon.svelte';
+	import { getIconSize } from '../config';
 	import type { ContextItemProps } from './types';
 
 	const {
@@ -17,6 +18,8 @@
 			.filter(Boolean)
 			.join(' ')
 	);
+
+	const iconSizePx = `${getIconSize('sm')}px`;
 
 	const colorStyle = $derived(
 		color
@@ -48,7 +51,7 @@
 >
 	{#if icon}
 		<div class="lumi-context-item__icon">
-			<Icon {icon} size="16px" />
+			<Icon {icon} size={iconSizePx} />
 		</div>
 	{/if}
 
@@ -78,7 +81,7 @@
 		color: var(--lumi-color-text);
 		font-size: var(--lumi-font-size-sm);
 		line-height: var(--lumi-line-height-normal);
-		border-radius: var(--lumi-radius-sm);
+		border-radius: var(--lumi-radius-md);
 		text-decoration: none;
 		outline: none;
 	}
@@ -104,8 +107,8 @@
 		justify-content: center;
 		color: var(--_accent, var(--lumi-color-text-muted));
 		flex-shrink: 0;
-		width: 16px;
-		height: 16px;
+		width: var(--lumi-icon-sm);
+		height: var(--lumi-icon-sm);
 	}
 
 	.lumi-context-item:hover .lumi-context-item__icon {

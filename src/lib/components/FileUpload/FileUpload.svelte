@@ -337,7 +337,7 @@
 	}
 
 	.lumi-file-upload__dropzone--disabled {
-		opacity: 0.6;
+		opacity: var(--lumi-opacity-disabled);
 		cursor: not-allowed;
 		background-color: var(--lumi-color-background-secondary);
 		border-style: solid;
@@ -550,6 +550,6 @@
 
 	.lumi-file-upload__add-more:disabled {
 		cursor: not-allowed;
-		opacity: 0.6;
+		opacity: var(--lumi-opacity-disabled);
 	}
 </style>
