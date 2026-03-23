@@ -7,13 +7,6 @@ export default defineConfig({
 		host: true
 	},
 	ssr: {
-		noExternal: [
-			'layerchart',
-			'layercake',
-			'@layerstack/svelte-actions',
-			'@layerstack/svelte-stores',
-			'@layerstack/tailwind',
-			'@layerstack/utils'
-		]
+		noExternal: []
 	}
 });
